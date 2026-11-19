@@ -665,3 +665,18 @@ html.dcn-modal { overflow: hidden; }
 .xv-grid .xv-t { zoom: var(--xvz, 1); }
 .xv-zoom { display: inline-flex; align-items: center; gap: 4px; }
 .xv-tb.xv-zv { width: auto; min-width: 64px; padding: 0 8px; font: 600 13px/1 inherit; font-variant-numeric: tabular-nums; }
+/* duplicates: same content, a person checks each group (JP 2026-11-19) */
+.dx-dupbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0; padding: 10px 14px; border-radius: 12px; background: rgba(var(--warn-rgb, 240, 170, 60), .12); border: 1px solid rgba(var(--warn-rgb, 240, 170, 60), .35); }
+.dx-dupbar > span { flex: 1; min-width: 200px; }
+.dx-dupsheet { width: min(640px, 100%); max-height: calc(100dvh - 32px); overflow: auto; }
+.dx-duplist { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dx-duplist li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.dx-dupk { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.dx-dupk input { width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+.dx-dupk > span:first-of-type { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dx-dupk b { overflow-wrap: anywhere; font-weight: 600; }
+.dx-dupk small { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.dx-dupbtns { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.dx-dupbtns .dc-chip { min-height: 44px; padding: 8px 16px; border-radius: 12px; font-size: 15px; }
+.dx-dupnav { margin-left: auto; display: inline-flex; gap: 6px; }
+@media (max-width: 560px) { .dx-duplist li { flex-wrap: wrap; } .dx-dupnav { margin-left: 0; } }

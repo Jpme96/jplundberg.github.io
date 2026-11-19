@@ -3196,5 +3196,17 @@ I18N.add({
   "ui.xv-zoom": ["Zoom", "Zoom"],
   "ui.xv-zoom-out": ["Zoom out", "Zoom ut"],
   "ui.xv-zoom-in": ["Zoom in", "Zoom inn"],
-  "ui.xv-zoom-100": ["Back to 100 %", "Tilbake til 100 %"]
+  "ui.xv-zoom-100": ["Back to 100 %", "Tilbake til 100 %"],
+  "ui.dx-dup-t": ["Same content – group {i} of {n}", "Samme innhold – gruppe {i} av {n}"],
+  "ui.dx-dup-help": ["These files have exactly the same content. Look at them, choose the one to keep, then remove the others from the list. The files on your computer are not touched.", "Disse filene har nøyaktig samme innhold. Se på dem, velg hvilken du vil beholde, og fjern de andre fra listen. Filene på maskinen din røres ikke."],
+  "ui.dx-dup-keep": ["Keep", "Beholdes"],
+  "ui.dx-dup-out": ["Removed from the list", "Tas ut av listen"],
+  "ui.dx-dup-open": ["Open", "Åpne"],
+  "ui.dx-dup-rm": ["Remove the other {n}", "Fjern de {n} andre"],
+  "ui.dx-dup-ok": ["They are different – keep all", "De er forskjellige – behold alle"],
+  "ui.dx-dup-prev": ["Previous group", "Forrige gruppe"],
+  "ui.dx-dup-next": ["Next group", "Neste gruppe"],
+  "ui.dx-dup-done": ["{n} removed from the list – {m} files left. The files on your computer are untouched.", "{n} fjernet fra listen – {m} filer igjen. Filene på maskinen din er urørt."],
+  "ui.dx-dup-bar": ["{n} files are here more than once (same content) – {g} groups to check", "{n} filer finnes flere ganger (samme innhold) – {g} grupper å sjekke"],
+  "ui.dx-dup-go": ["Check them", "Gå gjennom"]
 });

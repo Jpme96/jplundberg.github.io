@@ -328,6 +328,44 @@
   function toolApi() { if (!TAPI) TAPI = Object.assign({}, DCN_API, { saveP: function (id, fn, key) { if (id === '__ren') { fn(toolP()); toolKeep(); return; } saveP(id, fn, key); }, proj: function (id) { return id === '__ren' ? toolP() : proj(id); },
     getBlob: function (id) { return TOOL.blobs[id] ? Promise.resolve(TOOL.blobs[id]) : getBlob(id); }, cur: function () { return '__ren'; } }); return TAPI; }
   function renOn() { return xtool === 'ren' && !open; }
+  /* Duplicates (JP 2026-11-19): only files with exactly the same content (a SHA-256 fingerprint made in the browser) are grouped.
+     Nothing is removed by itself and there is no "clean up all": a person looks at each group, may open the files, picks the one to keep
+     and presses Remove – or Keep all. Removing only takes them out of this list and the .zip; the files on the computer are untouched. */
+  function fingerprint(b) { try { return b.arrayBuffer().then(function (buf) { return crypto.subtle.digest('SHA-256', buf); }).then(function (d) { return [].map.call(new Uint8Array(d).slice(0, 16), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }).catch(function () { return ''; }); } catch (e) { return Promise.resolve(''); } }
+  function dupGroups() { var p = toolP(), by = {}; p.files.forEach(function (f) { if (f.h && !(p.dupOk || {})[f.h]) (by[f.h] = by[f.h] || []).push(f); }); return Object.keys(by).filter(function (h) { return by[h].length > 1; }).map(function (h) { return by[h]; }); }
+  function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' kB'; }
+  function dupPop(gi) {
+    var old = document.querySelector('.dx-dupov'); if (old) old.remove();
+    var G = dupGroups(); if (!G.length) return;
+    gi = Math.max(0, Math.min(G.length - 1, gi || 0));
+    var g = G[gi], keep = g[0].id, ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dx-dupov';
+    var close = function () { ov.remove(); document.removeEventListener('keydown', key, true); }, key = function (e) { if (e.key === 'Escape' && document.querySelector('.dx-dupov') && !document.querySelector('.dx-fv')) { e.stopPropagation(); close(); } };
+    var render = function () {
+      ov.innerHTML = '<div class="dcn-sheet dx-dupsheet" role="dialog" aria-modal="true"><div class="dcn-shead"><b>' + esc(k('ui.dx-dup-t', 'Same content – group {i} of {n}', { i: gi + 1, n: G.length })) + '</b><button type="button" class="icon-btn" data-dupx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+        '<p class="muted dc-help">' + esc(k('ui.dx-dup-help', 'These files have exactly the same content. Look at them, choose the one to keep, then remove the others from the list. The files on your computer are not touched.')) + '</p>' +
+        '<ul class="dx-duplist">' + g.map(function (f) { return '<li><label class="dx-dupk"><input type="radio" name="dupkeep" value="' + esc(f.id) + '"' + (f.id === keep ? ' checked' : '') + '><span><b data-noi18n>' + esc(f.name) + '</b><small>' + esc((f.dir ? f.dir + ' · ' : '') + kb(f.size)) + '</small></span><span class="stt ' + (f.id === keep ? 'stt-ok' : 'stt-soon') + '">' + esc(f.id === keep ? k('ui.dx-dup-keep', 'Keep') : k('ui.dx-dup-out', 'Removed from the list')) + '</span></label><button type="button" class="dc-chip" data-dupview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dx-dup-open', 'Open')) + '</button></li>'; }).join('') + '</ul>' +
+        '<div class="dx-dupbtns"><button type="button" class="pill-btn" data-duprm><i class="bi bi-trash3"></i> ' + esc(k('ui.dx-dup-rm', 'Remove the other {n}', { n: g.length - 1 })) + '</button><button type="button" class="dc-chip" data-dupok>' + esc(k('ui.dx-dup-ok', 'They are different – keep all')) + '</button>' +
+        (G.length > 1 ? '<span class="dx-dupnav"><button type="button" class="icon-btn" data-dupgo="-1" aria-label="' + esc(k('ui.dx-dup-prev', 'Previous group')) + '"' + (gi ? '' : ' disabled') + '><i class="bi bi-chevron-left"></i></button><button type="button" class="icon-btn" data-dupgo="1" aria-label="' + esc(k('ui.dx-dup-next', 'Next group')) + '"' + (gi < G.length - 1 ? '' : ' disabled') + '><i class="bi bi-chevron-right"></i></button></span>' : '') + '</div></div>';
+    };
+    render();
+    var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
+    ov.addEventListener('change', function (e) { if (e.target.name === 'dupkeep') { keep = e.target.value; render(); } });
+    ov.addEventListener('click', function (e) {
+      var t = e.target, b;
+      if ((t === ov && dn === ov) || t.closest('[data-dupx]')) { close(); return; }
+      if ((b = t.closest('[data-dupview]'))) { var f = g.filter(function (x) { return x.id === b.dataset.dupview; })[0], N = naming(); if (f && N && N.view) N.view(TOOL.blobs[f.id], f.name); return; }
+      if ((b = t.closest('[data-dupgo]'))) { close(); dupPop(gi + +b.dataset.dupgo); return; }
+      if (t.closest('[data-dupok]')) { var p0 = toolP(); (p0.dupOk = p0.dupOk || {})[g[0].h] = 1; close(); draw(); if (dupGroups().length) dupPop(gi); return; }
+      if (t.closest('[data-duprm]')) {
+        var p = toolP(), out = g.filter(function (x) { return x.id !== keep; }).map(function (x) { return x.id; });
+        p.files = p.files.filter(function (x) { return out.indexOf(x.id) < 0; }); out.forEach(function (id) { delete TOOL.blobs[id]; });
+        toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dx-dup-done', '{n} removed from the list – {m} files left. The files on your computer are untouched.', { n: out.length, m: p.files.length })));
+        close(); draw(); if (dupGroups().length) dupPop(gi); return;
+      }
+    });
+    document.addEventListener('keydown', key, true);
+    document.body.appendChild(ov);
+  }
   function renPanel() {
     var N = naming(), p = toolP(), F = p.files, ok = 0, moved = 0;
     if (N) F.forEach(function (f) { if (f.orig && f.orig !== f.name) moved++; else if (N.ready(p, f)) ok++; });
@@ -336,7 +374,8 @@
       '<div class="dc-facts"><button type="button" class="pill-btn dc-file" data-dxrenopen><i class="bi bi-files"></i> ' + esc(F.length ? k('ui.dx-ren-more', 'Add more files') : k('ui.dx-ren-pick', 'Pick files or a .zip')) + '</button><input type="file" multiple data-dxrenf hidden>' + (F.length ? '<button type="button" class="dc-chip dx-clr" data-dxrenclr><i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dx-clear', 'Start again')) + '</button>' : '') + '</div>';
     if (!F.length) return h + '</section>';
     if (!N) return h + '<p class="muted">' + esc(k('ui.dx-ren-loading', 'Loading the file naming …')) + '</p></section>';
-    var busy = N.busy();
+    var busy = N.busy(), DG = dupGroups(), dn = DG.reduce(function (a, g) { return a + g.length; }, 0);
+    if (DG.length) h += '<div class="dx-dupbar" role="status"><i class="bi bi-files"></i><span>' + esc(k('ui.dx-dup-bar', '{n} files are here more than once (same content) – {g} groups to check', { n: dn, g: DG.length })) + '</span><button type="button" class="pill-btn sm" data-dxdups>' + esc(k('ui.dx-dup-go', 'Check them')) + '</button></div>';
     h += '<div class="dx-rsum"><span>' + esc(k('ui.dx-ren-sum', '{n} files · {r} renamed · {o} ready to rename', { n: F.length, r: moved, o: ok })) + (busy ? ' · <i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +
       '<span class="dx-rbtn">' + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
       '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(k('ui.dx-ren-dl3', 'Download {n} files with the new names (.zip)', { n: F.length })) + '</span></button></span></div>';
@@ -367,13 +406,14 @@
     var got = [];
     return list.reduce(function (pr, f) { return pr.then(function () {
       if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(function (buf) { var Z = zipEntries(buf).filter(function (z) { return !/\/$/.test(z.name) && !/(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db|desktop\.ini)(\/|$)/i.test(z.name) && !/(^|\/)\._/.test(z.name); });
-        return Z.reduce(function (p2, z) { return p2.then(function () { var nm = z.name.split('/').pop(); if (!nm || /\.zip$/i.test(nm)) return; return inflate(z).then(function (u) { got.push({ name: nm, size: z.size, blob: new Blob([u]) }); }); }); }, Promise.resolve()); })
+        return Z.reduce(function (p2, z) { return p2.then(function () { var nm = z.name.split('/').pop(); if (!nm || /\.zip$/i.test(nm)) return; return inflate(z).then(function (u) { got.push({ name: nm, size: z.size, blob: new Blob([u]), dir: f.name + (z.name.indexOf('/') > 0 ? ' › ' + z.name.split('/').slice(0, -1).join(' › ') : '') }); }); }); }, Promise.resolve()); })
         .catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-zip-bad', 'Could not read {f}', { f: f.name }))); });
       got.push({ name: f.name, size: f.size, blob: f });
-    }); }, Promise.resolve()).then(function () {
-      var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + f.size] = 1; });
-      got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + g.size; if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4);
-        TOOL.blobs[id] = g.blob; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
+    }); }, Promise.resolve()).then(function () { return Promise.all(got.map(function (g) { return fingerprint(g.blob).then(function (h) { g.h = h; }); })); }).then(function () {
+      /* the content decides (JP 2026-11-19): the very same file added again (same name, same content) is skipped; files with the same content but another name stay, marked for a person to check */
+      var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.h || f.size)] = 1; });
+      got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + (g.h || g.size); if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4);
+        TOOL.blobs[id] = g.blob; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
       draw(); var N = naming(); if (N) N.suggestAll('__ren').then(function () { draw(); });
     });
   }
@@ -1528,6 +1568,7 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
+    if (t.closest('[data-dxdups]')) { dupPop(0); return; }
     if (t.closest('[data-dxplanadd]')) { renDrop({ label: k('ui.dx-t-plans', 'Document plans'), title: k('ui.dx-pl-drop-t', 'Add document plans'), here: k('ui.dx-pl-drop-here', 'Drop the document plans here'), accept: '.xlsx,.xlsm', help: k('ui.dx-pl-drop-help', 'Excel files (.xlsx) – as many as you like. Each is checked against the client’s checklist and kept until it is deleted.'), take: function (fl) { plAdd(fl.filter(function (f) { return /\.xls[xm]$/i.test(f.name); })); } }); return; }
     if ((b = t.closest('[data-dxplopen]'))) { plOpen(b.dataset.dxplopen); return; }
     if ((b = t.closest('[data-dxpldl]'))) { var pe = plList().filter(function (x) { return x.id === b.dataset.dxpldl; })[0]; if (pe) plFile(pe).then(function (f) { if (f) window.FdvPdf.share(f); }); return; }
