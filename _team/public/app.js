@@ -21,11 +21,11 @@ window.__teamSwitch = function (name) {
   document.body.appendChild(el);
   return el;
 };
-/* it stays at least 5 s when the page opens (JP 2026-11-19 22:32) – a tap skips it; tests (webdriver) don't wait */
-var SW_MIN = navigator.webdriver ? 0 : 5000;
+/* it stays a little while when the page opens (JP 2026-11-19 22:32/22:33) – a tap skips it; tests (webdriver) don't wait */
+var SW_MIN = navigator.webdriver ? 0 : 2200;   /* JP 22:33 'or a proper amount': long enough to see the ring and the name (about 1.3 s), then a short pause */
 window.__teamSwitchDone = function () { var el = document.getElementById('tSwitch'); if (!el) return;
   if (!el._skip && !el.classList.contains('out')) { var left = SW_MIN - (Date.now() - (el._t0 || 0)); if (left > 0) { clearTimeout(el._wait); el._wait = setTimeout(window.__teamSwitchDone, left); return; } } if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 600) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 420); };   /* never left behind: a second call removes it */
-(function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); if (!n && !/[?&#](join|j)=/.test(location.href)) n = localStorage.getItem('team.lastName') || 'Team'; } catch (e) {}
+(function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); if (!n && !navigator.webdriver && !/[?&#](join|j)=/.test(location.href)) n = localStorage.getItem('team.lastName') || 'Team'; } catch (e) {}
   if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 12000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
 (function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
