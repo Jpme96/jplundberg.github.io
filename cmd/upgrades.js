@@ -81,6 +81,20 @@
         var w = s.tabOff.work, r = w.indexOf('req') > -1, c = w.indexOf('doc') > -1; if (!r && !c) return false;
         w = w.filter(function (x) { return x !== 'req' && x !== 'doc'; }); if (r && c) w.push('doc');
         s.tabOff.work = w; set('dash.settings', s); return true;
+      } },
+    { n: 7, what: 'Finances: bank rows that were money to yourself or a loan/credit payment (filed under Other) move out of spending into d.notSpent (kept, not deleted – d.transfers is the account moves)',
+      run: function (d, get) {
+        if (!Array.isArray(d.expenses) || !d.expenses.length) return false;
+        if (!window.Budget || !window.Budget.transferWhy) throw later('budget.js not loaded yet');
+        var p = get('dash.profile'), name = obj(p) ? p.name || '' : '';
+        var keep = [], moved = [];
+        d.expenses.forEach(function (e) {
+          var why = obj(e) && e.src === 'bank' && (e.cat || 'other') === 'other' ? window.Budget.transferWhy((e.note || '') + ' ' + (e.desc || ''), name) : '';
+          if (why) { var c = {}; for (var k in e) c[k] = e[k]; c.why = why; moved.push(c); } else keep.push(e);
+        });
+        if (!moved.length) return false;
+        d.expenses = keep; d.notSpent = (Array.isArray(d.notSpent) ? d.notSpent : []).concat(moved);
+        return true;
       } }
   ];
   var LAST = STEPS[STEPS.length - 1].n;

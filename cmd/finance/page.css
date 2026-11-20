@@ -653,3 +653,6 @@
 .wi-nums li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: var(--fs-s, 13px); color: var(--muted); }
 .wi-nums b { color: var(--text); font-weight: 600; }
 .wi-lb.wi-wide { grid-column: 1 / -1; }
+
+/* rows left out of spending (2026-11-20) */
+.ns-line { margin: 0 2px 10px; font-size: var(--fs-s, 13px); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

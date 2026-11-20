@@ -577,6 +577,18 @@ window.Budget.real = function (d, now) {
 };
 
 /* the one "at this pace" forecast (Home, Money card, Finances – 2026-11-17): have = free now, end = have − what's still to come */
+/* money you move to yourself, or pay on a loan or credit (2026-11-20): not spending. JP's bank file had ~100 000 kr a
+   month of "Other" that was mostly payments to his own name and to a credit bank. ownName = your name from the profile.
+   Returns '' or the reason. Used by the bank import and by upgrade step 7 for rows already imported (they move to d.notSpent). */
+window.Budget.transferWhy = function (desc, ownName) {
+  var s = String(desc || '').toLowerCase().replace(/\s+/g, ' ');
+  var nm = String(ownName || '').toLowerCase().replace(/\s+/g, ' ').trim(), w = nm.split(' ').filter(Boolean);
+  var words = ' ' + s.replace(/[^a-z0-9æøåäöüé ]+/g, ' ') + ' ';
+  if (w.length >= 2 && (s.indexOf(nm) > -1 || s.indexOf(w[0] + ' ' + w[1]) > -1 || w.every(function (x) { return words.indexOf(' ' + x + ' ') > -1; }))) return 'to yourself';
+  if (/kredittbank|bank norwegian|komplett bank|resurs bank|instabank|morrow bank|nordax|express bank|ikano bank|santander consumer|svea bank|lendo|refinans/.test(s)) return 'a loan or credit payment';
+  return '';
+};
+
 window.Budget.forecast = function (d, now) {
   "use strict";
   var B = window.Budget, pc = B.pace ? B.pace(d, now) : null; if (!pc) return null;

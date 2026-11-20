@@ -1,5 +1,8 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.ns-line": ["{n} bank rows ({a}) are left out of spending – money to yourself and loan or credit payments.", "{n} bankrader ({a}) holdes utenfor forbruket – penger til deg selv og betaling på lån eller kreditt."],
+  "ui.ns-back": ["Put them back", "Legg dem tilbake"],
+  "ui.ns-backed": ["Back in spending", "Tilbake i forbruket"],
   "ui.wi-t-custom": ["Something else – your own", "Noe annet – ditt eget"],
   "ui.wi-d-once": ["{m}: {a} once", "{m}: {a} én gang"],
   "ui.wi-d-monthly": ["from {m}: {a} a month", "fra {m}: {a} i måneden"],

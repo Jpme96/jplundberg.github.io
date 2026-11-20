@@ -154,6 +154,7 @@
     var kind = acct ? (AC ? AC.kind(d, acct) : acct) : null;
     /* a credit-card file with one amount column usually lists purchases as positive numbers */
     var card = opts.card != null ? !!opts.card : kind === 'credit' ? col.out < 0 && pos / Math.max(1, good.length) >= 0.5 : kind ? false : looksCard;
+    var ownName = (function () { try { return (JSON.parse(localStorage.getItem('dash.profile')) || {}).name || ''; } catch (e) { return ''; } })();
     var haveIn = {};
     (d.extra || []).forEach(function (e) { if (e.ref) haveIn[e.ref] = 1; });
     var SALARY = /lønn|lonn|salary|feriepeng|utbetaling nav|skatteetaten|skatt til gode/i, OWN = /innbetaling|overføring|overforing|fra konto|egen konto|sparekonto|nettbank|revolut/i;
@@ -183,6 +184,8 @@
       if (have[ref] || have[x.date + '|' + Math.round(amount) + '|' + norm(note)]) { skipped.dup++; return; }
       var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0];
       var transfer = TRANSFER.test(x.desc), why = transfer ? 'transfer' : '';
+      var tw = !bill && !transfer && window.Budget && window.Budget.transferWhy ? window.Budget.transferWhy(x.desc + ' ' + note, ownName) : '';
+      if (tw) { transfer = true; why = tw; }
       /* the salary account pays the credit card and moves money to the card account: not spending –
          the purchases themselves come from the card's own file */
       var ccpay = false;
@@ -456,5 +459,25 @@
   function fromHash() { if (location.hash === '#import') { history.replaceState(null, '', location.pathname + location.search); setTimeout(intro, 350); } }
   window.Vault.onUnlock(fromHash);
   window.addEventListener('hashchange', fromHash);
+  /* rows moved out of spending (money to yourself, loan/credit payments – upgrade step 7 and Budget.transferWhy):
+     one quiet line on Transactions with "Put them back" (2026-11-20) */
+  function nsLine() {
+    var el = document.getElementById('nsLine'), d = window.Vault.get && window.Vault.get(); if (!el || !d) return;
+    var l = Array.isArray(d.notSpent) ? d.notSpent : []; el.hidden = !l.length; if (!l.length) return;
+    var sum = l.reduce(function (a, e) { return a + (+e.amount || 0); }, 0);
+    el.innerHTML = '<i class="bi bi-arrow-left-right"></i> ' + esc(I18N.k('ui.ns-line', '{n} bank rows ({a}) are left out of spending – money to yourself and loan or credit payments.', { n: l.length, a: nf.format(Math.round(sum)) })) + ' <button type="button" class="text-btn" data-nsback>' + esc(I18N.k('ui.ns-back', 'Put them back')) + '</button>';
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-nsback]')) return;
+    var d = window.Vault.get(), l = Array.isArray(d.notSpent) ? d.notSpent : []; if (!l.length) return;
+    var back = l.map(function (x) { var c = {}; for (var k in x) if (k !== 'why') c[k] = x[k]; c.keep = true; return c; });
+    d.expenses = (d.expenses || []).concat(back); d.notSpent = []; window.Vault.save(d);
+    window.dispatchEvent(new Event('fin:change')); nsLine();
+    if (window.Quick && Quick.toast) Quick.toast('<i class="bi bi-arrow-counterclockwise"></i> ' + esc(I18N.k('ui.ns-backed', 'Back in spending')), function () {
+      var d2 = window.Vault.get(), ids = {}; back.forEach(function (x) { ids[x.id] = 1; });
+      d2.expenses = (d2.expenses || []).filter(function (x) { return !ids[x.id]; }); d2.notSpent = l; window.Vault.save(d2); window.dispatchEvent(new Event('fin:change')); nsLine();
+    });
+  });
+  window.addEventListener('fin:change', nsLine); window.Vault.onUnlock(nsLine);
   window.BankImport = { analyse: analyse };     // for tests
 })();
