@@ -21,6 +21,7 @@
         l.forEach(function (t) {
           if (dist(lat, lon, t.place.lat, t.place.lon) > R || (said[t.id] && now - said[t.id] < 6 * 36e5)) return;
           said[t.id] = now;
+          if (window.NotesPanel && NotesPanel.note) NotesPanel.note('place', '/cmd/#c=todo');   /* listed in the notification panel too (only the kind) */
           var title = K('ui.pl-near', 'You’re near {p}', { p: t.place.name });
           if (window.Quick && Quick.toast) Quick.toast('<i class="bi bi-geo-alt-fill"></i> ' + title.replace(/[<>&]/g, '') + ' – ' + String(t.text || '').replace(/[<>&]/g, ''));
           if (window.Notification && Notification.permission === 'granted' && navigator.serviceWorker) navigator.serviceWorker.getRegistration('/cmd/').then(function (reg) { if (reg) reg.showNotification(title, { body: t.text || '', tag: 'place:' + t.id, data: { url: '/cmd/' } }); }).catch(function () {});

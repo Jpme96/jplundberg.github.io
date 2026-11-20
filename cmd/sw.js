@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v36f89358cd';
+var CACHE = 'cmd-v8932caf7af';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';
@@ -129,11 +129,31 @@ self.addEventListener('fetch', function (e) {
 
 /* ---------- notifications (Settings → Notifications, off until you switch them on) ---------- */
 try { importScripts('/cmd/push-key.js'); } catch (x) {}
+function nlog(kind, url) {
+  return new Promise(function (ok) {
+    try {
+      var rq = indexedDB.open('cmd-nlog', 1);
+      rq.onupgradeneeded = function () { rq.result.createObjectStore('l', { autoIncrement: true }); };
+      rq.onerror = function () { ok(); };
+      rq.onsuccess = function () {
+        var db = rq.result, tx = db.transaction('l', 'readwrite'), st = tx.objectStore('l'), now = Date.now();
+        st.add({ at: now, kind: kind, url: String(url || '/cmd/').slice(0, 200) });
+        st.openCursor().onsuccess = function (ev) { var c = ev.target.result; if (!c) return; if (now - c.value.at > 3 * 864e5) c.delete(); c.continue(); };
+        tx.oncomplete = function () { db.close(); self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (l) { l.forEach(function (c) { c.postMessage({ nlog: 1 }); }); }); ok(); };
+        tx.onerror = function () { ok(); };
+      };
+    } catch (x) { ok(); }
+  });
+}
 self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Dashboard', body: e.data ? e.data.text() : '' }; }
   /* a reminder comes sealed with this device's key (F-R); things from the other one with the shared key; without the key, a plain line */
   var text = self.PushKey ? self.PushKey.text(d, false) : Promise.resolve({ t: d.title || 'Dashboard', b: d.body || '' });   /* sealed (F-R and the shared key) – never readable on the way */
+  /* the notification panel (notes-panel.js) also lists what came from outside – the shared home and chat – so a note of
+     the kind is kept (IndexedDB cmd-nlog, three days): only the kind, the time and where it points, never the text */
+  var kind = /^share-chat/.test(d.tag || '') ? 'chat' : /^share-/.test(d.tag || '') ? 'share' : '';
+  if (kind) e.waitUntil(nlog(kind, d.url || '/cmd/'));
   e.waitUntil(text.then(function (m) {
     return self.registration.showNotification(m.t || 'Dashboard', { body: m.b || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/' },
       icon: '/cmd/assets/icons/icon-192.png', badge: '/cmd/assets/icons/icon-192.png' });

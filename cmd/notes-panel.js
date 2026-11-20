@@ -17,9 +17,20 @@
     list.forEach(function (k) { g[k] = Date.now(); });
     try { localStorage.setItem('dash.ntGone', JSON.stringify(g)); } catch (e) {}
   }
-  function items() { try { var g = gone(); return (window.Notify && Notify.recent ? Notify.recent(72, 24) : []).filter(function (x) { return !g[keyOf(x)]; }); } catch (e) { return []; } }
+  /* what came from outside (the shared home, chat, reminders by place): sw.js and place-remind.js note the kind in
+     IndexedDB cmd-nlog – no text – and it's read in here (JP 2026-11-20: "everything that gives a notification") */
+  var got = [], GOT = { chat: ['chat-dots', 'ui.nt-got-chat', 'New chat message'], share: ['house-heart', 'ui.nt-got-share', 'Something changed in your shared home'], place: ['geo-alt', 'ui.nt-got-place', 'A reminder by a place'] };
+  function idb(fn) { try { var rq = indexedDB.open('cmd-nlog', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('l', { autoIncrement: true }); }; rq.onsuccess = function () { fn(rq.result); }; } catch (e) {} }
+  function readGot(then) {
+    idb(function (db) {
+      var out = [], tx = db.transaction('l', 'readonly'); tx.objectStore('l').openCursor().onsuccess = function (ev) { var c = ev.target.result; if (c) { out.push(c.value); c.continue(); } };
+      tx.oncomplete = function () { db.close(); var lim = Date.now() - 3 * 864e5; got = out.filter(function (x) { return x.at > lim && GOT[x.kind]; }).map(function (x) { var g = GOT[x.kind]; return { id: 'got:' + x.kind, at: x.at, title: K(g[1], g[2]), body: '', url: x.url, icon: g[0] }; }); badge(); if (then) then(); };
+    });
+  }
+  function noteGot(kind, url) { idb(function (db) { var tx = db.transaction('l', 'readwrite'); tx.objectStore('l').add({ at: Date.now(), kind: kind, url: url || '/cmd/' }); tx.oncomplete = function () { db.close(); readGot(); }; }); }
+  function items() { try { var g = gone(); return (window.Notify && Notify.recent ? Notify.recent(72, 24) : []).concat(got).sort(function (a, b) { return a.at - b.at; }).filter(function (x) { return !g[keyOf(x)]; }); } catch (e) { return []; } }
   var ICON = { ev: 'calendar3', bill: 'receipt', todo: 'check2-square', task: 'check2-square', bday: 'gift', trip: 'suitcase', checkin: 'clipboard-check', summary: 'bar-chart', morning: 'sunrise', dc: 'folder2-open', paper: 'file-earmark-text', house: 'house', people: 'people', timer: 'stopwatch' };
-  function icon(id) { var k = String(id || '').split(':')[0]; return ICON[k] || 'bell'; }
+  function icon(id, x) { if (x && x.icon) return x.icon; var k = String(id || '').split(':')[0]; return ICON[k] || 'bell'; }
   var btn = null;
   function when(t) {
     var d = new Date(t), now = new Date(), day = function (x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
@@ -48,7 +59,7 @@
     btn.setAttribute('aria-label', c ? K('ui.nt-label-n', 'Notifications, {n} new', { n: c }) : K('ui.nt-label', 'Notifications'));
   }
   function row(x, isNew) {
-    return '<div class="nt-item" data-ntk="' + esc(keyOf(x)) + '"><a draggable="false" class="nt-row' + (isNew ? ' nt-new' : '') + '" href="' + esc(x.url || '/cmd/') + '"><span class="nt-ic"><i class="bi bi-' + icon(x.id) + '"></i></span><span class="nt-tx"><b>' + esc(x.title) + '</b>' + (x.body ? '<small>' + esc(x.body) + '</small>' : '') + '</span><time>' + esc(when(x.at)) + '</time></a><button type="button" class="nt-x" data-ntdel aria-label="' + esc(K('ui.nt-del', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></div>';
+    return '<div class="nt-item" data-ntk="' + esc(keyOf(x)) + '"><a draggable="false" class="nt-row' + (isNew ? ' nt-new' : '') + '" href="' + esc(x.url || '/cmd/') + '"><span class="nt-ic"><i class="bi bi-' + icon(x.id, x) + '"></i></span><span class="nt-tx"><b>' + esc(x.title) + '</b>' + (x.body ? '<small>' + esc(x.body) + '</small>' : '') + '</span><time>' + esc(when(x.at)) + '</time></a><button type="button" class="nt-x" data-ntdel aria-label="' + esc(K('ui.nt-del', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></div>';
   }
   function open() {
     /* the popup's look lives in filedrop.js and is only added on first use – add it here too (JP 2026-11-20: it opened unstyled at the bottom of Finances) */
@@ -135,8 +146,10 @@
   window.addEventListener('tools:change', badge); window.addEventListener('need:change', badge);
   window.addEventListener('dash:local', function () { setTimeout(place, 50); });
   window.addEventListener('resize', function () { clearTimeout(place.t); place.t = setTimeout(place, 200); });
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') badge(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') readGot(); });
+  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.nlog) readGot(); });
+  readGot();
   setInterval(badge, 5 * 60e3);
   place(); setTimeout(place, 0);
-  window.NotesPanel = { open: open, count: count };
+  window.NotesPanel = { open: open, count: count, note: noteGot, reread: readGot };
 })();

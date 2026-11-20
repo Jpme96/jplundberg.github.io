@@ -54,6 +54,11 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   await p.evaluate(() => { location.hash = '#c=next'; }); await until(p, () => document.querySelector('.card.next').classList.contains('sr-flash'), 4000);
   const tile = await p.evaluate(() => { const c = document.querySelector('.card.next'); return { shown: c.offsetHeight > 0, flash: c.classList.contains('sr-flash'), hash: location.hash }; });
   check(hid === 0 && tile.shown && tile.flash && !tile.hash, 'a link to a tile opens its tab and lights it up ' + JSON.stringify([hid, tile]));
+  /* from outside: a chat message and a change in the shared home are noted by the service worker (only the kind) and listed */
+  await p.evaluate(() => localStorage.setItem('dash.ntSeen', String(Date.now() - 12e4)));
+  await p.evaluate(() => new Promise(ok => { const rq = indexedDB.open('cmd-nlog', 1); rq.onupgradeneeded = () => rq.result.createObjectStore('l', { autoIncrement: true }); rq.onsuccess = () => { const tx = rq.result.transaction('l', 'readwrite'); tx.objectStore('l').add({ at: Date.now() - 6e4, kind: 'chat', url: '/cmd/#chat' }); tx.objectStore('l').add({ at: Date.now() - 5 * 864e5, kind: 'share', url: '/cmd/' }); tx.oncomplete = () => { rq.result.close(); NotesPanel.reread(ok); }; }; }));
+  const ext = await p.evaluate(async () => { const n = +(document.querySelector('#ntBtn .nt-badge').textContent || 0); document.getElementById('ntBtn').click(); await new Promise(r => setTimeout(r, 300)); const ov = document.querySelector('.nt-ov'); const r = { n, chat: /New chat message/.test(ov.innerText), old: /shared home/.test(ov.innerText) }; ov.querySelector('[data-ntclose]').click(); return r; });
+  check(ext.chat && !ext.old && ext.n >= 1, 'a chat message from outside is in the panel and counted; one older than three days is not ' + JSON.stringify(ext));
   /* "Needs you": what the number on the app icon counts (an overdue bill) is in the panel too, and in the bell's count (JP 2026-11-20) */
   await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
   await p.evaluate(() => { const d = Vault.get(); d.budget = d.budget || {}; d.budget.fixed = (d.budget.fixed || []).concat([{ id: 'ovd1', name: 'Made-up rent', amount: 5000, day: Math.max(1, new Date().getDate() - 3) }]); Vault.save(d); });
