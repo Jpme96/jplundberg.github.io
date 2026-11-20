@@ -49,6 +49,22 @@ const { shared, until, sl, go } = require('../lib/browser'); const { check, done
   /* a nudge for tonight: the server keeps it for its minute */
   const ng = await p.evaluate(() => ShareCore.api('push', { method: 'POST', body: { notify: { title: 'Test', body: 'Bins', id: 'ntest', at: Date.now() + 3600e3 } } }).then(r => r, e => ({ err: String(e) })));
   check(ng && ng.at > Date.now(), 'a nudge for later is kept by the server until its minute ' + JSON.stringify(ng));
+  /* Iago's reminder for later can be cancelled by Iago (JP 2026-11-20: "my partner couldn't cancel his") – gone from the box and from the server */
+  await q.evaluate(() => { Together.open('nudge'); const f = document.querySelector('.tg-sheet form'); f.t.value = 'Test later'; const c = f.querySelector('[name=w][value="1h"]'); if (c) c.checked = true; f.requestSubmit(); }); await sl(1500);
+  const nid = await q.evaluate(() => { const s = document.querySelector('.tg-sheet'); if (s) s.remove(); Together.open('nudge'); const b = document.querySelector('.tg-sheet [data-tg-ndgx]'); return b ? b.dataset.tgNdgx : null; });
+  const kv = k => new Promise(r => require('http').get('http://localhost:' + (process.env.PORT || 8770) + '/__kvget?k=' + encodeURIComponent(k), res => { let d = ''; res.on('data', c => { d += c; }); res.on('end', () => r(d)); }));
+  const keptBefore = nid ? await kv('push:nudge:p:' + nid) : '';
+  check(!!nid && /Test later/.test(await q.evaluate(() => document.querySelector('.tg-sheet').textContent)) && keptBefore.length > 0, 'the reminder he set is listed with Cancel, and the server keeps it ' + nid);
+  await q.evaluate(() => document.querySelector('.tg-sheet [data-tg-ndgx]').click()); await sl(2500);
+  const gone = await q.evaluate(id => !Together.items && true || !document.querySelector('[data-tg-ndgx="' + id + '"]'), nid);
+  check(gone && (await kv('push:nudge:p:' + nid)) === '', 'Cancel takes it out of the list and the server forgets it');
+  /* a reminder from Iago that has gone off: in cmd's card with a tick, and in the notification panel */
+  await q.evaluate(() => { const s = document.querySelector('.tg-sheet'); if (s) s.remove(); Together.open('nudge'); const f = document.querySelector('.tg-sheet form'); f.t.value = 'Test now'; f.requestSubmit(); }); await sl(800);
+  await sync();
+  check(await until(p, () => /Test now/.test((document.querySelector('#tgCard') || {}).textContent || '') && !!document.querySelector('#tgCard [data-tg-ndgok]'), 15000) !== null, 'Iago\'s reminder shows in cmd with a tick');
+  check(await p.evaluate(() => Together.items().some(x => /Test now/.test(x.title))), 'it is in the notification panel too');
+  await p.evaluate(() => document.querySelector('#tgCard [data-tg-ndgok]').click()); await sl(600);
+  check(await p.evaluate(() => !/Test now/.test((document.querySelector('#tgCard') || {}).textContent || '')), 'the tick puts it away ' + await p.evaluate(() => JSON.stringify(ShareSpace.list('ndg').map(r => [r.id, r.f && r.f.text, r.f && r.f.done, r.f && r.f.for]))));
   check(!p.errs.length && !q.errs.length, 'no errors ' + JSON.stringify([p.errs, q.errs]).slice(0, 300));
   await done(b, b2);
 })();

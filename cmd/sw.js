@@ -3,7 +3,7 @@
    - Scripts, styles, icons (versioned …?v=12) and fonts: from the cache, so changing page is instant.
      A new version has a new address, so it's fetched the first time it's needed.
    - The private API is never cached – your data lives encrypted in the vault, not here. */
-var CACHE = 'cmd-v808ffaf987';
+var CACHE = 'cmd-v34af0db846';
 /* versioned files (…?v=…, fonts, images) never change, so they live in their own cache that survives updates:
    a new version of the app only downloads the files that actually changed */
 var ASSETS = 'cmd-assets';
@@ -152,7 +152,8 @@ self.addEventListener('push', function (e) {
   var text = self.PushKey ? self.PushKey.text(d, false) : Promise.resolve({ t: d.title || 'Dashboard', b: d.body || '' });   /* sealed (F-R and the shared key) – never readable on the way */
   /* the notification panel (notes-panel.js) also lists what came from outside – the shared home and chat – so a note of
      the kind is kept (IndexedDB cmd-nlog, three days): only the kind, the time and where it points, never the text */
-  var kind = /^share-chat/.test(d.tag || '') ? 'chat' : /^share-/.test(d.tag || '') ? 'share' : '';
+  /* the two of you (a reminder for you, on my way, a heart) come into the panel from the shared box itself, with their words */
+  var kind = /^share-chat/.test(d.tag || '') ? 'chat' : /^share-(n[0-9a-z]{5,}|omw[op]|rx[0-9a-z]+)$/.test(d.tag || '') ? '' : /^share-/.test(d.tag || '') ? 'share' : '';
   if (kind) e.waitUntil(nlog(kind, d.url || '/cmd/'));
   e.waitUntil(text.then(function (m) {
     return self.registration.showNotification(m.t || 'Dashboard', { body: m.b || '', tag: d.tag || undefined, data: { url: d.url || '/cmd/' },

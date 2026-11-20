@@ -364,8 +364,8 @@
 
   /* ================= Spending ================= */
   var showAll = false;
-  var spRows = 6;
-  window.FinSpending = { rows: function (n) { n = Math.max(6, Math.min(20, n | 0)); if (n !== spRows) { spRows = n; if (D) renderSpending(); } return spRows; }, get: function () { return spRows; } };
+  var spRows = 7;   /* at most 7 (JP 2026-11-20: "Spending got very long – only the current 6 or 7"); the rest under "All N in …" */
+  window.FinSpending = { rows: function (n) { n = Math.max(6, Math.min(7, n | 0)); if (n !== spRows) { spRows = n; if (D) renderSpending(); } return spRows; }, get: function () { return spRows; } };
 
   function renderSpending() {
     $('spMonth').textContent = monthName(viewMonth);
@@ -392,7 +392,7 @@
     }
 
     /* the card shows the latest few; the whole month opens in a sheet (so the page never gets long) */
-    var rows = spRows || 6, shown = list.slice(0, rows);      // wide screens: as many as fit next to the other cards (fin.js)
+    var rows = spRows || 7, shown = list.slice(0, rows);
     $('spList').innerHTML = shown.map(function (e) { return txRow(e, true); }).join('');
     $('spMore').hidden = list.length <= rows;
     $('spMore').innerHTML = '<i class="bi bi-list-ul"></i> All ' + list.length + ' in ' + esc(monthName(viewMonth, true));

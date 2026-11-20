@@ -86,7 +86,7 @@
   /* ---------- countdowns, guests, nudges for you ---------- */
   function countdowns() { var tk = dkey(new Date()); return list('cd').filter(function (r) { return r.f.date >= tk; }).sort(function (a, b) { return a.f.date < b.f.date ? -1 : 1; }); }
   function guests() { var tk = dkey(new Date()); return list('guest').filter(function (r) { return (r.f.to || r.f.from) >= tk; }).sort(function (a, b) { return a.f.from < b.f.from ? -1 : 1; }); }
-  function nudgesForMe() { var now = Date.now(); return list('ndg').filter(function (r) { return r.f.for === A.role && +r.f.at > now - 12 * 3600e3; }).sort(function (a, b) { return a.f.at - b.f.at; }); }
+  function nudgesForMe() { var now = Date.now(); return list('ndg').filter(function (r) { return r.f.for === A.role && !r.f.done && +r.f.at > now - 12 * 3600e3; }).sort(function (a, b) { return a.f.at - b.f.at; }); }
 
   /* ---------- the card on Today / Home ---------- */
   function card() {
@@ -95,7 +95,7 @@
     var html = omwBanner() +
       (rn ? '<div class="tg-row tg-hot"><span>' + (rn.kind === 'heart' ? '❤️ ' : '👏 ') + esc(A.other()) + (rn.kind === 'heart' ? L(' sent you a heart', ' sendte deg et hjerte') : L(' gave you a high five', ' ga deg en high five')) + '</span><button type="button" class="tg-mini" data-tg-seen>' + L('Thanks', 'Takk') + '</button></div>' : '') +
       cb.map(function (x) { return '<div class="tg-row"><span><i class="bi bi-check2-circle"></i> ' + esc(A.other()) + ': ' + esc(x.name) + '</span><span><button type="button" class="tg-mini" data-tg-react="hi5" data-what="' + esc(x.id) + '" data-name="' + esc(x.name) + '" aria-label="' + L('High five', 'High five') + '">👏</button><button type="button" class="tg-mini" data-tg-react="heart" data-what="' + esc(x.id) + '" data-name="' + esc(x.name) + '" aria-label="' + L('Heart', 'Hjerte') + '">❤️</button></span></div>'; }).join('') +
-      nds.map(function (r) { return '<div class="tg-row"><span><i class="bi bi-bell"></i> ' + esc(A.other()) + ': ' + esc(r.f.text) + ' <small>' + fday(dkey(new Date(+r.f.at))) + ' ' + hm(+r.f.at) + '</small></span></div>'; }).join('') +
+      nds.map(function (r) { return '<div class="tg-row"><span><i class="bi bi-bell"></i> ' + esc(A.other()) + ': ' + esc(r.f.text) + ' <small>' + fday(dkey(new Date(+r.f.at))) + ' ' + hm(+r.f.at) + '</small></span><button type="button" class="tg-mini" data-tg-ndgok="' + esc(r.id) + '" aria-label="' + L('Done', 'Ferdig') + '"><i class="bi bi-check-lg"></i></button></div>'; }).join('') +
       gs.map(function (r) { return '<div class="tg-row"><span><i class="bi bi-door-open"></i> ' + esc(r.f.name) + L(' stays ', ' bor hos dere ') + fday(r.f.from) + (r.f.to && r.f.to !== r.f.from ? '–' + fday(r.f.to) : '') + (days(r.f.from) === 1 ? ' · ' + L('get the guest room ready', 'gjør gjesterommet klart') : '') + '</span></div>'; }).join('') +
       weekHtml() +
       (cds.length ? '<div class="tg-cds">' + cds.map(function (r) { var n = days(r.f.date); return '<span class="tg-cd"><b>' + (n === 0 ? L('Today', 'I dag') : n) + '</b><small>' + (n === 0 ? '' : n === 1 ? L('day', 'dag') : L('days', 'dager')) + '</small>' + esc(r.f.title) + '</span>'; }).join('') + '</div>' : '') +
@@ -125,7 +125,10 @@
     nudge: function () {
       var P = [L('Take out the bins', 'Ta ut søpla'), L('Buy milk on the way home', 'Kjøp melk på vei hjem'), L('Water the plants', 'Vann plantene'), L('Pay the shared bill', 'Betal den felles regningen')];
       var now = new Date(), ev = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0), mo = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 8, 0); if (ev < now) ev = new Date(ev.getTime() + 864e5);
-      sheet(L('Remind ', 'Minn ') + A.other(), '<label class="tg-lbl">' + L('What', 'Hva') + '<input name="t" maxlength="120" required list="tgNdg"><datalist id="tgNdg">' + P.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist></label>' +
+      /* what you've already set for them, not gone off yet – each can be cancelled (JP 2026-11-20: Iago couldn't cancel his) */
+      var mineN = list('ndg').filter(function (r) { return mine(r) && +r.f.at > Date.now() && !r.f.done; }).sort(function (a, b) { return a.f.at - b.f.at; });
+      var sent = mineN.length ? '<p class="tg-small">' + L('Already set', 'Allerede satt') + '</p><ul class="tg-list">' + mineN.map(function (r) { return '<li><span>' + esc(r.f.text) + ' <small>' + fday(dkey(new Date(+r.f.at))) + ' ' + hm(+r.f.at) + '</small></span><button type="button" class="tg-mini" data-tg-ndgx="' + esc(r.id) + '">' + L('Cancel', 'Avbryt') + '</button></li>'; }).join('') + '</ul>' : '';
+      sheet(L('Remind ', 'Minn ') + A.other(), sent + '<label class="tg-lbl">' + L('What', 'Hva') + '<input name="t" maxlength="120" required list="tgNdg"><datalist id="tgNdg">' + P.map(function (x) { return '<option value="' + esc(x) + '">'; }).join('') + '</datalist></label>' +
         '<p class="tg-small">' + L('When', 'Når') + '</p>' + chips('w', [['now', L('Now', 'Nå')], ['1h', L('In an hour', 'Om en time')], [String(ev.getTime()), L('Tonight 20:00', 'I kveld 20:00')], [String(mo.getTime()), L('Tomorrow 08:00', 'I morgen 08:00')]], 'now'), function (f) {
           var t = f.t.value.trim(); if (!t) return false; var w = (f.querySelector('[name=w]:checked') || {}).value || 'now', at = w === 'now' ? Date.now() : w === '1h' ? Date.now() + 3600e3 : +w, id = 'n' + uid();
           A.put('ndg', id, { text: t, at: at, by: A.role, for: other() });
@@ -220,6 +223,12 @@
     if (!A) return; var t = e.target, b;
     if ((b = t.closest('[data-tg-open]'))) { var f = OPEN[b.dataset.tgOpen]; if (f) f(); return; }
     if (t.closest('[data-tg-home]')) { A.put('omw', A.role, null, true); A.push(A.me(), L('Home now', 'Hjemme nå'), { id: 'omw' + A.role }); A.refresh && A.refresh(); return; }
+    if ((b = t.closest('[data-tg-ndgx]'))) {
+      var nid = b.dataset.tgNdgx; A.put('ndg', nid, null, true);
+      A.push('', '', { id: nid, cancel: true });                     /* the server forgets the reminder it was keeping */
+      var li = b.closest('li'); if (li) li.remove(); A.toast('<i class="bi bi-bell-slash"></i> ' + L('Reminder cancelled', 'Påminnelsen er avbrutt')); A.refresh && A.refresh(); return;
+    }
+    if ((b = t.closest('[data-tg-ndgok]'))) { var nr = list('ndg').filter(function (x) { return x.id === b.dataset.tgNdgok; })[0]; if (nr) A.put('ndg', nr.id, Object.assign({}, nr.f, { done: true })); A.refresh && A.refresh(); return; }
     if (t.closest('[data-tg-seen]')) { try { localStorage.setItem(seenKey(), String(Date.now())); } catch (er) {} A.refresh && A.refresh(); return; }
     if ((b = t.closest('[data-tg-react]'))) { giveReact(b.dataset.tgReact, b.dataset.what, b.dataset.name); A.refresh && A.refresh(); return; }
     if ((b = t.closest('[data-tg-del]'))) { A.put(b.dataset.tgDel, b.dataset.id, null, true); var sh = b.closest('.tg-sheet'); if (sh && sh._redraw) sh._redraw(); else if (b.closest('li')) b.closest('li').remove(); return; }
@@ -251,7 +260,15 @@
 
   window.Together = {
     use: function (a) { A = a; css(); },
-    card: card, open: function (k) { if (OPEN[k]) OPEN[k](); }, week: week, omw: function (who) { return omwOf(who); }
+    card: card, open: function (k) { if (OPEN[k]) OPEN[k](); }, week: week, omw: function (who) { return omwOf(who); },
+    /* for the notification panel (notes-panel.js): their reminders for you, "on my way" and a heart or high five */
+    items: function () {
+      if (!A) return []; var out = [], o = A.other(), now = Date.now();
+      list('ndg').forEach(function (r) { if (r.f && r.f.for === A.role && +r.f.at > now - 3 * 864e5 && +r.f.at < now + 864e5) out.push({ id: 'tg:' + r.id, at: +r.f.at, title: o + ': ' + (r.f.text || ''), body: r.f.done ? L('Done', 'Ferdig') : '', url: '/cmd/', icon: 'bell' }); });
+      var w = omwOf(other()); if (w) out.push({ id: 'tg:omw', at: +w.at, title: o + L(' is on the way home', ' er på vei hjem'), body: L('Home around ', 'Hjemme rundt ') + hm(w.until), url: '/cmd/', icon: 'signpost-split' });
+      list('react').forEach(function (r) { if (r.f && r.f.by === other() && +r.f.at > now - 3 * 864e5) out.push({ id: 'tg:' + r.id, at: +r.f.at, title: o + (r.f.kind === 'heart' ? L(' sent you a heart', ' sendte deg et hjerte') : L(' gave you a high five', ' ga deg en high five')), body: r.f.name || '', url: '/cmd/', icon: r.f.kind === 'heart' ? 'heart' : 'hand-thumbs-up' }); });
+      return out;
+    }
   };
 
   /* ---------- cmd: the adapter and the card on Home ---------- */
@@ -262,7 +279,7 @@
       role: 'o', list: function (c) { return S() ? S().list(c) : []; }, put: function (c, id, f, del) { if (S()) S().put(c, id, f, del); },
       me: function () { return S() && S().ownerName ? S().ownerName() : ''; }, other: function () { return S() && S().partnerName ? S().partnerName() : ''; },
       otherLook: function () { return S() && S().partnerLook ? S().partnerLook() : null; },
-      push: function (title, body, o) { o = o || {}; var sc = SC(); if (sc && sc.send) sc.send('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }, o.id ? 'push:' + o.id : '').catch(function () {}); },
+      push: function (title, body, o) { o = o || {}; var sc = SC(); if (sc && sc.send) sc.send('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0, cancel: o.cancel ? 1 : undefined } } }, o.id ? 'push:' + o.id : '').catch(function () {}); },
       toast: function (h) { if (window.Quick && Quick.toast) Quick.toast(h); },
       shopAdd: function (texts) { var Fe = window.Features; if (!Fe) return; var t = Fe.tools(); t.shop = (Array.isArray(t.shop) ? t.shop : []).concat(texts.map(function (x) { return { id: 's' + uid(), text: x.slice(0, 120), done: false }; })); Fe.saveTools(t); },
       onReact: function (kind) { if (window.Avatar && Avatar.cheer) Avatar.cheer(kind === 'heart' ? L(S().partnerName() + ' sent you a heart ❤️', S().partnerName() + ' sendte deg et hjerte ❤️') : L(S().partnerName() + ' gave you a high five 👏', S().partnerName() + ' ga deg en high five 👏')); },

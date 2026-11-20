@@ -28,7 +28,7 @@
     });
   }
   function noteGot(kind, url) { idb(function (db) { var tx = db.transaction('l', 'readwrite'); tx.objectStore('l').add({ at: Date.now(), kind: kind, url: url || '/cmd/' }); tx.oncomplete = function () { db.close(); readGot(); }; }); }
-  function items() { try { var g = gone(); return (window.Notify && Notify.recent ? Notify.recent(72, 24) : []).concat(got).sort(function (a, b) { return a.at - b.at; }).filter(function (x) { return !g[keyOf(x)]; }); } catch (e) { return []; } }
+  function items() { try { var g = gone(); return (window.Notify && Notify.recent ? Notify.recent(72, 24) : []).concat(got, window.Together && Together.items ? Together.items() : []).sort(function (a, b) { return a.at - b.at; }).filter(function (x) { return !g[keyOf(x)]; }); } catch (e) { return []; } }
   var ICON = { ev: 'calendar3', bill: 'receipt', todo: 'check2-square', task: 'check2-square', bday: 'gift', trip: 'suitcase', checkin: 'clipboard-check', summary: 'bar-chart', morning: 'sunrise', dc: 'folder2-open', paper: 'file-earmark-text', house: 'house', people: 'people', timer: 'stopwatch' };
   function icon(id, x) { if (x && x.icon) return x.icon; var k = String(id || '').split(':')[0]; return ICON[k] || 'bell'; }
   var btn = null;

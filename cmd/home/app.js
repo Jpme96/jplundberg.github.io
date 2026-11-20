@@ -187,7 +187,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 330;
+  var APPV = 333;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -349,7 +349,7 @@
     Together.use({ role: 'p', list: function (c) { return list(c).map(function (r) { return { id: r.id, f: r.f, t: r.t, by: r.by }; }); },
       put: function (c, id, f, del) { put(c, id, f, del); }, me: function () { return myName(); }, other: function () { return owner(); },
       otherLook: function () { return info().olook; },
-      push: function (title, body, o) { o = o || {}; SC.send('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0 } } }, o.id ? 'push:' + o.id : '').catch(function () {}); },
+      push: function (title, body, o) { o = o || {}; SC.send('push', { method: 'POST', body: { notify: { title: title, body: body, tag: o.id || 'tg', id: o.id, at: o.at || 0, cancel: o.cancel ? 1 : undefined } } }, o.id ? 'push:' + o.id : '').catch(function () {}); },
       toast: function (h) { toast(h); }, shopAdd: function (texts) { texts.forEach(function (x) { put('shop', 'h' + uid(), { text: x.slice(0, 120), done: false }); }); },
       onReact: function () { coupleK = 'hi5'; }, refresh: function () { draw(); } });
   }

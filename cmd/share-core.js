@@ -77,7 +77,7 @@
     return (window.PushKey ? PushKey.sealShared(m) : Promise.reject()).then(function (c) { n2.c = c; return o2; }, function () { return o2; });
   }
   function send(path, opt, key) {
-    if (path === 'push' && opt && opt.body && opt.body.notify && opt.body.notify.c === undefined && (opt.body.notify.title != null || opt.body.notify.body != null)) return sealPush(opt).then(function (o2) { return send(path, o2, key); });
+    if (path === 'push' && opt && opt.body && opt.body.notify && !opt.body.notify.cancel && opt.body.notify.c === undefined && (opt.body.notify.title != null || opt.body.notify.body != null)) return sealPush(opt).then(function (o2) { return send(path, o2, key); });
     return api(path, opt).catch(function (e) {
       if (e && e.status) throw e;                                       /* the server answered: not a network problem */
       var l = oq().filter(function (x) { return !key || x.key !== key; }); l.push({ path: path, opt: opt, key: key || '', at: Date.now() }); oqSave(l);
@@ -186,7 +186,7 @@
     cd: ['title', 'date', 'icon', 'by'],                                     /* a countdown you both see */
     idea: ['text', 'by', 'done'],                                            /* date-night ideas */
     tpk: ['trip', 'text', 'done', 'by'],                                     /* the shared packing list of a trip */
-    ndg: ['text', 'at', 'by', 'for'],                                        /* a nudge: a reminder for the other, at a time */
+    ndg: ['text', 'at', 'by', 'for', 'done'],                                /* a nudge: a reminder for the other, at a time; done = they ticked it (2026-11-20) */
     rsvp: ['ev', 'a', 'by', 'at'],                                          /* an answer to an invite: yes, no or maybe for an event (either of you writes it) */
     guest: ['name', 'from', 'to', 'by'],                                     /* guests staying over */                                                     /* the pet you share (C10) – either of you picks it, the latest pick wins */
     pme: ['name', 'look', 'bday', 'phone', 'notif', 'v']                       /* the other person's own name and avatar – only they write it */
