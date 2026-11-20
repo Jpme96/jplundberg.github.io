@@ -75,6 +75,26 @@
     if (/norwegian/i.test(bankName)) { var cr = L.filter(function (x) { return x.kind === 'credit'; })[0]; if (cr) return cr.id; }
     return null;
   }
+  /* a bank account that has no match in cmd yet (JP 2026-11-20: "I need more, like Brukskonto") becomes a new cmd
+     account: its own name from the bank (with the bank's in front when that name is taken) and a type from the name */
+  function newName(bank, a) {
+    var n = String(a.name || K('ui.bk-account', 'Account')).trim(), taken = accts().some(function (x) { return (x.label || '').toLowerCase() === n.toLowerCase(); });
+    return taken ? bank + ' ' + n : n;
+  }
+  function newKind(bank, a) {
+    var n = (a.name || '').toLowerCase();
+    if (/norwegian|kreditt|credit|visa|mastercard|kort/.test(n) || /norwegian/i.test(bank)) return 'credit';
+    if (/fond|aksje|ask\b/.test(n)) return 'fund';
+    if (/spar|bsu|høyrente|hoyrente|buffer|saving/.test(n)) return 'savings';
+    return 'card';
+  }
+  function addAcct(bank, a) {
+    var id = 'bk' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    var d = V(); d.budget = d.budget || {}; d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
+    d.budget.acctList.push({ id: id, name: newName(bank, a), kind: newKind(bank, a) });
+    window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
+    return id;
+  }
   function untilTxt(u) { if (!u) return ''; var days = Math.round((new Date(u) - Date.now()) / 864e5); return days < 0 ? K('ui.bk-ended', 'ended – connect again') : K('ui.bk-until', 'until {d} ({n} days)', { d: new Date(u).toLocaleDateString(I18N && I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short' }), n: days }); }
   var aspspList = null;
   function setup(msg) {
@@ -87,7 +107,8 @@
         '<button type="button" class="text-btn" data-bkconnect="' + esc(l.aspsp) + '">' + esc(K('ui.bk-renew', 'Renew')) + '</button><button type="button" class="text-btn" data-bkdrop="' + li + '">' + esc(K('ui.remove', 'Remove')) + '</button></div>' +
         (l.accts || []).map(function (a, ai) {
           return '<label class="bk-acct"><span><b>' + esc(a.name || K('ui.bk-account', 'Account')) + '</b><small class="muted">' + esc((a.last4 ? '•• ' + a.last4 : '') + (a.from ? ' · ' + K('ui.bk-fetched', 'fetched to {d}', { d: a.from }) : '')) + '</small></span>' +
-            '<select data-bkmap="' + li + ':' + ai + '"><option value="">' + esc(K('ui.bk-skip', 'Don’t fetch')) + '</option>' + L.map(function (x) { return '<option value="' + esc(x.id) + '"' + (a.acct === x.id ? ' selected' : '') + '>' + esc(x.label) + '</option>'; }).join('') + '</select></label>';
+            '<select data-bkmap="' + li + ':' + ai + '"><option value="">' + esc(K('ui.bk-skip', 'Don’t fetch')) + '</option>' + L.map(function (x) { return '<option value="' + esc(x.id) + '"' + (a.acct === x.id ? ' selected' : '') + '>' + esc(x.label) + '</option>'; }).join('') +
+            '<option value="+new">' + esc(K('ui.bk-new-acct', '+ New account: {n}', { n: newName(l.aspsp, a) })) + '</option></select></label>';
         }).join('') + '</div>';
     }).join('');
     var names = (aspspList || MINE.map(function (n) { return { name: n }; })).map(function (x) { return x.name; });
@@ -285,7 +306,10 @@
   });
   document.addEventListener('change', function (e) {
     var s = e.target.closest('[data-bkmap]');
-    if (s) { var p = s.getAttribute('data-bkmap').split(':'); saveBank(function (b) { var a = b.links[+p[0]] && b.links[+p[0]].accts[+p[1]]; if (a) a.acct = s.value || null; }); var f = document.querySelector('.qa-acts [data-bkfetch]'); if (!f) setup(); return; }
+    if (s) {
+      var p = s.getAttribute('data-bkmap').split(':'), lk = ((B() || {}).links || [])[+p[0]], ba = lk && lk.accts[+p[1]], val = s.value || null;
+      if (val === '+new' && ba) { val = addAcct(lk.aspsp, ba); setTimeout(setup, 0); }
+      saveBank(function (b) { var a = b.links[+p[0]] && b.links[+p[0]].accts[+p[1]]; if (a) a.acct = val; }); var f = document.querySelector('.qa-acts [data-bkfetch]'); if (!f) setup(); return; }
     var pk = e.target.closest('[data-bkpick]'); if (pk) pk.dataset.touched = '1';
   });
   function hash() { if (location.hash === '#bank') { history.replaceState(null, '', location.pathname + location.search); setTimeout(setup, 350); } }

@@ -48,6 +48,11 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   await sl(300);
   const mapped = await p.evaluate(() => Vault.get().bank.links[0].accts.map(a => a.acct));
   check(mapped[0] === await p.evaluate(() => window.__sal) && !mapped[1], 'the everyday account is matched; savings is not fetched ' + JSON.stringify(mapped));
+  /* a bank account with no match in cmd becomes a new account, named and typed from the bank (JP: "I need more, like Brukskonto") */
+  await p.evaluate(() => { const s = document.querySelector('[data-bkmap="0:1"]'); s.value = '+new'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+  await sl(500);
+  const nw = await p.evaluate(() => { const d = Vault.get(), id = d.bank.links[0].accts[1].acct, A = (d.budget.acctList || []).find(a => a.id === id) || {}; return { id, name: A.name, kind: A.kind, inList: Accts.list(d).some(a => a.id === id), opt: !!document.querySelector('[data-bkmap="0:1"] option[value="' + id + '"]:checked') }; });
+  check(nw.id && nw.name === 'Made-up savings' && nw.kind === 'savings' && nw.inList && nw.opt, '"+ New account" makes "Made-up savings" as a savings account and matches it ' + JSON.stringify(nw));
 
   /* 4. fetch: booked rows through the import preview, the pending one left out, both pages read */
   await p.evaluate(() => document.querySelector('[data-bkfetch]').click());
