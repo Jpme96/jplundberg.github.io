@@ -243,7 +243,7 @@
     var s = sh(), min = +cfg().sharedMin || 0, href = /\/cmd\/finance\//.test(location.pathname) ? '#shared' : '/cmd/finance/#shared';
     s.people.forEach(function (p) {
       var b = balance(s, p.id); if (Math.abs(b) < Math.max(1, min)) return;
-      add(62, 'people', b > 0 ? '#22b35e' : '#e8743b', b > 0 ? p.name + ' owes you ' + kr(b) : 'You owe ' + p.name + ' ' + kr(-b), 'Shared expenses · settle up when it suits', href, { key: 'shared:' + p.id + ':' + Math.round(b / 50), tip: true });
+      add(62, 'people', b > 0 ? 'var(--ok)' : 'var(--orange)', b > 0 ? p.name + ' owes you ' + kr(b) : 'You owe ' + p.name + ' ' + kr(-b), 'Shared expenses · settle up when it suits', href, { key: 'shared:' + p.id + ':' + Math.round(b / 50), tip: true });
     });
   });
   (window.CommandExtra = window.CommandExtra || []).push(function () { return Fe.on('shared') && Fe.on('finance') ? [{ i: 'people', t: 'Split a payment', s: 'Shared expenses', run: function () { if (__ui().boxes && __ui().boxes.shared) __ui().splitSheet(null); else location.href = '/cmd/finance/#shared'; }, x: 'split share del dele skylder owe' }] : []; });

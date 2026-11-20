@@ -20,8 +20,8 @@
   function addDays(k, n) { var d = fromKey(k); d.setDate(d.getDate() + n); return dkey(d); }
   function fmt(k, o) { return fromKey(k).toLocaleDateString('en-GB', o || { day: 'numeric', month: 'short' }); }
   function chip(t, c) { return '<span class="hl-chip" style="--c:' + c + '">' + t + '</span>'; }
-  var BLUE = '#3987e5';
-  var FOR = [['home', 'For the home', 'house-heart', BLUE], ['me', 'For me', 'person', PURPLE], ['gift', 'A gift', 'gift', '#d55181'], ['other', 'Something else', 'bag', GREY]];
+  var BLUE = 'var(--blue)';
+  var FOR = [['home', 'For the home', 'house-heart', BLUE], ['me', 'For me', 'person', PURPLE], ['gift', 'A gift', 'gift', 'var(--pink)'], ['other', 'Something else', 'bag', GREY]];
   var ROOMS = [['', 'No room'], ['living', I18N.k('ui.living-room', 'Living room')], ['kitchen', I18N.k('ui.kitchen', 'Kitchen')], ['bedroom', I18N.k('ui.bedroom', 'Bedroom')], ['office', I18N.k('ui.office', 'Office')], ['bathroom', I18N.k('ui.bathroom', 'Bathroom')], ['hall', I18N.k('ui.hall', 'Hall')], ['storage', I18N.k('ui.storage-or-attic', 'Storage or attic')], ['outdoor', I18N.k('ui.outdoors', 'Outdoors')], ['other', I18N.k('ui.other', 'Other')]];
   var CATS = [['furniture', I18N.k('ui.furniture', 'Furniture')], ['appliance', I18N.k('ui.appliance', 'Appliance')], ['electronics', I18N.k('ui.electronics', 'Electronics')], ['kitchen', I18N.k('ui.kitchen-things', 'Kitchen things')], ['decor', I18N.k('ui.decor-and-textiles', 'Decor and textiles')], ['tools', I18N.k('ui.tools', 'Tools')], ['sport', I18N.k('ui.bikes-and-sport', 'Bikes and sport')], ['clothes', I18N.k('ui.clothes', 'Clothes')], ['other', I18N.k('ui.other', 'Other')]];
   function forOf(f) { return FOR.filter(function (x) { return x[0] === f; })[0] || FOR[3]; }

@@ -383,7 +383,7 @@
     /* ideas with a day are places too */
     (tr.ideas || []).filter(function (x) { return x.day && (!day || x.day === day); }).forEach(function (x) {
       var q = x.text + (tr.place ? ', ' + tr.place.name : '');
-      if (x.geo && x.geo.q === q && !x.geo.none) { n++; pts.push({ lat: x.geo.lat, lon: x.geo.lon, n: n, label: esc(x.text), color: '#c98500' }); }
+      if (x.geo && x.geo.q === q && !x.geo.none) { n++; pts.push({ lat: x.geo.lat, lon: x.geo.lon, n: n, label: esc(x.text), color: 'var(--warn)' }); }
       else if (!(x.geo && x.geo.q === q && x.geo.none)) { missing++; locateIdea(tr.id, x.id, q); }
     });
     if (tr.place && !day) pts.unshift({ lat: tr.place.lat, lon: tr.place.lon, label: esc(tr.place.name), color: 'var(--accent)' });

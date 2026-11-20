@@ -24,8 +24,8 @@
   function snapshot(k) { return JSON.parse(JSON.stringify(Fe.tools()[k] || null)); }
   var NB = window.I18N && window.I18N.lang === 'nb';
   function L(en, nb) { return NB ? nb : en; }
-  var PINK = '#d55181';
-  var OCC = [['bday', 'Birthday', 'balloon', PINK], ['xmas', 'Christmas', 'tree', '#22b35e'], ['other', 'Other occasion', 'gift', PURPLE]];
+  var PINK = 'var(--pink)';
+  var OCC = [['bday', 'Birthday', 'balloon', PINK], ['xmas', 'Christmas', 'tree', 'var(--ok)'], ['other', 'Other occasion', 'gift', PURPLE]];
   function occ(k) { return OCC.filter(function (o) { return o[0] === k; })[0] || OCC[2]; }
   function occName(o) { return L(o[1], { bday: 'Bursdag', xmas: 'Jul', other: 'Annen anledning' }[o[0]]); }
   function giftCfg(def, after) {

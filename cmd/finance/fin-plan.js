@@ -93,9 +93,9 @@
     var other = Math.max(0, nonCredit - p.loans), saving = p.save + p.yearly, leftM = inc - cardPay - p.loans - other - saving;
     var segs = [
       ['Credit cards', cardPay, '#d95926', cards.map(function (c) { return c.acct.label + ' ' + kr(c.amount) + (c.owedNow ? ' (owed now)' : c.known ? ' (last month)' : ''); }).join(' · ')],
-      ['Loans', p.loans, '#8a6fdf', ''],
-      ['Other bills', other, '#3987e5', ''],
-      ['Savings & yearly costs', saving, '#22b35e', ''],
+      ['Loans', p.loans, 'var(--violet)', ''],
+      ['Other bills', other, 'var(--blue)', ''],
+      ['Savings & yearly costs', saving, 'var(--ok)', ''],
       ['Salary left for everyday', Math.max(0, leftM), 'var(--accent)', '']
     ].filter(function (s0) { return s0[1] > 0; });
     var tot = Math.max(inc, sum(segs, function (s) { return s[1]; }), 1);
@@ -179,7 +179,7 @@
         '<input data-mnbal="' + esc(a.id) + '" inputmode="decimal" value="' + esc(v != null ? String(v).replace('.', ',') : '') + '" placeholder="kr" aria-label="' + esc((cr ? 'Owed on ' : 'Balance of ') + a.label) + '" autocomplete="off">' +
         (cr ? '<input class="mn-lim" data-mnlim="' + esc(a.id) + '" inputmode="decimal" value="' + esc(a.limit || '') + '" placeholder="Limit, kr" aria-label="Credit limit of ' + esc(a.label) + '" autocomplete="off">' : '') +
         '<label class="mn-nw"><input type="checkbox" data-mnnw="' + esc(a.id) + '"' + (a.nw ? ' checked' : '') + '> In net worth</label></li>';
-      var lim = cr && a.limit ? '<span class="mn-bar"><i style="width:' + Math.min(100, (v || 0) / a.limit * 100).toFixed(1) + '%;background:' + ((v || 0) / a.limit > .8 ? 'var(--danger)' : (v || 0) / a.limit > .5 ? '#c98500' : a.c) + '"></i></span>' : '';
+      var lim = cr && a.limit ? '<span class="mn-bar"><i style="width:' + Math.min(100, (v || 0) / a.limit * 100).toFixed(1) + '%;background:' + ((v || 0) / a.limit > .8 ? 'var(--danger)' : (v || 0) / a.limit > .5 ? 'var(--warn)' : a.c) + '"></i></span>' : '';
       var sub = v == null ? '<button type="button" class="text-btn" data-mnedit data-t="ui.add-the-balance">Add the balance</button>' :
         (cr && a.limit ? money(Math.max(0, a.limit - v)) + ' free of ' + money(a.limit) + ' · ' : '') + esc(ago(a.balAt)) + (a.balSrc === 'import' ? ' · from import' : '') + (a.nw ? '' : ' · not in net worth');
       return '<li class="mn-row' + (v == null ? ' none' : '') + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span class="mn-n">' + esc(a.label) + '<small>' + sub + '</small>' + lim + '</span>' +
@@ -615,11 +615,11 @@
     var loanTax = Lo ? (d.accounts || []).filter(function (a) { return a.kind === 'debt'; }).reduce(function (a, l) { var c = Lo.calc(l); return a + (c && !c.never ? c.taxBack * (Lo.part ? Lo.part(l) : 1) : 0) * (l.inner ? 0 : 1) + (l.inner ? Lo.myTaxBack(l) : 0); }, 0) : 0;
     var june = months.filter(function (m) { return m.hol; })[0], dec = months.filter(function (m) { return m.half; })[0];
     var facts = [], LOC = I18N.lang === 'nb' ? 'nb-NO' : 'en-GB';
-    if (june) facts.push(['sun', '#c98500', I18N.k('ui.fx-holpay', 'Holiday pay in {m}', { m: june.dt.toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { month: 'long' }) }), I18N.k(june.net >= ord ? 'ui.fx-holpay-more' : 'ui.fx-holpay-less', june.net >= ord ? '{a} paid out – {b} more than a normal month, no tax on the holiday pay' : '{a} paid out – {b} less than a normal month, no tax on the holiday pay', { a: money(june.net), b: money(Math.abs(june.net - ord)) })]);
-    if (dec) facts.push(['snow', '#3987e5', I18N.k('ui.fx-halftax', 'Half tax in December'), I18N.k('ui.fx-halftax-s', '{a} – {b} more than usual', { a: money(dec.net), b: money(Math.max(0, dec.net - ord)) })]);
-    if (bsu.length) facts.push(['house-heart', '#22b35e', I18N.k('ui.fx-bsu', 'BSU this year'), I18N.k('ui.fx-bsu-s', '{a} of 27 500 kr put in → {b} less tax', { a: money(Math.min(bsuIn, 27500)), b: money(Math.min(bsuIn, 27500) * 0.1) }) + (bsuIn < 27500 ? ' · ' + I18N.k('ui.fx-bsu-more', '{a} more fills it up', { a: money(27500 - bsuIn) }) : ' · ' + I18N.k('ui.fx-bsu-full', 'full for {y}', { y: y }))]);
-    if (loanTax > 0) facts.push(['percent', '#8a6fdf', I18N.k('ui.fx-interest', 'Interest deduction'), I18N.k('ui.fx-interest-s', 'About {a} less tax over the next 12 months from your loans', { a: money(loanTax) })]);
-    if (tb.amount) facts.push(['bank', tb.amount > 0 ? '#22b35e' : '#e66767', I18N.k('ui.fx-taxset', 'Tax settlement'), (tb.amount > 0 ? I18N.k('ui.fx-taxset-back', '{a} back', { a: money(tb.amount) }) : I18N.k('ui.fx-taxset-pay', '{a} to pay', { a: money(-tb.amount) })) + (tb.month ? ' · ' + new Date(tb.month + '-15T12:00').toLocaleDateString(LOC, { month: 'long', year: 'numeric' }) : '')]);
+    if (june) facts.push(['sun', 'var(--warn)', I18N.k('ui.fx-holpay', 'Holiday pay in {m}', { m: june.dt.toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { month: 'long' }) }), I18N.k(june.net >= ord ? 'ui.fx-holpay-more' : 'ui.fx-holpay-less', june.net >= ord ? '{a} paid out – {b} more than a normal month, no tax on the holiday pay' : '{a} paid out – {b} less than a normal month, no tax on the holiday pay', { a: money(june.net), b: money(Math.abs(june.net - ord)) })]);
+    if (dec) facts.push(['snow', 'var(--blue)', I18N.k('ui.fx-halftax', 'Half tax in December'), I18N.k('ui.fx-halftax-s', '{a} – {b} more than usual', { a: money(dec.net), b: money(Math.max(0, dec.net - ord)) })]);
+    if (bsu.length) facts.push(['house-heart', 'var(--ok)', I18N.k('ui.fx-bsu', 'BSU this year'), I18N.k('ui.fx-bsu-s', '{a} of 27 500 kr put in → {b} less tax', { a: money(Math.min(bsuIn, 27500)), b: money(Math.min(bsuIn, 27500) * 0.1) }) + (bsuIn < 27500 ? ' · ' + I18N.k('ui.fx-bsu-more', '{a} more fills it up', { a: money(27500 - bsuIn) }) : ' · ' + I18N.k('ui.fx-bsu-full', 'full for {y}', { y: y }))]);
+    if (loanTax > 0) facts.push(['percent', 'var(--violet)', I18N.k('ui.fx-interest', 'Interest deduction'), I18N.k('ui.fx-interest-s', 'About {a} less tax over the next 12 months from your loans', { a: money(loanTax) })]);
+    if (tb.amount) facts.push(['bank', tb.amount > 0 ? 'var(--ok)' : 'var(--danger)', I18N.k('ui.fx-taxset', 'Tax settlement'), (tb.amount > 0 ? I18N.k('ui.fx-taxset-back', '{a} back', { a: money(tb.amount) }) : I18N.k('ui.fx-taxset-pay', '{a} to pay', { a: money(-tb.amount) })) + (tb.month ? ' · ' + new Date(tb.month + '-15T12:00').toLocaleDateString(LOC, { month: 'long', year: 'numeric' }) : '')]);
     $('fpYearNote').textContent = modelled ? '' : I18N.k('ui.net-salary', 'net salary');
     box.innerHTML =
       '<div class="ya-bars" role="img" aria-label="Income month by month for the next 12 months" data-t-aria-label="ui.income-month-by-month-for-the-next-12-mo">' + months.map(function (m) {
@@ -646,8 +646,8 @@
 
   /* ================= Spending limits per category (Overview) =================
      d.budget.limits = { groceries: 5000, eating: 1500, … } – kr per budget period (payday → payday, or the month) */
-  var CATS = [['groceries', 'Groceries', '#11a597', 'basket'], ['eating', 'Eating out', '#d95926', 'cup-hot'], ['transport', 'Transport', '#3987e5', 'bus-front'], ['shopping', 'Shopping', '#c98500', 'bag'], ['home', 'Home', '#a0673a', 'house'],
-    ['fun', 'Fun', '#d55181', 'controller'], ['health', 'Health', '#8a6fdf', 'heart-pulse'], ['travel', 'Travel', '#0891b2', 'airplane'], ['other', 'Other', '#6b6d73', 'three-dots']];
+  var CATS = [['groceries', 'Groceries', '#11a597', 'basket'], ['eating', 'Eating out', '#d95926', 'cup-hot'], ['transport', 'Transport', 'var(--blue)', 'bus-front'], ['shopping', 'Shopping', 'var(--warn)', 'bag'], ['home', 'Home', '#a0673a', 'house'],
+    ['fun', 'Fun', 'var(--pink)', 'controller'], ['health', 'Health', 'var(--violet)', 'heart-pulse'], ['travel', 'Travel', '#0891b2', 'airplane'], ['other', 'Other', '#6b6d73', 'three-dots']];
   var limEditing = false;
   /* what you usually spend per category in a budget period: the average of the last three full months */
   function usual(d) {
@@ -685,7 +685,7 @@
       var note = !L ? 'no limit' : left < 0 ? money(-left) + ' over' : money(left) + ' left · ' + money(left / Math.max(1, per.daysLeft)) + '/day' + (state === 'fast' ? ' · <span class="lm-fast">faster than the days</span>' : '');
       return '<li class="lm ' + state + '"><span class="lm-n"><i class="bi bi-' + c[3] + '" style="color:' + c[2] + '"></i> ' + c[1] + '<small>' + note + '</small></span>' +
         '<span class="lm-v">' + money(sp) + (L ? '<small>of ' + esc(kr(L)) + '</small>' : '') + '</span>' +
-        (L ? '<span class="lm-bar"><i style="width:' + (pct * 100).toFixed(1) + '%;background:' + (state === 'over' ? 'var(--danger)' : state === 'fast' ? '#c98500' : c[2]) + '"></i><b style="left:' + (Math.min(1, share) * 100).toFixed(1) + '%" title="Where you’d be if you spent evenly"></b></span>' : '') + '</li>';
+        (L ? '<span class="lm-bar"><i style="width:' + (pct * 100).toFixed(1) + '%;background:' + (state === 'over' ? 'var(--danger)' : state === 'fast' ? 'var(--warn)' : c[2]) + '"></i><b style="left:' + (Math.min(1, share) * 100).toFixed(1) + '%" title="Where you’d be if you spent evenly"></b></span>' : '') + '</li>';
     }).join('');
     box.innerHTML = '<ul class="lm-list">' + rows + '</ul>' + lmRoom(p, total);
   }

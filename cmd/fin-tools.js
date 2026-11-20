@@ -31,10 +31,10 @@
   function fmtD(k, y) { return fromKey(k).toLocaleDateString('en-GB', y ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: 'numeric', month: 'short' }); }
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   function fin() { return Fe.on('finance') ? window.Vault.get() : null; }
-  var GREEN = '#22b35e';
-  var AMBER = '#c98500';
-  var RED = '#e66767';
-  var BLUE = '#3987e5';
+  var GREEN = 'var(--ok)';
+  var AMBER = 'var(--warn)';
+  var RED = 'var(--danger)';
+  var BLUE = 'var(--blue)';
   var GREY = '#7a8794';
   var DEF = { eye: true, rise: true, payBrief: true, ebBrief: true, merge: true, buffer: 5000, share: 100, taxBrief: true, rateBrief: true, rateCheck: 6, learn: true, learnAll: true, extra: 1000 };
   function cfg() { var c = Fe.tools().fintools; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }
@@ -194,7 +194,7 @@
     } catch (er) {} }
     if (c.ebBrief) Fe.list('ebudgets').forEach(function (b) {
       if (!isKey(b.start)) return; var n = days(t, b.start), sp = ebSpent(b, d).reduce(function (a, e) { return a + (+e.amount || 0); }, 0), bu = +b.budget || 0;
-      if (n >= 0 && n <= 14) add(60, b.kind === 'trip' ? 'airplane' : 'calendar2-heart', '#d55181', b.name + ' in ' + n + (n === 1 ? ' day' : ' days'), kr(Math.max(0, bu - sp)) + ' left of ' + kr(bu), '/cmd/finance/#ebud');
+      if (n >= 0 && n <= 14) add(60, b.kind === 'trip' ? 'airplane' : 'calendar2-heart', 'var(--pink)', b.name + ' in ' + n + (n === 1 ? ' day' : ' days'), kr(Math.max(0, bu - sp)) + ' left of ' + kr(bu), '/cmd/finance/#ebud');
       else if (n < 0 && t <= (b.end || b.start) && sp > bu) add(42, 'exclamation-triangle', RED, b.name + ': over budget', kr(sp - bu) + ' over', '/cmd/finance/#ebud');
     });
     if (c.rateBrief) {

@@ -35,8 +35,8 @@
   var AGAINST = [
     ['seller', 'The seller of the home', 'A used home you bought – the seller (or their insurance)', 'house-door', '#a0673a', 'avh'],
     ['builder', 'The builder', 'A new home – the developer or builder', 'building', '#0891b2', 'buofl'],
-    ['craftsman', 'A tradesman', 'Work done on the home – plumber, electrician, painter …', 'tools', '#e8743b', 'hvtj'],
-    ['shop', 'A shop – a product', 'An appliance, furniture or something else you bought', 'box-seam', '#3987e5', 'fkjl'],
+    ['craftsman', 'A tradesman', 'Work done on the home – plumber, electrician, painter …', 'tools', 'var(--orange)', 'hvtj'],
+    ['shop', 'A shop – a product', 'An appliance, furniture or something else you bought', 'box-seam', 'var(--blue)', 'fkjl'],
     ['other', 'Something else', 'Write it your own way', 'pencil', '#7a8794', 'other']];
   function ag(k) { return AGAINST.filter(function (a) { return a[0] === k; })[0] || AGAINST[4]; }
   var LAW = {
@@ -54,8 +54,8 @@
       more: 'Complain to the shop you bought it from, not the maker. A warranty from the maker comes on top of these rights.' },
     other: { n: 'Other', nb: '', deliver: 'Delivered', years: 0, rule: 'Tell them in writing as soon as you can after you found it.', more: '' } };
   var STATUS = {
-    draft: ['Draft', '#7a8794', 'pencil'], sent: ['Sent', '#3987e5', 'send'], reply: ['Answered', '#8a6fdf', 'reply'],
-    agreed: ['Agreed', '#22b35e', 'hand-thumbs-up'], fixed: ['Fixed', '#22b35e', 'check2-circle'], no: ['Turned down', '#e66767', 'x-octagon'], closed: ['Closed', '#7a8794', 'archive'] };
+    draft: ['Draft', '#7a8794', 'pencil'], sent: ['Sent', 'var(--blue)', 'send'], reply: ['Answered', 'var(--violet)', 'reply'],
+    agreed: ['Agreed', 'var(--ok)', 'hand-thumbs-up'], fixed: ['Fixed', 'var(--ok)', 'check2-circle'], no: ['Turned down', 'var(--danger)', 'x-octagon'], closed: ['Closed', '#7a8794', 'archive'] };
   function law(c) { return LAW[c.law] || LAW[ag(c.against)[5]] || LAW.other; }
   function lawKey(c) { return LAW[c.law] ? c.law : ag(c.against)[5]; }
   function deadlines(c) {
@@ -79,8 +79,8 @@
     if (!on() || cfg().glance === false) return;
     list().forEach(function (c) {
       var d = deadlines(c), href = (here ? '' : '/cmd/house/') + '#hclaims=' + c.id;
-      if (c.status === 'draft' && d.soft && daysTo(c.found) <= -7) { var n = daysTo(d.soft); add(n < 7 ? 12 : 34, 'exclamation-diamond', n < 7 ? '#e66767' : '#c98500', 'Send the claim: ' + c.title, n < 0 ? 'Found ' + (-daysTo(c.found)) + ' days ago – send it now' : 'Don’t wait – a claim should go out soon after you find the fault', href, { key: 'hc:d:' + c.id + ':' + (n < 7 ? 1 : 0) }); }
-      if (c.status === 'sent' && isKey(c.replyBy) && daysTo(c.replyBy) < 0) add(24, 'hourglass-bottom', '#e66767', 'No answer on: ' + c.title, 'Asked for by ' + fmt(c.replyBy, { day: 'numeric', month: 'short' }) + ' – send a reminder', href, { key: 'hc:r:' + c.id + ':' + c.replyBy });
+      if (c.status === 'draft' && d.soft && daysTo(c.found) <= -7) { var n = daysTo(d.soft); add(n < 7 ? 12 : 34, 'exclamation-diamond', n < 7 ? 'var(--danger)' : 'var(--warn)', 'Send the claim: ' + c.title, n < 0 ? 'Found ' + (-daysTo(c.found)) + ' days ago – send it now' : 'Don’t wait – a claim should go out soon after you find the fault', href, { key: 'hc:d:' + c.id + ':' + (n < 7 ? 1 : 0) }); }
+      if (c.status === 'sent' && isKey(c.replyBy) && daysTo(c.replyBy) < 0) add(24, 'hourglass-bottom', 'var(--danger)', 'No answer on: ' + c.title, 'Asked for by ' + fmt(c.replyBy, { day: 'numeric', month: 'short' }) + ' – send a reminder', href, { key: 'hc:r:' + c.id + ':' + c.replyBy });
     });
     /* a new home: the one-year inspection */
     var ti = takeInfo(cur()), td = takeDate(cur());
@@ -89,7 +89,7 @@
   (window.EventsExtra = window.EventsExtra || []).push(function () {
     if (!on()) return [];
     var out = [];
-    list().forEach(function (c) { if (c.status === 'sent' && isKey(c.replyBy)) out.push({ id: 'rem:hc:' + c.id, title: 'Answer due: ' + c.title, allDay: true, start: fromKey(c.replyBy), days: 1, color: '#e66767', readOnly: true, reminder: true, link: '/cmd/house/#hclaims=' + c.id, location: '', notes: 'Reklamasjon', exDays: {} }); });
+    list().forEach(function (c) { if (c.status === 'sent' && isKey(c.replyBy)) out.push({ id: 'rem:hc:' + c.id, title: 'Answer due: ' + c.title, allDay: true, start: fromKey(c.replyBy), days: 1, color: 'var(--danger)', readOnly: true, reminder: true, link: '/cmd/house/#hclaims=' + c.id, location: '', notes: 'Reklamasjon', exDays: {} }); });
     var ti = takeInfo(cur()), td = takeDate(cur()); if (ti.kind === 'new' && td) out.push({ id: 'rem:hc:y1', title: 'One-year inspection (ettårsbefaring)', allDay: true, start: fromKey(addYears(td, 1)), days: 1, color: '#0891b2', readOnly: true, reminder: true, link: '/cmd/house/#hclaim', location: '', notes: 'A year since the take-over', exDays: {} });
     return out;
   });

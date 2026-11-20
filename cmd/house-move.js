@@ -32,7 +32,7 @@
   function date(hid) { if (past(hid)) { var h = window.Homes.get(hid); return h && isKey(h.from) ? h.from : null; } var m = move(); return m ? m.date : null; }
   function arr(x) { return Array.isArray(x) ? x.filter(function (y) { return y && typeof y === 'object'; }) : []; }
   HF && HF.uses(function () { var t = T(), ids = []; if (window.Homes) window.Homes.list().forEach(function (h) { if (h.take) { arr(h.take.meters).forEach(function (m) { ids.push(m.photo); }); arr(h.take.faults).forEach(function (f) { ids = ids.concat(f.photos || []); }); } }); arr(t.meters).forEach(function (m) { ids.push(m.photo); }); arr(t.faults).forEach(function (f) { ids = ids.concat(f.photos || []); }); return ids; });
-  var METERS = { power: ['Electricity', 'kWh', 'lightning-charge', '#c98500'], water: ['Water', 'm³', 'droplet', '#3987e5'], heat: ['District heating', 'kWh', 'thermometer-half', '#e8743b'], oil: ['Oil or gas tank', 'litres', 'fuel-pump', '#7a8794'], other: ['Other meter', '', 'speedometer2', '#7a8794'] };
+  var METERS = { power: ['Electricity', 'kWh', 'lightning-charge', 'var(--warn)'], water: ['Water', 'm³', 'droplet', 'var(--blue)'], heat: ['District heating', 'kWh', 'thermometer-half', 'var(--orange)'], oil: ['Oil or gas tank', 'litres', 'fuel-pump', '#7a8794'], other: ['Other meter', '', 'speedometer2', '#7a8794'] };
   var CHECKS = [['taps', 'Run every tap, hot and cold, and flush the toilets – look for leaks under the sinks', 'droplet'],
     ['drains', 'Drains (sluk) are clean and the water runs away', 'water'],
     ['wet', 'Bathroom: no cracked tiles or sealant, no damp marks', 'bucket'],
@@ -75,7 +75,7 @@
     if (n === 1) add(8, 'key', '#a0673a', I18N.k('ui.take-over-tomorrow', 'Take-over tomorrow'), I18N.k('ui.open-the-guide-what-to-bring-meters-keys', 'Open the guide: what to bring, meters, keys and the walk-through'), href, { key: 'tk:eve:' + d });
     if (n === 0) add(4, 'key', '#a0673a', I18N.k('ui.take-over-today', 'Take-over today'), I18N.k('ui.step-by-step-meters-with-photos-keys-fau', 'Step by step: meters with photos, keys, faults, the protocol'), href, { key: 'tk:day:' + d });
     var open = arr(T().faults).filter(function (f) { return !f.claim; });
-    if (n < 0 && n >= -21 && open.length && Fe.on('hclaim')) add(30, 'exclamation-diamond', '#e66767', open.length + (open.length === 1 ? ' fault' : ' faults') + ' from the take-over', I18N.k('ui.make-a-claim-so-the-seller-hears-about-i', 'Make a claim so the seller hears about it in writing'), href, { key: 'tk:fl:' + open.length });
+    if (n < 0 && n >= -21 && open.length && Fe.on('hclaim')) add(30, 'exclamation-diamond', 'var(--danger)', open.length + (open.length === 1 ? ' fault' : ' faults') + ' from the take-over', I18N.k('ui.make-a-claim-so-the-seller-hears-about-i', 'Make a claim so the seller hears about it in writing'), href, { key: 'tk:fl:' + open.length });
   });
   (window.CommandExtra = window.CommandExtra || []).push(function () {
     return Fe.on('house') ? [{ i: 'key', t: 'Take-over day guide', s: 'House', run: function () { if (__ui().el) { __ui().save(function (x) { delete x.hide; }); __ui().go('htake'); } else location.href = '/cmd/house/#htake'; }, x: 'take-over overtakelse keys nøkler protokoll meter moving flytte' }] : [];

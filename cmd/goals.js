@@ -30,9 +30,9 @@
   function writeJSON(k, v) { try { var s = JSON.stringify(v); if (localStorage.getItem(k) === s) return; localStorage.setItem(k, s); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   function goals() { var g = readJSON('dash.goals', []); return Array.isArray(g) ? g.filter(function (x) { return x && typeof x === 'object'; }) : []; }
   function saveGoals(l) { writeJSON('dash.goals', l); window.dispatchEvent(new Event('goals:refresh')); }
-  var GREEN = '#22b35e';
-  var AMBER = '#c98500';
-  var RED = '#e66767';
+  var GREEN = 'var(--ok)';
+  var AMBER = 'var(--warn)';
+  var RED = 'var(--danger)';
   var GREY = '#7a8794';
   var DEF = { brief: true, lead: 30, stale: 14, archive: 30, celebrate: true, sort: 'due' };
   function cfg() { var c = Fe.tools().goalcfg; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }

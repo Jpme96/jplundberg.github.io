@@ -231,7 +231,7 @@
       if (!m && !notes) return;
       var id = 'prep' + Object.keys(prepFor).length; prepFor[id] = { o: o, m: m };
       var acts = m ? openActs(m) : [];
-      add(9, 'clipboard-check', '#3987e5', 'Prep: ' + o.title + ' at ' + pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()),
+      add(9, 'clipboard-check', 'var(--blue)', 'Prep: ' + o.title + ' at ' + pad(o.start.getHours()) + ':' + pad(o.start.getMinutes()),
         m ? 'Last time ' + new Date(m.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + (acts.length ? ' · ' + acts.length + ' open action' + (acts.length === 1 ? '' : 's') : ' · notes ready') : 'Notes in the event', '#' + id);
     });
   });
@@ -270,7 +270,7 @@
   window.BriefExtra.push(function (add) {
     var t = tripToday(); if (!t) return;
     var nm = t.trip.name || t.trip.dest || 'Trip';
-    add(6, 'cash-coin', t.left < 0 ? '#e66767' : '#0891b2', t.left < 0 ? nm + ': ' + kr(-t.left) + ' over today' : nm + ': ' + kr(t.left) + ' left today',
+    add(6, 'cash-coin', t.left < 0 ? 'var(--danger)' : '#0891b2', t.left < 0 ? nm + ': ' + kr(-t.left) + ' over today' : nm + ': ' + kr(t.left) + ' left today',
       (t.perDay > 0 ? kr(t.perDay) + ' a day' : 'Budget used') + ' · ' + t.daysLeft + ' day' + (t.daysLeft === 1 ? '' : 's') + ' left', '/cmd/travel/#trip=' + t.trip.id);
   });
 
@@ -297,7 +297,7 @@
   window.Readiness = readiness;
   window.BriefExtra.push(function (add) {
     var r = readiness(); if (!r || r.score == null || r.level === 'go') return;
-    add(r.level === 'rest' ? 11 : 32, 'battery-half', r.level === 'rest' ? '#e66767' : '#c98500', r.level === 'rest' ? 'Take a rest day' : 'Go easy today', r.why.slice(0, 2).join(' · ') + ' · readiness ' + r.score, '/cmd/habits/#rest', { key: 'rest:' + dkey(new Date()) });
+    add(r.level === 'rest' ? 11 : 32, 'battery-half', r.level === 'rest' ? 'var(--danger)' : 'var(--warn)', r.level === 'rest' ? 'Take a rest day' : 'Go easy today', r.why.slice(0, 2).join(' · ') + ' · readiness ' + r.score, '/cmd/habits/#rest', { key: 'rest:' + dkey(new Date()) });
   });
 
   /* ================= Flex time: clock in / out reminders ================= */
@@ -309,11 +309,11 @@
     var open = es.filter(function (e) { return e.in && !e.out; })[0], hmNow = pad(now.getHours()) + ':' + pad(now.getMinutes());
     var clock = function (fn) { return function () { var t = Fe.tools(); t.flex = t.flex || []; fn(t.flex); Fe.saveTools(t); toast('<i class="bi bi-stopwatch"></i> Saved'); }; };
     if (!es.length && now.getHours() >= 7 && now.getHours() < 11)
-      add(14, 'stopwatch', '#e8743b', I18N.k('ui.clock-in', 'Clock in?'), I18N.k('ui.not-clocked-in-yet-today', 'Not clocked in yet today'), '/cmd/work/', { act: { id: 'clockin:' + tk, label: 'Clock in ' + hmNow }, run: clock(function (l) { l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: tk, type: 'work', in: hmNow, out: '', brk: +((Fe.tools().flexcfg || {}).brk) || 0 }); }) });
+      add(14, 'stopwatch', 'var(--orange)', I18N.k('ui.clock-in', 'Clock in?'), I18N.k('ui.not-clocked-in-yet-today', 'Not clocked in yet today'), '/cmd/work/', { act: { id: 'clockin:' + tk, label: 'Clock in ' + hmNow }, run: clock(function (l) { l.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: tk, type: 'work', in: hmNow, out: '', brk: +((Fe.tools().flexcfg || {}).brk) || 0 }); }) });
     if (open) {
       var mins = now.getHours() * 60 + now.getMinutes() - toMin(open.in);
       var norm = ((+((Fe.tools().flexcfg || {}).norm)) || 7.5) * 60;
-      if (mins >= norm + 30) add(13, 'stopwatch', '#e8743b', 'Worked ' + Math.floor(mins / 60) + ' h ' + pad(mins % 60) + ' min – clock out?', 'Clocked in at ' + open.in, '/cmd/work/', { act: { id: 'clockout:' + tk, label: 'Clock out ' + hmNow }, run: clock(function (l) { l.forEach(function (e) { if (e.id === open.id) e.out = hmNow; }); }) });
+      if (mins >= norm + 30) add(13, 'stopwatch', 'var(--orange)', 'Worked ' + Math.floor(mins / 60) + ' h ' + pad(mins % 60) + ' min – clock out?', 'Clocked in at ' + open.in, '/cmd/work/', { act: { id: 'clockout:' + tk, label: 'Clock out ' + hmNow }, run: clock(function (l) { l.forEach(function (e) { if (e.id === open.id) e.out = hmNow; }); }) });
     }
   });
 

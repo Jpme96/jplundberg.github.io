@@ -91,7 +91,7 @@
   }
   intercept($t('hmaint'), function (e) { if (e.target.closest('[data-kit-add], [data-hmseed]')) { hmPick(); return false; } });
   var BIN_TYPES = [
-    ['Restavfall', '#7a8794', 'trash3'], ['Papir og papp', BLUE, 'newspaper'], ['Plastemballasje', '#8a6fdf', 'bag'],
+    ['Restavfall', '#7a8794', 'trash3'], ['Papir og papp', BLUE, 'newspaper'], ['Plastemballasje', 'var(--violet)', 'bag'],
     ['Matavfall', GREEN, 'apple'], ['Glass- og metallemballasje', '#0891b2', 'cup-straw'], ['Hageavfall', '#5d9c3a', 'tree']
   ];
   var EVERY_WK = [[1, I18N.k('ui.every-week', 'Every week')], [2, I18N.k('ui.every-2-weeks', 'Every 2 weeks')], [3, I18N.k('ui.every-3-weeks', 'Every 3 weeks')], [4, I18N.k('ui.every-4-weeks', 'Every 4 weeks')], [6, 'Every 6 weeks'], [8, I18N.k('ui.every-8-weeks', 'Every 8 weeks')]];
@@ -211,7 +211,7 @@
       heroTile('info-circle', I18N.k('ui.good-to-know', 'Good to know'), info.length, info.length ? esc(info.slice(0, 3).map(function (x) { return x.title; }).join(', ')) : 'Wi-Fi, codes, contacts', '#hinfo');
   };
   var REL = [['family', I18N.k('ui.family', 'Family')], ['friend', I18N.k('ui.friend', 'Friend')], ['work', I18N.k('ui.work', 'Work')], ['other', I18N.k('ui.other', 'Other')]];
-  var REL_C = { family: '#d55181', friend: BLUE, work: '#e8743b', other: '#7a8794' };
+  var REL_C = { family: 'var(--pink)', friend: BLUE, work: 'var(--orange)', other: '#7a8794' };
   var PP = { key: 'people', addTitle: 'New person', editTitle: 'Edit person', fields: [
     { k: 'name', type: 'title', label: 'Name', ph: 'Name', req: true },
     { k: 'rel', label: 'Who', type: 'select', options: REL, def: 'friend' },
@@ -251,7 +251,7 @@
       var b = bday(p), o = overdue(p), subs = [];
       if (b) subs.push('Birthday ' + fmt(b.next) + (b.age ? ' (' + b.age + ')' : ''));
       if (isKey(p.last)) subs.push('talked ' + ago(p.last));
-      var right = b && b.n <= 14 ? chip('<i class="bi bi-balloon"></i> ' + cap(inDays(b.n)), '#d55181') : o != null ? chip(I18N.k('ui.catch-up', 'Catch up'), AMBER) : '';
+      var right = b && b.n <= 14 ? chip('<i class="bi bi-balloon"></i> ' + cap(inDays(b.n)), 'var(--pink)') : o != null ? chip(I18N.k('ui.catch-up', 'Catch up'), AMBER) : '';
       return { icon: 'person', color: REL_C[p.rel] || BLUE, title: p.name, sub: esc(subs.join(' · ')), right: right };
     },
     detail: function (p) {
@@ -288,7 +288,7 @@
   heroes.people = function () {
     var l = Fe.list('people'), bs = l.map(function (p) { return [bday(p), p]; }).filter(function (x) { return x[0]; }).sort(function (a, b) { return a[0].n - b[0].n; });
     var due = l.filter(function (p) { return overdue(p) != null; }), m = new Date().getMonth() + 1, mon = bs.filter(function (x) { return x[0].m === m; });
-    return heroTile('balloon', I18N.k('ui.next-birthday', 'Next birthday'), bs.length ? esc(cap(inDays(bs[0][0].n))) : '–', bs.length ? esc(bs[0][1].name + (bs[0][0].age ? ' · turns ' + bs[0][0].age : '')) : 'Add a birthday', '#pdates', '#d55181') +
+    return heroTile('balloon', I18N.k('ui.next-birthday', 'Next birthday'), bs.length ? esc(cap(inDays(bs[0][0].n))) : '–', bs.length ? esc(bs[0][1].name + (bs[0][0].age ? ' · turns ' + bs[0][0].age : '')) : 'Add a birthday', '#pdates', 'var(--pink)') +
       heroTile('chat-heart', I18N.k('ui.catch-up', 'Catch up'), due.length ? '<span class="neg">' + due.length + '</span>' : '0', due.length ? esc(due.slice(0, 3).map(function (p) { return p.name; }).join(', ')) : 'All in touch', '#people') +
       heroTile('calendar-heart', I18N.k('ui.this-month', 'This month'), mon.length, mon.length ? esc(mon.map(function (x) { return x[1].name; }).join(', ')) : 'No birthdays', '#pdates') +
       heroTile('people', 'People', l.length, l.filter(function (p) { return +p.every; }).length ? I18N.k('ui.people-keep-n', '{n} you keep in touch with', { n: l.filter(function (p) { return +p.every; }).length }) : I18N.k('ui.people-keep-0', 'Set how often to keep in touch on a person', {}), '#people');
@@ -528,7 +528,7 @@
       heroTile('cart3', I18N.k('ui.shopping-list', 'Shopping list'), shop.length, shop.length ? esc(shop.slice(0, 3).map(function (x) { return x.text; }).join(', ')) : 'Nothing to buy', '#shop') +
       heroTile('journal-text', 'Recipes', Fe.list('recipes').length, 'to plan from', '#recipes');
   };
-  var PCOL = ['#e8743b', BLUE, '#22b35e', '#8a6fdf', '#d55181', '#0891b2', '#c98500'];
+  var PCOL = ['var(--orange)', BLUE, 'var(--ok)', 'var(--violet)', 'var(--pink)', '#0891b2', 'var(--warn)'];
   var PROJ = { key: 'pproj', addTitle: 'New client or project', editTitle: 'Edit client or project', fields: [
     { k: 'name', type: 'title', label: 'Name', ph: 'e.g. Obos – Storgata 12', req: true },
     { k: 'client', label: 'Client', ph: 'Who pays' },

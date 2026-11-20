@@ -262,7 +262,7 @@
   mount('rest', function (el) {
     var r = window.Readiness ? window.Readiness() : null;
     if (!r || r.score == null) { el.innerHTML = card('rest', 'battery-half', I18N.k('ui.rest-day-advisor', 'Rest-day advisor'), '', '<p class="empty kit-empty" data-t="ui.needs-a-few-days-of-sleep-heart-rate-hrv">Needs a few days of sleep, heart rate (HRV, resting pulse) from Apple Health, or your training log, to know your normal.</p>'); return; }
-    var col = { go: '#22b35e', easy: '#c98500', rest: '#e66767' }[r.level], C = 2 * Math.PI * 34;
+    var col = { go: 'var(--ok)', easy: 'var(--warn)', rest: 'var(--danger)' }[r.level], C = 2 * Math.PI * 34;
     var title = { go: 'Ready to train', easy: 'Go easy today', rest: 'Take a rest day' }[r.level];
     var tip = { go: 'Your body is recovered – a good day for a hard session.', easy: 'Train light: technique, mobility, a walk or an easy run.', rest: 'Rest, sleep early and eat well – you’ll come back stronger.' }[r.level];
     el.innerHTML = card('rest', 'battery-half', I18N.k('ui.rest-day-advisor', 'Rest-day advisor'), '', '<div class="rd-row"><svg class="rd-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="34" class="trk"/><circle cx="40" cy="40" r="34" class="val" style="stroke:' + col + '" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - r.score / 100)).toFixed(1) + '"/><text x="40" y="46" text-anchor="middle">' + r.score + '</text></svg>' +

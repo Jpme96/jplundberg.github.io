@@ -34,8 +34,8 @@
     var hb = readJSON('dash.habits', { list: [], log: {} }), wd = (now.getDay() + 6) % 7, left = 6 - wd + 1;   /* days left this week, today included */
     (hb.list || []).forEach(function (h) {
       var s = of(h, hb), need = (+h.target || 1) - s.week;
-      if (s.met && s.cur >= 4 && s.cur % 4 === 0 && wd >= 4) add(60, 'fire', '#e8743b', s.cur + ' weeks in a row: ' + h.name, s.cur >= s.best ? 'Your best streak yet' : 'Best is ' + s.best + ' weeks', '/cmd/habits/');
-      else if (!s.met && s.cur >= 2 && wd >= 4 && need > 0 && need <= left) add(need === left ? 30 : 46, 'fire', '#e8743b', h.name + ': ' + need + ' more to keep your ' + s.cur + '-week streak', need === left ? 'Every day left this week' : left + ' days left this week', '/cmd/');
+      if (s.met && s.cur >= 4 && s.cur % 4 === 0 && wd >= 4) add(60, 'fire', 'var(--orange)', s.cur + ' weeks in a row: ' + h.name, s.cur >= s.best ? 'Your best streak yet' : 'Best is ' + s.best + ' weeks', '/cmd/habits/');
+      else if (!s.met && s.cur >= 2 && wd >= 4 && need > 0 && need <= left) add(need === left ? 30 : 46, 'fire', 'var(--orange)', h.name + ': ' + need + ' more to keep your ' + s.cur + '-week streak', need === left ? 'Every day left this week' : left + ' days left this week', '/cmd/');
     });
   });
   (window.BriefExtra = window.BriefExtra || []).push(function (add) {
@@ -47,7 +47,7 @@
       if (gifts.some(function (g) { return g.pid === p.id && g.occ === 'bday' && String(g.date || '').slice(0, 4) === b.next.slice(0, 4); })) return;
       var ideas = String(p.gifts || '').split('\n').map(function (x) { return x.replace(/^[-*•]\s*/, '').trim(); }).filter(Boolean);
       var wl = Fe.on('wish') && ideas.length && !Fe.list('wishes').some(function (w) { return w.for === 'gift' && w.title === ideas[0] + ' – ' + p.name; });
-      add(b.n <= 7 ? 34 : 50, 'gift', '#d55181', 'A gift for ' + p.name + ' – birthday in ' + b.n + ' days',
+      add(b.n <= 7 ? 34 : 50, 'gift', 'var(--pink)', 'A gift for ' + p.name + ' – birthday in ' + b.n + ' days',
         (ideas.length ? 'Ideas: ' + ideas.slice(0, 2).join(', ') : 'No gift ideas yet – add some on People') + (+c.gbBday ? ' · budget ' + nf.format(+c.gbBday) + ' kr' : ''), '/cmd/people/#people=' + p.id,
         wl ? { main: true, act: { id: 'gw:' + p.id + ':' + y, label: 'Wishlist' }, run: function () {
           var t = Fe.tools(); t.wishes = (Array.isArray(t.wishes) ? t.wishes : []).concat([{ id: Date.now().toString(36), title: ideas[0] + ' – ' + p.name, for: 'gift', prio: 1, price: +c.gbBday || '', added: dkey(new Date()), notes: 'For ' + p.name + '’s birthday ' + b.next }]); Fe.saveTools(t);
@@ -61,7 +61,7 @@
     var g = gcfg(), wd = (now.getDay() + 6) % 7, tk = dkey(now); if (g.days.indexOf(wd) < 0 || now.getHours() >= 17) return;
     var T = Fe.tools(), trained = (T.training || []).some(function (w) { return w.date === tk; }) || (T.gym || []).some(function (x) { return String(x.date || '').slice(0, 10) === tk; });
     if (trained || (T.gympacked || '') === tk) return;
-    add(now.getHours() < 9 ? 38 : 52, 'bag-check', '#d55181', I18N.k('ui.gym-today-pack-your-bag', 'Gym today – pack your bag'), g.bag, '/cmd/habits/#training', { main: true, act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
+    add(now.getHours() < 9 ? 38 : 52, 'bag-check', 'var(--pink)', I18N.k('ui.gym-today-pack-your-bag', 'Gym today – pack your bag'), g.bag, '/cmd/habits/#training', { main: true, act: { id: 'gb:' + tk, label: 'Packed' }, run: function () { var t = Fe.tools(); t.gympacked = tk; Fe.saveTools(t); } });
   });
   function sel(attr, v0, label, opts, sub) { return '<label class="st-row"><span>' + esc(label) + (sub ? '<small class="st-rsub">' + esc(sub) + '</small>' : '') + '</span><select class="st-select" ' + attr + '>' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v0) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>'; }
   function fill(page) {

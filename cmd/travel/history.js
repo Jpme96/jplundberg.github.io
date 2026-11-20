@@ -100,7 +100,7 @@
     var Fe = window.Features;
     if (Fe && Fe.on('bucket')) Fe.list('bucket').forEach(function (b) {
       if (b.visited || !b.geo || b.geo.lat == null) return;
-      pts.push({ lat: b.geo.lat, lon: b.geo.lon, label: '<b>' + esc(b.place) + '</b> (want to visit)<br>' + esc(b.geo.country || ''), color: '#c9a227' });
+      pts.push({ lat: b.geo.lat, lon: b.geo.lon, label: '<b>' + esc(b.place) + '</b> (want to visit)<br>' + esc(b.geo.country || ''), color: 'var(--gold)' });
     });
     var places = {};
     pts.forEach(function (p) { places[p.lat + ',' + p.lon] = 1; });

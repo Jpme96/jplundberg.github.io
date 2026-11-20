@@ -146,7 +146,7 @@
     row: function (e) {
       var isT = e.date === today(), w = worked(e, isT), lbl = FLEX_TYPES[e.type] || 'Work';
       return { icon: e.type === 'vacation' ? 'sun' : e.type === 'sick' ? 'thermometer-half' : e.type === 'flexoff' ? 'cup-hot' : e.type === 'holiday' ? 'flag' : 'briefcase',
-        color: e.type === 'work' || e.type === 'course' ? '#e8743b' : '#7a8794',
+        color: e.type === 'work' || e.type === 'course' ? 'var(--orange)' : '#7a8794',
         title: fmt(e.date, { weekday: 'short', day: 'numeric', month: 'short' }) + (e.type !== 'work' ? ' · ' + lbl : ''),
         sub: (e.in ? esc(e.in) + '–' + (e.out ? esc(e.out) : 'now') : '') + (e.brk ? ' · ' + e.brk + ' min break' : '') + (e.note ? ' · ' + esc(e.note) : ''),
         right: e.type === 'work' || e.type === 'course' ? hm(w) : '' };
@@ -283,7 +283,7 @@
     sort: function (a, b) { return a.date < b.date ? 1 : -1; },
     row: function (m) {
       var acts = String(m.actions || '').split('\n').filter(function (x) { return x.trim(); }), done = acts.filter(function (_, i) { return (m.done || {})[i]; }).length;
-      return { icon: 'people', color: '#3987e5', title: m.title || 'Meeting', sub: fmt(m.date) + (m.who ? ' · ' + esc(m.who) : '') + (acts.length ? ' · ' + done + '/' + acts.length + ' actions' : ''),
+      return { icon: 'people', color: 'var(--blue)', title: m.title || 'Meeting', sub: fmt(m.date) + (m.who ? ' · ' + esc(m.who) : '') + (acts.length ? ' · ' + done + '/' + acts.length + ' actions' : ''),
         cls: acts.length && done < acts.length ? 'has-open' : '' };
     },
     detail: function (m) {
@@ -349,7 +349,7 @@
       return items.length ? '<div class="kit-tiles">' + tile('Done in ' + y, done) + tile('In progress', prog) + tile('Expiring soon', '<span class="' + (soon ? 'neg' : '') + '">' + soon + '</span>', 'within 6 months') + '</div>' : '';
     },
     row: function (c) {
-      return { icon: KIND_ICON[c.kind] || 'lightbulb', color: '#8a6fdf', title: c.title, cls: c.status === 'done' ? 'is-done' : '',
+      return { icon: KIND_ICON[c.kind] || 'lightbulb', color: 'var(--violet)', title: c.title, cls: c.status === 'done' ? 'is-done' : '',
         sub: [c.provider ? esc(c.provider) : '', (STATUS.filter(function (s) { return s[0] === c.status; })[0] || ['', ''])[1], c.date ? fmt(c.date, { month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · '),
         right: expiryBadge(c.expires) };
     },
@@ -399,7 +399,7 @@
     },
     row: function (w) {
       var s = SPORTS.filter(function (x) { return x[0] === w.kind; })[0] || SPORTS[7];
-      return { icon: s[2], color: '#d55181', title: s[1], sub: fmt(w.date, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + hm(+w.min || 0) + (w.km ? ' · ' + String(w.km).replace('.', ',') + ' km' : '') + (w.notes ? ' · ' + esc(String(w.notes).slice(0, 60)) : ''),
+      return { icon: s[2], color: 'var(--pink)', title: s[1], sub: fmt(w.date, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + hm(+w.min || 0) + (w.km ? ' · ' + String(w.km).replace('.', ',') + ' km' : '') + (w.notes ? ' · ' + esc(String(w.notes).slice(0, 60)) : ''),
         right: '<span class="kit-dots">' + [1, 2, 3, 4, 5].map(function (i) { return '<i class="' + (i <= +w.effort ? 'on' : '') + '"></i>'; }).join('') + '</span>' };
     },
     empty: I18N.k('ui.log-a-workout-and-it-also-ticks-your-tra', 'Log a workout and it also ticks your training habit for that day.')
@@ -454,7 +454,7 @@
     },
     row: function (h) {
       var past = h.kind === 'checkup' && h.date && h.date < today();
-      return { icon: HICON[h.kind] || 'clipboard2-pulse', color: '#e66767', title: h.title,
+      return { icon: HICON[h.kind] || 'clipboard2-pulse', color: 'var(--danger)', title: h.title,
         sub: [{ checkup: 'Check-up', vaccine: 'Vaccine', medicine: 'Medicine' }[h.kind] || '', h.every ? hevery(h.every) + (h.time ? ' ' + esc(h.time) : '') : h.date ? fmt(h.date) + (h.time && !past ? ' ' + esc(h.time) : '') : '', h.where ? esc(h.where) : ''].filter(Boolean).join(' · '),
         right: dueBadge(h.next, h.kind === 'medicine' ? 'Renew' : h.kind === 'vaccine' ? 'Booster' : 'Next') };
     },
@@ -468,7 +468,7 @@
     F.list('health').forEach(function (h) {
       if (!h.every || !hOn(h, td) || done[h.id]) return;
       var late = h.time && (new Date().getHours() * 60 + new Date().getMinutes()) > (+h.time.slice(0, 2) * 60 + +h.time.slice(3, 5));
-      add(late ? 22 : 44, h.kind === 'medicine' ? 'capsule' : 'clipboard2-pulse', '#e66767', (h.kind === 'medicine' ? 'Take ' : '') + (h.title || 'Medicine') + (h.time ? ' at ' + h.time : ' today'), [hevery(h.every), h.where].filter(Boolean).join(' · '), '/cmd/habits/#health',
+      add(late ? 22 : 44, h.kind === 'medicine' ? 'capsule' : 'clipboard2-pulse', 'var(--danger)', (h.kind === 'medicine' ? 'Take ' : '') + (h.title || 'Medicine') + (h.time ? ' at ' + h.time : ' today'), [hevery(h.every), h.where].filter(Boolean).join(' · '), '/cmd/habits/#health',
         { main: true, act: { id: 'ht:' + h.id + ':' + td, label: h.kind === 'medicine' ? 'Taken' : 'Done' }, run: function () {
           var t = F.tools(); t.htaken = t.htaken && typeof t.htaken === 'object' ? t.htaken : {};
           Object.keys(t.htaken).forEach(function (k) { if (k < F.addMonths(td, -1)) delete t.htaken[k]; });
@@ -478,7 +478,7 @@
   });
 
   /* ================= HABITS: journal ================= */
-  var MOODS = [['1', 'Bad', 'emoji-frown', '#e66767'], ['2', 'Meh', 'emoji-neutral', '#e8743b'], ['3', 'OK', 'emoji-smile', '#c9a227'], ['4', 'Good', 'emoji-laughing', '#22b35e'], ['5', 'Great', 'emoji-heart-eyes', '#14b8a6']];
+  var MOODS = [['1', 'Bad', 'emoji-frown', 'var(--danger)'], ['2', 'Meh', 'emoji-neutral', 'var(--orange)'], ['3', 'OK', 'emoji-smile', 'var(--gold)'], ['4', 'Good', 'emoji-laughing', 'var(--ok)'], ['5', 'Great', 'emoji-heart-eyes', '#14b8a6']];
   function mood(v) { return MOODS.filter(function (m) { return m[0] === String(v); })[0] || MOODS[2]; }
   K.collection({
     mount: $t('journal'), feature: 'journal', key: 'journal', title: I18N.k('ui.journal', 'Journal'), icon: 'journal-bookmark', addLabel: I18N.k('ui.today', 'Today'),
@@ -534,7 +534,7 @@
       var v = items.filter(function (x) { return x.visited; }).length;
       return items.length ? '<p class="kit-moodlbl">' + items.length + ' place' + (items.length > 1 ? 's' : '') + ' · ' + v + ' visited · they show on the map under History</p>' : '';
     },
-    row: function (b) { return { icon: b.visited ? 'check-circle-fill' : 'pin-map', color: b.visited ? '#22b35e' : '#0891b2', title: b.place, cls: b.visited ? 'is-done' : '', sub: [b.geo ? esc(b.geo.country) : '', b.notes ? esc(String(b.notes).slice(0, 70)) : ''].filter(Boolean).join(' · ') }; },
+    row: function (b) { return { icon: b.visited ? 'check-circle-fill' : 'pin-map', color: b.visited ? 'var(--ok)' : '#0891b2', title: b.place, cls: b.visited ? 'is-done' : '', sub: [b.geo ? esc(b.geo.country) : '', b.notes ? esc(String(b.notes).slice(0, 70)) : ''].filter(Boolean).join(' · ') }; },
     detail: function (b) {
       return (b.notes ? '<p class="kit-notes">' + esc(b.notes) + '</p>' : '') +
         (b.visited ? '' : '<span class="kit-acts"><button type="button" class="text-btn" data-plantrip="' + esc(b.id) + '"><i class="bi bi-suitcase-lg"></i> <span data-t="ui.plan-a-trip">Plan a trip</span></button>' +
@@ -611,7 +611,7 @@
     },
     row: function (w) {
       var end = F.warrantyEnd(w), over = end < today();
-      return { icon: 'receipt-cutoff', color: '#c98500', title: w.item, cls: over ? 'is-done' : '',
+      return { icon: 'receipt-cutoff', color: 'var(--warn)', title: w.item, cls: over ? 'is-done' : '',
         sub: [w.store ? esc(w.store) : '', fmt(w.bought), w.price ? kr(+w.price) : '', w.receipt ? 'receipt: ' + esc(w.receipt) : ''].filter(Boolean).join(' · '),
         right: over ? '<span class="kit-badge">Ended</span>' : expiryBadge(end).replace('Until', 'Until').replace('Expires', 'Ends') };
     },

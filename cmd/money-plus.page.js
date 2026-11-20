@@ -15,7 +15,7 @@
   function fmt(k, o) { return fromKey(k).toLocaleDateString('en-GB', o || { day: 'numeric', month: 'short' }); }
   function ord(n) { var t = n % 100, u = n % 10; return n + (t > 10 && t < 14 ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th'); }
   var CAT = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other' };
-  var CATC = { groceries: '#11a597', eating: '#d95926', transport: '#3987e5', shopping: '#c98500', home: '#a0673a', fun: '#d55181', health: '#8a6fdf', travel: '#0891b2', other: '#6b6d73' };
+  var CATC = { groceries: '#11a597', eating: '#d95926', transport: 'var(--blue)', shopping: 'var(--warn)', home: '#a0673a', fun: 'var(--pink)', health: 'var(--violet)', travel: '#0891b2', other: '#6b6d73' };
   var showIgnored = false;
   function recurCard(el) {
     var all = detect(), list = all.filter(function (r) { return !r.ignored; }), ign = all.filter(function (r) { return r.ignored; });
@@ -119,7 +119,7 @@
         tile(I18N.k('ui.your-share', 'Your share'), esc(kr(mine)), 'this month') + '</div>' +
         '<ul class="mp-list">' + people.map(function (x) {
           var b = x.b, txt = b >= 1 ? 'owes you ' + kr(b) : b <= -1 ? 'you owe ' + kr(-b) : 'settled up';
-          return '<li class="mp-row' + (Math.abs(b) < 1 ? ' is-done' : '') + '"><button type="button" class="kit-main" data-shp="' + esc(x.p.id) + '"><span class="kit-ic mp-av" style="--c:' + (b >= 1 ? '#22b35e' : b <= -1 ? '#e8743b' : '#7a8794') + '">' + esc((x.p.name || '?').slice(0, 1).toUpperCase()) + '</span>' +
+          return '<li class="mp-row' + (Math.abs(b) < 1 ? ' is-done' : '') + '"><button type="button" class="kit-main" data-shp="' + esc(x.p.id) + '"><span class="kit-ic mp-av" style="--c:' + (b >= 1 ? 'var(--ok)' : b <= -1 ? 'var(--orange)' : '#7a8794') + '">' + esc((x.p.name || '?').slice(0, 1).toUpperCase()) + '</span>' +
             '<span class="kit-x"><b>' + esc(x.p.name) + '</b><small class="' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(txt) + '</small></span></button>' +
             (Math.abs(b) >= 1 ? '<span class="mp-acts"><button type="button" class="pill-btn sm" data-shsettle="' + esc(x.p.id) + '"><span data-t="ui.settle-up">Settle up</span></button></span>' : '') + '</li>';
         }).join('') + '</ul>' +
@@ -269,7 +269,7 @@
         .sort(function (a, c) { return a.date < c.date ? 1 : -1; });
       box.innerHTML = head('person', p.name) + '<p class="mp-bal ' + (b >= 1 ? 'mp-pos' : b <= -1 ? 'mp-neg' : '') + '">' + esc(b >= 1 ? 'Owes you ' + kr(b) : b <= -1 ? 'You owe ' + kr(-b) : 'Settled up') + '</p>' +
         '<ul class="mp-list">' + ev.map(function (r) {
-          return '<li class="mp-row"><span class="kit-ic" style="--c:' + (r.k === 'p' ? '#22b35e' : r.k === 'l' ? '#a0673a' : '#3987e5') + '"><i class="bi bi-' + (r.k === 'p' ? 'cash-coin' : r.k === 'l' ? 'calendar2-check' : 'people') + '"></i></span><span class="kit-x"><b>' + esc(r.t) + '</b><small>' + esc(fmt(r.date) + (r.k !== 'p' ? ' · ' + kr(r.x.total) + ' in total' : '')) + '</small></span>' +
+          return '<li class="mp-row"><span class="kit-ic" style="--c:' + (r.k === 'p' ? 'var(--ok)' : r.k === 'l' ? '#a0673a' : 'var(--blue)') + '"><i class="bi bi-' + (r.k === 'p' ? 'cash-coin' : r.k === 'l' ? 'calendar2-check' : 'people') + '"></i></span><span class="kit-x"><b>' + esc(r.t) + '</b><small>' + esc(fmt(r.date) + (r.k !== 'p' ? ' · ' + kr(r.x.total) + ' in total' : '')) + '</small></span>' +
             '<span class="money ' + (r.v > 0 ? 'mp-pos' : r.v < 0 ? 'mp-neg' : '') + '">' + (r.v > 0 ? '+' : r.v < 0 ? '−' : '') + esc(kr(Math.abs(r.v))) + '</span>' +
             (r.k === 'p' ? '<button type="button" class="icon-btn sm" data-shdelpay="' + esc(r.x.id) + '" aria-label="Delete payment"><i class="bi bi-trash3"></i></button>' : r.k === 'l' ? '<span class="icon-btn sm" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>' : '<button type="button" class="icon-btn sm" data-shedit="' + esc(r.x.id) + '" aria-label="Edit"><i class="bi bi-pencil"></i></button>') + '</li>';
         }).join('') + '</ul>' +

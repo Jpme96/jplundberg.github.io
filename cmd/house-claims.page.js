@@ -63,9 +63,9 @@
   }
   function dl(c) {
     var d = deadlines(c), bits = [];
-    if (c.status === 'draft' && d.soft) { var n = daysTo(d.soft); bits.push({ t: n < 0 ? 'Send it now – found ' + (-daysTo(c.found)) + ' days ago' : 'Send it by about ' + fmt(d.soft, { day: 'numeric', month: 'short' }), c: n < 0 ? '#e66767' : n <= 14 ? '#c98500' : '#7a8794' }); }
-    if (d.reply) { var r = daysTo(d.reply); bits.push({ t: r < 0 ? 'Answer is ' + (-r) + ' days late' : 'Answer by ' + fmt(d.reply, { day: 'numeric', month: 'short' }), c: r < 0 ? '#e66767' : '#3987e5' }); }
-    if (d.hard && OPEN[c.status]) { var h = daysTo(d.hard); if (h < 0) bits.push({ t: 'The ' + (law(c).years === 2 && !c.long ? '2' : '5') + '-year limit passed ' + fmt(d.hard), c: '#e66767' }); else if (h < 120) bits.push({ t: 'Final limit ' + fmt(d.hard), c: '#c98500' }); }
+    if (c.status === 'draft' && d.soft) { var n = daysTo(d.soft); bits.push({ t: n < 0 ? 'Send it now – found ' + (-daysTo(c.found)) + ' days ago' : 'Send it by about ' + fmt(d.soft, { day: 'numeric', month: 'short' }), c: n < 0 ? 'var(--danger)' : n <= 14 ? 'var(--warn)' : '#7a8794' }); }
+    if (d.reply) { var r = daysTo(d.reply); bits.push({ t: r < 0 ? 'Answer is ' + (-r) + ' days late' : 'Answer by ' + fmt(d.reply, { day: 'numeric', month: 'short' }), c: r < 0 ? 'var(--danger)' : 'var(--blue)' }); }
+    if (d.hard && OPEN[c.status]) { var h = daysTo(d.hard); if (h < 0) bits.push({ t: 'The ' + (law(c).years === 2 && !c.long ? '2' : '5') + '-year limit passed ' + fmt(d.hard), c: 'var(--danger)' }); else if (h < 120) bits.push({ t: 'Final limit ' + fmt(d.hard), c: 'var(--warn)' }); }
     return bits;
   }
   var col = K && mountEl ? K.collection({

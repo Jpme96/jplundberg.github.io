@@ -69,12 +69,12 @@
   function hmShort(mins) { mins = Math.round(Math.abs(mins)); return mins >= 60 ? Math.floor(mins / 60) + ' h ' + pad(mins % 60) : mins + ' min'; }
   /* [key, label, icon, colour, value text, delta text, better?] */
   var ROWS = [
-    ['sleep', 'Sleep', 'moon-stars', '#8a6fdf', function (v) { return hm(v); }, function (d) { return (d > 0 ? '+' : '−') + hmShort(d * 60); }, 1, 'a night'],
-    ['steps', 'Steps', 'person-walking', '#22b35e', function (v) { return nf.format(Math.round(v)); }, function (d, a, b) { return (d > 0 ? '+' : '−') + Math.round(Math.abs(d / b) * 100) + '%'; }, 1, 'a day'],
-    ['exercise', 'Exercise', 'activity', '#e8743b', function (v) { return Math.round(v) + ' min'; }, function (d) { return (d > 0 ? '+' : '−') + Math.round(Math.abs(d)) + ' min'; }, 1, 'in total'],
-    ['workouts', 'Workouts', 'heart-pulse', '#d55181', function (v) { return String(v); }, function (d) { return (d > 0 ? '+' : '−') + Math.abs(d); }, 1, ''],
-    ['rhr', 'Resting HR', 'heart', '#e66767', function (v) { return Math.round(v) + ' bpm'; }, function (d) { return (d > 0 ? '+' : '−') + Math.round(Math.abs(d)); }, -1, 'average'],
-    ['mood', 'Mood', 'emoji-smile', '#c9a227', function (v) { return nf1.format(v) + ' / 5'; }, function (d) { return (d > 0 ? '+' : '−') + nf1.format(Math.abs(d)); }, 1, 'average'],
+    ['sleep', 'Sleep', 'moon-stars', 'var(--violet)', function (v) { return hm(v); }, function (d) { return (d > 0 ? '+' : '−') + hmShort(d * 60); }, 1, 'a night'],
+    ['steps', 'Steps', 'person-walking', 'var(--ok)', function (v) { return nf.format(Math.round(v)); }, function (d, a, b) { return (d > 0 ? '+' : '−') + Math.round(Math.abs(d / b) * 100) + '%'; }, 1, 'a day'],
+    ['exercise', 'Exercise', 'activity', 'var(--orange)', function (v) { return Math.round(v) + ' min'; }, function (d) { return (d > 0 ? '+' : '−') + Math.round(Math.abs(d)) + ' min'; }, 1, 'in total'],
+    ['workouts', 'Workouts', 'heart-pulse', 'var(--pink)', function (v) { return String(v); }, function (d) { return (d > 0 ? '+' : '−') + Math.abs(d); }, 1, ''],
+    ['rhr', 'Resting HR', 'heart', 'var(--danger)', function (v) { return Math.round(v) + ' bpm'; }, function (d) { return (d > 0 ? '+' : '−') + Math.round(Math.abs(d)); }, -1, 'average'],
+    ['mood', 'Mood', 'emoji-smile', 'var(--gold)', function (v) { return nf1.format(v) + ' / 5'; }, function (d) { return (d > 0 ? '+' : '−') + nf1.format(Math.abs(d)); }, 1, 'average'],
     ['habits', 'Habits on target', 'check2-circle', '#11a597', function (v, w) { return v + ' / ' + w.habitsOf; }, function (d) { return (d > 0 ? '+' : '−') + Math.abs(d); }, 1, '']
   ];
   function compare(w, p) {
@@ -143,7 +143,7 @@
     if (!Fe.on('hreport') || !Fe.on('healthpage') || !cfg().glance || !due(now)) return;
     var mon = reportWeek(now), rows = compare(week(mon), week(addDays(mon, -7)));
     if (!rows.length) return;
-    add(30, 'clipboard2-heart', '#d55181', 'Your week in health: ' + headline(rows).replace(/\.$/, ''), line(rows) || weekName(mon), /\/cmd\/habits\//.test(location.pathname) ? '#hreport' : '/cmd/habits/#hreport', { key: 'hrep:' + mon });
+    add(30, 'clipboard2-heart', 'var(--pink)', 'Your week in health: ' + headline(rows).replace(/\.$/, ''), line(rows) || weekName(mon), /\/cmd\/habits\//.test(location.pathname) ? '#hreport' : '/cmd/habits/#hreport', { key: 'hrep:' + mon });
   });
   /* ⌘K */
   (window.CommandExtra = window.CommandExtra || []).push(function () { return Fe.on('hreport') && Fe.on('healthpage') ? [{ i: 'clipboard2-heart', t: 'Weekly health report', s: 'Sleep, steps, training and mood vs last week', run: function () { location.href = '/cmd/habits/#hreport'; }, x: 'health report week uke helse rapport' }] : []; });

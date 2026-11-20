@@ -59,10 +59,10 @@
     var tk = dkey(now), h = prices(tk); if (!h) return;
     var cfg = Fe.tools().powercfg || {}; if (cfg.norgespris) return;
     var c3 = cheapest(h, 3, now.getHours()), cur = h[now.getHours()];
-    if (c3 && c3.h === now.getHours()) add(36, 'lightning-charge', '#22b35e', 'Cheap power now – ' + nf.format(Math.round(cur)) + ' øre', 'Good time to wash, dry or charge · until ' + pad(c3.h + 3) + ':00', (Fe.on('house') ? '/cmd/house/#power' : '/cmd/finance/#power'));
-    else if (c3 && now.getHours() >= 17 && now.getHours() < 23) add(48, 'lightning-charge', '#c98500', 'Cheapest power ' + pad(c3.h) + '–' + pad(c3.h + 3), nf.format(Math.round(c3.avg)) + ' øre/kWh · now ' + nf.format(Math.round(cur)) + ' øre', (Fe.on('house') ? '/cmd/house/#power' : '/cmd/finance/#power'));
+    if (c3 && c3.h === now.getHours()) add(36, 'lightning-charge', 'var(--ok)', 'Cheap power now – ' + nf.format(Math.round(cur)) + ' øre', 'Good time to wash, dry or charge · until ' + pad(c3.h + 3) + ':00', (Fe.on('house') ? '/cmd/house/#power' : '/cmd/finance/#power'));
+    else if (c3 && now.getHours() >= 17 && now.getHours() < 23) add(48, 'lightning-charge', 'var(--warn)', 'Cheapest power ' + pad(c3.h) + '–' + pad(c3.h + 3), nf.format(Math.round(c3.avg)) + ' øre/kWh · now ' + nf.format(Math.round(cur)) + ' øre', (Fe.on('house') ? '/cmd/house/#power' : '/cmd/finance/#power'));
   });
-  var TG = { 0: ['TG 0', 'No issues', '#22b35e'], 1: ['TG 1', 'Minor issues', '#3987e5'], 2: ['TG 2', 'Significant issues', '#c98500'], 3: ['TG 3', 'Serious issues', '#e66767'], iu: ['TG IU', 'Not examined', '#8b8f9a'] };
+  var TG = { 0: ['TG 0', 'No issues', 'var(--ok)'], 1: ['TG 1', 'Minor issues', 'var(--blue)'], 2: ['TG 2', 'Significant issues', 'var(--warn)'], 3: ['TG 3', 'Serious issues', 'var(--danger)'], iu: ['TG IU', 'Not examined', '#8b8f9a'] };
   /* NS 3451 (the building parts table): the main and two-digit groups, [code, English, Norwegian]. The standard is
      Standard Norge's – only these headings are kept here (the repo is public); three-digit codes are typed in and
      remembered per user (tools.fdvcodes). NS 3424 (condition surveys): TG 0–3 / IU, KG 0–3, survey level 1–3. */
@@ -81,10 +81,10 @@
   function nsLabel(code) { return code ? code + ' ' + nsName(code) : ''; }
   /* a finding's building part as one line: "23 Outer walls · 2nd floor, south" (older findings may only have their place) */
   function partLabel(x) { return [nsLabel(x.code), x.part].filter(Boolean).join(' · ') || (nb() ? 'Uten kode' : 'No code'); }
-  var KG = { 0: ['KG 0', 'No consequences', '#22b35e'], 1: ['KG 1', 'Small consequences', '#3987e5'], 2: ['KG 2', 'Medium consequences', '#c98500'], 3: ['KG 3', 'Large consequences', '#e66767'] };
+  var KG = { 0: ['KG 0', 'No consequences', 'var(--ok)'], 1: ['KG 1', 'Small consequences', 'var(--blue)'], 2: ['KG 2', 'Medium consequences', 'var(--warn)'], 3: ['KG 3', 'Large consequences', 'var(--danger)'] };
   /* priority from TG and KG (this app's own help, not a rule of the standard): TG × KG – 6 and up high, 3–5 medium, 1–2 low */
   function prio(x) { var t = +x.tg, k = +x.kg; if (!isFinite(t) || x.kg == null || x.kg === '' || !isFinite(k)) return null; var s = t * k; return s >= 6 ? 3 : s >= 3 ? 2 : s >= 1 ? 1 : 0; }
-  var PRIO = { 3: ['High', '#e66767'], 2: ['Medium', '#c98500'], 1: ['Low', '#3987e5'], 0: ['None', '#22b35e'] };
+  var PRIO = { 3: ['High', 'var(--danger)'], 2: ['Medium', 'var(--warn)'], 1: ['Low', 'var(--blue)'], 0: ['None', 'var(--ok)'] };
   var WHEN = { now: 'Now', y1: 'Within 1 year', y5: '1–5 years', y10: '5–10 years' };
   function summary(r) {
     var f = r.findings || [], by = function (t) { return f.filter(function (x) { return String(x.tg) === t; }); };

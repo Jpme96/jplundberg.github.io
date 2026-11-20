@@ -26,9 +26,9 @@
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(n || 0)) + ' kr'; }
   var KINDS = [
-    ['home', I18N.k('ui.pak-home', 'Home'), 'house-door', '#a0673a'], ['contract', I18N.k('ui.pak-contract', 'Contract'), 'file-earmark-text', '#3987e5'], ['insurance', I18N.k('ui.pak-insurance', 'Insurance'), 'shield-check', '#22b35e'],
-    ['loan', I18N.k('ui.pak-loan-bank', 'Loan & bank'), 'bank', '#11a597'], ['work', I18N.k('ui.pak-work', 'Work'), 'briefcase', '#e8743b'], ['id', I18N.k('ui.pak-id-certificates', 'ID & certificates'), 'person-vcard', '#8a6fdf'],
-    ['car', I18N.k('ui.pak-car', 'Car'), 'car-front', '#0891b2'], ['health', I18N.k('ui.pak-health', 'Health'), 'heart-pulse', '#d55181'], ['tax', I18N.k('ui.pak-tax', 'Tax'), 'percent', '#6b6d73'], ['other', I18N.k('ui.pak-other', 'Other'), 'folder2', '#7a8794']];
+    ['home', I18N.k('ui.pak-home', 'Home'), 'house-door', '#a0673a'], ['contract', I18N.k('ui.pak-contract', 'Contract'), 'file-earmark-text', 'var(--blue)'], ['insurance', I18N.k('ui.pak-insurance', 'Insurance'), 'shield-check', 'var(--ok)'],
+    ['loan', I18N.k('ui.pak-loan-bank', 'Loan & bank'), 'bank', '#11a597'], ['work', I18N.k('ui.pak-work', 'Work'), 'briefcase', 'var(--orange)'], ['id', I18N.k('ui.pak-id-certificates', 'ID & certificates'), 'person-vcard', 'var(--violet)'],
+    ['car', I18N.k('ui.pak-car', 'Car'), 'car-front', '#0891b2'], ['health', I18N.k('ui.pak-health', 'Health'), 'heart-pulse', 'var(--pink)'], ['tax', I18N.k('ui.pak-tax', 'Tax'), 'percent', '#6b6d73'], ['other', I18N.k('ui.pak-other', 'Other'), 'folder2', '#7a8794']];
   function kind(k) { return KINDS.filter(function (x) { return x[0] === k; })[0] || KINDS[KINDS.length - 1]; }
   var VERB = { expires: I18N.k('ui.pa-w-expires', 'expires'), renews: I18N.k('ui.pa-w-renews', 'renews'), ends: I18N.k('ui.pa-w-ends', 'ends'), review: I18N.k('ui.pa-w-review', 'look at it again') };
   var idb = null;
@@ -104,7 +104,7 @@
     var el = $t('paelse'); if (!el) return;
     if (!on()) { el.hidden = true; el.innerHTML = ''; return; }
     var rows = [];
-    if (Fe.on('house')) { var inv = Fe.list('hinv'), rc = inv.filter(function (x) { return x.receipt; }).length; if (!rc) rows.push(['box-seam', '#22b35e', 'Receipts on home items', inv.length ? rc + ' of ' + inv.length + ' items have a receipt' : 'Photos and receipts for your valuables', '/cmd/house/#hinv']); }
+    if (Fe.on('house')) { var inv = Fe.list('hinv'), rc = inv.filter(function (x) { return x.receipt; }).length; if (!rc) rows.push(['box-seam', 'var(--ok)', 'Receipts on home items', inv.length ? rc + ' of ' + inv.length + ' items have a receipt' : 'Photos and receipts for your valuables', '/cmd/house/#hinv']); }
     if (Fe.on('travel')) { var td = travelDocs(), nx = td.filter(function (d) { return isKey(d.expires) && daysTo(d.expires) >= 0; }).sort(function (a, b) { return a.expires < b.expires ? -1 : 1; })[0]; rows.push(['passport', '#0891b2', 'Travel documents', td.length ? td.length + ' saved' + (nx ? ' · next to expire: ' + (nx.name || 'document') + ' ' + fmt(nx.expires, { month: 'short', year: 'numeric' }) : '') : 'Passport, ID, EHIC and travel insurance', '/cmd/travel/#docs']); }
     if (Fe.on('house') && window.SharedHome) rows.push(['people', '#a0673a', 'Household register', 'Appendix B of the samboerkontrakt – from the Home inventory', '/cmd/house/#hinv']);
     el.hidden = !rows.length;
@@ -123,8 +123,8 @@
     var nofile = l.filter(function (x) { return !(x.files || []).length; }).length;
     el.hidden = false;
     var h = heroTile('folder2-open', I18N.k('ui.nav-papers', 'Papers'), l.length, nofile ? I18N.k('ui.pa-nofile', '{n} without a file', { n: nofile }) : l.length ? I18N.k('ui.pa-allfile', 'all with a file') : I18N.k('ui.none-yet', 'none yet'), '#papers', '#6b4bc4') +
-      heroTile('calendar-event', I18N.k('ui.next-date', 'Next date'), u ? esc(fmt(u.date, { day: 'numeric', month: 'short' })) : '–', u ? esc(u.title) : 'nothing in 12 months', '#pasoon', u && u.n <= 30 ? '#e8743b' : '#3987e5') +
-      heroTile('cash-coin', I18N.k('ui.per-year', 'Per year'), ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', '#22b35e');
+      heroTile('calendar-event', I18N.k('ui.next-date', 'Next date'), u ? esc(fmt(u.date, { day: 'numeric', month: 'short' })) : '–', u ? esc(u.title) : 'nothing in 12 months', '#pasoon', u && u.n <= 30 ? 'var(--orange)' : 'var(--blue)') +
+      heroTile('cash-coin', I18N.k('ui.per-year', 'Per year'), ins ? kr(ins) : '–', ins ? kr(ins / 12) + ' a month' : 'add what insurance costs', '#papers', 'var(--ok)');
     if (el.innerHTML !== h) el.innerHTML = h;
   }
   window.BriefExtra = window.BriefExtra || [];
@@ -133,7 +133,7 @@
     Fe.list('papers').map(function (x) { return [x, status(x)]; }).filter(function (p) { return p[1] && lead(p[0]) > 0 && p[1].n <= lead(p[0]) && p[1].n >= (p[0].dateKind === 'renews' ? 0 : -30); })
       .sort(function (a, b) { return a[1].n - b[1].n; }).slice(0, 3).forEach(function (p) {
         var x = p[0], s = p[1], k = kind(x.kind), dk = VERB[x.dateKind] ? x.dateKind : 'expires', v = VERB[dk], K = I18N.k;
-        add(s.n < 0 ? 30 : s.n <= 7 ? 38 : 56, k[2], s.n < 0 ? '#e66767' : s.n <= 7 ? '#e8743b' : k[3],
+        add(s.n < 0 ? 30 : s.n <= 7 ? 38 : 56, k[2], s.n < 0 ? 'var(--danger)' : s.n <= 7 ? 'var(--orange)' : k[3],
           x.title + ' ' + (s.n < 0 ? (dk === 'expires' ? K('ui.pa-has-expired', 'has expired') : dk === 'ends' ? K('ui.pa-has-ended', 'has ended') : K('ui.pa-was-due', 'was due')) : v + ' ' + s.rel),
           [fmt(s.date), x.who, x.dateKind === 'ends' ? K('ui.pa-cancel-before', 'cancel or renew before then') : x.dateKind === 'renews' ? K('ui.pa-check-price', 'check the price, or switch') : ''].filter(Boolean).join(' · '), '/cmd/papers/#papers=' + x.id);
       });

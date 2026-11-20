@@ -25,28 +25,28 @@
     /* only real copies: a bank row imported twice (same reference), or the same entry saved twice (same moment) –
        two coffees for the same price on the same day are left alone */
     (d.expenses || []).forEach(function (e) { if (!e || !e.date) return; var k = e.ref ? 'r|' + e.ref + '|' + e.date + '|' + (+e.amount || 0) : e.t ? 't|' + e.t + '|' + (+e.amount || 0) + '|' + String(e.note || '') : null; if (!k) return; if (seen[k]) dup.push(e.id); else seen[k] = 1; });
-    out.push({ id: 'dupexp', icon: 'files', c: '#e66767', t: 'The same spending twice', s: 'A bank row imported twice, or saved twice – one of each is kept', n: dup.length, where: 'vault',
+    out.push({ id: 'dupexp', icon: 'files', c: 'var(--danger)', t: 'The same spending twice', s: 'A bank row imported twice, or saved twice – one of each is kept', n: dup.length, where: 'vault',
       run: function (dd) { var ids = {}; dup.forEach(function (i) { ids[i] = 1; }); dd.expenses = (dd.expenses || []).filter(function (e) { return !ids[e.id]; }); } });
     var todos = rj('dash.todos', []) || [], oldT = todos.filter(function (x) { return x.done && (!x.doneAt || x.doneAt < ago(60)); });
-    out.push({ id: 'todos', icon: 'check2-square', c: '#22b35e', t: 'To-dos done over 2 months ago', s: 'Done is done', n: oldT.length, where: 'local', key: 'dash.todos',
+    out.push({ id: 'todos', icon: 'check2-square', c: 'var(--ok)', t: 'To-dos done over 2 months ago', s: 'Done is done', n: oldT.length, where: 'local', key: 'dash.todos',
       run: function (l) { return (l || []).filter(function (x) { return !(x.done && (!x.doneAt || x.doneAt < ago(60))); }); } });
     var notes = rj('dash.notes', []) || [];
-    out.push({ id: 'notes', icon: 'sticky', c: '#c98500', t: 'Empty notes', s: '', n: notes.filter(function (x) { return !String(x.text || '').trim(); }).length, where: 'local', key: 'dash.notes',
+    out.push({ id: 'notes', icon: 'sticky', c: 'var(--warn)', t: 'Empty notes', s: '', n: notes.filter(function (x) { return !String(x.text || '').trim(); }).length, where: 'local', key: 'dash.notes',
       run: function (l) { return (l || []).filter(function (x) { return String(x.text || '').trim(); }); } });
     var cal = rj('dash.calendar', {}) || {}, oldE = (cal.events || []).filter(function (e) { return e.date && e.date < ago(730) && !e.repeat && !e.rrule; });
-    out.push({ id: 'cal', icon: 'calendar-x', c: '#3987e5', t: 'Calendar events over 2 years old', s: 'One-off events only – repeating ones stay', n: oldE.length, where: 'local', key: 'dash.calendar',
+    out.push({ id: 'cal', icon: 'calendar-x', c: 'var(--blue)', t: 'Calendar events over 2 years old', s: 'One-off events only – repeating ones stay', n: oldE.length, where: 'local', key: 'dash.calendar',
       run: function (c) { c = c || {}; c.events = (c.events || []).filter(function (e) { return !(e.date && e.date < ago(730) && !e.repeat && !e.rrule); }); return c; } });
     var md = {}, mdup = [];
     (t.hmeter || []).forEach(function (m) { if (!m || !m.date) return; if (md[m.date]) mdup.push(m.id); else md[m.date] = 1; });
-    out.push({ id: 'meter', icon: 'speedometer2', c: '#c98500', t: 'Two meter readings on one day', s: 'The first one is kept', n: mdup.length, where: 'tools', run: function (tt) { var ids = {}; mdup.forEach(function (i) { ids[i] = 1; }); tt.hmeter = (tt.hmeter || []).filter(function (m) { return !ids[m.id]; }); } });
+    out.push({ id: 'meter', icon: 'speedometer2', c: 'var(--warn)', t: 'Two meter readings on one day', s: 'The first one is kept', n: mdup.length, where: 'tools', run: function (tt) { var ids = {}; mdup.forEach(function (i) { ids[i] = 1; }); tt.hmeter = (tt.hmeter || []).filter(function (m) { return !ids[m.id]; }); } });
     var blank = 0; LISTS.forEach(function (k) { (Array.isArray(t[k]) ? t[k] : []).forEach(function (x) { if (empty(x)) blank++; }); });
     out.push({ id: 'blank', icon: 'question-square', c: '#7a8794', t: 'Things with no name', s: 'Empty rows in wishes, upkeep, inventory, people …', n: blank, where: 'tools',
       run: function (tt) { LISTS.forEach(function (k) { if (Array.isArray(tt[k])) tt[k] = tt[k].filter(function (x) { return !empty(x); }); }); } });
     var goals = rj('dash.goals', []) || [], oldG = goals.filter(function (g) { return g.arch && g.done && g.done < ago(365); });
-    out.push({ id: 'goals', icon: 'trophy', c: '#3987e5', t: 'Goals reached over a year ago', s: 'From Done on the Goals page', n: oldG.length, where: 'local', key: 'dash.goals',
+    out.push({ id: 'goals', icon: 'trophy', c: 'var(--blue)', t: 'Goals reached over a year ago', s: 'From Done on the Goals page', n: oldG.length, where: 'local', key: 'dash.goals',
       run: function (l) { return (l || []).filter(function (g) { return !(g.arch && g.done && g.done < ago(365)); }); } });
     var oldW = (t.wbought || []).filter(function (x) { return x.bought && x.bought < ago(730); });
-    out.push({ id: 'wbought', icon: 'bag-check', c: '#8a6fdf', t: 'Wishes bought over 2 years ago', s: 'They stay in Home inventory and Finances', n: oldW.length, where: 'tools', run: function (tt) { tt.wbought = (tt.wbought || []).filter(function (x) { return !(x.bought && x.bought < ago(730)); }); } });
+    out.push({ id: 'wbought', icon: 'bag-check', c: 'var(--violet)', t: 'Wishes bought over 2 years ago', s: 'They stay in Home inventory and Finances', n: oldW.length, where: 'tools', run: function (tt) { tt.wbought = (tt.wbought || []).filter(function (x) { return !(x.bought && x.bought < ago(730)); }); } });
     var mem = Object.keys(d.catMemory || {}).length;
     out.push({ id: 'mem', icon: 'tags', c: '#11a597', t: 'Learned categories', s: 'Keeps the newest 300', n: Math.max(0, mem - 300), where: 'vault', run: function (dd) { var k = Object.keys(dd.catMemory || {}); k.slice(0, Math.max(0, k.length - 300)).forEach(function (x) { delete dd.catMemory[x]; }); } });
     return out;

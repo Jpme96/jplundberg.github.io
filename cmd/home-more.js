@@ -34,7 +34,7 @@
         var st = P && P.status ? P.status(x) : null;
         return '<li><a href="#papers=' + esc(x.id) + '"><b>' + esc(x.title) + '</b><small>' + esc([x.who, x.covers].filter(Boolean).join(' · ') || 'Add what it covers on the paper') + '</small></a>' +
           '<span class="ins-n"><b class="money">' + (x.cost ? esc(kr(x.cost)) + '<small>/yr</small>' : '–') + '</b><small>' + (x.excess ? 'excess ' + esc(kr(x.excess)) : 'no excess noted') + '</small></span>' +
-          (st ? chip(esc(st.rel), st.over ? '#e66767' : st.soon ? '#c98500' : '#7a8794') : '') + '</li>';
+          (st ? chip(esc(st.rel), st.over ? 'var(--danger)' : st.soon ? 'var(--warn)' : '#7a8794') : '') + '</li>';
       }).join('') + '</ul>' +
       '<p class="muted hl-small" data-t="ui.before-one-renews-compare-a-couple-of-of">Before one renews, compare a couple of offers (finn.no/forsikring, or ask your bank) – it’s often cheaper to move. Fill in “What it covers” and the excess on each insurance paper.</p></section>';
   }
@@ -58,7 +58,7 @@
     empty: I18N.k('ui.add-your-plants-with-how-often-they-want', 'Add your plants with how often they want water – tick them off when you’ve watered and you’re told which ones are thirsty.'),
     sort: function (a, b) { return due(a) < due(b) ? -1 : 1; },
     row: function (p) {
-      var n = days(today(), due(p)), c = n < 0 ? '#e66767' : n === 0 ? '#c98500' : '#22b35e';
+      var n = days(today(), due(p)), c = n < 0 ? 'var(--danger)' : n === 0 ? 'var(--warn)' : 'var(--ok)';
       return { icon: 'flower1', color: '#2f9e57', title: p.name, sub: esc([p.room, (EV.filter(function (x) { return x[0] === +p.every; })[0] || [0, ''])[1].toLowerCase()].filter(Boolean).join(' · ')),
         right: chip(n < 0 ? 'Thirsty' : n === 0 ? 'Today' : 'In ' + n + (n === 1 ? ' day' : ' days'), c) + '<span role="button" tabindex="0" class="check pl-w" data-plwater="' + esc(p.id) + '" aria-label="Watered ' + esc(p.name) + '"><i class="bi bi-droplet-fill"></i></span>' };
     }
@@ -70,7 +70,7 @@
     var c = cfg(), t = today();
     if (c.compare) policies().forEach(function (x) {
       var st = window.Papers && window.Papers.status ? window.Papers.status(x) : null; if (!st || st.over || st.n > +c.compareLead) return;
-      if (st.n === +c.compareLead || st.n === 14 || st.n <= 3) add(64, 'shield-check', '#22b35e', 'Compare prices for ' + x.title, 'Renews ' + st.rel + (x.cost ? ' · ' + kr(x.cost) + ' a year now' : ''), '/cmd/papers/#papers=' + x.id);
+      if (st.n === +c.compareLead || st.n === 14 || st.n <= 3) add(64, 'shield-check', 'var(--ok)', 'Compare prices for ' + x.title, 'Renews ' + st.rel + (x.cost ? ' · ' + kr(x.cost) + ' a year now' : ''), '/cmd/papers/#papers=' + x.id);
     });
     if (c.plantBrief && Fe.on('house')) {
       var th = Fe.list('plants').filter(function (p) { return due(p) <= t; });

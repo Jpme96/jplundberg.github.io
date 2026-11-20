@@ -15,8 +15,8 @@
   var GREEN = __c.GREEN, RED = __c.RED, AMBER = __c.AMBER, PAGE = __c.PAGE, esc = __c.esc, pct = __c.pct, lower = __c.lower, show = __c.show, src = __c.src, pace = __c.pace, fmtD = __c.fmtD, isKey = __c.isKey, GREY = __c.GREY, cfg = __c.cfg, on = __c.on, refresh = __c.refresh, goals = __c.goals, days = __c.days, today = __c.today, year = __c.year, sources = __c.sources, fin = __c.fin, kr = __c.kr, n2 = __c.n2, saveGoals = __c.saveGoals, toast = __c.toast, srcValue = __c.srcValue;
   function num(v) { var s = String(v == null ? '' : v).replace(/[\s kr]/gi, ''); if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); var x = parseFloat(s.replace(',', '.')); return isFinite(x) ? x : null; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-  var BLUE = '#3987e5';
-  var PURPLE = '#8a6fdf';
+  var BLUE = 'var(--blue)';
+  var PURPLE = 'var(--violet)';
   var CATS = [['money', 'Money', 'piggy-bank', GREEN], ['health', 'Health', 'heart-pulse', RED], ['home', 'Home', 'house-heart', AMBER], ['work', 'Work', 'briefcase', BLUE], ['learn', 'Learning', 'mortarboard', '#0891b2'], ['me', 'Personal', 'person', PURPLE]];
   function catOf(k) { return CATS.filter(function (c) { return c[0] === k; })[0] || null; }
   var root = PAGE ? document.getElementById('glRoot') : null;

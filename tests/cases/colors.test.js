@@ -32,6 +32,10 @@ const NAMED = { '22b35e': 'ok', 'c98500': 'warn', 'e66767': 'danger', 'e8743b': 
     for (const m of js.matchAll(/style=\\?"--c:' \+ (?!Tok\(|esc\(Tok\()([^+]+)\+/g)) raw.push(f + ': ' + m[1].trim());
   }
   check(!raw.length, 'colours drawn by scripts go through Tok() (light/dark tokens) ' + raw.slice(0, 4).join(' | '));
-  check(await (async () => true)(), 'Tok exists in features.js');
+  /* and these files use the status tokens, never the status hex (2026-11-20 – the list may only grow) */
+  const noHex = ["finance/fin-plan.js", "tools.js", "house-proj.js", "papers.js", "house-docs.js", "house-claims.js", "health-plus.js", "admin-clean.js", "life.js", "life-pages.js", "home-life.page.js", "finance/fin-now.js", "fin-tools.js", "budget.js", "wish.js", "life-more.js", "house-energy.js", "ahealth.js", "people-plus.js", "money-plus.page.js", "house-claims.page.js", "home-shared.page.js", "home-more.js", "goals.js", "wish.page.js", "people-plus.page.js", "house-proj.page.js", "house-move.js", "goals.page.js", "finance/fin-now2.js", "travel/trips.js", "travel/history.js", "money-plus.js", "life-pages.page.js", "house-plus.js", "house-homes.page.js"];
+  const hexLeft = [];
+  for (const f of noHex) { const js = fs.readFileSync(path.join(DIR, f), 'utf8'); if (/['"]#(22b35e|c98500|e66767|e8743b|3987e5|d9a400|c9a227|d55181|8a6fdf|5b6470)['"]/i.test(js)) hexLeft.push(f); }
+  check(!hexLeft.length, 'status colours in scripts are tokens ' + hexLeft.join(', '));
   await done();
 })();

@@ -25,7 +25,7 @@
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
   function readJSON(k, f) { try { var v = localStorage.getItem(k); return v === null ? f : JSON.parse(v); } catch (e) { return f; } }
   function on() { return Fe.on('house'); }
-  var AMBER = '#c98500';
+  var AMBER = 'var(--warn)';
   var GREY = '#7a8794';
   var DEF = { grid: 36, gridFixed: 415, markup: 0, norgespris: false, support: true, ocr: true, fdvSuggest: true, prosBrief: false };
   function cfg() { var c = Fe.tools().energycfg; var o = Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); var pc = Fe.tools().powercfg; if (pc && pc.norgespris) o.norgespris = true; return o; }
@@ -85,9 +85,9 @@
     });
     return out;
   }
-  var TRADES = [['electric', 'Electrician', 'lightning-charge', '#d9a400'], ['plumber', 'Plumber', 'droplet', '#3b9de0'], ['carpenter', 'Carpenter', 'hammer', '#a0673a'], ['painter', 'Painter', 'paint-bucket', '#8a6fdf'],
-    ['tiler', 'Tiler / wet rooms', 'grid-3x3', '#0891b2'], ['roofer', 'Roofer', 'house', '#7a6a58'], ['hvac', 'Heat pump / ventilation', 'fan', '#e66767'], ['cleaner', 'Cleaning', 'stars', '#11a597'],
-    ['lock', 'Locksmith', 'key', '#6b6d73'], ['garden', 'Garden', 'tree', '#2f9e57'], ['mover', 'Moving / transport', 'truck', '#c98500'], ['other', 'Other', 'person-gear', GREY]];
+  var TRADES = [['electric', 'Electrician', 'lightning-charge', 'var(--gold)'], ['plumber', 'Plumber', 'droplet', '#3b9de0'], ['carpenter', 'Carpenter', 'hammer', '#a0673a'], ['painter', 'Painter', 'paint-bucket', 'var(--violet)'],
+    ['tiler', 'Tiler / wet rooms', 'grid-3x3', '#0891b2'], ['roofer', 'Roofer', 'house', '#7a6a58'], ['hvac', 'Heat pump / ventilation', 'fan', 'var(--danger)'], ['cleaner', 'Cleaning', 'stars', '#11a597'],
+    ['lock', 'Locksmith', 'key', '#6b6d73'], ['garden', 'Garden', 'tree', '#2f9e57'], ['mover', 'Moving / transport', 'truck', 'var(--warn)'], ['other', 'Other', 'person-gear', GREY]];
   function trade(k) { return TRADES.filter(function (x) { return x[0] === k; })[0] || TRADES[TRADES.length - 1]; }
   (window.SearchExtra = window.SearchExtra || []).push(function (add) {
     if (!on()) return;

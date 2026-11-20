@@ -16,7 +16,7 @@
   function sum(l, f) { return l.reduce(function (a, x) { return a + (+(f ? f(x) : x.amount) || 0); }, 0); }
   var CATN = { groceries: 'Groceries', eating: 'Eating out', transport: 'Transport', shopping: 'Shopping', home: 'Home', fun: 'Fun', health: 'Health', travel: 'Travel', other: 'Other', fixed: 'Bills' };
   var CATI = { groceries: 'basket', eating: 'cup-hot', transport: 'bus-front', shopping: 'bag', home: 'house', fun: 'controller', health: 'heart-pulse', travel: 'airplane', other: 'three-dots', fixed: 'receipt' };
-  var CATC = { groceries: '#22b35e', eating: '#d95926', transport: '#3987e5', shopping: '#d55181', home: '#c98500', fun: '#8a6fdf', health: '#11a597', travel: '#0891b2', other: '#6b6d73', fixed: '#6b6d73' };
+  var CATC = { groceries: 'var(--ok)', eating: '#d95926', transport: 'var(--blue)', shopping: 'var(--pink)', home: 'var(--warn)', fun: 'var(--violet)', health: '#11a597', travel: '#0891b2', other: '#6b6d73', fixed: '#6b6d73' };
   function data() { var d = window.Vault.get(); if (!d) return null; d.budget = d.budget || { income: [], fixed: [] }; d.budget.fixed = d.budget.fixed || []; d.budget.income = d.budget.income || []; return d; }
 
   /* ---------- your accounts at a glance ---------- */
@@ -69,7 +69,7 @@
     box.innerHTML = '<div class="fn-pace-g"><div><small data-t="ui.this-week">This week</small><b>' + esc(kr(week)) + '</b></div>' + (room > 0 ? '<div><small data-t="ui.per-day-until-payday">Per day until payday</small><b>' + esc(kr(perDay)) + '</b></div>' : '') + '</div>' +
       (room > 0 ? '<div class="fn-bar" role="img" aria-label="' + Math.round(used * 100) + ' % of what you can spend used, ' + Math.round(share * 100) + ' % of the days gone"><i style="width:' + Math.min(100, used * 100).toFixed(1) + '%"></i><em style="left:' + Math.min(100, share * 100).toFixed(1) + '%"></em></div>' +
         '<p class="muted fn-pl">' + Math.round(used * 100) + ' % used · ' + Math.round(share * 100) + ' % of the days gone ' + state + '</p>' : '') +
-      (close.length ? '<ul class="fn-lims">' + close.map(function (c) { var r = sp[c] / lim[c]; return '<li><span>' + esc(CATN[c] || c) + '</span><span class="fn-lb"><i style="width:' + Math.min(100, r * 100).toFixed(0) + '%;background:' + (r >= 1 ? 'var(--danger)' : '#c98500') + '"></i></span><b>' + Math.round(r * 100) + ' %</b></li>'; }).join('') + '</ul>' : '');
+      (close.length ? '<ul class="fn-lims">' + close.map(function (c) { var r = sp[c] / lim[c]; return '<li><span>' + esc(CATN[c] || c) + '</span><span class="fn-lb"><i style="width:' + Math.min(100, r * 100).toFixed(0) + '%;background:' + (r >= 1 ? 'var(--danger)' : 'var(--warn)') + '"></i></span><b>' + Math.round(r * 100) + ' %</b></li>'; }).join('') + '</ul>' : '');
   }
 
   /* ---------- between you and your partner (Shared home / shared expenses) ---------- */

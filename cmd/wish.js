@@ -24,10 +24,10 @@
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
   function toast(h, undo) { if (window.Quick && window.Quick.toast) window.Quick.toast(h, undo); }
   function on() { return Fe.on('wish'); }
-  var RED = '#e66767';
-  var AMBER = '#c98500';
-  var GREEN = '#22b35e';
-  var PURPLE = '#8a6fdf';
+  var RED = 'var(--danger)';
+  var AMBER = 'var(--warn)';
+  var GREEN = 'var(--ok)';
+  var PURPLE = 'var(--violet)';
   var GREY = '#7a8794';
   var DEF = { share: 50, aside: 0, cool: 7, stale: 90, toFin: true, toInv: true, brief: true, sort: 'prio', clearBuy: true };
   function cfg() { var c = Fe.tools().wishcfg; return Object.assign({}, DEF, c && typeof c === 'object' ? c : {}); }

@@ -397,13 +397,13 @@ window.Loans = (function () {
 window.Accts = (function () {
   "use strict";
   var KINDS = {
-    salary: { name: 'Salary account', icon: 'cash-stack', c: '#8a6fdf' },
+    salary: { name: 'Salary account', icon: 'cash-stack', c: 'var(--violet)' },
     credit: { name: 'Credit card', icon: 'credit-card', c: '#d95926' },
-    card: { name: 'Card account', icon: 'credit-card-2-front', c: '#3987e5' },
-    savings: { name: 'Savings account', icon: 'piggy-bank', c: '#22b35e' },
+    card: { name: 'Card account', icon: 'credit-card-2-front', c: 'var(--blue)' },
+    savings: { name: 'Savings account', icon: 'piggy-bank', c: 'var(--ok)' },
     fund: { name: 'Fund account', icon: 'graph-up-arrow', c: '#0891b2' }
   };
-  var EXTRA_C = ['#0891b2', '#c98500', '#d55181', '#6b6d73', '#11a597'];
+  var EXTRA_C = ['#0891b2', 'var(--warn)', 'var(--pink)', '#6b6d73', '#11a597'];
   function list(d) {
     var b = (d && d.budget) || {}, names = b.accts || {}, own = Array.isArray(b.acctList) ? b.acctList : [];
     /* the three you start with can be renamed, given another type or removed (o.off) like any other */
@@ -538,7 +538,7 @@ window.Budget.cardBills = function (d, now) {
     window.Budget.cardBills(d).forEach(function (c) {
       if (!c.due || c.paid || c.days > 3) return;
       var late = c.days < 0;
-      add(late ? 5 : c.days === 0 ? 8 : 16, 'credit-card', late ? '#e66767' : '#c98500',
+      add(late ? 5 : c.days === 0 ? 8 : 16, 'credit-card', late ? 'var(--danger)' : 'var(--warn)',
         late ? I18N.k(c.days === -1 ? 'ui.ccb-late1' : 'ui.ccb-late', c.days === -1 ? '{a} bill is 1 day overdue' : '{a} bill is {n} days overdue', { a: c.acct.label, n: -c.days }) : c.days === 0 ? I18N.k('ui.ccb-today', '{a} bill is due today', { a: c.acct.label }) : I18N.k(c.days === 1 ? 'ui.ccb-in1' : 'ui.ccb-in', c.days === 1 ? '{a} bill due in 1 day' : '{a} bill due in {n} days', { a: c.acct.label, n: c.days }),
         (c.amount ? I18N.k('ui.about-n-dash', 'About {n} – ', { n: nf.format(Math.round(c.amount)) }) : '') + I18N.k('ui.ccb-pay-full', 'pay it in full to avoid card interest'), fin + '#c=flow', { key: 'cc:' + c.acct.id + ':' + c.month + (late ? ':late' : ''), badge: late || c.days === 0 });
     });
