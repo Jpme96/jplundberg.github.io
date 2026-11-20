@@ -181,11 +181,15 @@
         '<label class="mn-nw"><input type="checkbox" data-mnnw="' + esc(a.id) + '"' + (a.nw ? ' checked' : '') + '> In net worth</label></li>';
       var lim = cr && a.limit ? '<span class="mn-bar"><i style="width:' + Math.min(100, (v || 0) / a.limit * 100).toFixed(1) + '%;background:' + ((v || 0) / a.limit > .8 ? 'var(--danger)' : (v || 0) / a.limit > .5 ? 'var(--warn)' : a.c) + '"></i></span>' : '';
       var sub = v == null ? '<button type="button" class="text-btn" data-mnedit data-t="ui.add-the-balance">Add the balance</button>' :
-        (cr && a.limit ? money(Math.max(0, a.limit - v)) + ' free of ' + money(a.limit) + ' · ' : '') + esc(ago(a.balAt)) + (a.balSrc === 'import' ? ' · from import' : '') + (a.nw ? '' : ' · not in net worth');
+        (cr && a.limit ? money(Math.max(0, a.limit - v)) + ' free of ' + money(a.limit) + ' · ' : '') + esc(ago(a.balAt)) + (a.balSrc === 'import' ? ' · ' + esc(I18N.k('ui.mn-from-file', 'from a file')) : a.balSrc === 'bank' ? ' · <i class="bi bi-bank mn-src" aria-hidden="true"></i> ' + esc(I18N.k('ui.mn-from-bank', 'from the bank')) : '') +
+          /* small marks instead of the words on every line (JP 2026-11-20: "not in net worth" everywhere was confusing) – explained once under the list */
+          (a.shared ? ' · <i class="bi bi-people mn-mark" title="' + esc(I18N.k('ui.mn-shared', 'Shared – half counts as yours')) + '"></i>' : '') + (a.nw ? '' : ' <i class="bi bi-eye-slash mn-mark" title="' + esc(I18N.k('ui.mn-not-nw', 'Not counted in net worth')) + '"></i>');
       return '<li class="mn-row' + (v == null ? ' none' : '') + '"><span class="pa-ico" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span><span class="mn-n">' + esc(a.label) + '<small>' + sub + '</small>' + lim + '</span>' +
         (v == null ? '<span class="muted">–</span>' : money(cr ? -Math.max(0, v) : v, cr && v > 0 ? 'neg' : '')) + '</li>';
     };
-    box.innerHTML = setup + '<ul class="mn-list">' + list.map(row).join('') + '</ul>' +
+    var anyOff = !monEditing && list.some(function (a) { return a.bal != null && !a.nw; }), anySh = !monEditing && list.some(function (a) { return a.shared; });
+    var key = anyOff || anySh ? '<p class="muted mn-key">' + (anyOff ? '<i class="bi bi-eye-slash"></i> ' + esc(I18N.k('ui.mn-not-nw', 'Not counted in net worth')) + ' <small>(' + esc(I18N.k('ui.mn-not-nw-how', 'change it under Update')) + ')</small>' : '') + (anyOff && anySh ? ' · ' : '') + (anySh ? '<i class="bi bi-people"></i> ' + esc(I18N.k('ui.mn-shared', 'Shared – half counts as yours')) : '') + '</p>' : '';
+    box.innerHTML = setup + '<ul class="mn-list">' + list.map(row).join('') + '</ul>' + key +
       (m.known && !monEditing ? '<div class="mn-tot"><span>In your accounts<b>' + money(m.cash) + '</b></span>' + (m.owed || m.limit ? '<span>Owed on cards<b class="neg">' + money(-m.owed) + '</b></span>' : '') + (m.saved ? '<span>Savings &amp; funds<b>' + money(m.saved) + '</b></span>' : '') + '<span>Net worth<b>' + money(m.worth) + '</b></span></div>' : '') +
       (!monEditing && list.length > 1 ? transfers(d) : '') +
       (monEditing ? '<p class="muted mn-p">Type what your bank shows now. Importing a file afterwards moves the balance on by itself (or takes the balance column, when the file has one).</p>' :

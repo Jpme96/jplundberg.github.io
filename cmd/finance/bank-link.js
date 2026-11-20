@@ -95,6 +95,16 @@
     window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
     return id;
   }
+  /* an account you share (Felleskonto): half of its purchases count as yours, and its balance goes to the shared app */
+  function partner() { try { return (window.ShareSpace && ShareSpace.partnerName && ShareSpace.partnerName()) || K('ui.bk-partner', 'your partner'); } catch (e) { return K('ui.bk-partner', 'your partner'); } }
+  function isShared(id) { return (((V().budget || {}).acctList) || []).some(function (x) { return x && x.id === id && x.shared; }); }
+  function setShared(id, on) {
+    var d = V(); d.budget = d.budget || {}; var L = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [];
+    var e = L.filter(function (x) { return x.id === id; })[0]; if (!e) { e = { id: id, kind: window.Accts ? Accts.kind(d, id) : 'card' }; L.push(e); }
+    if (on) e.shared = true; else delete e.shared;
+    window.Vault.save(d); window.dispatchEvent(new Event('fin:change'));
+    if (window.ShareSpace && ShareSpace.sync) try { ShareSpace.sync(); } catch (er) {}
+  }
   function untilTxt(u) { if (!u) return ''; var days = Math.round((new Date(u) - Date.now()) / 864e5); return days < 0 ? K('ui.bk-ended', 'ended – connect again') : K('ui.bk-until', 'until {d} ({n} days)', { d: new Date(u).toLocaleDateString(I18N && I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short' }), n: days }); }
   /* the banks send the account holder's name as "name" (JP's accounts all said "John Paul Lundberg"): ask each account
      once for its product name ("Brukskonto", "Sparekonto") and use that, the holder's name in small type */
@@ -128,7 +138,8 @@
         (l.accts || []).map(function (a, ai) {
           return '<label class="bk-acct"><span><b>' + esc(a.name || K('ui.bk-account', 'Account')) + '</b><small class="muted">' + esc((a.last4 ? '•• ' + a.last4 : '') + (a.holder && a.holder !== a.name ? ' · ' + a.holder : '') + (a.from ? ' · ' + K('ui.bk-fetched', 'fetched to {d}', { d: a.from }) : '')) + '</small></span>' +
             '<select data-bkmap="' + li + ':' + ai + '"><option value="">' + esc(K('ui.bk-skip', 'Don’t fetch')) + '</option>' + L.map(function (x) { return '<option value="' + esc(x.id) + '"' + (a.acct === x.id ? ' selected' : '') + '>' + esc(x.label) + '</option>'; }).join('') +
-            '<option value="+new">' + esc(K('ui.bk-new-acct', '+ New account: {n}', { n: newName(l.aspsp, a) })) + '</option></select></label>';
+            '<option value="+new">' + esc(K('ui.bk-new-acct', '+ New account: {n}', { n: newName(l.aspsp, a) })) + '</option></select></label>' +
+            (a.acct ? '<label class="bk-shared"><input type="checkbox" data-bkshared="' + esc(a.acct) + '"' + (isShared(a.acct) ? ' checked' : '') + '> ' + esc(K('ui.bk-shared', 'Shared with {p} – half of each purchase counts as yours, and {p} sees the balance', { p: partner() })) + '</label>' : '');
         }).join('') + '</div>';
     }).join('');
     var names = (aspspList || MINE.map(function (n) { return { name: n }; })).map(function (x) { return x.name; });
@@ -267,6 +278,15 @@
     var got = pre ? Promise.resolve(pre) : Promise.all(list.map(function (x) { return pull(x.a).then(function (r) { return { x: x, r: r }; }, function (e) { return { x: x, err: e }; }); }));
     got.then(function (res) {
       cache = null; notice(0);
+      /* moves between your own connected accounts: out of one and into another, the same amount, within a day */
+      var own = {}, flows = [];
+      res.forEach(function (it) { if (!it.r) return; it.r.rows.slice(1).forEach(function (x) { var a = +x[2]; if (a) flows.push({ u: it.x.a.uid, d: x[0], c: Math.round(Math.abs(a) * 100), out: a < 0 }); }); });
+      var dayN = function (k) { return Math.round(new Date(k + 'T12:00') / 864e5); };
+      flows.forEach(function (o) {
+        if (!o.out) return;
+        var m = flows.filter(function (i2) { return !i2.out && !i2.used && i2.u !== o.u && i2.c === o.c && Math.abs(dayN(i2.d) - dayN(o.d)) <= 1; })[0];
+        if (m) { m.used = 1; own['out|' + o.d + '|' + o.c] = 1; own['in|' + m.d + '|' + m.c] = 1; }
+      });
       var i = 0;
       function next() {
         if (i >= res.length) {
@@ -281,9 +301,9 @@
           said.push(label + ': ' + (expired ? K('ui.bk-renew-needed', 'connect again') : K('ui.bk-failed', 'didn’t answer')));
           return next();
         }
-        var test = window.BankImport.analyse(it.r.rows, { acct: acct, card: false });
+        var test = window.BankImport.analyse(it.r.rows, { acct: acct, card: false, own: own });
         if (test.error || !test.rows.length) { setBal(acct, it.r.bal); markFrom(it.x.a.uid, it.r.newest); said.push(label + ': ' + K('ui.bk-nothing', 'nothing new')); return next(); }
-        BankImport.show(it.r.rows, acct, function () { markFrom(it.x.a.uid, it.r.newest); next(); });
+        BankImport.show(it.r.rows, acct, function () { markFrom(it.x.a.uid, it.r.newest); next(); }, own);
       }
       next();
     }).catch(function (e) { busy = false; setup('<i class="bi bi-exclamation-triangle"></i> ' + esc(e.message)); });
@@ -291,6 +311,8 @@
 
   /* ---------- a quiet look when Finances opens (at most every six hours – banks allow a few looks a day without you) ---------- */
   function notice(n) {
+    /* the bell (notes-panel.js) shows it too, on every page */
+    try { if (n) localStorage.setItem('dash.bankNew', JSON.stringify({ n: n, at: Date.now() })); else localStorage.removeItem('dash.bankNew'); } catch (e) {}
     var card = document.querySelector('.card.spending .card-head'); if (!card) return;
     var el = card.querySelector('.bk-new');
     if (!n) { if (el) el.remove(); return; }
@@ -342,6 +364,7 @@
       var p = s.getAttribute('data-bkmap').split(':'), lk = ((B() || {}).links || [])[+p[0]], ba = lk && lk.accts[+p[1]], val = s.value || null;
       if (val === '+new' && ba) { val = addAcct(lk.aspsp, ba); setTimeout(setup, 0); }
       saveBank(function (b) { var a = b.links[+p[0]] && b.links[+p[0]].accts[+p[1]]; if (a) a.acct = val; }); var f = document.querySelector('.qa-acts [data-bkfetch]'); if (!f) setup(); return; }
+    var sh = e.target.closest('[data-bkshared]'); if (sh) { setShared(sh.getAttribute('data-bkshared'), sh.checked); return; }
     var pk = e.target.closest('[data-bkpick]'); if (pk) pk.dataset.touched = '1';
   });
   /* a clear button on Finances → Accounts (JP 2026-11-20: it was only behind the small upload icon on Spending):
@@ -354,10 +377,13 @@
     el.innerHTML = '<i class="bi bi-' + (on ? 'arrow-repeat' : 'bank') + '"></i> ' + esc(on ? K('ui.bk-fetch-bank', 'Fetch from bank') : K('ui.bk-connect-bank', 'Connect bank'));
   }
   window.addEventListener('fin:change', acctBtn);
-  function hash() { if (location.hash === '#bank') { history.replaceState(null, '', location.pathname + location.search); setTimeout(setup, 350); } }
+  function hash() {
+    if (location.hash === '#bank') { history.replaceState(null, '', location.pathname + location.search); setTimeout(setup, 350); }
+    if (location.hash === '#bankreview') { history.replaceState(null, '', location.pathname + location.search); setTimeout(function () { fetchAll(cache || null); }, 450); }   /* from the bell */
+  }
   window.addEventListener('hashchange', hash);
   window.Vault.onUnlock(function () { back(); hash(); acctBtn(); setTimeout(quiet, 2500); });
   acctBtn();
 
-  window.BankLink = { block: block, setup: setup, fetch: fetchAll, balances: balances, jwt: jwt, der: der, pull: pull, _api: api };
+  window.BankLink = { block: block, setup: setup, fetch: fetchAll, balances: balances, setShared: setShared, jwt: jwt, der: der, pull: pull, _api: api };
 })();

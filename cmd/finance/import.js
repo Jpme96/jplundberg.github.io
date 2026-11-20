@@ -157,6 +157,8 @@
     var ownName = (function () { try { return (JSON.parse(localStorage.getItem('dash.profile')) || {}).name || ''; } catch (e) { return ''; } })();
     var haveIn = {};
     (d.extra || []).forEach(function (e) { if (e.ref) haveIn[e.ref] = 1; });
+    /* rows you left out before (unticked – a move between your accounts, a refund you don't count) don't come back (2026-11-20) */
+    (d.skipRefs || []).forEach(function (x) { if (x && x.r) { have[x.r] = 1; haveIn[x.r] = 1; } });
     var SALARY = /lønn|lonn|salary|feriepeng|utbetaling nav|skatteetaten|skatt til gode/i, OWN = /innbetaling|overføring|overforing|fra konto|egen konto|sparekonto|nettbank|revolut/i;
     var out = [], skipped = { income: 0, dup: 0, bad: 0 }, salaries = [];
     parsed.forEach(function (x) {
@@ -204,6 +206,11 @@
       }
       out.push({ recur: recur, date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : (memory[norm(note)] || guess2(note, x.desc, memory)), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
     });
+    /* moves between your own connected accounts (bank-link.js matched money out of one and into another, same amount,
+       within a day): a transfer, left out of spending and of money in (JP 2026-11-20) */
+    if (opts.own) out.forEach(function (r) {
+      if (opts.own[(r.income ? 'in|' : 'out|') + r.date + '|' + Math.round(r.amount * 100)]) { r.transfer = true; r.on = false; r.why = 'between your own accounts'; }
+    });
     out.sort(function (a, b) { return b.date.localeCompare(a.date); });
     /* the account's balance after this file: the file's own balance column if it has one, otherwise the
        balance you typed in moved on by every row after that day (transfers and salary too – they're real money) */
@@ -221,7 +228,7 @@
     }
     /* one amount per month (a salary split in two rows is added up) */
     var pay = {}; salaries.forEach(function (x) { var k = x.date.slice(0, 7); pay[k] = (pay[k] || 0) + x.amount; });
-    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows, bal: bal, pay: pay };
+    return { rows: out, skipped: skipped, memory: memory, card: card, acct: acct, kind: kind, sig: sig, source: rows, bal: bal, pay: pay, own: opts.own || null };
   }
 
   /* ---------- Excel files (.xlsx): a zip of XML, read without any library ---------- */
@@ -323,6 +330,8 @@
       '<label class="qa-check im-sign"><input type="checkbox" data-card' + (res.card ? ' checked' : '') + '> Purchases are positive amounts in this file</label>';
     var per = window.Budget && window.Budget.period(window.Vault.get() || {}), inPer = per ? rows.filter(function (r) { return r.on && !r.bill && !r.income && per.has(r.date); }).reduce(function (a, r) { return a + r.amount; }, 0) : 0;
     var balLine = res.bal ? '<p class="muted im-p im-per"><i class="bi bi-bank2"></i> ' + (res.kind === 'credit' ? 'Owed on the card' : 'Balance') + ' after this file: <b>' + esc(nf.format(res.bal.to)) + '</b> (' + esc(res.bal.how) + ')</p>' : '';
+    var shAcct = res.acct && ((((window.Vault.get() || {}).budget || {}).acctList) || []).some(function (a) { return a && a.id === res.acct && a.shared; });
+    if (shAcct) balLine += '<p class="muted im-p im-per"><i class="bi bi-people"></i> ' + esc(I18N.k('ui.im-half', 'A shared account – half of each purchase counts as yours')) + '</p>';
     var perLine = balLine + (per ? '<p class="muted im-p im-per"><i class="bi bi-pie-chart"></i> <span id="imPer">' + esc(nf.format(inPer)) + '</span> of this counts in your budget now (' + esc(per.name) + ') – the rest is in earlier periods and shows in the statistics.</p>' : '');
     if (!rows.length) { open('<h2 class="im-h"><i class="bi bi-bank"></i> Nothing new</h2><p class="muted im-p">' + (sk.dup ? 'Every expense in that file is already in Spending' : 'No spending found in that file') + (note.length ? ' (' + note.join(', ') + ')' : '') + '.</p>' + signRow + '<div class="qa-acts"><span class="spacer"></span><button type="button" class="pill-btn wide" data-close>OK</button></div>'); return; }
     var total = rows.filter(function (r) { return r.on && !r.bill; }).reduce(function (a, r) { return a + (r.income ? -r.amount : r.amount); }, 0);
@@ -364,6 +373,7 @@
     if (per && p) p.textContent = nf.format(found.rows.filter(function (r) { return r.on && !r.bill && !r.income && per.has(r.date); }).reduce(function (a, r) { return a + r.amount; }, 0));
   }
   function doImport() {
+    var halfAcct = !!(found.acct && ((((window.Vault.get() || {}).budget || {}).acctList) || []).some(function (a) { return a && a.id === found.acct && a.shared; }));
     var d = window.Vault.get(); d.expenses = d.expenses || []; d.catMemory = d.catMemory || {}; d.paid = d.paid || {}; d.extra = d.extra || [];
     var n = 0, bills = 0, nin = 0, t0 = Date.now();
     found.rows.forEach(function (r, i) {
@@ -389,7 +399,9 @@
         var per0 = window.Budget && window.Budget.period(d);
         if (per0 && per0.has(r.date)) { var k2 = r.date.slice(0, 7), l2 = d.paid[k2] = d.paid[k2] || []; if (l2.indexOf(fid) < 0) l2.push(fid); bills++; return; }
       }
-      d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined });
+      /* from an account you share (Felleskonto): half of it is yours – the whole stays in `full` (JP 2026-11-20) */
+      if (halfAcct) d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: Math.round(r.amount * 50) / 100, full: r.amount, half: 1, cat: r.cat, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined });
+      else d.expenses.push({ id: uid(), t: t0 + i, date: r.date, amount: r.amount, cat: r.cat, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined });
       d.catMemory[norm(r.desc)] = r.cat; n++;
     });
     /* a credit-card payment found in the salary/card account file marks that month's card bill as paid */
@@ -417,6 +429,11 @@
     var keys = Object.keys(d.catMemory); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.catMemory[k]; });
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
+    /* remember what was left out, so the next fetch or the same file doesn't bring it back (kept 150 days, 1500 at most) */
+    var cutS = Date.now() - 150 * 864e5; d.skipRefs = (d.skipRefs || []).filter(function (x) { return x && x.t > cutS; });
+    found.rows.forEach(function (r) { if (!r.on && r.ref && !r.bill) d.skipRefs.push({ r: r.ref, t: Date.now() }); });
+    d.skipRefs = d.skipRefs.slice(-1500);
+    window.Vault.save(d);
     var nx = afterImport; afterImport = null;
     close();
     if (nx) setTimeout(function () { nx(found); }, 450);
@@ -431,7 +448,7 @@
     if (e.target.closest('[data-pick]')) { if (!chosen && bg.querySelector('[data-pickacct]')) return; file.value = ''; file.click(); return; }
     if (e.target.closest('[data-import]')) { doImport(); return; }
     var ab = e.target.closest('[data-acct]');
-    if (ab && found && found.source) { chosen = ab.dataset.acct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} preview(analyse(found.source, { acct: chosen })); return; }
+    if (ab && found && found.source) { chosen = ab.dataset.acct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} preview(analyse(found.source, { acct: chosen, own: found.own })); return; }
   });
   bg.addEventListener('change', function (e) {
     var cb = e.target.closest('input[data-i]');
@@ -441,7 +458,7 @@
     var sel = e.target.closest('select[data-cat]');
     if (sel) { found.rows[+sel.dataset.cat].cat = sel.value; return; }
     var cc = e.target.closest('input[data-card]');
-    if (cc && found && found.source) preview(analyse(found.source, { card: cc.checked, acct: found.acct || undefined }));
+    if (cc && found && found.source) preview(analyse(found.source, { card: cc.checked, acct: found.acct || undefined, own: found.own }));
   });
   file.addEventListener('change', function () {
     var f = file.files && file.files[0]; if (!f) return;
@@ -485,8 +502,8 @@
   /* rows fetched from the bank (bank-link.js) go through the same preview as a file: you see them, untick what you
      don't want, and the same rules apply (duplicates, transfers, card payments, the balance) */
   window.BankImport = {
-    analyse: analyse,
-    show: function (rows, acct, next) { var res = analyse(rows, { acct: acct, card: false }); if (res.error) return res; afterImport = next || null; preview(res); return res; },
+    analyse: analyse, norm: norm, cats: CATS,
+    show: function (rows, acct, next, own) { var res = analyse(rows, { acct: acct, card: false, own: own }); if (res.error) return res; afterImport = next || null; preview(res); return res; },
     open: open, close: close, sheet: bg
   };
 })();

@@ -172,6 +172,7 @@
     vote: ['date', 'opts', 'pick', 'from', 'at'],
     keys: ['list'],                                                          /* earlier shared keys, so older chat messages stay readable */                             /* dinner voting: 2–3 suggestions, the other one picks */
     pantry: ['name', 'state'],
+    facct: ['name', 'bal', 'at'],                                            /* a shared account's balance (Felleskonto), one way from cmd – 2026-11-20 */
     recipe: ['title', 'mins', 'serves', 'ingr', 'steps', 'link'],
     bill: ['name', 'day', 'amount', 'part', 'payer', 'next'],
     trip: ['name', 'dest', 'start', 'end', 'pack'],

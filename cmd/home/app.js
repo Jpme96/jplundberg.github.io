@@ -187,7 +187,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 333;
+  var APPV = 334;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -545,12 +545,17 @@
     return '<h2 class="h-h">' + L('Home bills · your part ', 'Regninger · din del ') + esc(kr(tot)) + L(' a month', ' i måneden') + '</h2><ul class="h-list">' + l.map(function (r) { var f = r.f;
       return '<li><span class="h-row"><span>' + esc(f.name) + '<small>' + esc(fdate(f.next, { day: 'numeric', month: 'short' }) + ' · ' + (f.payer === 'o' ? o + L(' pays it', ' betaler') : f.payer === 'p' ? L('you pay it', 'du betaler') : L('you each pay your part', 'dere betaler hver deres del')) + ' · ' + L('of ', 'av ') + kr(f.amount)) + '</small></span><b>' + esc(kr(f.part)) + '</b></span></li>'; }).join('') + '</ul>';
   }
+  /* an account you share (Felleskonto): its balance, from cmd (2026-11-20) */
+  function faccts() {
+    var l = list('facct'); if (!l.length) return '';
+    return '<ul class="h-list h-facct">' + l.map(function (r) { var f = r.f || {}; return '<li><span class="h-row"><span><i class="bi bi-people"></i> ' + esc(f.name || L('Shared account', 'Felles konto')) + '<small>' + esc(f.at ? fdate(f.at, { day: 'numeric', month: 'short' }) : '') + '</small></span><b>' + esc(kr(f.bal)) + '</b></span></li>'; }).join('') + '</ul>';
+  }
   function money() {
     if ((info().what || {}).money === false) return bills() || '<p class="h-sum">' + L('Nothing shared here yet.', 'Ingenting delt her ennå.') + '</p>';
     var b = balance(), o = owner();
     var rows = list('sx').map(function (r) { return { d: r.f.date, r: r, k: 'sx' }; }).concat(list('pay').map(function (r) { return { d: r.f.date, r: r, k: 'pay' }; })).concat(list('led').map(function (r) { return { d: r.f.date, r: r, k: 'led' }; })).sort(function (a, c) { return a.d < c.d ? 1 : a.d > c.d ? -1 : c.r.t - a.r.t; });
     var shown = showAllMoney ? rows : rows.slice(0, 12);
-    return '<div class="h-bal ' + (Math.abs(b) < 1 ? 'even' : b > 0 ? 'owe' : 'get') + '"><small>' + (Math.abs(b) < 1 ? L('You’re even', 'Dere er skuls') : b > 0 ? L('You owe ', 'Du skylder ') + esc(o) : esc(o) + L(' owes you', ' skylder deg')) + '</small><b>' + (Math.abs(b) < 1 ? '0 kr' : esc(kr(Math.abs(b)))) + '</b>' +
+    return faccts() + '<div class="h-bal ' + (Math.abs(b) < 1 ? 'even' : b > 0 ? 'owe' : 'get') + '"><small>' + (Math.abs(b) < 1 ? L('You’re even', 'Dere er skuls') : b > 0 ? L('You owe ', 'Du skylder ') + esc(o) : esc(o) + L(' owes you', ' skylder deg')) + '</small><b>' + (Math.abs(b) < 1 ? '0 kr' : esc(kr(Math.abs(b)))) + '</b>' +
       (Math.abs(b) >= 1 ? '<button type="button" class="h-btn sm" data-settle>' + L('Settle up', 'Gjør opp') + '</button>' : '') + '</div>' +
       '<button type="button" class="h-btn ghost wide" data-addcost><i class="bi bi-plus-lg"></i> ' + L('Add a shared cost', 'Legg til en felles utgift') + '</button>' +
       (rows.length ? '<p class="h-small h-key"><b class="pos">+</b> ' + esc(o) + L(' owes you for it', ' skylder deg for det') + ' · <b class="neg">−</b> ' + L('you owe ', 'du skylder ') + esc(o) + L(' for it', ' for det') + '</p><ul class="h-list">' + shown.map(function (x) {

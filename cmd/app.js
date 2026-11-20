@@ -18,17 +18,33 @@
      never while you're typing – so two devices never run different versions of the sync for long. */
   (function () {
     var mine = null, newer = false;
+    /* the page you have may itself be the old one (it opens from the saved copy while the new one downloads – JP
+       2026-11-20: "I had to reload twice"): compare the scripts this page runs with the ones on the server's page */
+    function ver(html) { var m = String(html || '').match(/dist\/tail\.js\?v=([\w]+)/); return m ? m[1] : null; }
+    var running = ver((document.querySelector('script[src*="dist/tail.js"]') || {}).src);
     function check() {
-      return fetch('/cmd/sw.js', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
-        var m = t.match(/var CACHE = '([^']+)'/); if (!m) return;
-        if (mine === null) mine = m[1]; else if (m[1] !== mine) newer = true;
+      return fetch(location.pathname, { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok && !r.redirected ? r.text() : ''; }).then(function (t) {
+        var v = ver(t); if (!v || !running) return;
+        if (v !== running) { newer = true; bar(); }
       }, function () {});
     }
+    /* "New version – Update": one tap loads it (the saved copy is fresh by then) */
+    function bar() {
+      if (document.getElementById('nvBar') || document.hidden) return;
+      var el = document.createElement('div'); el.id = 'nvBar'; el.className = 'nv-bar'; el.setAttribute('role', 'status');
+      el.innerHTML = '<i class="bi bi-stars"></i><span>' + (window.I18N ? I18N.k('ui.nv-ready', 'A new version of cmd is ready') : 'A new version of cmd is ready') + '</span><button type="button" class="pill-btn" data-nvgo>' + (window.I18N ? I18N.k('ui.nv-update', 'Update') : 'Update') + '</button><button type="button" class="icon-btn sm" data-nvx aria-label="Later"><i class="bi bi-x-lg"></i></button>';
+      document.body.appendChild(el);
+    }
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-nvgo]')) { var sw = navigator.serviceWorker, go = function () { location.reload(); }; if (sw && sw.getRegistration) sw.getRegistration('/cmd/').then(function (r) { return r && r.update(); }).then(function () { setTimeout(go, 300); }, go); else go(); return; }
+      if (e.target.closest('[data-nvx]')) { var b0 = document.getElementById('nvBar'); if (b0) b0.remove(); }
+    });
+    window.__nvCheck = check;
     function busy() { var e = document.activeElement; return !!(e && (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT' || e.isContentEditable) && String(e.value || e.textContent || '').trim()); }
     function maybe() { if (!newer || busy() || document.querySelector('.st-backdrop:not([hidden]) form, dialog[open]')) return; newer = false;
       var go = function () { location.reload(); }, sw = navigator.serviceWorker;
       if (sw && sw.getRegistration) sw.getRegistration('/cmd/').then(function (r) { return r && r.update(); }).then(function () { setTimeout(go, 700); }, go); else go(); }
-    setTimeout(check, 4000);
+    setTimeout(check, 2500);
     setInterval(function () { check().then(function () { if (document.hidden) maybe(); }); }, 15 * 60 * 1000);
     document.addEventListener('visibilitychange', function () { if (document.hidden) { if (newer) maybe(); return; } check().then(maybe); });
   })();

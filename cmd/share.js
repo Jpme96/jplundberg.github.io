@@ -46,7 +46,7 @@
   var OFF_FIRST = { pantry: 1, recipes: 1 };
   /* what they may change, per area (view = they see it but can't change it) */
   var AREAS = [['shop', I18N.k('ui.shopping-list', 'Shopping list')], ['meals', I18N.k('ui.dinner-plan', 'Dinner plan')], ['pantry', I18N.k('ui.pantry', 'Pantry')], ['chores', I18N.k('ui.chores', 'Chores')], ['money', I18N.k('ui.money-between-you', 'Money between you')], ['cal', I18N.k('ui.calendar', 'Calendar')], ['trips', I18N.k('ui.trips', 'Trips')], ['plants', I18N.k('ui.plants', 'Plants')], ['move', I18N.k('ui.moving-checklist', 'Moving checklist')], ['notes', I18N.k('ui.home-notes', 'Home notes')], ['house', I18N.k('ui.house-projects', 'House projects')]];
-  var KIND_AREA = { shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', room: 'chores', vote: 'meals', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
+  var KIND_AREA = { facct: 'money', shop: 'shop', meal: 'meals', pantry: 'pantry', chore: 'chores', cdone: 'chores', room: 'chores', vote: 'meals', sx: 'money', pay: 'money', ev: 'cal', trip: 'trips', plant: 'plants', mv: 'move', note: 'notes', proj: 'house' };
   function perm() { var s0 = (V.get() || {}).share || {}, o = {}; AREAS.forEach(function (a) { o[a[0]] = (s0.perm && s0.perm[a[0]]) === 'view' ? 'view' : 'edit'; }); return o; }
   var NOTE_DEF = { cost: true, settle: true, event: true, shop: false, chore: false, note: false };
   function notifyMe() { var s0 = (V.get() || {}).share || {}; return Object.assign({}, NOTE_DEF, s0.notifyMe || {}); }
@@ -129,6 +129,8 @@
       var fm = ((V.get() || {}).share || {}).files || {};
       docs().forEach(function (dc) { var fl = dc.files.filter(function (f) { return fm[f.id]; }).map(function (f) { return { fid: fm[f.id], name: f.name, type: f.type, size: f.size }; }); put('doc', dc.src + ':' + dc.id, { name: dc.name, cat: dc.cat, src: dc.src, date: dc.date, files: fl }); });
     }
+    /* an account you share (Felleskonto, marked in Finances): its balance, so the other one sees what's in it */
+    if (w.money && window.Accts) { var VD = V.get() || {}; ((VD.budget || {}).acctList || []).forEach(function (a) { if (!a || !a.shared || !a.id || a.off) return; var A = Accts.get(VD, a.id); if (A && A.bal != null) put('facct', a.id, { name: String(A.label || '').slice(0, 60), bal: Math.round(+A.bal * 100) / 100, at: A.balAt || '' }); }); }
     if (w.notes) (Array.isArray(t.homenotes) ? t.homenotes : []).forEach(function (n) { if (n && n.id) put('note', n.id, { title: String(n.title || '').slice(0, 60), text: String(n.text || '').slice(0, 1500) }); });
     if (w.move && mv && Array.isArray(mv.items)) mv.items.forEach(function (x) { if (x && x.id) put('mv', x.id, { text: String(x.text || '').slice(0, 80), done: !!x.done }); });
     return out;

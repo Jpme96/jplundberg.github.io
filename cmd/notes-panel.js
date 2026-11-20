@@ -27,8 +27,19 @@
       tx.oncomplete = function () { db.close(); var lim = Date.now() - 3 * 864e5; got = out.filter(function (x) { return x.at > lim && GOT[x.kind]; }).map(function (x) { var g = GOT[x.kind]; return { id: 'got:' + x.kind, at: x.at, title: K(g[1], g[2]), body: '', url: x.url, icon: g[0] }; }); badge(); if (then) then(); };
     });
   }
+  /* the bank (finance/bank-link.js): "N new from the bank" from the last quiet look, and a connection ending within 10 days */
+  function bankItems() {
+    var out = [], now = Date.now();
+    try { var bn = JSON.parse(localStorage.getItem('dash.bankNew') || 'null'); if (bn && bn.n > 0 && now - bn.at < 3 * 864e5) out.push({ id: 'bank:new', at: bn.at, title: K(bn.n === 1 ? 'ui.bk-new1' : 'ui.bk-newn', bn.n === 1 ? '1 new from the bank' : '{n} new from the bank', { n: bn.n }), body: K('ui.nt-bank-review', 'Tap to look through and import'), url: '/cmd/finance/#bankreview', icon: 'bank' }); } catch (e) {}
+    var b = (window.Vault && Vault.get && (Vault.get() || {}).bank) || null;
+    ((b && b.links) || []).forEach(function (l) {
+      if (!l.until) return; var end = new Date(l.until).getTime(), days = Math.ceil((end - now) / 864e5);
+      if (days <= 10) out.push({ id: 'bank:end:' + l.aspsp, at: Math.min(now, end - 10 * 864e5), title: days <= 0 ? K('ui.bk-brief-ended', 'The connection to {b} has ended', { b: l.aspsp }) : K('ui.bk-brief-ends', 'The connection to {b} ends in {n} days', { b: l.aspsp, n: days }), body: K('ui.bk-brief-sub', 'Renew it with BankID'), url: '/cmd/finance/#bank', icon: 'bank' });
+    });
+    return out;
+  }
   function noteGot(kind, url) { idb(function (db) { var tx = db.transaction('l', 'readwrite'); tx.objectStore('l').add({ at: Date.now(), kind: kind, url: url || '/cmd/' }); tx.oncomplete = function () { db.close(); readGot(); }; }); }
-  function items() { try { var g = gone(); return (window.Notify && Notify.recent ? Notify.recent(72, 24) : []).concat(got, window.Together && Together.items ? Together.items() : []).sort(function (a, b) { return a.at - b.at; }).filter(function (x) { return !g[keyOf(x)]; }); } catch (e) { return []; } }
+  function items() { try { var g = gone(); return (window.Notify && Notify.recent ? Notify.recent(72, 24) : []).concat(got, window.Together && Together.items ? Together.items() : [], bankItems()).sort(function (a, b) { return a.at - b.at; }).filter(function (x) { return !g[keyOf(x)]; }); } catch (e) { return []; } }
   var ICON = { ev: 'calendar3', bill: 'receipt', todo: 'check2-square', task: 'check2-square', bday: 'gift', trip: 'suitcase', checkin: 'clipboard-check', summary: 'bar-chart', morning: 'sunrise', dc: 'folder2-open', paper: 'file-earmark-text', house: 'house', people: 'people', timer: 'stopwatch' };
   function icon(id, x) { if (x && x.icon) return x.icon; var k = String(id || '').split(':')[0]; return ICON[k] || 'bell'; }
   var btn = null;

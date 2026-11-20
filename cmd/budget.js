@@ -411,11 +411,11 @@ window.Accts = (function () {
       var o = own.filter(function (a) { return a.id === id; })[0] || {};
       if (o.off) return null;
       return { id: id, kind: KINDS[o.kind] ? o.kind : id, name: o.name || names[id] || '', due: o.due || (id === 'credit' ? b.ccDue : null) || null, buffer: id === 'card' ? (o.buffer != null ? +o.buffer : +b.cardBuffer || 0) : +o.buffer || 0, builtin: true,
-        bal: o.bal != null && o.bal !== '' ? +o.bal : null, balAt: o.balAt || null, balSrc: o.balSrc || null, limit: +o.limit || 0, nw: o.nw !== false };
+        bal: o.bal != null && o.bal !== '' ? +o.bal : null, balAt: o.balAt || null, balSrc: o.balSrc || null, limit: +o.limit || 0, nw: o.nw !== false, shared: !!o.shared };
     }).filter(Boolean);
     var more = own.filter(function (a) { return a && a.id && !a.off && ['salary', 'credit', 'card'].indexOf(a.id) < 0; }).map(function (a, i) {
       return { id: a.id, kind: KINDS[a.kind] ? a.kind : 'card', name: a.name || '', due: a.due || null, buffer: +a.buffer || 0, extra: true, ci: i,
-        bal: a.bal != null && a.bal !== '' ? +a.bal : null, balAt: a.balAt || null, balSrc: a.balSrc || null, limit: +a.limit || 0, nw: a.nw !== false };
+        bal: a.bal != null && a.bal !== '' ? +a.bal : null, balAt: a.balAt || null, balSrc: a.balSrc || null, limit: +a.limit || 0, nw: a.nw !== false, shared: !!a.shared };
     });
     var all = base.concat(more);
     if (!all.some(function (a) { return a.kind === 'salary'; })) all.unshift({ id: 'salary', kind: 'salary', name: names.salary || '', builtin: true, buffer: 0 });   // the salary has to land somewhere
@@ -536,6 +536,20 @@ window.Budget.cardBills = function (d, now) {
     });
   };
   bankBrief._id = 'bank'; window.BriefExtra.push(bankBrief);
+  /* an account that can't be connected to the bank (LOfavør – Kredittbanken) but gets files: a reminder when the last
+     file is 25+ days old (JP 2026-11-20) – only for accounts that have had files, and not once it's connected */
+  window.BriefExtra = window.BriefExtra.filter(function (f) { return f._id !== 'filedue'; });
+  var fileBrief = function (add) {
+    var d = window.Vault.get() || {}, K = I18N.k, linked = {}, newest = {};
+    ((d.bank || {}).links || []).forEach(function (l) { (l.accts || []).forEach(function (a) { if (a.acct) linked[a.acct] = 1; }); });
+    (d.expenses || []).concat(d.extra || []).forEach(function (e) { if (e && e.src === 'bank' && e.acct && !linked[e.acct] && (!newest[e.acct] || e.date > newest[e.acct])) newest[e.acct] = e.date; });
+    Object.keys(newest).forEach(function (id) {
+      var A = window.Accts ? Accts.get(d, id) : null; if (!A) return;
+      var days = Math.floor((Date.now() - new Date(newest[id] + 'T12:00')) / 864e5);
+      if (days >= 25) add(45, 'file-earmark-arrow-up', 'var(--blue)', K('ui.fd-title', 'Import the {a} file', { a: A.label }), K('ui.fd-sub', 'The newest transaction is {n} days old – it can’t be fetched from the bank', { n: days }), 'finance/#import', { key: 'filedue:' + id + ':' + newest[id] });
+    });
+  };
+  fileBrief._id = 'filedue'; window.BriefExtra.push(fileBrief);
   window.BriefExtra.push(function (add) {
     var d = window.Vault && window.Vault.get && window.Vault.get(); if (!d || !d.budget) return;
     if (window.Features && !window.Features.on('finance')) return;

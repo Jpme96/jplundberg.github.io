@@ -64,10 +64,11 @@ function fakeBank(u, init) {
   let mt = p.match(/^\/accounts\/([\w-]+)\/transactions\?(.*)$/);
   if (m === 'GET' && mt) {
     const q = new URLSearchParams(mt[2]); globalThis.__eb.from = q.get('date_from');
-    if (mt[1] !== 'acc-salary-000001') return ebj({ transactions: [] });
+    if (mt[1] !== 'acc-salary-000001') return ebj({ transactions: [{ status: 'BOOK', booking_date: day(2), credit_debit_indicator: 'CRDT', transaction_amount: { amount: '777.00', currency: 'NOK' }, debtor: { name: 'Made-up move in' } }] });
     if (!q.get('continuation_key')) return ebj({ continuation_key: 'page2', transactions: [
       { status: 'BOOK', booking_date: day(2), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '249.90', currency: 'NOK' }, creditor: { name: 'REMA 1000 MADEUP' }, remittance_information: ['Varekjøp'] },
-      { status: 'PDNG', booking_date: day(0), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '99.00', currency: 'NOK' }, creditor: { name: 'PENDING SHOP' } }] });
+      { status: 'PDNG', booking_date: day(0), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '99.00', currency: 'NOK' }, creditor: { name: 'PENDING SHOP' } },
+      { status: 'BOOK', booking_date: day(2), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '777.00', currency: 'NOK' }, creditor: { name: 'Made-up move' } }] });
     return ebj({ transactions: [
       { status: 'BOOK', booking_date: day(1), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '89.00', currency: 'NOK' }, creditor: { name: 'Made-up Cafe' } },
       { status: 'BOOK', booking_date: day(3), credit_debit_indicator: 'CRDT', transaction_amount: { amount: '150.00', currency: 'NOK' }, debtor: { name: 'Vipps refusjon made-up' } }] });

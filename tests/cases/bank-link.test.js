@@ -70,8 +70,15 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   const e2 = await eb();
   const d90 = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
   check(e2.calls.some(c => /continuation_key=page2/.test(c)) && Math.abs(new Date(e2.from) - new Date(d90)) < 2 * 864e5, 'the first fetch reaches back 90 days ' + e2.from);
+  /* money out of the everyday account and into savings, same amount, same day: a move between your own accounts */
+  const mv = await p.evaluate(() => { const li = [...document.querySelectorAll('.im-box .im-row')].find(x => /Made-up move/.test(x.textContent)); return li ? { off: li.classList.contains('off'), why: /between your own accounts/.test(li.textContent) } : null; });
+  check(mv && mv.off && mv.why, 'a move between your own connected accounts is a transfer, left out ' + JSON.stringify(mv));
   await p.evaluate(() => document.querySelector('.im-box [data-import]').click());
   await sl(1500);
+  /* then the savings account's preview: its money in is the same move */
+  const mv2 = await p.evaluate(() => { const li = [...document.querySelectorAll('.im-box .im-row')].find(x => /Made-up move in/.test(x.textContent)); return li ? { off: li.classList.contains('off'), why: /between your own accounts/.test(li.textContent) } : null; });
+  check(mv2 && mv2.off && mv2.why, '… and on the other side too ' + JSON.stringify(mv2));
+  if (await p.$('.im-box [data-import]')) { await p.evaluate(() => document.querySelector('.im-box [data-import]').click()); await sl(1500); }
   const after = await p.evaluate(() => { const d = Vault.get(), sal = window.__sal; const ex = (d.expenses || []).filter(e => e.src === 'bank' && e.acct === sal); const A = (d.budget.acctList || []).find(a => a.id === sal) || {}; return { notes: ex.map(e => e.note + ' ' + e.amount), bal: A.bal, from: d.bank.links[0].accts[0].from }; });
   check(after.notes.length >= 2 && after.bal === 12345.6 && /^\d{4}-\d\d-\d\d$/.test(after.from || ''), 'imported, the balance set to the bank\'s, and where it got to is remembered ' + JSON.stringify(after));
 
@@ -82,6 +89,19 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   const again = await p.evaluate(() => ({ preview: !!document.querySelector('.im-box [data-import]'), n: (Vault.get().expenses || []).filter(e => e.src === 'bank').length }));
   check(!again.preview && again.n === after.notes.length && e3.from > e2.from, 'the second fetch finds nothing new and starts later ' + JSON.stringify([again, e3.from]));
 
+  /* a shared account (Felleskonto): purchases from it count half, the whole kept; the balance goes to the shared app */
+  const half = await p.evaluate(async () => {
+    const d = Vault.get(), sal = window.__sal; BankLink.setShared(sal, true);
+    const before = (Vault.get().expenses || []).length;
+    const rows = [['Dato', 'Tekst', 'Beløp', 'Saldo', 'EB test'], [new Date().toISOString().slice(0, 10), 'Made-up shared dinner', '-400', '', '']];
+    BankImport.show(rows, sal, null); await new Promise(r => setTimeout(r, 300));
+    const note = /half of each purchase/.test(document.querySelector('.im-box').innerText);
+    document.querySelector('.im-box [data-import]').click(); await new Promise(r => setTimeout(r, 600));
+    const e = (Vault.get().expenses || []).find(x => x.note && /shared dinner/i.test(x.note));
+    BankLink.setShared(sal, false);
+    return { note, amount: e && e.amount, full: e && e.full, half: e && e.half };
+  });
+  check(half.note && half.amount === 200 && half.full === 400 && half.half === 1, 'a shared account: half of a purchase counts, the whole is kept ' + JSON.stringify(half));
   /* every call was signed – the pretend bank answers 401 to anything else */
   check(e3.calls.length >= 8 && !e3.calls.some(c => /payments/.test(c)), 'every call went through signed ' + e3.calls.length);
 

@@ -14,7 +14,7 @@ async function page(b, W, opts = {}) {
   await p.setViewport({ width: W, height: opts.h || (touch ? 852 : 945), isMobile: touch, hasTouch: touch, deviceScaleFactor: 1 });
   p.errs = [];
   p.on('pageerror', e => p.errs.push(e.message));
-  p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|WebSocket connection|localStorage|Manifest: Line: 1, column: 1/.test(m.text())) p.errs.push('console: ' + m.text().slice(0, 200)); });
+  p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|WebSocket connection|localStorage|Manifest: Line: 1, column: 1|Error while trying to use the following icon from the Manifest/.test(m.text())) p.errs.push('console: ' + m.text().slice(0, 200)); });
   await p.setRequestInterception(true);
   p.on('request', r => { if (!r.url().startsWith('http://localhost')) return r.abort(); r.continue(); });
   return p;
@@ -36,6 +36,8 @@ async function unlock(p) {
   if (await p.evaluate(() => { const c = document.getElementById('lockConfirm'); return !!(c && c.offsetParent); })) await p.type('#lockConfirm', PASS);
   await p.click('#lockSubmit');
   await until(p, () => document.documentElement.classList.contains('unlocked'), 15000);
+  /* the vault itself open, not just the class (CI 2026-11-20: tests met Vault.get() === null on a slow machine) */
+  await until(p, () => !!(window.Vault && Vault.get && Vault.get()), 15000);
   await sl(800);
 }
 /* go to a cmd page; if it came up locked (a slow machine missed the quick resume), unlock it */
@@ -45,6 +47,7 @@ async function go(p, path, wait = 2500) {
   const shown = () => { const i = document.getElementById('lockPass'), bx = document.getElementById('lockBox'); return !!(i && i.offsetParent && bx && getComputedStyle(bx).visibility !== 'hidden' && !document.documentElement.classList.contains('resuming')); };
   const ok = await until(p, '(' + 'function () { return document.documentElement.classList.contains("unlocked") || (' + shown.toString() + ')(); }' + ')()', 15000);
   if (ok !== null && !(await p.evaluate(() => document.documentElement.classList.contains('unlocked')))) await unlock(p);
+  await until(p, () => !!(window.Vault && Vault.get && Vault.get()), 10000);   /* the vault open before the test goes on */
   await sl(wait);
 }
 /* owner (computer) starts sharing; Iago's phone opens the shared app with the key */

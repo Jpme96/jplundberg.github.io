@@ -411,7 +411,10 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     const l = Object.values(S.recs).find(r => r.k === 'dcl' && !r.del && r.d && r.d.pid === p.d.p.id && !['ok', 'cmt', 'na'].includes(r.d.l.st)); if (!l) return null;
     return { v: p.d.p.id + '|' + l.d.l.id, lid: l.id }; });
   if (dlink) {
-    await own.goto(U + '#actions'); await own.waitForSelector('[data-act=newAction]'); await own.click('[data-act=newAction]'); await own.waitForSelector('form[data-form=action] select[name=doc]');
+    await own.goto(U + '#actions'); await own.waitForSelector('[data-act=newAction]'); await own.click('[data-act=newAction]');
+    /* on a slow machine the first tap can land before the view is ready (CI 2026-11-20): tap again rather than wait 30 s */
+    for (let i = 0; i < 3 && !(await own.$('form[data-form=action] select[name=doc]')); i++) { await new Promise(r => setTimeout(r, 2500)); if (!(await own.$('form[data-form=action] select[name=doc]'))) await own.evaluate(() => { const b = document.querySelector('[data-act=newAction]'); if (b) b.click(); }); }
+    await own.waitForSelector('form[data-form=action] select[name=doc]');
     await own.type('form[data-form=action] input[name=text]', 'Get the made-up FDV'); await own.select('form[data-form=action] select[name=doc]', dlink.v); await own.click('form[data-form=action] button[type=submit]');
     check(await until(own, () => /Get the made-up FDV/.test(document.body.innerText) && /Document: /.test(document.body.innerText)), 'an action can be linked to a document line');
     await own.goto(U + '#docs'); await until(own, () => !!(window.DocHost && window.DocHost.Fe), 20000);

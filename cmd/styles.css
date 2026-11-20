@@ -4307,3 +4307,8 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .side-nav .mb-me .nt-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
 .side-nav.sn-mini .mb-me .nt-btn { right: -6px; top: -6px; transform: none; width: 28px; height: 28px; min-width: 0; min-height: 0; font-size: 13px; }
 .side-nav.sn-mini .mb-me .nt-btn .nt-badge { top: -4px; right: -4px; }
+
+/* "A new version of cmd is ready" (app.js, 2026-11-20) */
+.nv-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); z-index: 2000; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 999px; background: rgb(var(--card-rgb, 24, 25, 29)); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.35); font-size: 14px; max-width: calc(100vw - 24px); }
+.nv-bar .bi-stars { color: var(--accent); }
+.nv-bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
