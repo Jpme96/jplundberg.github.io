@@ -18,6 +18,7 @@ const fs = require('fs'), path = require('path');
     const ch = (Vault.get().priceChanges || [])[0]; return { learnt, ch }; });
   check(pr.learnt, 'the first time it only learns the prices');
   check(pr.ch && pr.ch.from === 500 && pr.ch.to === 600, 'a price change is noted ' + JSON.stringify(pr.ch));
+  await sl(1500);   /* the encrypted save finishes before the page changes (CI was slower, 2026-11-20) */
   await go(p, '', 3000);
   check(await until(p, () => /Made-up power/.test(document.body.textContent) && /\+20 %/.test(document.body.textContent), 10000) !== null, 'At a glance says “Made-up power: 500 → 600 kr (+20 %)”');
   /* shortcuts */
