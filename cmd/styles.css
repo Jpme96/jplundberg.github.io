@@ -4270,6 +4270,12 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .nt-badge { position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 17px; text-align: center; box-sizing: border-box; pointer-events: none; }
 .nt-sh { width: min(460px, 100%); max-height: min(80vh, 680px); overflow: auto; }
 .nt-h { margin: 14px 2px 6px; font-size: var(--fs-s, 13px); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.nt-item { display: flex; align-items: center; gap: 2px; }
+.nt-item > .nt-row { flex: 1; min-width: 0; }
+.nt-x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; font-size: 13px; }
+.nt-x:hover { background: rgba(var(--ink-rgb), .07); color: var(--text); }
+.nt-hp { display: flex; align-items: center; justify-content: space-between; }
+.nt-clear { border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; cursor: pointer; padding: 4px 6px; }
 .nt-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px; border-radius: var(--r-ctl, 10px); color: inherit; text-decoration: none; }
 .nt-row:hover { background: rgba(var(--ink-rgb), .05); }
 .nt-row.nt-new { background: rgba(var(--accent-rgb, 20, 184, 166), .08); }

@@ -20,9 +20,21 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   check(pop && /Coming up/i.test(pop.txt) && /Earlier/i.test(pop.txt) && /plumber/.test(pop.txt) && /Dentist/.test(pop.txt) && pop.rows >= 2 && pop.news >= 1 && pop.wide, 'the popup lists what is coming and what has been, the new ones marked ' + JSON.stringify(pop && pop.txt.slice(0, 200)));
   /* it looks like a popup on every page, not text at the bottom (JP 2026-11-20: it opened unstyled on Finances) */
   check(await p.evaluate(() => getComputedStyle(document.querySelector('.nt-ov')).position === 'fixed'), 'the popup floats over the page');
+  /* remove one, then clear the rest of "Earlier"; removed ones stay gone after reopening (JP 2026-11-20) */
+  const del = await p.evaluate(async () => {
+    const ov = document.querySelector('.nt-ov'), n0 = ov.querySelectorAll('.nt-item').length;
+    const it = [...ov.querySelectorAll('.nt-item')].find(x => /plumber/.test(x.textContent)); it.querySelector('[data-ntdel]').click();
+    await new Promise(r => setTimeout(r, 100));
+    const still = !!document.querySelector('.nt-ov'), n1 = ov.querySelectorAll('.nt-item').length, plumber = /plumber/.test(ov.innerText);
+    return { still, n0, n1, plumber };
+  });
+  check(del.still && del.n1 === del.n0 - 1 && !del.plumber, 'the × removes one and the popup stays open ' + JSON.stringify(del));
   await p.keyboard.press('Escape'); await sl(200);
   const c2 = await p.evaluate(() => ({ gone: !document.querySelector('.nt-ov'), hidden: document.querySelector('#ntBtn .nt-badge').hidden }));
   check(c2.gone && c2.hidden, 'Escape closes it, and the count is cleared');
+  await p.evaluate(() => document.getElementById('ntBtn').click()); await sl(300);
+  const clr = await p.evaluate(async () => { const ov = document.querySelector('.nt-ov'); const pl = /plumber/.test(ov.innerText); ov.querySelector('[data-ntall]').click(); await new Promise(r => setTimeout(r, 100)); const r = { pl, dentist: /Dentist/.test(ov.innerText), past: ov.querySelectorAll('.nt-past .nt-item').length, head: !!ov.querySelector('.nt-hp') }; ov.querySelector('[data-ntclose]').click(); return r; });
+  check(!clr.pl && !clr.dentist && !clr.past && !clr.head, 'a removed one stays gone, and "Clear all" empties Earlier ' + JSON.stringify(clr));
   /* on the computer with the side menu: on Finances, the popup is styled, and the bell doesn't sit on the name */
   await p.setViewport({ width: 1280, height: 860 }); await p.evaluate(() => { const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.nav = 'side'; localStorage.setItem('dash.settings', JSON.stringify(s)); localStorage.setItem('dash.sideNav', 'open'); window.dispatchEvent(new Event('dash:local')); }); await go(p, 'finance/', 3000);
   await until(p, () => !!document.querySelector('.mb-me #ntBtn'), 8000);

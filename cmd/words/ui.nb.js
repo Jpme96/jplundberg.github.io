@@ -14,6 +14,8 @@ I18N.add({
   "ui.nt-next": ["Coming up", "Kommer"],
   "ui.nt-past": ["Earlier", "Tidligere"],
   "ui.nt-settings": ["Which notifications you get", "Hvilke varsler du får"],
+  "ui.nt-del": ["Remove", "Fjern"],
+  "ui.nt-clear": ["Clear all", "Fjern alle"],
   "ui.dc-hand-btn": ["Handover package", "Overleveringspakke"],
   "ui.dc-hand-none": ["No approved files with a file on this device yet – approve lines first.", "Ingen godkjente filer på denne enheten ennå – godkjenn linjer først."],
   "ui.dc-hand-making": ["Making the package …", "Lager pakken …"],
