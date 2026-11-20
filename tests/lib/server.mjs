@@ -56,7 +56,9 @@ function fakeBank(u, init) {
   if (m === 'GET' && p.startsWith('/aspsps')) return ebj({ aspsps: ['DNB', 'Bank Norwegian', 'SpareBank 1 Østlandet', 'Made-up Bank'].map(n => ({ name: n, country: 'NO', maximum_consent_validity: 15552000, psu_types: ['personal'] })) });
   if (m === 'POST' && p === '/auth') { const b = JSON.parse(init.body || '{}'); globalThis.__eb.auth = b; return ebj({ url: b.redirect_url + '?code=MADEUPCODE&state=' + encodeURIComponent(b.state), authorization_id: 'a1' }); }
   if (m === 'POST' && p === '/sessions') return ebj({ session_id: 'sess-0000-made-up', aspsp: { name: globalThis.__eb.auth ? globalThis.__eb.auth.aspsp.name : 'DNB', country: 'NO' }, access: { valid_until: new Date(Date.now() + 90 * 864e5).toISOString() },
-    accounts: [{ uid: 'acc-salary-000001', account_id: { iban: 'NO0000000000011' }, name: 'Made-up everyday', currency: 'NOK' }, { uid: 'acc-other-000002', account_id: { iban: 'NO0000000000022' }, name: 'Made-up savings', currency: 'NOK' }] });
+    accounts: [{ uid: 'acc-salary-000001', account_id: { iban: 'NO0000000000011' }, name: 'Made-up Person', currency: 'NOK' }, { uid: 'acc-other-000002', account_id: { iban: 'NO0000000000022' }, name: 'Made-up Person', currency: 'NOK' }] });   /* banks send the holder's name as name, the product in the details */
+  let md = p.match(/^\/accounts\/([\w-]+)\/details$/);
+  if (m === 'GET' && md) return ebj({ uid: md[1], name: 'Made-up Person', product: md[1] === 'acc-salary-000001' ? 'Made-up everyday' : 'Made-up savings', cash_account_type: md[1] === 'acc-salary-000001' ? 'CACC' : 'SVGS' });
   let mt = p.match(/^\/accounts\/([\w-]+)\/transactions\?(.*)$/);
   if (m === 'GET' && mt) {
     const q = new URLSearchParams(mt[2]); globalThis.__eb.from = q.get('date_from');

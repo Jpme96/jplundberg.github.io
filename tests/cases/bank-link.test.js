@@ -43,6 +43,7 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   check(e1.auth && e1.auth.psu_type === 'personal' && /\/cmd\/finance\/$/.test(e1.auth.redirect_url) && e1.auth.aspsp.country === 'NO' && new Date(e1.auth.access.valid_until) - Date.now() > 170 * 864e5, 'the login asks for personal, read access, about 180 days, back to Finances');
 
   /* 3. match the everyday account to the salary account, leave savings out */
+  check(await until(p, () => Vault.get().bank.links[0].accts.every(a => a.named) && /Made-up savings/.test(document.querySelector('.im-box').innerText), 8000) !== null, 'the accounts get their product names, not the holder\'s name ' + await p.evaluate(() => JSON.stringify(Vault.get().bank.links[0].accts.map(a => [a.name, a.holder]))));
   check(await until(p, () => !!document.querySelector('[data-bkmap="0:0"]'), 8000) !== null, 'the sheet opens with the accounts to match ' + await p.evaluate(() => (document.querySelector('.im-box') || {}).innerText || '').then(t => t.slice(0, 200)));
   await p.evaluate(() => { const L = Accts.list(Vault.get()), sal = L.find(a => a.kind === 'salary') || L[0]; const s = document.querySelector('[data-bkmap="0:0"]'); s.value = sal.id; s.dispatchEvent(new Event('change', { bubbles: true })); window.__sal = sal.id; });
   await sl(300);

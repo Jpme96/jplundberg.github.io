@@ -96,8 +96,28 @@
     return id;
   }
   function untilTxt(u) { if (!u) return ''; var days = Math.round((new Date(u) - Date.now()) / 864e5); return days < 0 ? K('ui.bk-ended', 'ended – connect again') : K('ui.bk-until', 'until {d} ({n} days)', { d: new Date(u).toLocaleDateString(I18N && I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short' }), n: days }); }
+  /* the banks send the account holder's name as "name" (JP's accounts all said "John Paul Lundberg"): ask each account
+     once for its product name ("Brukskonto", "Sparekonto") and use that, the holder's name in small type */
+  var naming = false;
+  function nameAccts() {
+    if (naming) return; var todo = [];
+    ((B() || {}).links || []).forEach(function (l) { (l.accts || []).forEach(function (a) { if (!a.named && a.uid) todo.push(a.uid); }); });
+    if (!todo.length) return; naming = true;
+    Promise.all(todo.map(function (uid) { return api('GET', '/accounts/' + uid + '/details').then(function (j) { return { uid: uid, j: j }; }, function () { return { uid: uid, j: null }; }); })).then(function (res) {
+      saveBank(function (b) { b.links.forEach(function (l) { (l.accts || []).forEach(function (a) {
+        var r = res.filter(function (x) { return x.uid === a.uid; })[0]; if (!r) return;
+        var p = r.j && (r.j.product || r.j.details || (r.j.cash_account_type && { CACC: 'Brukskonto', SVGS: 'Sparekonto', CARD: 'Kortkonto', LOAN: 'Lån' }[r.j.cash_account_type]));
+        if (!a.holder) a.holder = a.name;
+        if (p) a.name = p;
+        a.named = true;
+      }); }); });
+      naming = false;
+      if (document.querySelector('[data-bkmap]')) setup();
+    });
+  }
   var aspspList = null;
   function setup(msg) {
+    setTimeout(nameAccts, 0);
     var b = B() || { links: [] }, L = accts(), links = b.links || [];
     var keyPart = b.key && b.app
       ? '<p class="bk-ok"><i class="bi bi-key"></i> ' + esc(K('ui.bk-key-ok', 'Key loaded – locked in your vault')) + ' <small class="muted">· ' + esc('…' + String(b.app).slice(-6)) + '</small> <button type="button" class="text-btn" data-bkkey>' + esc(K('ui.bk-replace', 'Replace')) + '</button></p>'
@@ -106,7 +126,7 @@
       return '<div class="bk-link"><div class="bk-lh"><b><i class="bi bi-bank"></i> ' + esc(l.aspsp) + '</b><small class="muted">' + esc(untilTxt(l.until)) + '</small><span class="spacer"></span>' +
         '<button type="button" class="text-btn" data-bkconnect="' + esc(l.aspsp) + '">' + esc(K('ui.bk-renew', 'Renew')) + '</button><button type="button" class="text-btn" data-bkdrop="' + li + '">' + esc(K('ui.remove', 'Remove')) + '</button></div>' +
         (l.accts || []).map(function (a, ai) {
-          return '<label class="bk-acct"><span><b>' + esc(a.name || K('ui.bk-account', 'Account')) + '</b><small class="muted">' + esc((a.last4 ? '•• ' + a.last4 : '') + (a.from ? ' · ' + K('ui.bk-fetched', 'fetched to {d}', { d: a.from }) : '')) + '</small></span>' +
+          return '<label class="bk-acct"><span><b>' + esc(a.name || K('ui.bk-account', 'Account')) + '</b><small class="muted">' + esc((a.last4 ? '•• ' + a.last4 : '') + (a.holder && a.holder !== a.name ? ' · ' + a.holder : '') + (a.from ? ' · ' + K('ui.bk-fetched', 'fetched to {d}', { d: a.from }) : '')) + '</small></span>' +
             '<select data-bkmap="' + li + ':' + ai + '"><option value="">' + esc(K('ui.bk-skip', 'Don’t fetch')) + '</option>' + L.map(function (x) { return '<option value="' + esc(x.id) + '"' + (a.acct === x.id ? ' selected' : '') + '>' + esc(x.label) + '</option>'; }).join('') +
             '<option value="+new">' + esc(K('ui.bk-new-acct', '+ New account: {n}', { n: newName(l.aspsp, a) })) + '</option></select></label>';
         }).join('') + '</div>';
@@ -175,7 +195,7 @@
         var accs = (s.accounts || []).map(function (a) {
           var iban = (a.account_id && (a.account_id.iban || (a.account_id.other && a.account_id.other.identification))) || '', last4 = String(iban).replace(/\s/g, '').slice(-4);
           var was = keep[iban] || keep[last4 + '|' + (a.name || a.product || '')] || {};
-          var x = { uid: a.uid, name: a.name || a.product || a.details || K('ui.bk-account', 'Account'), last4: last4, iban: iban, cur: a.currency || 'NOK', acct: was.acct || null, from: was.from || null };
+          var x = { uid: a.uid, name: a.product || a.details || a.name || K('ui.bk-account', 'Account'), holder: a.name || '', named: !!(a.product || a.details), last4: last4, iban: iban, cur: a.currency || 'NOK', acct: was.acct || null, from: was.from || null };
           if (!x.acct) x.acct = guess(name, x);
           return x;
         });
