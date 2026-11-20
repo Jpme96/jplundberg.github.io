@@ -12,7 +12,7 @@ I18N.add({
   "ui.wi-note2": ["Today’s kroner – no price growth or pay rises. Your part of {n} loans is paid down month by month; your part of the home counts at today’s value.", "Dagens kroner – uten prisvekst eller lønnsøkning. Din del av {n} lån betales ned måned for måned; din del av boligen teller med dagens verdi."],
   "ui.wi-yours": ["yours", "ditt tall"],
   "ui.wi-start": ["Starting numbers (a month)", "Tallene den starter fra (i måneden)"],
-  "ui.wi-s-pay": ["Pay after tax", "Lønn etter skatt"],
+  "ui.wi-s-pay": ["Pay after tax (average month)", "Lønn etter skatt (snitt i måneden)"],
   "ui.wi-s-fixed": ["Fixed costs (without loans)", "Faste kostnader (uten lån)"],
   "ui.wi-s-spend": ["Everyday spending", "Vanlig forbruk"],
   "ui.wi-s-auto": ["From your finances: pay {i}, fixed costs {f}, everyday spending {s} (the last three whole months, big one-offs left out).", "Fra økonomien din: lønn {i}, faste kostnader {f}, vanlig forbruk {s} (de tre siste hele månedene, store engangskjøp holdt utenfor)."],

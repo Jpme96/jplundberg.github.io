@@ -1,7 +1,7 @@
 /* "What if?" – the maths (2026-11-19, plan Part 2). No page, no DOM: WhatIf.base(d) reads today's numbers from your
    finances, WhatIf.project(base, changes, months) runs them month by month. Finances → Insights draws it (whatif.page.js).
    Kept simple on purpose, in today's kroner (no price growth or pay rises):
-   - money in  = your net pay (Budget.income)
+   - money in  = your net pay for that calendar month (Budget.income – June and December follow your tax card)
    - money out = your fixed costs without the loans (Budget.fixedAmt, your part of shared ones) + everyday spending
                  (the average of the last three whole months, one-offs left out) + your part of each loan payment
    - loans     = your part of each debt in Net worth, paid down month by month at its rate; the payment stops when it's paid
@@ -30,7 +30,12 @@
   function base(d, now) {
     now = now || new Date();
     var B = window.Budget, L = window.Loans, k = ym(now);
-    var income = B && B.income ? Math.max(0, +B.income(d, k) || 0) : 0;
+    /* pay for each calendar month of the next year (holiday pay in June, half tax in December, a payslip that's
+       already logged) – the plan uses the right one for each month; the average is what's shown (20 Nov: this month
+       alone was 21 173 kr against a normal 66 343 kr) */
+    var incomeBy = {}, isum = 0;
+    for (var q = 1; q <= 12; q++) { var mk = addM(k, q), iv = B && B.income ? Math.max(0, +B.income(d, mk) || 0) : 0; incomeBy[mk.slice(5)] = Math.round(iv); isum += iv; }
+    var income = isum / 12;
     var fixed = ((d && d.budget && d.budget.fixed) || []).filter(function (f) { return f && f.src !== 'loan' && !/^loan-/.test(f.id || ''); });
     var fixedNow = fixed.reduce(function (a, f) { return a + (B && B.activeIn && !B.activeIn(f, k) ? 0 : (B && B.fixedAmt ? +B.fixedAmt(f, k) || 0 : +f.amount || 0)); }, 0);
     /* everyday spending: the last three whole months, one-offs out */
@@ -51,7 +56,7 @@
     var assets = ((d && d.accounts) || []).filter(function (a) { return a && a.kind !== 'debt'; }).reduce(function (s, a) { return s + (+a.balance || 0); }, 0);
     /* your part of a home is kept with its mortgage (a.home = { value, own % }) – it counts as an asset, like on Net worth (20 Nov, JP) */
     var home = ((d && d.accounts) || []).filter(function (a) { return a && a.kind === 'debt' && a.home && +a.home.value > 0; }).reduce(function (s, a) { return s + (+a.home.value) * (+a.home.own || 50) / 100; }, 0);
-    return { start: k, income: Math.round(income), fixed: Math.round(fixedNow), fixedRows: fixed, spend: Math.round(spend), loans: loans, assets: Math.round(assets), home: Math.round(home) };
+    return { start: k, income: Math.round(income), incomeBy: incomeBy, fixed: Math.round(fixedNow), fixedRows: fixed, spend: Math.round(spend), loans: loans, assets: Math.round(assets), home: Math.round(home) };
   }
 
   /* month by month; returns { rows: [{ m, assets, debt, net, left, costs }], low: first month the assets are under one month's costs } */
@@ -65,9 +70,9 @@
       var m = addM(b.start, i);
       /* fixed costs without the loans, for that month (rows that start or stop later follow their dates) */
       var fixed = b.fixedRows ? b.fixedRows.reduce(function (a, f) { return a + (B && B.activeIn && !B.activeIn(f, m) ? 0 : (B && B.fixedAmt ? +B.fixedAmt(f, m) || 0 : +f.amount || 0)); }, 0) : (b.fixed || 0);
-      var income = b.income || 0, extra = 0, more = 0;
+      var pay = b.incomeBy && b.incomeBy[m.slice(5)] != null ? b.incomeBy[m.slice(5)] : (b.income || 0), income = pay, extra = 0, more = 0;
       changes.forEach(function (c) {
-        if (c.type === 'income' && on(c, m)) income = (b.income || 0) * (Math.max(0, +c.pct || 0) / 100);
+        if (c.type === 'income' && on(c, m)) income = pay * (Math.max(0, +c.pct || 0) / 100);
         if ((c.type === 'cost' || c.type === 'child') && on(c, m)) more += +c.amount || 0;
         if (c.type === 'custom') {
           if (on(c, m)) more -= +c.monthly || 0;                                   /* + money in, − money out */

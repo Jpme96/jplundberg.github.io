@@ -83,12 +83,12 @@
     if (editStart) {
       var f = function (k, label, v) { return '<label class="wi-lb"><span>' + esc(label) + '</span><input class="wi-in" name="' + k + '" inputmode="decimal" autocomplete="off" value="' + Math.round(v) + '"></label>'; };
       return '<form class="wi-add wi-start" data-wistart><p class="wi-add-h"><i class="bi bi-sliders"></i> ' + esc(K('ui.wi-start', 'Starting numbers (a month)')) + '</p><div class="wi-fields">' +
-        f('income', K('ui.wi-s-pay', 'Pay after tax'), b.income) + f('fixed', K('ui.wi-s-fixed', 'Fixed costs (without loans)'), b.fixed) + f('spend', K('ui.wi-s-spend', 'Everyday spending'), b.spend) + '</div>' +
+        f('income', K('ui.wi-s-pay', 'Pay after tax (average month)'), b.income) + f('fixed', K('ui.wi-s-fixed', 'Fixed costs (without loans)'), b.fixed) + f('spend', K('ui.wi-s-spend', 'Everyday spending'), b.spend) + '</div>' +
         '<p class="muted wi-note">' + esc(K('ui.wi-s-auto', 'From your finances: pay {i}, fixed costs {f}, everyday spending {s} (the last three whole months, big one-offs left out).', { i: kr(auto.income), f: kr(auto.fixed), s: kr(auto.spend) })) + '</p>' +
         '<div class="wi-btns">' + (Object.keys(ov).length ? '<button type="button" class="text-btn" data-wireset>' + esc(K('ui.wi-s-reset', 'Use my finances again')) + '</button>' : '') + '<button type="button" class="text-btn" data-wicancel>' + esc(K('ui.cancel', 'Cancel')) + '</button><button type="submit" class="pill-btn">' + esc(K('ui.save', 'Save')) + '</button></div></form>';
     }
     return '<div class="wi-start"><p class="wi-add-h"><i class="bi bi-sliders"></i> ' + esc(K('ui.wi-start', 'Starting numbers (a month)')) + ' <button type="button" class="text-btn" data-wiedit>' + esc(K('ui.change', 'Change')) + '</button></p><ul class="wi-nums">' +
-      row('income', K('ui.wi-s-pay', 'Pay after tax'), b.income) + row('fixed', K('ui.wi-s-fixed', 'Fixed costs (without loans)'), b.fixed) + row('spend', K('ui.wi-s-spend', 'Everyday spending'), b.spend) +
+      row('income', K('ui.wi-s-pay', 'Pay after tax (average month)'), b.income) + row('fixed', K('ui.wi-s-fixed', 'Fixed costs (without loans)'), b.fixed) + row('spend', K('ui.wi-s-spend', 'Everyday spending'), b.spend) +
       '<li><span>' + esc(K('ui.wi-s-loans', 'Your loan payments')) + '</span><b class="tnum">' + esc(kr(b.loans.reduce(function (s, l) { return s + l.pay; }, 0))) + '</b></li></ul></div>';
   }
   function num(v) { return parseFloat(String(v || '').replace(/\s/g, '').replace(/ /g, '').replace(',', '.')); }
@@ -97,7 +97,7 @@
     el.hidden = false;
     var sc = store(), years = [3, 5, 10].indexOf(+sc.years) >= 0 ? +sc.years : 5, n = years * 12;
     var b = WhatIf.base(d), auto = { income: b.income, fixed: b.fixed, spend: b.spend }, ov = sc.base || {};
-    if (ov.income != null) b.income = ov.income;
+    if (ov.income != null) { b.income = ov.income; b.incomeBy = null; }
     if (ov.spend != null) b.spend = ov.spend;
     if (ov.fixed != null) { b.fixed = ov.fixed; b.fixedRows = null; }
     var a = WhatIf.project(b, [], n), has = sc.changes.length, p = has ? WhatIf.project(b, sc.changes, n) : null;
