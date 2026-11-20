@@ -350,7 +350,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .add-row { display: flex; gap: 8px; align-items: flex-start; }
 
 .inline-form { display: grid; gap: 8px; margin-bottom: 14px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .form-actions { display: flex; align-items: center; gap: 6px; }
 .spacer { flex: 1; }
 
@@ -1880,7 +1880,7 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="
   height: var(--field-h); min-height: var(--field-h); padding-top: 0; padding-bottom: 0;
 }
 textarea { min-height: var(--field-h); padding-top: 11px; padding-bottom: 11px; }
-input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; }
+input[type="date"], input[type="time"], input[type="month"] { -webkit-appearance: none; appearance: none; }   /* month too (2026-11-20): iOS kept its own wider box – the field stuck out 26 px on Finances */
 input::-webkit-date-and-time-value { text-align: left; }
 /* compact selects in toolbars match the segmented controls there (36 px) */
 .fp-filter .fp-year, .bill-day, .kit-head select, .cl-head select { height: 36px; min-height: 36px; font-size: 14px; }
@@ -3474,7 +3474,7 @@ html.wrs-open, html.wrs-open body { overflow: hidden; }
 input, select, textarea { min-width: 0; max-width: 100%; }
 input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"] { box-sizing: border-box; min-width: 0; }
 label > input[type="date"], label > input[type="time"], .sv-by > input, .qa-row > input, .row2 input, .add-row input { width: 100%; }
-input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
+input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value, input[type="month"]::-webkit-date-and-time-value { text-align: left; min-width: 0; }
 /* Travel picture, Journey tab (scenes.js journey()): your bus/tram/metro/train/boat pulls in at the stop and leaves */
 .sc-veh { transform: translateX(56px); animation: scveh 9s infinite; }
 @keyframes scveh { 0% { transform: translateX(-160px); animation-timing-function: cubic-bezier(.2,.7,.35,1); } 30% { transform: translateX(56px); } 64% { transform: translateX(56px); animation-timing-function: cubic-bezier(.55,0,.8,.4); } 100% { transform: translateX(300px); } }

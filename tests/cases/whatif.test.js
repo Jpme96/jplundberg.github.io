@@ -44,6 +44,8 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   check(c1.shown && /net worth/.test(c1.sum || '') && c1.svg && c1.types === 6, 'the card shows today’s line, a chart and six kinds of change ' + JSON.stringify(c1));
   /* add: a car for 250 000 in cash */
   await p.evaluate(() => document.querySelector('[data-witype="buy"]').click()); await sl(200);
+  const out = await p.evaluate(() => { const f = document.querySelector('[data-wiform="buy"]'), fr = f.getBoundingClientRect(); return [...f.querySelectorAll('input, select')].filter(i => i.offsetWidth && i.getBoundingClientRect().right > fr.right + 0.5).map(i => i.name); });
+  check(!out.length, 'every field stays inside the form on the phone (iPhone said 26 px out, 20 Nov) ' + out.join(', '));
   await p.evaluate(() => { const f = document.querySelector('[data-wiform="buy"]'); f.elements.amount.value = '250 000'; f.requestSubmit(); }); await sl(300);
   const c2 = await p.evaluate(() => { const c = document.getElementById('wiCard'); return { n: c.querySelectorAll('.wi-list li').length, plan: !!c.querySelector('path.wi-plan'), diff: (c.querySelector('.wi-sum .stt') || {}).textContent, warn: !!c.querySelector('.wi-warn'), saved: (Features.tools().whatif || [])[0], wide: document.documentElement.scrollWidth - document.documentElement.clientWidth }; });
   check(c2.n === 1 && c2.plan && /−\s?250/.test(c2.diff || ''), 'a purchase shows as a second line, 250 000 kr less at the end ' + JSON.stringify(c2.diff));

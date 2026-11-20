@@ -133,7 +133,7 @@
 @media (max-width: 759px) {
   .sp-box { height: 88vh; height: 88dvh; }
 }
-.sv-by { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.sv-by { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); min-width: 0; }
 .sv-aside { margin-top: 2px; }
 .sv-hint { margin: 0; font-size: 12.5px; min-height: 0; }
 .sv-hint:empty { display: none; }
@@ -641,8 +641,8 @@
 .wi-type i { color: var(--accent); }
 .wi-add { margin: 10px 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-card, 14px); }
 .wi-add-h { margin: 0 0 8px; font-weight: 600; }
-.wi-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-.wi-lb { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-s, 13px); color: var(--muted); }
-.wi-lb input, .wi-lb select { min-height: 44px; font-size: 16px; color: var(--text); }
+.wi-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 10px; }
+.wi-lb { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-s, 13px); color: var(--muted); min-width: 0; }
+.wi-lb input, .wi-lb select { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; font-size: 16px; color: var(--text); }
 .wi-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .wi-note { font-size: var(--fs-s, 13px); margin: 8px 0 0; }
