@@ -29,6 +29,8 @@
     return '<a class="nt-row' + (isNew ? ' nt-new' : '') + '" href="' + esc(x.url || '/cmd/') + '"><span class="nt-ic"><i class="bi bi-' + icon(x.id) + '"></i></span><span class="nt-tx"><b>' + esc(x.title) + '</b>' + (x.body ? '<small>' + esc(x.body) + '</small>' : '') + '</span><time>' + esc(when(x.at)) + '</time></a>';
   }
   function open() {
+    /* the popup's look lives in filedrop.js and is only added on first use – add it here too (JP 2026-11-20: it opened unstyled at the bottom of Finances) */
+    if (window.FileDrop && FileDrop.style) FileDrop.style();
     var n = Date.now(), s = seen(), l = items();
     var past = l.filter(function (x) { return x.at <= n; }).reverse(), next = l.filter(function (x) { return x.at > n; });
     var ov = document.createElement('div'); ov.className = 'fdz-ov nt-ov';

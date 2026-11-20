@@ -4292,6 +4292,9 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .td-pin i { color: var(--accent); }
 
 .side-nav .mb-me { position: relative; }
-.side-nav .mb-me .nt-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+/* the name makes room for the bell (it sat on top of the name, 2026-11-20) */
+.side-nav:not(.sn-mini) .mb-me:has(.nt-btn) .mb-who { flex: 1; padding-right: 52px; min-width: 0; }
+.side-nav:not(.sn-mini) .mb-me:has(.nt-btn) .mb-who b, .side-nav:not(.sn-mini) .mb-me:has(.nt-btn) .mb-who small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-nav .mb-me .nt-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
 .side-nav.sn-mini .mb-me .nt-btn { right: -6px; top: -6px; transform: none; width: 28px; height: 28px; min-width: 0; min-height: 0; font-size: 13px; }
 .side-nav.sn-mini .mb-me .nt-btn .nt-badge { top: -4px; right: -4px; }

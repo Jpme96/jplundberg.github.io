@@ -243,5 +243,5 @@
     alert: function (msg, o) { return ask('alert', msg, null, o); },
     tip: showTip
   };
-  window.FileDrop = { open: open, give: give, kinds: kinds };
+  window.FileDrop = { open: open, give: give, kinds: kinds, style: style };
 })();
