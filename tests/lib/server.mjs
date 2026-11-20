@@ -53,6 +53,8 @@ function fakeBank(u, init) {
   try { head = JSON.parse(Buffer.from(parts[0], 'base64url').toString()); body = JSON.parse(Buffer.from(parts[1], 'base64url').toString()); } catch (e) {}
   if (parts.length !== 3 || head.alg !== 'RS256' || !/^[0-9a-f-]{36}$/.test(head.kid || '') || body.aud !== 'api.enablebanking.com' || !(parts[2].length > 300)) return new Response(JSON.stringify({ message: 'bad jwt' }), { status: 401 });
   const day = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  /* like SpareBank 1: account calls need the user-present headers */
+  if (p.startsWith('/accounts/') && !(init.headers['psu-user-agent'])) return new Response(JSON.stringify({ message: 'HTTP header is required: PSU-IP-Address.' }), { status: 422 });
   if (m === 'GET' && p.startsWith('/aspsps')) return ebj({ aspsps: ['DNB', 'Bank Norwegian', 'SpareBank 1 Østlandet', 'Made-up Bank'].map(n => ({ name: n, country: 'NO', maximum_consent_validity: 15552000, psu_types: ['personal'] })) });
   if (m === 'POST' && p === '/auth') { const b = JSON.parse(init.body || '{}'); globalThis.__eb.auth = b; return ebj({ url: b.redirect_url + '?code=MADEUPCODE&state=' + encodeURIComponent(b.state), authorization_id: 'a1' }); }
   if (m === 'POST' && p === '/sessions') return ebj({ session_id: 'sess-0000-made-up', aspsp: { name: globalThis.__eb.auth ? globalThis.__eb.auth.aspsp.name : 'DNB', country: 'NO' }, access: { valid_until: new Date(Date.now() + 90 * 864e5).toISOString() },

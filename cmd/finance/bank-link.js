@@ -105,7 +105,7 @@
     if (!todo.length) return; naming = true;
     Promise.all(todo.map(function (uid) { return api('GET', '/accounts/' + uid + '/details').then(function (j) { return { uid: uid, j: j }; }, function () { return { uid: uid, j: null }; }); })).then(function (res) {
       saveBank(function (b) { b.links.forEach(function (l) { (l.accts || []).forEach(function (a) {
-        var r = res.filter(function (x) { return x.uid === a.uid; })[0]; if (!r) return;
+        var r = res.filter(function (x) { return x.uid === a.uid; })[0]; if (!r || !r.j) return;   /* failed: tried again next time */
         var p = r.j && (r.j.product || r.j.details || (r.j.cash_account_type && { CACC: 'Brukskonto', SVGS: 'Sparekonto', CARD: 'Kortkonto', LOAN: 'Lån' }[r.j.cash_account_type]));
         if (!a.holder) a.holder = a.name;
         if (p) a.name = p;

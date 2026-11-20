@@ -998,7 +998,11 @@ async function bankApi(request, url) {
   let body;
   if (m === 'POST') { body = await request.text(); if (body.length > 8000) return json({ error: 'too big' }, 413); }
   let r;
-  try { r = await fetch('https://api.enablebanking.com' + p, { method: m, headers: { authorization: auth, accept: 'application/json', 'content-type': 'application/json' }, body }); }
+  /* you are there (the call comes from your browser): some banks (SpareBank 1) require your device's address and browser
+     to be passed on – the PSD2 "user present" headers; nothing else about you is sent */
+  const psu = { 'psu-ip-address': request.headers.get('cf-connecting-ip') || '', 'psu-user-agent': (request.headers.get('user-agent') || '').slice(0, 300) };
+  if (!psu['psu-ip-address']) delete psu['psu-ip-address'];
+  try { r = await fetch('https://api.enablebanking.com' + p, { method: m, headers: Object.assign({ authorization: auth, accept: 'application/json', 'content-type': 'application/json' }, psu), body }); }
   catch (e) { return json({ error: 'the bank service did not answer' }, 502); }
   return new Response(r.body, { status: r.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 }
