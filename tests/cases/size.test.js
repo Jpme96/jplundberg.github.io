@@ -78,7 +78,8 @@ const BUDGET_KB = { total: 1702 };   /* +1–2 kB every page (2026-11-20, JP): N
 /* +2 kB every page (2026-11-20, JP): remove and clear all in the notification panel */
 /* +2 kB every page (2026-11-20, JP): swipe to remove a notification, and a tap goes to its card */
 /* +1–2 kB every page (2026-11-20, JP): Needs you in the notification panel, swipe on the phone */
-const PAGE_KB = { 'index.html': 1461, 'admin/index.html': 1375, 'calendar/index.html': 1304, 'finance/index.html': 1702, 'food/index.html': 1393, 'goals/index.html': 1322, 'habits/index.html': 1351, 'house/index.html': 1665, 'papers/index.html': 1343, 'people/index.html': 1391, 'travel/index.html': 1448, 'wish/index.html': 1408, 'work/index.html': 1477 };
+/* +1 kB (2026-11-20): the price-line redraw */
+const PAGE_KB = { 'index.html': 1462, 'admin/index.html': 1375, 'calendar/index.html': 1304, 'finance/index.html': 1702, 'food/index.html': 1393, 'goals/index.html': 1322, 'habits/index.html': 1351, 'house/index.html': 1666, 'papers/index.html': 1343, 'people/index.html': 1392, 'travel/index.html': 1448, 'wish/index.html': 1408, 'work/index.html': 1477 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
