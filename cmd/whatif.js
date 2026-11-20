@@ -44,7 +44,7 @@
     months.forEach(function (m) {
       var l = ex.filter(function (e) { return e && typeof e.date === 'string' && e.date.slice(0, 7) === m; });
       if (!l.length) return;
-      var big = B && B.oneOffs ? B.oneOffs(l, income - fixedNow) : [];
+      var big = B && B.oneOffs ? B.oneOffs(l, 0) : [];   /* anything from 2 500 kr counts as a one-off here, whatever the pay (20 Nov) */
       tot += l.reduce(function (a, e) { return a + (big.indexOf(e) >= 0 ? 0 : (+e.amount || 0)); }, 0); used++;
     });
     var spend = used ? tot / used : 0;
