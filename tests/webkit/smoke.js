@@ -30,6 +30,10 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
       /* the "Create a passcode" box can show its second field only after the first try (a slow first start): fill both and try again */
       if (!unl) { await p.fill('#lockPass', 'test-passcode-1').catch(() => {}); if (await p.locator('#lockConfirm').isVisible().catch(() => false)) await p.fill('#lockConfirm', 'test-passcode-1'); await p.click('#lockSubmit').catch(() => {});
         unl = await p.waitForFunction(() => document.documentElement.classList.contains('unlocked'), null, { timeout: 30000, polling: 250 }).then(() => true, () => false); }
+      /* a cold first start in CI can still be on the lock screen: load the page again and try once more (2026-11-20) */
+      if (!unl) { console.log('  (first start slow – reloading and trying again)'); await p.reload().catch(() => {}); await p.waitForSelector('#lockPass', { state: 'visible', timeout: 15000 }).catch(() => {});
+        await p.fill('#lockPass', 'test-passcode-1').catch(() => {}); if (await p.locator('#lockConfirm').isVisible().catch(() => false)) await p.fill('#lockConfirm', 'test-passcode-1'); await p.click('#lockSubmit').catch(() => {});
+        unl = await p.waitForFunction(() => document.documentElement.classList.contains('unlocked'), null, { timeout: 30000, polling: 250 }).then(() => true, () => false); }
       if (!unl) console.log('  not unlocked – the lock screen says: ' + JSON.stringify(await p.evaluate(() => { const l = document.getElementById('lock') || document.body; return (l.innerText || '').slice(0, 300) + ' | secure ' + window.isSecureContext + ' | subtle ' + !!(window.crypto && crypto.subtle); })) + ' | console: ' + logs.slice(-6).join(' / ').slice(0, 600));
       check(unl, W + ' px: unlocked');
       if (!unl) { await ctx.close(); continue; }
