@@ -29,6 +29,11 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
     return { still, n0, n1, plumber };
   });
   check(del.still && del.n1 === del.n0 - 1 && !del.plumber, 'the × removes one and the popup stays open ' + JSON.stringify(del));
+  /* swipe a row sideways to remove it (JP 2026-11-20) */
+  const sw = await p.evaluate(() => { const it = [...document.querySelectorAll('.nt-ov .nt-item')][0]; if (!it) return null; const r = it.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, tx: it.textContent.slice(0, 30), n: document.querySelectorAll('.nt-ov .nt-item').length }; });
+  if (sw) { await p.mouse.move(sw.x, sw.y); await p.mouse.down(); for (let i = 1; i <= 8; i++) await p.mouse.move(sw.x - i * 25, sw.y); await p.mouse.up(); await sl(500); }
+  const sw2 = await p.evaluate(() => ({ open: !!document.querySelector('.nt-ov'), n: document.querySelectorAll('.nt-ov .nt-item').length, url: location.pathname }));
+  check(sw && sw2.open && sw2.n === sw.n - 1 && sw2.url === '/cmd/', 'swiping a row removes it, and does not open it ' + JSON.stringify([sw, sw2]));
   await p.keyboard.press('Escape'); await sl(200);
   const c2 = await p.evaluate(() => ({ gone: !document.querySelector('.nt-ov'), hidden: document.querySelector('#ntBtn .nt-badge').hidden }));
   check(c2.gone && c2.hidden, 'Escape closes it, and the count is cleared');
@@ -40,6 +45,13 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   await until(p, () => !!document.querySelector('.mb-me #ntBtn'), 8000);
   const side = await p.evaluate(() => { const bt = document.getElementById('ntBtn'), w = document.querySelector('.mb-me .mb-who b'); if (!bt || !w) return null; const a = bt.getBoundingClientRect(), r = document.createRange(); r.selectNodeContents(w); const t = w.getBoundingClientRect(); bt.click(); const o = document.querySelector('.nt-ov'); const out = { inMe: !!bt.closest('.mb-me'), gap: Math.round(a.left - t.right), fixed: !!o && getComputedStyle(o).position === 'fixed' }; if (o) o.click(); return out; });
   check(side && side.inMe && side.gap >= 0 && side.fixed, 'side menu: the bell is beside the name, and the popup floats on Finances ' + JSON.stringify(side));
+  /* a notification goes to its tile: a bill opens Finances' "Next 14 days" – its tab opens and the card lights up */
+  await p.evaluate(() => { const b = document.querySelector('[data-ftab-go="tx"]'); if (b) b.click(); });
+  await sl(300);
+  const hid = await p.evaluate(() => document.querySelector('.card.next').offsetHeight);
+  await p.evaluate(() => { location.hash = '#c=next'; }); await until(p, () => document.querySelector('.card.next').classList.contains('sr-flash'), 4000);
+  const tile = await p.evaluate(() => { const c = document.querySelector('.card.next'); return { shown: c.offsetHeight > 0, flash: c.classList.contains('sr-flash'), hash: location.hash }; });
+  check(hid === 0 && tile.shown && tile.flash && !tile.hash, 'a link to a tile opens its tab and lights it up ' + JSON.stringify([hid, tile]));
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();

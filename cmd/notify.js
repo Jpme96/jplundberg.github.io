@@ -79,7 +79,7 @@
         (d.budget.fixed || []).forEach(function (f) {
           if (!f.day || f.src === 'sub' || paid.indexOf(f.id) > -1) return;
           var k = ym + '-' + pad(Math.min(f.day, dim));
-          add('bill:' + f.id + ':' + k, at(k, 9), full ? f.name + ' is due today' : 'A bill is due today', full ? kr(f.amount) : 'Open Finances to see it', '/cmd/finance/#c=bills');
+          add('bill:' + f.id + ':' + k, at(k, 9), full ? f.name + ' is due today' : 'A bill is due today', full ? kr(f.amount) : 'Open Finances to see it', '/cmd/finance/#c=next');
         });
       }
     }
@@ -95,7 +95,7 @@
       if (evs.length) parts.push(evs.length + (evs.length === 1 ? ' event' : ' events') + (full && first ? ' (first ' + pad(first.start.getHours()) + ':' + pad(first.start.getMinutes()) + ' ' + first.title + ')' : ''));
       if (tasks.length) parts.push(full ? 'Tasks: ' + tasks.slice(0, 3).map(function (t) { return t.text; }).join(', ') : tasks.length + (tasks.length === 1 ? ' task' : ' tasks'));
       if (bills.length) parts.push(full ? 'Due: ' + bills.map(function (f) { return f.name; }).join(', ') : bills.length + (bills.length === 1 ? ' bill due' : ' bills due'));
-      add('morning:' + mk, at(mk, 7, 30), 'Today', parts.join(' · '), '/cmd/');
+      add('morning:' + mk, at(mk, 7, 30), 'Today', parts.join(' · '), '/cmd/#c=brief');
     }
     /* tasks with a day */
     if (p.k.tasks) (readJSON('dash.todos', []) || []).forEach(function (t) {
@@ -148,7 +148,7 @@
       if (spent != null) bits.push(I18N.k('ui.sum-spent', 'Spent {a}', { a: kr(spent) }));
       if (wo != null) bits.push(I18N.k(wo === 1 ? 'ui.sum-wo1' : 'ui.sum-wo', wo === 1 ? '1 workout' : '{n} workouts', { n: wo }));
       bits.push(I18N.k(ahead === 1 ? 'ui.sum-ahead1' : 'ui.sum-ahead', ahead === 1 ? '1 event next week' : '{n} events next week', { n: ahead }));
-      add('summary:' + suK, at(suK, 19), I18N.k('ui.sum-title', 'Your week'), full ? bits.join(' · ') : I18N.k('ui.sum-private', 'Your week in short – open the dashboard'), '/cmd/');
+      add('summary:' + suK, at(suK, 19), I18N.k('ui.sum-title', 'Your week'), full ? bits.join(' · ') : I18N.k('ui.sum-private', 'Your week in short – open the dashboard'), '/cmd/#c=brief');
     }
     /* document deadlines (JP 23:46): a week before and on the day, 08:00, while documents are still missing or not approved */
     if (Fe && Fe.list) (Fe.list('dctl') || []).forEach(function (pj) {

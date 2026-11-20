@@ -4272,6 +4272,8 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .nt-h { margin: 14px 2px 6px; font-size: var(--fs-s, 13px); font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .nt-item { display: flex; align-items: center; gap: 2px; }
 .nt-item > .nt-row { flex: 1; min-width: 0; }
+.nt-item { touch-action: pan-y; transition: transform .18s ease, opacity .18s ease; }
+.nt-item.nt-drag { transition: none; user-select: none; }
 .nt-x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; font-size: 13px; }
 .nt-x:hover { background: rgba(var(--ink-rgb), .07); color: var(--text); }
 .nt-hp { display: flex; align-items: center; justify-content: space-between; }

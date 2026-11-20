@@ -36,7 +36,7 @@
     btn.setAttribute('aria-label', c ? K('ui.nt-label-n', 'Notifications, {n} new', { n: c }) : K('ui.nt-label', 'Notifications'));
   }
   function row(x, isNew) {
-    return '<div class="nt-item" data-ntk="' + esc(keyOf(x)) + '"><a class="nt-row' + (isNew ? ' nt-new' : '') + '" href="' + esc(x.url || '/cmd/') + '"><span class="nt-ic"><i class="bi bi-' + icon(x.id) + '"></i></span><span class="nt-tx"><b>' + esc(x.title) + '</b>' + (x.body ? '<small>' + esc(x.body) + '</small>' : '') + '</span><time>' + esc(when(x.at)) + '</time></a><button type="button" class="nt-x" data-ntdel aria-label="' + esc(K('ui.nt-del', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></div>';
+    return '<div class="nt-item" data-ntk="' + esc(keyOf(x)) + '"><a draggable="false" class="nt-row' + (isNew ? ' nt-new' : '') + '" href="' + esc(x.url || '/cmd/') + '"><span class="nt-ic"><i class="bi bi-' + icon(x.id) + '"></i></span><span class="nt-tx"><b>' + esc(x.title) + '</b>' + (x.body ? '<small>' + esc(x.body) + '</small>' : '') + '</span><time>' + esc(when(x.at)) + '</time></a><button type="button" class="nt-x" data-ntdel aria-label="' + esc(K('ui.nt-del', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></div>';
   }
   function open() {
     /* the popup's look lives in filedrop.js and is only added on first use – add it here too (JP 2026-11-20: it opened unstyled at the bottom of Finances) */
@@ -66,6 +66,29 @@
       }
       if (e.target.closest('.nt-row')) close();
     });
+    /* swipe a row sideways to remove it (JP 2026-11-20); a short drag springs back, and the tap after a swipe is not a click */
+    var sw = null;
+    ov.addEventListener('pointerdown', function (e) {
+      var it = e.target.closest('.nt-item'); if (!it || e.target.closest('[data-ntdel]') || e.button > 0) return;
+      sw = { it: it, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
+    });
+    ov.addEventListener('pointermove', function (e) {
+      if (!sw || e.pointerId !== sw.id) return;
+      var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (!sw.on) { if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } if (Math.abs(dx) < 10) return; sw.on = true; sw.it.classList.add('nt-drag'); try { sw.it.setPointerCapture(e.pointerId); } catch (er) {} }
+      sw.dx = dx; sw.it.style.transform = 'translateX(' + dx + 'px)'; sw.it.style.opacity = String(Math.max(.25, 1 - Math.abs(dx) / 260));
+    });
+    var swEnd = function () {
+      if (!sw) return; var s0 = sw; sw = null; if (!s0.on) return;
+      s0.it.classList.remove('nt-drag'); ov._swiped = Date.now();
+      if (Math.abs(s0.dx) > Math.min(110, s0.it.offsetWidth * .35)) {
+        s0.it.style.transform = 'translateX(' + (s0.dx > 0 ? '' : '-') + '110%)'; s0.it.style.opacity = '0';
+        setTimeout(function () { var b = s0.it.querySelector('[data-ntdel]'); if (b) b.click(); }, 180);
+      } else { s0.it.style.transform = ''; s0.it.style.opacity = ''; }
+    };
+    ov.addEventListener('dragstart', function (e) { if (e.target.closest && e.target.closest('.nt-item')) e.preventDefault(); });
+    ov.addEventListener('pointerup', swEnd); ov.addEventListener('pointercancel', swEnd);
+    ov.addEventListener('click', function (e) { if (ov._swiped && Date.now() - ov._swiped < 400 && e.target.closest('.nt-row')) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
     document.addEventListener('keydown', key, true);
     document.body.appendChild(ov); document.documentElement.classList.add('fdz-modal');
     try { localStorage.setItem('dash.ntSeen', String(n)); } catch (e) {}

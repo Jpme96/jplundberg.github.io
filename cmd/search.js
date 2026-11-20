@@ -238,11 +238,15 @@
     if (!m) return;
     var card = document.querySelector('.card.' + m[1]);
     if (!card) return;
+    /* the card may sit on another tab of the page: open that tab first (JP 2026-11-20: a notification should go to its tile) */
+    var tab = card.dataset.ptab || (card.closest('[data-ptab]') || { dataset: {} }).dataset.ptab;
+    if (tab && window.PageTabs && PageTabs.current && PageTabs.current() !== tab) PageTabs.show(tab, true);
     setTimeout(function () {
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       card.classList.add('sr-flash'); setTimeout(function () { card.classList.remove('sr-flash'); }, 1600);
+      /* the address is cleaned after the page's own tabs have read it (Finances opens the card's tab from #c=…) */
+      if (location.hash === '#c=' + m[1]) history.replaceState(null, '', location.pathname + location.search);
     }, 350);
-    history.replaceState(null, '', location.pathname + location.search);
   }
   /* for others: everything you can find (notes link to things with [[name]] – script.js) */
   window.SearchIndex = function () { try { return index().filter(function (x) { return x.g !== 'Commands' && x.g !== 'Notes' && x.h; }); } catch (e) { return []; } };
