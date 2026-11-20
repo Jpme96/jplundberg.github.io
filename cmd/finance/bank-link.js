@@ -253,7 +253,8 @@
     if (isNaN(bal) || !window.Accts) return;
     var d = V(), A = Accts.get(d, acctId); if (!A) return;
     var kind = Accts.kind(d, acctId), v = kind === 'credit' ? Math.abs(bal) : bal;
-    var L = (d.budget && d.budget.acctList) || [], e = L.filter(function (x) { return x.id === acctId; })[0];
+    d.budget = d.budget || {}; var L = d.budget.acctList = Array.isArray(d.budget.acctList) ? d.budget.acctList : [], e = L.filter(function (x) { return x.id === acctId; })[0];
+    if (!e) { e = { id: acctId, kind: kind }; L.push(e); }   /* one of the three you start with, never edited yet */
     if (e) { e.bal = Math.round(v * 100) / 100; e.balAt = dkey(Date.now()); e.balSrc = 'bank'; window.Vault.save(d); window.dispatchEvent(new Event('fin:change')); }
   }
   var busy = false, cache = null;
@@ -295,8 +296,18 @@
     if (!el) { el = document.createElement('button'); el.type = 'button'; el.className = 'bk-new'; el.setAttribute('data-bkreview', ''); card.insertBefore(el, card.querySelector('.im-btn')); }
     el.innerHTML = '<i class="bi bi-bank"></i> ' + esc(K(n === 1 ? 'ui.bk-new1' : 'ui.bk-newn', n === 1 ? '1 new from the bank' : '{n} new from the bank', { n: n }));
   }
+  /* balances by themselves (JP 2026-11-20: "couldn't it say how much I have in my cards?"): when Finances opens, at
+     most once an hour, every matched account's balance is set to the bank's – no review needed for a balance */
+  function balances() {
+    var list = mappedAccts(); if (!list.length) return Promise.resolve(0);
+    try { localStorage.setItem('dash.bankBal', String(Date.now())); } catch (e) {}
+    return Promise.all(list.map(function (x) { return api('GET', '/accounts/' + x.a.uid + '/balances').then(function (j) { return { acct: x.a.acct, bal: balanceOf(j) }; }, function () { return null; }); })).then(function (res) {
+      var n = 0; res.forEach(function (r) { if (r && !isNaN(r.bal)) { setBal(r.acct, r.bal); n++; } }); return n;
+    });
+  }
   function quiet() {
     var b = B(); if (!b || !b.key || !mappedAccts().length || busy) return;
+    if (Date.now() - (+localStorage.getItem('dash.bankBal') || 0) > 36e5) balances();
     var last = +localStorage.getItem('dash.bankLook') || 0; if (Date.now() - last < 6 * 36e5) return;
     try { localStorage.setItem('dash.bankLook', String(Date.now())); } catch (e) {}
     Promise.all(mappedAccts().map(function (x) { return pull(x.a).then(function (r) { return { x: x, r: r }; }, function (e) { return { x: x, err: e }; }); })).then(function (res) {
@@ -336,5 +347,5 @@
   window.addEventListener('hashchange', hash);
   window.Vault.onUnlock(function () { back(); hash(); setTimeout(quiet, 2500); });
 
-  window.BankLink = { block: block, setup: setup, fetch: fetchAll, jwt: jwt, der: der, pull: pull, _api: api };
+  window.BankLink = { block: block, setup: setup, fetch: fetchAll, balances: balances, jwt: jwt, der: der, pull: pull, _api: api };
 })();

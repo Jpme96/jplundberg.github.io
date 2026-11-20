@@ -55,6 +55,9 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   const nw = await p.evaluate(() => { const d = Vault.get(), id = d.bank.links[0].accts[1].acct, A = (d.budget.acctList || []).find(a => a.id === id) || {}; return { id, name: A.name, kind: A.kind, inList: Accts.list(d).some(a => a.id === id), opt: !!document.querySelector('[data-bkmap="0:1"] option[value="' + id + '"]:checked') }; });
   check(nw.id && nw.name === 'Made-up savings' && nw.kind === 'savings' && nw.inList && nw.opt, '"+ New account" makes "Made-up savings" as a savings account and matches it ' + JSON.stringify(nw));
 
+  /* balances by themselves: every matched account's balance from the bank, no review (JP: "say how much I have in my account") */
+  const nb = await p.evaluate(async () => { const n = await BankLink.balances(); const d = Vault.get(); const A = (d.budget.acctList || []).find(a => a.id === window.__sal) || {}; return { n, bal: A.bal, src: A.balSrc, sheetOpen: !!document.querySelector('.im-box [data-import]') }; });
+  check(nb.n >= 1 && nb.bal === 12345.6 && nb.src === 'bank' && !nb.sheetOpen, 'balances are set from the bank by themselves ' + JSON.stringify(nb));
   /* 4. fetch: booked rows through the import preview, the pending one left out, both pages read */
   await p.evaluate(() => document.querySelector('[data-bkfetch]').click());
   check(await until(p, () => !!document.querySelector('.im-box [data-import]'), 10000) !== null, 'the fetched rows open in the import preview');
