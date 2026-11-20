@@ -22,6 +22,13 @@ const ROOT = path.join(__dirname, '../../cmd');
   await go(p, '', 2000);
   await p.evaluate(() => { const s = document.querySelector('[data-open-settings], #settingsBtn, [aria-label="Settings"]'); if (s) s.click(); }); await sl(800);
   (await p.evaluate(() => window.__csp || [])).forEach(x => blocked.push('settings: ' + x));
+  /* the shared app and the contractors' upload page (2026-11-20) */
+  for (const u of ['home/', '../upload/']) {
+    await p.goto(p.url().replace(/\/cmd\/.*$/, '/cmd/') + u, { waitUntil: 'domcontentloaded' }).catch(() => {}); await sl(2500);
+    const has = await p.evaluate(() => !!document.querySelector('meta[http-equiv="Content-Security-Policy"]'));
+    if (!has) blocked.push(u + ': no policy');
+    (await p.evaluate(() => window.__csp || [])).forEach(x => blocked.push(u + ': ' + x));
+  }
   check(!blocked.length, 'nothing is blocked by the policy ' + [...new Set(blocked)].slice(0, 5).join(' | '));
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);

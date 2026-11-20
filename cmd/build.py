@@ -165,7 +165,9 @@ for hp in sorted(HTML):
         if m.group(2).endswith('home/app.js'): return m.group(0)     # the shared app keeps its counting number (below)
         f = _local(hp, m.group(2))
         return m.group(0) if not f else '%s="%s?v=%s"' % (m.group(1), m.group(2), _h(open(f, 'rb').read()))
-    _save(hp, html, re.sub(r'(src|href)="([^"?]+)\?v=[^"]*"', _stamp, html))
+    new = re.sub(r'(src|href)="([^"?]+)\?v=[^"]*"', _stamp, html)
+    if hp.endswith(os.path.join('upload', 'index.html')) or hp.endswith(os.path.join('cmd', 'home', 'index.html')): new = csp(new)   # the upload page and the shared app carry the policy too (2026-11-20)
+    _save(hp, html, new)
 # the shared app: its version goes up by one when any of its files change (it compares numbers to know "newer")
 HV = os.path.join(HERE, 'home', 'version.json'); APPJS = os.path.join(HERE, 'home', 'app.js'); HIDX = os.path.join(HERE, 'home', 'index.html')
 hv = json.load(io.open(HV)) if os.path.exists(HV) else None
