@@ -192,7 +192,7 @@ function storage(env) {
 async function route(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '');
-    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws|vpiece|errlog)$/.test(path)) return json({ error: 'not found' }, 404);
+    if (!/^\/cmd\/api\/(vault|site|visitors|content|article|calendar|texts|push|health|power|rate|ping|recipe|backup|file|devices|share|shared|sfile|pvault|chat|cfile|live|ws|vpiece|errlog|bank)$/.test(path)) return json({ error: 'not found' }, 404);
 
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
@@ -247,6 +247,7 @@ async function route(request, env) {
     if (path === '/cmd/api/article') return articleApi(request, url, env);
     if (path === '/cmd/api/calendar') return calendarFeed(request);
     if (path === '/cmd/api/texts') return textsApi(request, env);
+    if (path === '/cmd/api/bank') return bankApi(request, url);
     if (path === '/cmd/api/power') return powerApi(url);
     if (path === '/cmd/api/rate') return rateApi();
     if (path === '/cmd/api/recipe') return recipeApi(request);
@@ -973,6 +974,35 @@ async function fileApi(request, url, env) {
 }
 
 /* ---------- electricity prices (NO1), cached for an hour at the edge ---------- */
+/* ---------- bank connection (2026-11-20, JP: "the bank thing") ----------
+   Enable Banking's API can't be called from a web page (no CORS), so this passes the calls on – nothing else.
+   The browser signs each call itself with the app's key from the encrypted vault; this only forwards it to
+   api.enablebanking.com and hands the answer back. Nothing is stored or logged here, and only the read-only
+   account calls are let through: the bank list, starting a BankID login, the session, and an account's
+   balances / transactions / details. */
+async function bankApi(request, url) {
+  const p = url.searchParams.get('p') || '', m = request.method;
+  const OK = [
+    ['GET', /^\/aspsps(\?country=[A-Z]{2}(&psu_type=(personal|business))?(&service=AIS)?)?$/],
+    ['GET', /^\/application$/],
+    ['POST', /^\/auth$/],
+    ['POST', /^\/sessions$/],
+    ['GET', /^\/sessions\/[\w-]{8,64}$/],
+    ['DELETE', /^\/sessions\/[\w-]{8,64}$/],
+    ['GET', /^\/accounts\/[\w-]{8,64}\/(balances|details)$/],
+    ['GET', /^\/accounts\/[\w-]{8,64}\/transactions(\?[\w%=&.:+-]{0,600})?$/]
+  ];
+  if (!OK.some(([mm, re]) => mm === m && re.test(p))) return json({ error: 'not allowed' }, 400);
+  const auth = request.headers.get('authorization') || '';
+  if (!/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/.test(auth)) return json({ error: 'no signature' }, 401);
+  let body;
+  if (m === 'POST') { body = await request.text(); if (body.length > 8000) return json({ error: 'too big' }, 413); }
+  let r;
+  try { r = await fetch('https://api.enablebanking.com' + p, { method: m, headers: { authorization: auth, accept: 'application/json', 'content-type': 'application/json' }, body }); }
+  catch (e) { return json({ error: 'the bank service did not answer' }, 502); }
+  return new Response(r.body, { status: r.status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+}
+
 async function powerApi(url) {
   const d = String(url.searchParams.get('date') || '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return json({ error: 'bad date' }, 400);

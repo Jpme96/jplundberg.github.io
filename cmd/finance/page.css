@@ -661,3 +661,21 @@
 .wi-goal .wi-lb { flex: 1; }
 .wi-goal-a { margin: 4px 0 6px; font-size: var(--fs-s, 13px); }
 .wi-goal-a i { color: var(--accent); }
+
+/* bank connection (bank-link.js, 2026-11-20) */
+.bk-block { display: flex; align-items: center; gap: 10px; padding: 12px; margin: 4px 0 14px; border-radius: var(--r-ctl, 12px); background: rgba(var(--ink-rgb), .05); }
+.bk-block > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bk-block small { font-size: 12.5px; }
+.bk-step { margin: 10px 0 14px; }
+.bk-step > b { display: block; margin-bottom: 4px; }
+.bk-ok { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
+.bk-msg { padding: 10px 12px; border-radius: var(--r-ctl, 12px); background: rgba(var(--ink-rgb), .06); margin: 4px 0 12px; }
+.bk-link { border: 1px solid var(--line); border-radius: var(--r-ctl, 12px); padding: 10px 12px; margin: 0 0 10px; }
+.bk-lh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.bk-lh small { font-size: 12.5px; }
+.bk-acct { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.bk-acct > span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bk-acct select { max-width: 48%; }
+.bk-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.bk-add select { flex: 1; min-width: 0; }
+.bk-new { border: 0; border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12.5px; background: rgba(var(--ok-rgb), .16); color: var(--ok); cursor: pointer; margin-left: auto; margin-right: 6px; }

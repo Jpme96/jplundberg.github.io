@@ -526,6 +526,16 @@ window.Budget.cardBills = function (d, now) {
   "use strict";
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
   window.BriefExtra = window.BriefExtra || [];
+  /* the bank connection (finance/bank-link.js): a connection about to end or ended – renew it with BankID */
+  window.BriefExtra = window.BriefExtra.filter(function (f) { return f._id !== 'bank'; });
+  var bankBrief = function (add) {
+    var b = (window.Vault.get() || {}).bank, K = I18N.k; if (!b || !b.links) return;
+    b.links.forEach(function (l) {
+      if (!l.until) return; var days = Math.ceil((new Date(l.until) - Date.now()) / 864e5);
+      if (days <= 10) add(days <= 0 ? 8 : 30, 'bank', days <= 0 ? 'var(--danger)' : 'var(--warn)', days <= 0 ? K('ui.bk-brief-ended', 'The connection to {b} has ended', { b: l.aspsp }) : K('ui.bk-brief-ends', 'The connection to {b} ends in {n} days', { b: l.aspsp, n: days }), K('ui.bk-brief-sub', 'Renew it with BankID'), 'finance/#bank', { key: 'bank:' + l.aspsp + ':' + l.until });
+    });
+  };
+  bankBrief._id = 'bank'; window.BriefExtra.push(bankBrief);
   window.BriefExtra.push(function (add) {
     var d = window.Vault && window.Vault.get && window.Vault.get(); if (!d || !d.budget) return;
     if (window.Features && !window.Features.on('finance')) return;

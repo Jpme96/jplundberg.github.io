@@ -43,7 +43,37 @@ const TEAM = 'https://test.cloudflareaccess.com', AUD = 'aud123';
 const kp = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1,0,1]), hash: 'SHA-256' }, true, ['sign','verify']);
 const jwk = { ...(await crypto.subtle.exportKey('jwk', kp.publicKey)), kid: 'k1' };
 const realFetch = globalThis.fetch;
-globalThis.fetch = async (u, init = {}) => { u = String(u); if (u.startsWith(TEAM)) return new Response(JSON.stringify({ keys: [jwk] })); return new Response('{}', { status: 404 }); };
+/* a pretend Enable Banking (bank-link test): made-up accounts and transactions only; every call must carry a signed-looking JWT for the app */
+const EB = 'https://api.enablebanking.com', ebj = o => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json' } });
+globalThis.__eb = { calls: [] };
+function fakeBank(u, init) {
+  const p = u.slice(EB.length), m = (init.method || 'GET').toUpperCase(), auth = (init.headers && (init.headers.authorization || init.headers.Authorization)) || '';
+  globalThis.__eb.calls.push(m + ' ' + p);
+  const parts = auth.replace(/^Bearer /, '').split('.'); let head = {}, body = {};
+  try { head = JSON.parse(Buffer.from(parts[0], 'base64url').toString()); body = JSON.parse(Buffer.from(parts[1], 'base64url').toString()); } catch (e) {}
+  if (parts.length !== 3 || head.alg !== 'RS256' || !/^[0-9a-f-]{36}$/.test(head.kid || '') || body.aud !== 'api.enablebanking.com' || !(parts[2].length > 300)) return new Response(JSON.stringify({ message: 'bad jwt' }), { status: 401 });
+  const day = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  if (m === 'GET' && p.startsWith('/aspsps')) return ebj({ aspsps: ['DNB', 'Bank Norwegian', 'SpareBank 1 Østlandet', 'Made-up Bank'].map(n => ({ name: n, country: 'NO', maximum_consent_validity: 15552000, psu_types: ['personal'] })) });
+  if (m === 'POST' && p === '/auth') { const b = JSON.parse(init.body || '{}'); globalThis.__eb.auth = b; return ebj({ url: b.redirect_url + '?code=MADEUPCODE&state=' + encodeURIComponent(b.state), authorization_id: 'a1' }); }
+  if (m === 'POST' && p === '/sessions') return ebj({ session_id: 'sess-0000-made-up', aspsp: { name: globalThis.__eb.auth ? globalThis.__eb.auth.aspsp.name : 'DNB', country: 'NO' }, access: { valid_until: new Date(Date.now() + 90 * 864e5).toISOString() },
+    accounts: [{ uid: 'acc-salary-000001', account_id: { iban: 'NO0000000000011' }, name: 'Made-up everyday', currency: 'NOK' }, { uid: 'acc-other-000002', account_id: { iban: 'NO0000000000022' }, name: 'Made-up savings', currency: 'NOK' }] });
+  let mt = p.match(/^\/accounts\/([\w-]+)\/transactions\?(.*)$/);
+  if (m === 'GET' && mt) {
+    const q = new URLSearchParams(mt[2]); globalThis.__eb.from = q.get('date_from');
+    if (mt[1] !== 'acc-salary-000001') return ebj({ transactions: [] });
+    if (!q.get('continuation_key')) return ebj({ continuation_key: 'page2', transactions: [
+      { status: 'BOOK', booking_date: day(2), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '249.90', currency: 'NOK' }, creditor: { name: 'REMA 1000 MADEUP' }, remittance_information: ['Varekjøp'] },
+      { status: 'PDNG', booking_date: day(0), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '99.00', currency: 'NOK' }, creditor: { name: 'PENDING SHOP' } }] });
+    return ebj({ transactions: [
+      { status: 'BOOK', booking_date: day(1), credit_debit_indicator: 'DBIT', transaction_amount: { amount: '89.00', currency: 'NOK' }, creditor: { name: 'Made-up Cafe' } },
+      { status: 'BOOK', booking_date: day(3), credit_debit_indicator: 'CRDT', transaction_amount: { amount: '150.00', currency: 'NOK' }, debtor: { name: 'Vipps refusjon made-up' } }] });
+  }
+  mt = p.match(/^\/accounts\/([\w-]+)\/balances$/);
+  if (m === 'GET' && mt) return ebj({ balances: [{ balance_type: 'CLBD', balance_amount: { amount: mt[1] === 'acc-salary-000001' ? '12345.60' : '500.00', currency: 'NOK' }, reference_date: day(0) }] });
+  if (m === 'DELETE') return ebj({});
+  return new Response('{}', { status: 404 });
+}
+globalThis.fetch = async (u, init = {}) => { u = String(u); if (u.startsWith(TEAM)) return new Response(JSON.stringify({ keys: [jwk] })); if (u.startsWith(EB)) return fakeBank(u, init); return new Response('{}', { status: 404 }); };
 const b64u = b => Buffer.from(b).toString('base64url');
 async function token(em) { const h = b64u(JSON.stringify({ alg: 'RS256', kid: 'k1' })), p = b64u(JSON.stringify({ iss: TEAM, aud: [AUD], exp: Math.floor(Date.now()/1000) + 3600, email: em || 'me@x' }));
   const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', kp.privateKey, new TextEncoder().encode(h + '.' + p)); return h + '.' + p + '.' + b64u(sig); }
@@ -67,6 +97,7 @@ if (process.env.LIVE) env.LIVE = { idFromName: () => 1, get: () => ({ fetch: asy
   for (const s of __socks) if (roles.has(s.role)) { s.send(__snap(s.role)); globalThis.__liveMsgs++; }
   return new Response('ok'); } }) };
 const __srv = http.createServer(async (req, res) => {
+  if (req.url === '/__eb') return res.end(JSON.stringify(globalThis.__eb));
   if (req.url === '/__live') return res.end(JSON.stringify({ socks: [...__socks].map(s => s.role), msgs: globalThis.__liveMsgs }));
   if (req.url.startsWith('/__kvput')) { let body = ''; for await (const c of req) body += c; const j = JSON.parse(body); store.set(j.k, j.v); return res.end('ok'); }
   if (req.url.startsWith('/__kvget')) { const k = new URL('http://x' + req.url).searchParams.get('k'); const v = store.get(k); return res.end(v == null ? '' : typeof v === 'string' ? v : '[bytes]'); }

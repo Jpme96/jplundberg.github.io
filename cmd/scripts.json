@@ -124,7 +124,7 @@
       "budget.js",
       "finance.js",
       "finance/fin.js",
-      "finance/import.js",
+      "finance/import.js", "finance/bank-link.js",
       "finance/fin-plan.js",
       "finance/fin-setup.js",
       "finance/fin-bill.js",

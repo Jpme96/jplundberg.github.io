@@ -287,7 +287,7 @@
   scan.type = 'button'; scan.className = 'icon-btn sm im-btn'; scan.setAttribute('data-qascan', ''); scan.innerHTML = '<i class="bi bi-camera"></i>';
   scan.setAttribute('aria-label', 'Scan a receipt'); scan.title = 'Scan a receipt';
   card.querySelector('.card-head').insertBefore(scan, btn);
-  var found = null;
+  var found = null, afterImport = null;   /* bank-link.js: what to do once these rows are imported (the next account) */
 
   function open(html) { $('imBody').innerHTML = html; bg.hidden = false; document.body.classList.add('qa-open'); requestAnimationFrame(function () { bg.classList.add('open'); }); }
   function close() { bg.classList.remove('open'); document.body.classList.remove('qa-open'); setTimeout(function () { if (!bg.classList.contains('open')) bg.hidden = true; }, 320); }
@@ -298,6 +298,7 @@
     if (!chosen || !list.some(function (a) { return a.id === chosen; })) { try { chosen = localStorage.getItem('dash.imAcct'); } catch (e) {} }
     if (!list.some(function (a) { return a.id === chosen; })) chosen = null;
     open('<h2 class="im-h"><i class="bi bi-bank"></i> Import from your bank</h2>' +
+      (window.BankLink && BankLink.block ? BankLink.block() : '') +
       '<p class="muted im-p">Export the transactions as <b data-t="ui.csv-or-excel">CSV or Excel</b> in your bank app or online bank (under the account’s history), then pick the account the file is from and choose the file. Nothing leaves your browser.</p>' +
       '<p class="im-q">Which account is the file from?</p>' +
       '<div class="im-pick" role="radiogroup" aria-label="Account" data-t-aria-label="ui.account">' + list.map(function (a) {
@@ -416,13 +417,15 @@
     var keys = Object.keys(d.catMemory); if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete d.catMemory[k]; });
     window.Vault.save(d);
     window.dispatchEvent(new Event('fin:change'));
+    var nx = afterImport; afterImport = null;
     close();
+    if (nx) setTimeout(function () { nx(found); }, 450);
     if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-check-lg"></i> ' + n + ' expense' + (n === 1 ? '' : 's') + ' imported' + (nin ? ' · ' + nin + ' in' : '') + (bills ? ' · ' + bills + ' bill' + (bills === 1 ? '' : 's') + ' ticked as paid' : ''));
   }
 
   btn.addEventListener('click', intro);
   bg.addEventListener('click', function (e) {
-    if (e.target === bg || e.target.closest('[data-close]')) { close(); return; }
+    if (e.target === bg || e.target.closest('[data-close]')) { afterImport = null; close(); return; }
     var pa = e.target.closest('[data-pickacct]');
     if (pa) { chosen = pa.dataset.pickacct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} bg.querySelectorAll('[data-pickacct]').forEach(function (b) { b.setAttribute('aria-checked', b === pa); }); var pk = bg.querySelector('[data-pick]'); if (pk) pk.disabled = false; return; }
     if (e.target.closest('[data-pick]')) { if (!chosen && bg.querySelector('[data-pickacct]')) return; file.value = ''; file.click(); return; }
@@ -479,5 +482,11 @@
     });
   });
   window.addEventListener('fin:change', nsLine); window.Vault.onUnlock(nsLine);
-  window.BankImport = { analyse: analyse };     // for tests
+  /* rows fetched from the bank (bank-link.js) go through the same preview as a file: you see them, untick what you
+     don't want, and the same rules apply (duplicates, transfers, card payments, the balance) */
+  window.BankImport = {
+    analyse: analyse,
+    show: function (rows, acct, next) { var res = analyse(rows, { acct: acct, card: false }); if (res.error) return res; afterImport = next || null; preview(res); return res; },
+    open: open, close: close, sheet: bg
+  };
 })();
