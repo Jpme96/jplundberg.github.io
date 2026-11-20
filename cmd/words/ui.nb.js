@@ -1,5 +1,14 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.nt-today": ["Today", "I dag"],
+  "ui.nt-yesterday": ["Yesterday", "I går"],
+  "ui.nt-tomorrow": ["Tomorrow", "I morgen"],
+  "ui.nt-label": ["Notifications", "Varsler"],
+  "ui.nt-label-n": ["Notifications, {n} new", "Varsler, {n} nye"],
+  "ui.nt-empty": ["Nothing in the last three days or the next 24 hours.", "Ingenting de tre siste dagene eller de neste 24 timene."],
+  "ui.nt-next": ["Coming up", "Kommer"],
+  "ui.nt-past": ["Earlier", "Tidligere"],
+  "ui.nt-settings": ["Which notifications you get", "Hvilke varsler du får"],
   "ui.dc-hand-btn": ["Handover package", "Overleveringspakke"],
   "ui.dc-hand-none": ["No approved files with a file on this device yet – approve lines first.", "Ingen godkjente filer på denne enheten ennå – godkjenn linjer først."],
   "ui.dc-hand-making": ["Making the package …", "Lager pakken …"],

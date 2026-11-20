@@ -48,9 +48,13 @@
   });
 
   /* ================= what to remind you of ================= */
-  function plan() {
+  /* plan(opts): the reminders from now to a week ahead (what's sent to the server). opts.from / opts.to (ms) widen or
+     narrow the window and opts.full asks for the full text – the notification panel shows the last days too and only
+     what you'd be told (2026-11-20). */
+  function plan(opts) {
+    opts = opts || {};
     var d = window.Vault && window.Vault.get(); if (!d) return [];
-    var p = prefs(), full = p.detail === 'full', now = Date.now(), end = now + 7 * 864e5, out = [];
+    var p = prefs(), full = opts.full != null ? opts.full : p.detail === 'full', now = opts.from != null ? opts.from - 60e3 : Date.now(), end = opts.to != null ? opts.to : Date.now() + 7 * 864e5, out = [];
     var Fe = window.Features, C = window.Cal, Bu = window.Budget, Fl = window.Flow;
     var on = function (k, def) { return Fe ? Fe.on(k) : def; };
     function add(id, t, title, body, url) { if (t > now + 60e3 && t < end) out.push({ id: id, at: t, title: title, body: body, url: url || '/cmd/' }); }
@@ -243,5 +247,7 @@
     setInterval(sync, 3 * 3600e3);
   }
   window.addEventListener('features:change', shortcuts);
-  window.Notify = { plan: plan, sync: sync, prefs: prefs };
+  /* for the notification panel: what you've been told lately and what's coming (2026-11-20) */
+  function recent(backH, aheadH) { var n = Date.now(); return plan({ from: n - (backH || 72) * 36e5, to: n + (aheadH || 24) * 36e5, full: true }); }
+  window.Notify = { plan: plan, sync: sync, prefs: prefs, recent: recent };
 })();
