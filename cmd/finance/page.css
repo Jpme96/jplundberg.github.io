@@ -646,3 +646,10 @@
 .wi-lb input, .wi-lb select { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; min-height: 44px; font-size: 16px; color: var(--text); }
 .wi-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .wi-note { font-size: var(--fs-s, 13px); margin: 8px 0 0; }
+
+.wi-start { margin: 12px 0 4px; }
+.wi-start .wi-add-h .text-btn { margin-left: 6px; }
+.wi-nums { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 6px 14px; }
+.wi-nums li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: var(--fs-s, 13px); color: var(--muted); }
+.wi-nums b { color: var(--text); font-weight: 600; }
+.wi-lb.wi-wide { grid-column: 1 / -1; }

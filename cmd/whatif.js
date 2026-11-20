@@ -12,7 +12,10 @@
      income { pct }                   your pay becomes pct % of today's
      extra  { amount }                extra paid on the loan with the highest rate, every month
      cost   { amount, until }         a new monthly cost (or a negative one: a cost that stops)
-     child  { amount }                monthly costs for a child (a rough default – change it) */
+     child  { amount }                monthly costs for a child (a rough default – change it)
+     custom { label, once, monthly, until }  anything else: a one-off amount and/or a monthly one (+ money in, − money out)
+   Assets = savings and other assets + your part of a home's value (kept with its mortgage); the warning looks at money only.
+   The starting numbers (pay, fixed costs, everyday spending) can be set by hand – the card passes them in b. */
 (function () {
   'use strict';
   function ym(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
@@ -46,7 +49,9 @@
       return { id: a.id, name: a.name || 'Loan', bal: Math.max(0, bal), rate: +a.rate || 0, pay: Math.max(0, pay) };
     }).filter(function (l) { return l.bal > 0.5; });
     var assets = ((d && d.accounts) || []).filter(function (a) { return a && a.kind !== 'debt'; }).reduce(function (s, a) { return s + (+a.balance || 0); }, 0);
-    return { start: k, income: Math.round(income), fixed: Math.round(fixedNow), fixedRows: fixed, spend: Math.round(spend), loans: loans, assets: Math.round(assets) };
+    /* your part of a home is kept with its mortgage (a.home = { value, own % }) – it counts as an asset, like on Net worth (20 Nov, JP) */
+    var home = ((d && d.accounts) || []).filter(function (a) { return a && a.kind === 'debt' && a.home && +a.home.value > 0; }).reduce(function (s, a) { return s + (+a.home.value) * (+a.home.own || 50) / 100; }, 0);
+    return { start: k, income: Math.round(income), fixed: Math.round(fixedNow), fixedRows: fixed, spend: Math.round(spend), loans: loans, assets: Math.round(assets), home: Math.round(home) };
   }
 
   /* month by month; returns { rows: [{ m, assets, debt, net, left, costs }], low: first month the assets are under one month's costs } */
@@ -64,6 +69,10 @@
       changes.forEach(function (c) {
         if (c.type === 'income' && on(c, m)) income = (b.income || 0) * (Math.max(0, +c.pct || 0) / 100);
         if ((c.type === 'cost' || c.type === 'child') && on(c, m)) more += +c.amount || 0;
+        if (c.type === 'custom') {
+          if (on(c, m)) more -= +c.monthly || 0;                                   /* + money in, − money out */
+          if (+c.once && (c.from === m || (i === 1 && c.from < m))) assets += +c.once;
+        }
         if (c.type === 'extra' && on(c, m)) extra += Math.max(0, +c.amount || 0);
         if (c.type === 'buy' && (c.from === m || (i === 1 && c.from < m))) {
           var amt = Math.max(0, +c.amount || 0);
@@ -87,7 +96,7 @@
       var left = income - costs; assets += left;
       var debt = loans.reduce(function (a, l) { return a + l.bal; }, 0);
       if (low == null && assets < costs) low = m;
-      rows.push({ m: m, assets: Math.round(assets), debt: Math.round(debt), net: Math.round(assets - debt), left: Math.round(left), costs: Math.round(costs) });
+      rows.push({ m: m, assets: Math.round(assets), home: Math.round(b.home || 0), debt: Math.round(debt), net: Math.round(assets + (b.home || 0) - debt), left: Math.round(left), costs: Math.round(costs) });
     }
     return { rows: rows, low: low };
   }

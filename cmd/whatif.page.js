@@ -21,9 +21,11 @@
     ['income', 'briefcase', function () { return K('ui.wi-t-income', 'My pay changes'); }],
     ['extra', 'piggy-bank', function () { return K('ui.wi-t-extra', 'Extra on the loan each month'); }],
     ['cost', 'receipt', function () { return K('ui.wi-t-cost', 'A new monthly cost'); }],
-    ['child', 'heart', function () { return K('ui.wi-t-child', 'A child'); }]
+    ['child', 'heart', function () { return K('ui.wi-t-child', 'A child'); }],
+    ['custom', 'pencil', function () { return K('ui.wi-t-custom', 'Something else – your own'); }]
   ];
-  function tname(t) { var r = TYPES.filter(function (x) { return x[0] === t; })[0]; return r ? r[2]() : t; }
+  function tname(t, c) { if (t === 'custom' && c && c.label) return c.label; return tname0(t); }
+  function tname0(t) { var r = TYPES.filter(function (x) { return x[0] === t; })[0]; return r ? r[2]() : t; }
   function ticon(t) { var r = TYPES.filter(function (x) { return x[0] === t; })[0]; return r ? r[1] : 'dot'; }
   function describe(c) {
     var from = mon(c.from);
@@ -33,6 +35,12 @@
     if (c.type === 'extra') return K('ui.wi-d-extra', 'From {m}: {a} extra a month', { m: from, a: kr(c.amount) });
     if (c.type === 'cost') return K('ui.wi-d-cost', 'From {m}: {a} a month', { m: from, a: kr(c.amount) }) + (c.until ? ' ' + K('ui.wi-d-until', 'until {m}', { m: mon(c.until) }) : '');
     if (c.type === 'child') return K('ui.wi-d-child', 'From {m}: {a} a month', { m: from, a: kr(c.amount) });
+    if (c.type === 'custom') {
+      var sg = function (n) { return (n >= 0 ? '+' : '−') + kr(Math.abs(n)); }, parts = [];
+      if (+c.once) parts.push(K('ui.wi-d-once', '{m}: {a} once', { m: from, a: sg(+c.once) }));
+      if (+c.monthly) parts.push(K('ui.wi-d-monthly', 'from {m}: {a} a month', { m: from, a: sg(+c.monthly) }) + (c.until ? ' ' + K('ui.wi-d-until', 'until {m}', { m: mon(c.until) }) : ''));
+      return parts.join(' · ');
+    }
     return '';
   }
   function chart(a, b, low) {
@@ -63,45 +71,78 @@
     if (t === 'cost') return from + '<label class="wi-lb"><span>' + esc(K('ui.wi-month-kr-neg', 'kr a month (− for a cost that stops)')) + '</span>' + nm('amount', '1 500') + '</label>' +
       '<label class="wi-lb"><span>' + esc(K('ui.wi-until', 'Until (empty = for good)')) + '</span><input type="month" name="until"></label>';
     if (t === 'child') return from + '<label class="wi-lb"><span>' + esc(K('ui.wi-child-kr', 'Costs a month (a rough guess – change it)')) + '</span>' + nm('amount', '5 000', '5000') + '</label>';
+    if (t === 'custom') return '<label class="wi-lb wi-wide"><span>' + esc(K('ui.wi-what', 'What is it?')) + '</span><input class="wi-in" name="label" maxlength="60" autocomplete="off" placeholder="' + esc(K('ui.wi-what-ph', 'Sell the car, a new job, a trip to Japan …')) + '"></label>' + from +
+      '<label class="wi-lb"><span>' + esc(K('ui.wi-once', 'Once, kr (+ in, − out)')) + '</span>' + nm('once', '−40 000') + '</label>' +
+      '<label class="wi-lb"><span>' + esc(K('ui.wi-monthly', 'Each month, kr (+ in, − out)')) + '</span>' + nm('monthly', '+3 000') + '</label>' +
+      '<label class="wi-lb"><span>' + esc(K('ui.wi-until', 'Until (empty = for good)')) + '</span><input type="month" name="until"></label>';
     return '';
+  }
+  var editStart = false;
+  function startBlock(b, auto, ov) {
+    var row = function (k, label, v, a) { return '<li><span>' + esc(label) + '</span><b class="tnum">' + esc(kr(v)) + '</b>' + (ov[k] != null ? ' <span class="stt stt-plan">' + esc(K('ui.wi-yours', 'yours')) + '</span>' : '') + '</li>'; };
+    if (editStart) {
+      var f = function (k, label, v) { return '<label class="wi-lb"><span>' + esc(label) + '</span><input class="wi-in" name="' + k + '" inputmode="decimal" autocomplete="off" value="' + Math.round(v) + '"></label>'; };
+      return '<form class="wi-add wi-start" data-wistart><p class="wi-add-h"><i class="bi bi-sliders"></i> ' + esc(K('ui.wi-start', 'Starting numbers (a month)')) + '</p><div class="wi-fields">' +
+        f('income', K('ui.wi-s-pay', 'Pay after tax'), b.income) + f('fixed', K('ui.wi-s-fixed', 'Fixed costs (without loans)'), b.fixed) + f('spend', K('ui.wi-s-spend', 'Everyday spending'), b.spend) + '</div>' +
+        '<p class="muted wi-note">' + esc(K('ui.wi-s-auto', 'From your finances: pay {i}, fixed costs {f}, everyday spending {s} (the last three whole months, big one-offs left out).', { i: kr(auto.income), f: kr(auto.fixed), s: kr(auto.spend) })) + '</p>' +
+        '<div class="wi-btns">' + (Object.keys(ov).length ? '<button type="button" class="text-btn" data-wireset>' + esc(K('ui.wi-s-reset', 'Use my finances again')) + '</button>' : '') + '<button type="button" class="text-btn" data-wicancel>' + esc(K('ui.cancel', 'Cancel')) + '</button><button type="submit" class="pill-btn">' + esc(K('ui.save', 'Save')) + '</button></div></form>';
+    }
+    return '<div class="wi-start"><p class="wi-add-h"><i class="bi bi-sliders"></i> ' + esc(K('ui.wi-start', 'Starting numbers (a month)')) + ' <button type="button" class="text-btn" data-wiedit>' + esc(K('ui.change', 'Change')) + '</button></p><ul class="wi-nums">' +
+      row('income', K('ui.wi-s-pay', 'Pay after tax'), b.income) + row('fixed', K('ui.wi-s-fixed', 'Fixed costs (without loans)'), b.fixed) + row('spend', K('ui.wi-s-spend', 'Everyday spending'), b.spend) +
+      '<li><span>' + esc(K('ui.wi-s-loans', 'Your loan payments')) + '</span><b class="tnum">' + esc(kr(b.loans.reduce(function (s, l) { return s + l.pay; }, 0))) + '</b></li></ul></div>';
   }
   function num(v) { return parseFloat(String(v || '').replace(/\s/g, '').replace(/ /g, '').replace(',', '.')); }
   function render() {
     var d = V && V.get && V.get(); if (!d) { el.hidden = true; return; }
     el.hidden = false;
     var sc = store(), years = [3, 5, 10].indexOf(+sc.years) >= 0 ? +sc.years : 5, n = years * 12;
-    var b = WhatIf.base(d), a = WhatIf.project(b, [], n), has = sc.changes.length, p = has ? WhatIf.project(b, sc.changes, n) : null;
+    var b = WhatIf.base(d), auto = { income: b.income, fixed: b.fixed, spend: b.spend }, ov = sc.base || {};
+    if (ov.income != null) b.income = ov.income;
+    if (ov.spend != null) b.spend = ov.spend;
+    if (ov.fixed != null) { b.fixed = ov.fixed; b.fixedRows = null; }
+    var a = WhatIf.project(b, [], n), has = sc.changes.length, p = has ? WhatIf.project(b, sc.changes, n) : null;
     var endA = a.rows[a.rows.length - 1], endP = p && p.rows[p.rows.length - 1], low = (p || a).low;
     var diff = p ? endP.net - endA.net : 0;
     var known = b.income > 0;
     el.innerHTML = '<div class="card-head"><h2><i class="bi bi-signpost-split"></i> ' + esc(K('ui.wi-title', 'What if?')) + '</h2>' +
       '<div class="head-actions"><select class="wi-yrs" data-wiyrs aria-label="' + esc(K('ui.wi-ahead', 'How far ahead')) + '">' + [3, 5, 10].map(function (y) { return '<option value="' + y + '"' + (y === years ? ' selected' : '') + '>' + esc(K('ui.wi-n-years', '{n} years', { n: y })) + '</option>'; }).join('') + '</select></div></div>' +
       (!known ? '<p class="empty">' + esc(K('ui.wi-need-pay', 'Add your pay under Accounts → Income & fixed costs first – the plan starts from it.')) + '</p>' :
-      '<p class="wi-sum tnum">' + esc(K('ui.wi-in', 'In {m}', { m: mon(endA.m) })) + ': <b>' + esc(kr(endA.net)) + '</b> ' + esc(K('ui.wi-networth', 'net worth')) + ' <span class="muted">· ' + esc(K('ui.wi-assets', 'assets')) + ' ' + esc(kr(endA.assets)) + ' · ' + esc(K('ui.wi-debt', 'debt')) + ' ' + esc(kr(endA.debt)) + '</span></p>' +
+      '<p class="wi-sum tnum">' + esc(K('ui.wi-in', 'In {m}', { m: mon(endA.m) })) + ': <b>' + esc(kr(endA.net)) + '</b> ' + esc(K('ui.wi-networth', 'net worth')) + ' <span class="muted">· ' + esc(K('ui.wi-money', 'money')) + ' ' + esc(kr(endA.assets)) + (b.home ? ' · ' + esc(K('ui.wi-home', 'your part of the home')) + ' ' + esc(kr(b.home)) : '') + ' · ' + esc(K('ui.wi-debt', 'debt')) + ' ' + esc(kr(endA.debt)) + '</span></p>' +
       (p ? '<p class="wi-sum tnum">' + esc(K('ui.wi-with', 'With your changes')) + ': <b>' + esc(kr(endP.net)) + '</b> <span class="stt ' + (diff >= 0 ? 'stt-ok' : 'stt-bad') + '">' + (diff >= 0 ? '+' : '−') + esc(kr(Math.abs(diff))) + '</span></p>' : '') +
       (low ? '<p class="wi-warn"><span class="stt stt-bad">' + esc(K('ui.wi-low', 'Savings under one month’s costs from {m}', { m: mon(low) })) + '</span></p>' : '') +
       chart(a, p, low) +
       (p ? '<p class="wi-key"><span class="wi-k wi-k-base"></span>' + esc(K('ui.wi-as-now', 'As now')) + ' <span class="wi-k wi-k-plan"></span>' + esc(K('ui.wi-with', 'With your changes')) + '</p>' : '') +
-      (has ? '<ul class="wi-list">' + sc.changes.map(function (c) { return '<li><i class="bi bi-' + ticon(c.type) + '"></i><span><b>' + esc(tname(c.type)) + '</b><small>' + esc(describe(c)) + '</small></span><button type="button" class="icon-btn sm" data-widel="' + esc(c.id) + '" aria-label="' + esc(K('ui.remove', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
+      (has ? '<ul class="wi-list">' + sc.changes.map(function (c) { return '<li><i class="bi bi-' + ticon(c.type) + '"></i><span><b>' + esc(tname(c.type, c)) + '</b><small>' + esc(describe(c)) + '</small></span><button type="button" class="icon-btn sm" data-widel="' + esc(c.id) + '" aria-label="' + esc(K('ui.remove', 'Remove')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
       (adding ? '<form class="wi-add" data-wiform="' + adding + '"><p class="wi-add-h"><i class="bi bi-' + ticon(adding) + '"></i> ' + esc(tname(adding)) + '</p><div class="wi-fields">' + field(adding) + '</div>' +
         '<div class="wi-btns"><button type="button" class="text-btn" data-wicancel>' + esc(K('ui.cancel', 'Cancel')) + '</button><button type="submit" class="pill-btn">' + esc(K('ui.add', 'Add')) + '</button></div></form>' :
         '<div class="wi-types">' + TYPES.map(function (t) { return '<button type="button" class="wi-type" data-witype="' + t[0] + '"><i class="bi bi-' + t[1] + '"></i> ' + esc(t[2]()) + '</button>'; }).join('') + '</div>') +
-      '<p class="wi-note muted">' + esc(K('ui.wi-note', 'Today’s kroner – no price growth or pay rises. From: pay {i}, fixed costs {f}, everyday spending {s} (last three months), your part of {n} loans.', { i: kr(b.income), f: kr(b.fixed), s: kr(b.spend), n: b.loans.length })) + '</p>');
+      startBlock(b, auto, ov) +
+      '<p class="wi-note muted">' + esc(K('ui.wi-note2', 'Today’s kroner – no price growth or pay rises. Your part of {n} loans is paid down month by month; your part of the home counts at today’s value.', { n: b.loans.length })) + '</p>');
     var lf = el.querySelector('select[name=loan]'); if (lf) { var tg = function () { [].forEach.call(el.querySelectorAll('.wi-loanf'), function (x) { x.hidden = !lf.value; }); }; lf.addEventListener('change', tg); tg(); }
     var f1 = el.querySelector('.wi-add .wi-in'); if (f1 && !f1.value) f1.focus();
   }
   el.addEventListener('click', function (e) {
     var b;
     if ((b = e.target.closest('[data-witype]'))) { adding = b.dataset.witype; render(); return; }
-    if (e.target.closest('[data-wicancel]')) { adding = ''; render(); return; }
+    if (e.target.closest('[data-wicancel]')) { adding = ''; editStart = false; render(); return; }
+    if (e.target.closest('[data-wiedit]')) { editStart = true; adding = ''; render(); return; }
+    if (e.target.closest('[data-wireset]')) { var s0 = store(); delete s0.base; save(s0); editStart = false; render(); return; }
     if ((b = e.target.closest('[data-widel]'))) {
       var sc = store(), gone = sc.changes.filter(function (c) { return c.id === b.dataset.widel; })[0], at = sc.changes.indexOf(gone);
       sc.changes = sc.changes.filter(function (c) { return c !== gone; }); save(sc); render();
-      if (gone && window.Quick && Quick.toast) Quick.toast('<i class="bi bi-x-lg"></i> ' + esc(tname(gone.type)) + ' ' + esc(K('ui.wi-removed', 'removed')), function () { var s2 = store(); s2.changes.splice(Math.min(at, s2.changes.length), 0, gone); save(s2); render(); });
+      if (gone && window.Quick && Quick.toast) Quick.toast('<i class="bi bi-x-lg"></i> ' + esc(tname(gone.type, gone)) + ' ' + esc(K('ui.wi-removed', 'removed')), function () { var s2 = store(); s2.changes.splice(Math.min(at, s2.changes.length), 0, gone); save(s2); render(); });
     }
   });
   el.addEventListener('change', function (e) { if (e.target.matches('[data-wiyrs]')) { var sc = store(); sc.years = +e.target.value; save(sc); render(); } });
   el.addEventListener('submit', function (e) {
+    var st = e.target.closest('[data-wistart]');
+    if (st) {
+      e.preventDefault();
+      var sc0 = store(), bb = WhatIf.base(V.get() || {}), o = {};
+      [['income', bb.income], ['fixed', bb.fixed], ['spend', bb.spend]].forEach(function (x) { var v = num(st.elements[x[0]].value); if (isFinite(v) && Math.round(v) !== x[1]) o[x[0]] = Math.max(0, Math.round(v)); });
+      if (Object.keys(o).length) sc0.base = o; else delete sc0.base;
+      save(sc0); editStart = false; render(); return;
+    }
     var f = e.target.closest('[data-wiform]'); if (!f) return; e.preventDefault();
     var t = f.dataset.wiform, g = function (k) { return f.elements[k] ? f.elements[k].value : ''; };
     var c = { id: uid(), type: t, from: g('from') };
@@ -110,7 +151,11 @@
     if (t === 'buy') { c.amount = num(g('amount')); c.loan = !!g('loan'); if (c.loan) { c.rate = num(g('rate')) || 0; c.years = num(g('years')) || 5; } }
     if (t === 'income') c.pct = num(g('pct'));
     if (t === 'extra' || t === 'cost' || t === 'child') c.amount = num(g('amount'));
-    if (t === 'cost' && /^\d{4}-\d{2}$/.test(g('until'))) c.until = g('until');
+    if ((t === 'cost' || t === 'custom') && /^\d{4}-\d{2}$/.test(g('until'))) c.until = g('until');
+    if (t === 'custom') {
+      c.label = String(g('label') || '').trim().slice(0, 60); c.once = num(g('once')) || 0; c.monthly = num(g('monthly')) || 0;
+      if (!c.once && !c.monthly) { var fi = f.elements.once; if (fi) fi.focus(); return; }
+    }
     var bad = ['delta', 'amount', 'pct'].some(function (k) { return k in c && !isFinite(c[k]); });
     if (bad) { var i = f.querySelector('.wi-in'); if (i) { i.focus(); i.select(); } return; }
     var sc = store(); sc.changes.push(c); save(sc); adding = ''; render();
