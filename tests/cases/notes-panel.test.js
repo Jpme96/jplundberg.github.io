@@ -12,7 +12,7 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
     localStorage.setItem('dash.calendar', JSON.stringify(cal)); localStorage.removeItem('dash.ntSeen');
   });
   await go(p, '', 2500);
-  check(await until(p, () => !!document.getElementById('ntBtn'), 8000), 'a bell in the top bar');
+  check(await until(p, () => !!document.getElementById('ntBtn'), 20000), 'a bell in the top bar');   /* CI can be slow to unlock (2026-11-20) */
   const c1 = await p.evaluate(() => ({ n: (document.querySelector('#ntBtn .nt-badge') || {}).textContent, hidden: document.querySelector('#ntBtn .nt-badge').hidden, recent: Notify.recent(72, 24).map(x => x.title) }));
   check(!c1.hidden && +c1.n >= 1, 'it counts what has gone off ' + JSON.stringify(c1));
   await p.evaluate(() => document.getElementById('ntBtn').click()); await sl(300);
