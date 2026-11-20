@@ -85,7 +85,9 @@
     }
     /* the morning "Today" (later features): 07:30 each of the next mornings – what's in the calendar, your top
        tasks and bills due that day (worked out now, so it's as fresh as the last time the dashboard was open) */
-    if (p.k.morning) for (var mi = 0; mi < 3; mi++) {
+    /* the panel asks for the last days too (opts.from): their mornings are listed as well, worked out from today's data */
+    var m0 = opts.from != null ? -Math.ceil((Date.now() - opts.from) / 864e5) : 0;
+    if (p.k.morning) for (var mi = m0; mi < 3; mi++) {
       var md = new Date(); md.setDate(md.getDate() + mi); var mk = dkey(md), evs = [], tasks = [], bills = [];
       try { if (C && on('calendar', true)) evs = C.occurrences(new Date(md.getFullYear(), md.getMonth(), md.getDate()), new Date(md.getFullYear(), md.getMonth(), md.getDate(), 23, 59), { card: true }).filter(function (o) { return !(o.ev && (o.ev.holiday || o.ev.reminder)); }); } catch (e) {}
       tasks = (readJSON('dash.todos', []) || []).filter(function (t) { return !t.done && (t.due === mk || t.today === mk); });

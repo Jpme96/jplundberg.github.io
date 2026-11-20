@@ -268,6 +268,6 @@ html.t-modal { overflow: hidden; }
 .t-welcome h2 { margin-bottom: 4px; }
 .t-wsteps { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
 .t-wsteps li { display: flex; gap: 10px; align-items: flex-start; }
-.t-wsteps li > svg, .t-wsteps li > i { flex: none; margin-top: 2px; color: var(--acc); }
+.t-wsteps li > svg, .t-wsteps li > i { flex: none; width: 20px; height: 20px; margin-top: 2px; color: var(--acc); }   /* an svg with no size filled the card (seen live 2026-11-20) */
 .t-wsteps span { display: flex; flex-direction: column; }
 .t-wsteps small { color: var(--muted, #8a94a3); }

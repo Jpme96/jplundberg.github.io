@@ -30,6 +30,13 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   await own.click('button[type=submit]');
   check(await until(own, () => !!document.querySelector('.t-tabs'), 20000), 'the owner is in the app');
 
+  /* the welcome card for someone new: small icons, nothing wider than the screen (live 2026-11-20: the icons had no size and filled the card) */
+  await own.evaluate(() => { window.__welcomeTest = 1; location.hash = '#tasks'; }); await sl(400);
+  await own.evaluate(() => { location.hash = '#overview'; }); await until(own, () => !!document.querySelector('.t-welcome'), 8000);
+  const wel = await own.evaluate(() => { const w = document.querySelector('.t-welcome'); if (!w) return null; const s = [...w.querySelectorAll('svg')].map(x => Math.round(x.getBoundingClientRect().width)); return { icons: s, maxIc: Math.max(...s), wide: document.documentElement.scrollWidth > innerWidth + 1, h: Math.round(w.getBoundingClientRect().height) }; });
+  check(wel && wel.maxIc <= 24 && !wel.wide && wel.h < 500, 'the welcome card is compact: icons ' + JSON.stringify(wel) + (wel ? '' : await own.evaluate(() => [window.__welcomeTest, navigator.webdriver, Object.keys(localStorage).filter(k => /welcome/.test(k)).join(','), document.body.innerText.slice(0, 150)].join(' / '))));
+  await click('[data-act=welcomeOk]'); await sl(300);
+  check(!(await own.$('.t-welcome')), '"Got it" puts the welcome card away');
   /* off until an admin turns it on */
   await own.goto(T + '#overview'); await sl(1000);
   check(!(await own.$('.t-clock')), 'no clock card before an admin turns it on');
