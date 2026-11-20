@@ -12,7 +12,7 @@ const fs = require('fs'), path = require('path');
     const it = Notify.plan().find(x => x.id === 'morning:' + k); return it ? { h: new Date(it.at).getHours(), mi: new Date(it.at).getMinutes(), body: it.body } : null; });
   check(m && m.h === 7 && m.mi === 30 && /task/i.test(m.body), 'tomorrow 07:30: a morning summary with the task ' + JSON.stringify(m));
   /* prices: learn, then a change shows in At a glance */
-  const pr = await p.evaluate(async () => { const d = Vault.get(); d.budget = d.budget || {}; d.budget.fixed = [{ id: 'fx1', name: 'Made-up power', amount: 500, day: 20 }]; delete d.prices; delete d.priceChanges; Vault.save(d);
+  const pr = await p.evaluate(async () => { const d = Vault.get(); d.budget = d.budget || {}; d.budget.fixed = [{ id: 'fx1', name: 'Made-up power', amount: 500 }];   /* no due day: a bill due today or overdue is shown as that, not as a price change (failed on the 20th) */ delete d.prices; delete d.priceChanges; Vault.save(d);
     Prices.check(); const learnt = !!(Vault.get().prices || {})['bill:fx1'] && !(Vault.get().priceChanges || []).length;
     const e = Vault.get(); e.budget.fixed[0].amount = 600; Vault.save(e); Prices.check();
     const ch = (Vault.get().priceChanges || [])[0]; return { learnt, ch }; });

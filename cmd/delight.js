@@ -360,8 +360,9 @@
       }
       return false;
     }
+    /* not while a popup is open (the notification panel's swipe-to-remove went to the next page, 2026-11-20) */
     document.addEventListener('touchstart', function (e) {
-      ok = false; if (!on('swipe') || e.touches.length !== 1 || root.classList.contains('cl-modal') || !root.classList.contains('unlocked') || innerWidth > 760) return;
+      ok = false; if (!on('swipe') || e.touches.length !== 1 || root.classList.contains('cl-modal') || root.classList.contains('fdz-modal') || document.querySelector('.fdz-ov') || !root.classList.contains('unlocked') || innerWidth > 760) return;
       var t = e.touches[0]; if (t.clientX < 28 || t.clientX > innerWidth - 28) return;     // leave the edges to the browser's own back gesture
       if (blocked(e.target)) return;
       sx = t.clientX; sy = t.clientY; st = Date.now(); ok = true;

@@ -29,7 +29,19 @@
     if (diff === 1) return K('ui.nt-tomorrow', 'Tomorrow') + ' ' + hm;
     return d.toLocaleDateString(window.I18N && I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + hm;
   }
-  function count() { var s = seen(), n = Date.now(); return items().filter(function (x) { return x.at <= n && x.at > s; }).length; }
+  /* "Needs you": what the number on the app icon counts – overdue bills, expired documents (At a glance, brief.js).
+     On Home the lines themselves; elsewhere only their number is known (dash.needN), as one line to Home. JP 2026-11-20:
+     "it says I have two notifications, but it does not show up" */
+  function needN() { return window.BriefItems ? window.BriefItems.filter(function (x) { return x.badge; }).length : (+localStorage.getItem('dash.needN') || 0); }
+  function needRows() {
+    if (window.BriefItems) return window.BriefItems.filter(function (x) { return x.badge; }).map(function (x) {
+      var h = String(x.href || ''), url = /^\//.test(h) ? h : '/cmd/' + h;
+      return '<div class="nt-item nt-need"><a draggable="false" class="nt-row" href="' + esc(url) + '"><span class="nt-ic" style="color:var(--danger)"><i class="bi bi-' + esc(x.icon || 'exclamation-circle') + '"></i></span><span class="nt-tx"><b>' + esc(window.I18N && I18N.t ? I18N.t(x.title) : x.title) + '</b>' + (x.sub ? '<small>' + esc(window.I18N && I18N.t ? I18N.t(x.sub) : x.sub) + '</small>' : '') + '</span></a></div>';
+    }).join('');
+    var n = needN(); if (!n) return '';
+    return '<div class="nt-item nt-need"><a draggable="false" class="nt-row" href="/cmd/#c=brief"><span class="nt-ic" style="color:var(--danger)"><i class="bi bi-exclamation-circle"></i></span><span class="nt-tx"><b>' + esc(K(n === 1 ? 'ui.nt-need1' : 'ui.nt-needn', n === 1 ? '1 thing needs you' : '{n} things need you', { n: n })) + '</b><small>' + esc(K('ui.nt-need-sub', 'On At a glance')) + '</small></span></a></div>';
+  }
+  function count() { var s = seen(), n = Date.now(); return items().filter(function (x) { return x.at <= n && x.at > s; }).length + needN(); }
   function badge() {
     if (!btn) return; var c = count(), b = btn.querySelector('.nt-badge');
     b.textContent = c > 9 ? '9+' : c; b.hidden = !c;
@@ -45,7 +57,8 @@
     var past = l.filter(function (x) { return x.at <= n; }).reverse(), next = l.filter(function (x) { return x.at > n; });
     var ov = document.createElement('div'); ov.className = 'fdz-ov nt-ov';
     ov.innerHTML = '<div class="fdz-sh nt-sh" role="dialog" aria-modal="true" aria-label="' + esc(K('ui.nt-label', 'Notifications')) + '"><div class="fdz-hd"><b><i class="bi bi-bell"></i> ' + esc(K('ui.nt-label', 'Notifications')) + '</b><button type="button" class="icon-btn sm" data-ntclose aria-label="' + esc(K('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
-      (past.length || next.length ? '' : '<p class="nt-empty">' + esc(K('ui.nt-empty', 'Nothing in the last three days or the next 24 hours.')) + '</p>') +
+      (needN() ? '<p class="nt-h">' + esc(K('ui.nt-need', 'Needs you')) + '</p>' + needRows() : '') +
+      (past.length || next.length || needN() ? '' : '<p class="nt-empty">' + esc(K('ui.nt-empty', 'Nothing in the last three days or the next 24 hours.')) + '</p>') +
       (next.length ? '<p class="nt-h">' + esc(K('ui.nt-next', 'Coming up')) + '</p>' + next.map(function (x) { return row(x, false); }).join('') : '') +
       (past.length ? '<p class="nt-h nt-hp"><span>' + esc(K('ui.nt-past', 'Earlier')) + '</span><button type="button" class="nt-clear" data-ntall>' + esc(K('ui.nt-clear', 'Clear all')) + '</button></p><div class="nt-past">' + past.map(function (x) { return row(x, x.at > s); }).join('') + '</div>' : '') +
       '<p class="nt-foot"><a href="#" data-ntset>' + esc(K('ui.nt-settings', 'Which notifications you get')) + ' <i class="bi bi-chevron-right"></i></a></p></div>';
@@ -67,27 +80,35 @@
       if (e.target.closest('.nt-row')) close();
     });
     /* swipe a row sideways to remove it (JP 2026-11-20); a short drag springs back, and the tap after a swipe is not a click */
+    /* phones: touch events, and once the finger moves sideways the page doesn't scroll (iPhone cancelled the pointer and
+       scrolled instead – JP 2026-11-20 "make it swipable on phone"); mouse and pen: pointer events */
     var sw = null;
-    ov.addEventListener('pointerdown', function (e) {
-      var it = e.target.closest('.nt-item'); if (!it || e.target.closest('[data-ntdel]') || e.button > 0) return;
-      sw = { it: it, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId };
-    });
-    ov.addEventListener('pointermove', function (e) {
-      if (!sw || e.pointerId !== sw.id) return;
-      var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
-      if (!sw.on) { if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; } if (Math.abs(dx) < 10) return; sw.on = true; sw.it.classList.add('nt-drag'); try { sw.it.setPointerCapture(e.pointerId); } catch (er) {} }
+    function swStart(it, x, y, tgt) { if (!it || it.classList.contains('nt-need') || tgt.closest('[data-ntdel]')) return;   /* "Needs you" goes when it's dealt with, not by a swipe */ sw = { it: it, x: x, y: y, dx: 0, on: false }; }
+    function swMove(x, y) {
+      if (!sw) return false;
+      var dx = x - sw.x, dy = y - sw.y;
+      if (!sw.on) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return false; } if (Math.abs(dx) < 8) return false; sw.on = true; sw.it.classList.add('nt-drag'); var a = sw.it.querySelector('.nt-row'); if (a && a.hasAttribute('href')) { a.dataset.href = a.getAttribute('href'); a.removeAttribute('href'); } }
       sw.dx = dx; sw.it.style.transform = 'translateX(' + dx + 'px)'; sw.it.style.opacity = String(Math.max(.25, 1 - Math.abs(dx) / 260));
-    });
-    var swEnd = function () {
+      return true;
+    }
+    function swEnd() {
       if (!sw) return; var s0 = sw; sw = null; if (!s0.on) return;
       s0.it.classList.remove('nt-drag'); ov._swiped = Date.now();
-      if (Math.abs(s0.dx) > Math.min(110, s0.it.offsetWidth * .35)) {
+      /* the link has no address while swiping, so the tap the phone sends at the end can't open it; it gets it back after */
+      setTimeout(function () { var a = s0.it.querySelector('.nt-row'); if (a && a.dataset.href) { a.setAttribute('href', a.dataset.href); delete a.dataset.href; } }, 450);
+      if (Math.abs(s0.dx) > Math.min(100, s0.it.offsetWidth * .3)) {
         s0.it.style.transform = 'translateX(' + (s0.dx > 0 ? '' : '-') + '110%)'; s0.it.style.opacity = '0';
         setTimeout(function () { var b = s0.it.querySelector('[data-ntdel]'); if (b) b.click(); }, 180);
       } else { s0.it.style.transform = ''; s0.it.style.opacity = ''; }
-    };
+    }
+    ov.addEventListener('touchstart', function (e) { if (e.touches.length !== 1) { sw = null; return; } var t = e.touches[0]; swStart(e.target.closest('.nt-item'), t.clientX, t.clientY, e.target); }, { passive: true });
+    ov.addEventListener('touchmove', function (e) { var t = e.touches[0]; if (t && swMove(t.clientX, t.clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+    /* a swipe isn't a tap: cancelling the touch's end stops the click that would open the row */
+    ov.addEventListener('touchend', function (e) { if (sw && sw.on && e.cancelable) e.preventDefault(); swEnd(); }, { passive: false }); ov.addEventListener('touchcancel', swEnd);
+    ov.addEventListener('pointerdown', function (e) { if (e.pointerType === 'touch' || e.button > 0) return; swStart(e.target.closest('.nt-item'), e.clientX, e.clientY, e.target); });
+    ov.addEventListener('pointermove', function (e) { if (e.pointerType !== 'touch') swMove(e.clientX, e.clientY); });
+    ov.addEventListener('pointerup', function (e) { if (e.pointerType !== 'touch') swEnd(); });
     ov.addEventListener('dragstart', function (e) { if (e.target.closest && e.target.closest('.nt-item')) e.preventDefault(); });
-    ov.addEventListener('pointerup', swEnd); ov.addEventListener('pointercancel', swEnd);
     ov.addEventListener('click', function (e) { if (ov._swiped && Date.now() - ov._swiped < 400 && e.target.closest('.nt-row')) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
     document.addEventListener('keydown', key, true);
     document.body.appendChild(ov); document.documentElement.classList.add('fdz-modal');
@@ -111,7 +132,7 @@
     badge();
   }
   if (window.Vault && Vault.onUnlock) Vault.onUnlock(place);
-  window.addEventListener('tools:change', badge);
+  window.addEventListener('tools:change', badge); window.addEventListener('need:change', badge);
   window.addEventListener('dash:local', function () { setTimeout(place, 50); });
   window.addEventListener('resize', function () { clearTimeout(place.t); place.t = setTimeout(place, 200); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') badge(); });

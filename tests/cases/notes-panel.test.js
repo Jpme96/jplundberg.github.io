@@ -31,9 +31,11 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   check(del.still && del.n1 === del.n0 - 1 && !del.plumber, 'the × removes one and the popup stays open ' + JSON.stringify(del));
   /* swipe a row sideways to remove it (JP 2026-11-20) */
   const sw = await p.evaluate(() => { const it = [...document.querySelectorAll('.nt-ov .nt-item')][0]; if (!it) return null; const r = it.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, tx: it.textContent.slice(0, 30), n: document.querySelectorAll('.nt-ov .nt-item').length }; });
-  if (sw) { await p.mouse.move(sw.x, sw.y); await p.mouse.down(); for (let i = 1; i <= 8; i++) await p.mouse.move(sw.x - i * 25, sw.y); await p.mouse.up(); await sl(500); }
+  /* a finger, like on the phone (touch events, not the mouse) */
+  if (sw) { const cdp = await p.target().createCDPSession(), tp = (type, x) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y: sw.y }] });
+    await tp('touchStart', sw.x); for (let i = 1; i <= 8; i++) { await tp('touchMove', sw.x - i * 22); await sl(16); } await tp('touchEnd'); await sl(500); }
   const sw2 = await p.evaluate(() => ({ open: !!document.querySelector('.nt-ov'), n: document.querySelectorAll('.nt-ov .nt-item').length, url: location.pathname }));
-  check(sw && sw2.open && sw2.n === sw.n - 1 && sw2.url === '/cmd/', 'swiping a row removes it, and does not open it ' + JSON.stringify([sw, sw2]));
+  check(sw && sw2.open && sw2.n === sw.n - 1 && sw2.url === '/cmd/', 'swiping a row with a finger removes it, and does not open it ' + JSON.stringify([sw, sw2]));
   await p.keyboard.press('Escape'); await sl(200);
   const c2 = await p.evaluate(() => ({ gone: !document.querySelector('.nt-ov'), hidden: document.querySelector('#ntBtn .nt-badge').hidden }));
   check(c2.gone && c2.hidden, 'Escape closes it, and the count is cleared');
@@ -52,6 +54,15 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   await p.evaluate(() => { location.hash = '#c=next'; }); await until(p, () => document.querySelector('.card.next').classList.contains('sr-flash'), 4000);
   const tile = await p.evaluate(() => { const c = document.querySelector('.card.next'); return { shown: c.offsetHeight > 0, flash: c.classList.contains('sr-flash'), hash: location.hash }; });
   check(hid === 0 && tile.shown && tile.flash && !tile.hash, 'a link to a tile opens its tab and lights it up ' + JSON.stringify([hid, tile]));
+  /* "Needs you": what the number on the app icon counts (an overdue bill) is in the panel too, and in the bell's count (JP 2026-11-20) */
+  await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
+  await p.evaluate(() => { const d = Vault.get(); d.budget = d.budget || {}; d.budget.fixed = (d.budget.fixed || []).concat([{ id: 'ovd1', name: 'Made-up rent', amount: 5000, day: Math.max(1, new Date().getDate() - 3) }]); Vault.save(d); });
+  await sl(800); await go(p, '', 3000);
+  const need = await p.evaluate(async () => { const n = +((document.querySelector('#ntBtn .nt-badge') || {}).textContent || 0); document.getElementById('ntBtn').click(); await new Promise(r => setTimeout(r, 300)); const ov = document.querySelector('.nt-ov'); const r = { n, brief: (window.BriefItems || []).filter(x => x.badge).length, txt: ov ? ov.innerText.slice(0, 200) : '', rows: ov ? ov.querySelectorAll('.nt-need').length : 0 }; if (ov) ov.querySelector('[data-ntclose]').click(); return r; });
+  check(need.brief === 0 || (need.rows === need.brief && /Needs you/i.test(need.txt) && /Made-up rent/.test(need.txt) && need.n >= need.brief), 'what the app icon counts is under "Needs you" ' + JSON.stringify(need));
+  await go(p, 'food/', 2500);
+  const need2 = await p.evaluate(async () => { document.getElementById('ntBtn').click(); await new Promise(r => setTimeout(r, 300)); const ov = document.querySelector('.nt-ov'); const r = { txt: ov ? ov.innerText.slice(0, 200) : '', href: ov && ov.querySelector('.nt-need a') && ov.querySelector('.nt-need a').getAttribute('href') }; if (ov) ov.querySelector('[data-ntclose]').click(); return r; });
+  check(need.brief === 0 || (/need(s)? you/i.test(need2.txt) && need2.href === '/cmd/#c=brief'), 'on other pages: one line to At a glance ' + JSON.stringify(need2));
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();

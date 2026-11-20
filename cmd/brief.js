@@ -371,6 +371,9 @@
     window.BriefItems = all;                       /* the morning briefing (delight.js) reads these */
     window.dispatchEvent(new Event('brief:items'));
     /* only with notifications switched on (Settings → Notifications) – off means no number on the icon either */
+    /* the notification panel shows the same things under "Needs you" – on other pages only the number is kept (no titles or amounts outside the vault) */
+    try { localStorage.setItem('dash.needN', String(urgent)); } catch (e) {}
+    window.dispatchEvent(new Event('need:change'));
     if (!(readJSON('dash.push') || {}).on) urgent = 0;
     try { if (navigator.setAppBadge) { if (urgent) navigator.setAppBadge(urgent); else navigator.clearAppBadge(); } } catch (e) {}
     /* amounts get .money so "hide amounts" blurs them (only the number, not the sentence) */

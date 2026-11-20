@@ -25,6 +25,7 @@
     if (Object.keys(was).some(function (k) { return !cur[k]; })) ch = true;
     if (!ch) return;
     d.prices = cur; d.priceChanges = log.filter(function (x) { return at - x.at < 90 * 864e5; }).slice(-50); V.save(d);
+    window.dispatchEvent(new Event('brief:refresh'));
   }
   var t = null; function soon() { clearTimeout(t); t = setTimeout(check, 1200); }
   ['tools:change', 'fin:change'].forEach(function (ev) { window.addEventListener(ev, soon); });
@@ -40,5 +41,7 @@
     });
   };
   brief._id = 'prices'; window.BriefExtra.push(brief);
+  /* At a glance may already be drawn when this runs (after an instant page change): draw it again with the price lines */
+  setTimeout(function () { window.dispatchEvent(new Event('brief:refresh')); }, 0);
   window.Prices = { check: check, now: now };
 })();
