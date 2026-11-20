@@ -251,7 +251,7 @@
       "life-pages.page.js",
       "paged-pdf.js",
       "fdv.page.js",
-      "doc-control.page.js",
+      "doc-loader.js",
       "work-plus.page.js"
     ],
     "habits/index.html": [

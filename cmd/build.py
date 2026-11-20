@@ -121,6 +121,15 @@ def csp(html):
         return re.sub(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">', lambda m: tag, html, count=1)
     return html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  ' + tag, 1)
 
+# Documentation is built on its own and loaded by doc-loader.js when it's needed (2026-11-20): its version goes into
+# doc-loader.js before the page bundles take it
+dcp_v = write('doc-control.js', bundle(['doc-control.page.js']))
+stale |= dcp_v is None
+_DL = os.path.join(HERE, 'doc-loader.js'); _dl = io.open(_DL, encoding='utf-8').read()
+_dl2 = re.sub(r"var DCP_V = '[^']*';", "var DCP_V = '%s';" % (dcp_v or 'x'), _dl)
+if _dl2 != _dl:
+    if check: print('out of date (version): cmd/doc-loader.js'); stale = True
+    else: io.open(_DL, 'w', encoding='utf-8').write(_dl2)
 for page, files in M['pages'].items():
     name = 'page-' + (os.path.dirname(page) or 'home') + '.js'
     if os.path.dirname(page): files = files + [f for f in SET_JS if f not in files]

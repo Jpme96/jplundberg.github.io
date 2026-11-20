@@ -14,6 +14,9 @@ const { shared, sl, U, go } = require('../lib/browser'); const { check, done } =
     const ticked = await q.evaluate(w => { const all = document.querySelectorAll('[data-shop]'), x = w === 'first' ? all[0] : all[all.length - 1]; const tx = (x.closest('li') || x).textContent.trim().slice(0, 20); x.click(); return tx; }, which);
     await sl(3500);
     /* a probe sitting on the very item Iago ticked moves with it – that's the item, not the page */
+    /* a probe on a card that starts far above the screen is the card that holds the list, and it changes size with it
+       (home's "At a glance" around midday UTC, 2026-11-20) – that's the list, not the page */
+    probes.forEach(pr => { if (pr.top < -100) pr.skip = 1; });
     probes.forEach(pr => { if (ticked && pr.tx && ticked.indexOf(pr.tx.slice(0, 8)) > -1) pr.skip = 1; });
     const shift = await p.evaluate(ps => ps.map(pr => { if (pr.skip) return 0; let bd = 1e9; document.querySelectorAll(pr.tag).forEach(x => { if ((x.textContent || '').trim().slice(0, 60) === pr.tx) { const d = x.getBoundingClientRect().top - pr.top; if (Math.abs(d) < Math.abs(bd)) bd = d; } }); return bd === 1e9 ? 0 : Math.round(bd); }), probes);
     /* the view stays put: what's at the top of the screen doesn't move, and nothing moves by more than the one row
