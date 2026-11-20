@@ -166,6 +166,7 @@
     "work/index.html": [
       "budget.js",
       "kit.js",
+      "calendar/cal-core.js",
       "tools.js",
       "profile.js",
       "links.js",

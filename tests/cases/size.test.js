@@ -61,6 +61,7 @@ const BUDGET_KB = { total: 1692 };   /* finance +14 kB (2026-11-19 night, plan P
 /* +1 kB (2026-11-19 night, plan Part 3 A2): Tok() – status colours from scripts follow light/dark */
 /* +1 kB every page (2026-11-19 night, plan Part 4): Keep screen on (Awake in filedrop.js) for recipes and the shopping list */
 /* finance +14 kB (2026-11-19 night, plan Part 2): the What if? planner on Insights (whatif.js maths + whatif.page.js card) – a candidate to load only when Insights opens */
+/* work +9 kB (2026-11-20, CSP work): calendar/cal-core.js on Work – Flex time's "from your calendar" only worked after another page had loaded the calendar */
 const PAGE_KB = { 'index.html': 1456, 'admin/index.html': 1373, 'calendar/index.html': 1303, 'finance/index.html': 1692, 'food/index.html': 1391, 'goals/index.html': 1320, 'habits/index.html': 1349, 'house/index.html': 1663, 'papers/index.html': 1342, 'people/index.html': 1389, 'travel/index.html': 1446, 'wish/index.html': 1406, 'work/index.html': 1652 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
