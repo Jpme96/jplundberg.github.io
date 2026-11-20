@@ -34,8 +34,8 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   if (pk === null) check(false, 'the bank list ' + await p.evaluate(() => (document.querySelector('.im-box') || {}).innerText));
   await p.evaluate(() => { const s = document.querySelector('[data-bkpick]'); s.value = 'DNB'; document.querySelector('.bk-add [data-bkconnect]').click(); });
   await p.waitForNavigation({ timeout: 15000 }).catch(() => {});
-  const shownLock = await p.evaluate(() => { const i = document.getElementById('lockPass'); return !!(i && i.offsetParent) && !document.documentElement.classList.contains('unlocked'); });
-  if (shownLock) await unlock(p);
+  /* back on Finances: it opens unlocked by itself (the quick resume); only if the lock screen stays, type the passcode */
+  if (await until(p, () => document.documentElement.classList.contains('unlocked'), 9000) === null) await unlock(p);
   check(await until(p, () => !!(Vault.get() && Vault.get().bank && Vault.get().bank.links && Vault.get().bank.links.length), 15000) !== null, 'back from the bank: the connection is saved');
   const link = await p.evaluate(() => { const l = Vault.get().bank.links[0]; return { aspsp: l.aspsp, sid: l.sid, n: l.accts.length, last4: l.accts.map(a => a.last4), url: location.href, until: !!l.until, auth: null }; });
   const e1 = await eb();
