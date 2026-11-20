@@ -4290,3 +4290,8 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .td-plr { text-align: left; display: flex; flex-direction: column; padding: 8px 10px; border-radius: var(--r-ctl, 10px); border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; }
 .td-plr small { color: var(--muted); }
 .td-pin i { color: var(--accent); }
+
+.side-nav .mb-me { position: relative; }
+.side-nav .mb-me .nt-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+.side-nav.sn-mini .mb-me .nt-btn { right: -6px; top: -6px; transform: none; width: 28px; height: 28px; min-width: 0; min-height: 0; font-size: 13px; }
+.side-nav.sn-mini .mb-me .nt-btn .nt-badge { top: -4px; right: -4px; }

@@ -57,17 +57,20 @@
       btn.innerHTML = '<i class="bi bi-bell"></i><span class="nt-badge" hidden></span>';
       btn.addEventListener('click', open);
     }
-    if (!btn.isConnected) {
-      var host = document.querySelector('.mb-acts') || document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top');
-      if (!host) return;
-      host.insertBefore(btn, host.querySelector('[data-search]') || null);
-    }
+    /* with the side bar the bell sits in the profile row at the top, so the page list keeps its room (sidenav-fit);
+       otherwise with the other buttons in the top bar */
+    var side = document.documentElement.classList.contains('side-nav'), me = document.querySelector('.mbar .mb-me');
+    var host = side && me ? me : (document.querySelector('.mb-acts') || document.querySelector('.top-actions') || document.querySelector('#fp > .fp-top'));
+    if (!host) return;
+    if (btn.parentNode !== host) { if (host === me) host.appendChild(btn); else host.insertBefore(btn, host.querySelector('.sr-btn, [data-search]') || null); }
     badge();
   }
-  if (window.Vault && Vault.onUnlock) Vault.onUnlock(function () { setTimeout(place, 300); });
+  if (window.Vault && Vault.onUnlock) Vault.onUnlock(place);
   window.addEventListener('tools:change', badge);
+  window.addEventListener('dash:local', function () { setTimeout(place, 50); });
+  window.addEventListener('resize', function () { clearTimeout(place.t); place.t = setTimeout(place, 200); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') badge(); });
   setInterval(badge, 5 * 60e3);
-  setTimeout(place, 600);
+  place(); setTimeout(place, 0);
   window.NotesPanel = { open: open, count: count };
 })();
