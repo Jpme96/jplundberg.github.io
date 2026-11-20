@@ -1,0 +1,32 @@
+name: uptime
+# A warning when something is down (2026-11-20, plan Part 4): every 30 minutes GitHub asks jplundberg.com (the site and
+# cmd), the /cmd Worker and Team (work.jplundberg.com). Any answer under 500 counts as up – the API routes want a
+# sign-in, so 401/403 still means the Worker answered. Two tries a minute apart; if one is still down the run fails,
+# and GitHub emails the repo owner about a failed scheduled run. Nothing personal is fetched or logged.
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask each service
+        run: |
+          check() {
+            for i in 1 2; do
+              code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "$1" || echo 000)
+              if [ "$code" -ge 200 ] && [ "$code" -lt 500 ]; then echo "up   $code  $1"; return 0; fi
+              echo "try $i: $code  $1"; sleep 60
+            done
+            echo "::error::$1 is down ($code)"; return 1
+          }
+          bad=0
+          check https://jplundberg.com/ || bad=1
+          check https://jplundberg.com/cmd/ || bad=1
+          check https://jplundberg.com/cmd/api/ping || bad=1
+          check https://work.jplundberg.com/ || bad=1
+          exit $bad

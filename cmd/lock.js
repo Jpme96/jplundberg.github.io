@@ -1076,6 +1076,19 @@
         /* remembered in the vault too, so every device knows when you last took one */
         if (data) { data.lastBackup = Date.now(); window.Vault.save(data); }
         window.dispatchEvent(new Event('dash:backup'));
+        /* the backup check (2026-11-20): open the very file just saved with your key – a backup that can't be read is
+           no backup. Remembered as dash.lastBackupOk; a failure says so at once. */
+        var v = null; try { v = JSON.parse(raw); } catch (e) {}
+        if (!key || !isVault(v)) return;
+        return open(v, key).then(function (o) {
+          if (!o || typeof o !== 'object') throw new Error('empty');
+          try { localStorage.setItem('dash.lastBackupOk', String(Date.now())); } catch (e) {}
+          window.dispatchEvent(new Event('dash:backup'));
+        }, function () {
+          try { localStorage.removeItem('dash.lastBackupOk'); } catch (e) {}
+          if (window.Ask) window.Ask.alert(I18N.k('ui.backup-unreadable', 'The backup that was just saved could not be opened again. Try once more, and keep an older backup until a new one works.'));
+          if (window.Diag && window.Diag.log) window.Diag.log('backup', 'A new backup could not be opened again', 'lock.js');
+        });
       });
     },
     recovery: {

@@ -3,6 +3,25 @@
    habits that need you this week, your next trip. Each line opens where it came from. */
 (function () {
   "use strict";
+  function errDigest(add, now) {
+    var c = null; try { c = JSON.parse(localStorage.getItem('dash.errDigest') || 'null'); } catch (e) {}
+    var day = now.toISOString().slice(0, 10);
+    if (!c || c.day !== day) {
+      if (!navigator.onLine || !window.fetch) return;
+      fetch('/cmd/api/errlog', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        if (!j) return;
+        var cut = Date.now() - 7 * 864e5, l = [].concat(j.o || [], j.p || []).filter(function (x) { return x && x.t > cut; }), kinds = {};
+        l.forEach(function (x) { kinds[(x.k || '') + '|' + (x.m || '').slice(0, 60)] = 1; });
+        try { localStorage.setItem('dash.errDigest', JSON.stringify({ day: day, n: l.reduce(function (a, x) { return a + (+x.n || 1); }, 0), k: Object.keys(kinds).length })); } catch (e) {}
+      }).catch(function () {});
+      return;
+    }
+    if (!c.n) return;
+    var wk = new Date(now); wk.setDate(wk.getDate() - ((wk.getDay() + 6) % 7));
+    if (now.getDay() !== 1 && now.getDay() !== 2) return;          // Monday (and Tuesday, in case Monday was missed)
+    add(45, 'bug', 'var(--orange)', I18N.k('ui.err-digest', 'Error reports this week: {n}', { n: c.n }), I18N.k('ui.err-digest-sub', '{k} different kinds – see Diagnostics in Admin', { k: c.k }), '/cmd/admin/',
+      { key: 'errdig:' + wk.toISOString().slice(0, 10) });
+  }
   var box = document.getElementById('briefList');
   if (!box || !window.Vault) return;
   var Fe = window.Features, C = window.Cal, Fl = window.Flow;
@@ -177,6 +196,9 @@
       var open = Fe.list('flex').filter(function (e) { return e.date === today && e.in && !e.out; })[0];
       if (open) add(25, 'stopwatch', '#e8743b', 'Clocked in at ' + open.in, 'Remember to clock out', 'work/');
     }
+    /* the weekly error digest (2026-11-20, plan Part 4): on Mondays (or when the last digest is a week old) one line with
+       how many error reports came in from cmd and the shared app over 7 days – the same list as the errlog, read once a day */
+    errDigest(add, now);
     /* lines from the optional features (Meeting prep, Trip budget, Rest day, Strømpris …) */
     (window.BriefExtra || []).forEach(function (fn) { try { fn(add, now, today); } catch (e) {} });
     suggestions(add, now, today);

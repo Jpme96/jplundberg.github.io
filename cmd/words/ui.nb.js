@@ -1,5 +1,9 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.err-digest": ["Error reports this week: {n}", "Feilrapporter denne uken: {n}"],
+  "ui.err-digest-sub": ["{k} different kinds – see Diagnostics in Admin", "{k} ulike slags – se Diagnostikk i Admin"],
+  "ui.backup-unreadable": ["The backup that was just saved could not be opened again. Try once more, and keep an older backup until a new one works.", "Sikkerhetskopien som nettopp ble lagret, kunne ikke åpnes igjen. Prøv én gang til, og ta vare på en eldre kopi til en ny fungerer."],
+  "ui.backup-checked": ["checked: it opens", "sjekket: den åpnes"],
   "ui.ns-line": ["{n} bank rows ({a}) are left out of spending – money to yourself and loan or credit payments.", "{n} bankrader ({a}) holdes utenfor forbruket – penger til deg selv og betaling på lån eller kreditt."],
   "ui.ns-back": ["Put them back", "Legg dem tilbake"],
   "ui.ns-backed": ["Back in spending", "Tilbake i forbruket"],
