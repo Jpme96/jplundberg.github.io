@@ -20,7 +20,10 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
     const homeB = Object.assign({}, base, { home: 2000000 });
     const hm = WhatIf.project(homeB, [], 12).rows[11];
     const cust = WhatIf.project(base, [{ type: 'custom', label: 'Sell the car', from: '2027-01', once: 80000, monthly: -1500, until: '2027-06' }], 12).rows[11];
-    out0 = { hm, cust };
+    const fl = WhatIf.project(Object.assign({}, base, { loans: [{ id: 'f', bal: 1000000, rate: 5, pay, steps: [{ m: '2027-03', rate: 6 }] }] }), [], 12).rows;
+    const flUser = WhatIf.project(Object.assign({}, base, { loans: [{ id: 'f', bal: 1000000, rate: 5, pay, steps: [{ m: '2027-03', rate: 6 }] }] }), [{ type: 'rate', from: '2026-12', delta: 1 }], 12).rows;
+    const reach = [WhatIf.reach(a.rows, 150000), WhatIf.reach(a.rows, 10000000)];
+    out0 = { hm, cust, flJump: (fl[3].costs - fl[2].costs), flUserJump: (flUser[3].costs - flUser[2].costs), flUserDiff: flUser[11].costs - fl[11].costs, reach };
     return { e, bal: Math.round(bal), cash: Math.round(cash), rate, cashBuy, loanBuy, low: half.low, extra, cost, paid: paid.map(r => r.debt), paidCash: paid[5].assets, first: a.rows[0].m, out0 };
   });
   check(m.first === '2026-12' && Math.abs(m.e.debt - m.bal) <= 1 && Math.abs(m.e.assets - m.cash) <= 1, 'today’s line: the loan and the savings month by month as worked out by hand ' + JSON.stringify([m.e, m.bal, m.cash]));
@@ -32,6 +35,9 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   check(m.e.assets - m.cost.assets === 3000, 'a monthly cost with an end date counts only those months');
   check(m.out0.hm.net - m.e.net === 2000000 && m.out0.hm.assets === m.e.assets, 'your part of the home counts in net worth, not as money to spend');
   check(m.out0.cust.assets - m.e.assets === 80000 - 1500 * 6, 'your own change: once +80 000 and −1 500 a month for six months');
+  check(m.out0.flJump > 500, 'a floating rate change that lands in March 2027 raises the payment from then ' + m.out0.flJump);
+  check(m.out0.flUserJump > 500 && m.out0.flUserDiff > 400, 'your own rate change stays on top of the planned one');
+  check(/^2027-/.test(m.out0.reach[0] || '') && m.out0.reach[1] === null, 'the savings target: the month it is reached, or none');
   check(JSON.stringify(m.paid) === JSON.stringify([7500, 5000, 2500, 0, 0, 0]) && m.paidCash === 30000 * 6 - 10000, 'a loan that is paid off stops costing money');
 
   /* the card */
@@ -69,6 +75,8 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   await p.evaluate(() => { const f = document.querySelector('[data-wiform="custom"]'); f.elements.label.value = 'Sell the car'; f.elements.once.value = '+80 000'; f.requestSubmit(); }); await sl(300);
   check(await p.evaluate(() => [...document.querySelectorAll('#wiCard .wi-list b')].some(b => b.textContent === 'Sell the car')), 'your own change shows with its own name');
   await p.evaluate(() => { const l = [...document.querySelectorAll('#wiCard .wi-list li')].find(li => /Sell the car/.test(li.textContent)); l.querySelector('[data-widel]').click(); }); await sl(200);
+  await p.evaluate(() => { const f = document.querySelector('[data-wigoal]'); f.elements.amount.value = '100 000'; f.requestSubmit(); }); await sl(300);
+  check(await p.evaluate(() => /100\s000 kr: /.test((document.querySelector('.wi-goal-a') || {}).textContent || '') && Features.tools().whatif[0].target === 100000), 'the savings target shows when it is reached and is kept');
   /* remove it again, with Undo */
   await p.evaluate(() => document.querySelector('[data-widel]').click()); await sl(200);
   check(await p.evaluate(() => !document.querySelector('#wiCard .wi-list') && (Features.tools().whatif[0].changes.length === 0)), 'removing it takes the line away');

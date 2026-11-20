@@ -656,3 +656,8 @@
 
 /* rows left out of spending (2026-11-20) */
 .ns-line { margin: 0 2px 10px; font-size: var(--fs-s, 13px); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.wi-goal { display: flex; align-items: flex-end; gap: 10px; margin: 12px 0 4px; }
+.wi-goal .wi-lb { flex: 1; }
+.wi-goal-a { margin: 4px 0 6px; font-size: var(--fs-s, 13px); }
+.wi-goal-a i { color: var(--accent); }

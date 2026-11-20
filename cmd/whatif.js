@@ -51,7 +51,16 @@
     var loans = ((d && d.accounts) || []).filter(function (a) { return a && a.kind === 'debt'; }).map(function (a) {
       var part = L && L.part ? L.part(a) : 1, bal = (L && L.owedNow ? L.owedNow(a, now) : +a.balance || 0) * part;
       var pay = L && L.myPay ? +L.myPay(a, now) || 0 : (+a.pay || 0) * part;
-      return { id: a.id, name: a.name || 'Loan', bal: Math.max(0, bal), rate: +a.rate || 0, pay: Math.max(0, pay) };
+      /* a floating rate: a policy-rate change that's decided but hasn't reached the loan yet (its lag) is a step at
+         the month it lands (2026-11-20) */
+      var steps = [], fl = a.float, P = window.Policy;
+      if (fl && !a.plan && P && P.data) (P.data().changes || []).forEach(function (c) {
+        if (c.date <= (fl.since || '') || (fl.applied || []).indexOf(c.date) > -1) return;
+        var eff = new Date(c.date + 'T12:00'); eff.setDate(eff.getDate() + (+fl.lag >= 0 ? +fl.lag : 42));
+        var em = ym(eff); if (em <= k) return;
+        steps.push({ m: em, rate: Math.round((+c.rate + (+fl.margin || 0)) * 1000) / 1000 });
+      });
+      return { id: a.id, name: a.name || 'Loan', bal: Math.max(0, bal), rate: +a.rate || 0, pay: Math.max(0, pay), steps: steps };
     }).filter(function (l) { return l.bal > 0.5; });
     var assets = ((d && d.accounts) || []).filter(function (a) { return a && a.kind !== 'debt'; }).reduce(function (s, a) { return s + (+a.balance || 0); }, 0);
     /* your part of a home is kept with its mortgage (a.home = { value, own % }) – it counts as an asset, like on Net worth (20 Nov, JP) */
@@ -63,7 +72,7 @@
   function project(b, changes, n) {
     changes = (changes || []).filter(Boolean); n = Math.max(1, Math.min(240, n || 60));
     var B = window.Budget;
-    var loans = (b.loans || []).map(function (l) { return { id: l.id, name: l.name, bal: l.bal, rate: l.rate, pay: l.pay }; });
+    var loans = (b.loans || []).map(function (l) { return { id: l.id, name: l.name, bal: l.bal, rate: l.rate, pay: l.pay, steps: l.steps || [] }; });
     var assets = b.assets || 0, rows = [], low = null;
     var on = function (c, m) { return (!c.from || c.from <= m) && (!c.until || c.until >= m); };
     for (var i = 1; i <= n; i++) {
@@ -85,9 +94,11 @@
           else assets -= amt;
         }
         if (c.type === 'rate' && (c.from === m || (i === 1 && c.from < m))) loans.forEach(function (l) {
-          var left = monthsLeft(l.bal, l.rate, l.pay); l.rate = Math.max(0, l.rate + (+c.delta || 0)); l.pay = pmt(l.bal, l.rate, left);
+          var left = monthsLeft(l.bal, l.rate, l.pay); l.delta = (l.delta || 0) + (+c.delta || 0); l.rate = Math.max(0, l.rate + (+c.delta || 0)); l.pay = pmt(l.bal, l.rate, left);
         });
       });
+      /* a floating rate landing this month (the planned change, before any of your own) */
+      loans.forEach(function (l) { (l.steps || []).forEach(function (st) { if (st.m === m) { var left = monthsLeft(l.bal, l.rate, l.pay); l.rate = Math.max(0, st.rate + (l.delta || 0)); l.pay = pmt(l.bal, l.rate, left); } }); });
       /* the loans this month; extra goes to the highest rate first */
       var pays = 0;
       loans.sort(function (x, y) { return y.rate - x.rate; });
@@ -105,5 +116,7 @@
     }
     return { rows: rows, low: low };
   }
-  window.WhatIf = { base: base, project: project, addM: addM, pmt: pmt };
+  /* the first month the money (assets, not the home) reaches amount, or null */
+  function reach(rows, amount) { for (var i = 0; i < rows.length; i++) if (rows[i].assets >= amount) return rows[i].m; return null; }
+  window.WhatIf = { base: base, project: project, addM: addM, pmt: pmt, reach: reach };
 })();

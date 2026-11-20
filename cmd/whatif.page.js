@@ -77,6 +77,19 @@
       '<label class="wi-lb"><span>' + esc(K('ui.wi-until', 'Until (empty = for good)')) + '</span><input type="month" name="until"></label>';
     return '';
   }
+  /* "When will I have … in savings?" (2026-11-20): the first month the money reaches it, as now and with the changes */
+  function goalBlock(sc, a, p, endM) {
+    var g = sc.target, inp = '<form class="wi-goal" data-wigoal><label class="wi-lb"><span>' + esc(K('ui.wi-goal-q', 'When will I have … in savings? (kr)')) + '</span><input class="wi-in" name="amount" inputmode="decimal" autocomplete="off" placeholder="500 000" value="' + (g ? Math.round(g) : '') + '"></label><button type="submit" class="text-btn">' + esc(K('ui.wi-goal-go', 'Show')) + '</button></form>';
+    if (!(g > 0)) return inp;
+    var m1 = WhatIf.reach(a.rows, g), m2 = p ? WhatIf.reach(p.rows, g) : null, out;
+    var when = function (m) { return m ? mon(m) : K('ui.wi-goal-not', 'not by {m}', { m: mon(endM) }); };
+    out = '<p class="wi-goal-a tnum"><i class="bi bi-flag"></i> <b>' + esc(kr(g)) + '</b>: ' + esc(when(m1));
+    if (p) {
+      var diff = m1 && m2 ? (+m1.slice(0, 4) - +m2.slice(0, 4)) * 12 + (+m1.slice(5) - +m2.slice(5)) : null;
+      out += ' · ' + esc(K('ui.wi-with', 'With your changes')) + ': ' + esc(when(m2)) + (diff ? ' <span class="stt ' + (diff > 0 ? 'stt-ok' : 'stt-bad') + '">' + esc(K(diff > 0 ? 'ui.wi-goal-earlier' : 'ui.wi-goal-later', diff > 0 ? '{n} months earlier' : '{n} months later', { n: Math.abs(diff) })) + '</span>' : '');
+    }
+    return inp + out + '</p>';
+  }
   var editStart = false;
   function startBlock(b, auto, ov) {
     var row = function (k, label, v, a) { return '<li><span>' + esc(label) + '</span><b class="tnum">' + esc(kr(v)) + '</b>' + (ov[k] != null ? ' <span class="stt stt-plan">' + esc(K('ui.wi-yours', 'yours')) + '</span>' : '') + '</li>'; };
@@ -116,6 +129,7 @@
       (adding ? '<form class="wi-add" data-wiform="' + adding + '"><p class="wi-add-h"><i class="bi bi-' + ticon(adding) + '"></i> ' + esc(tname(adding)) + '</p><div class="wi-fields">' + field(adding) + '</div>' +
         '<div class="wi-btns"><button type="button" class="text-btn" data-wicancel>' + esc(K('ui.cancel', 'Cancel')) + '</button><button type="submit" class="pill-btn">' + esc(K('ui.add', 'Add')) + '</button></div></form>' :
         '<div class="wi-types">' + TYPES.map(function (t) { return '<button type="button" class="wi-type" data-witype="' + t[0] + '"><i class="bi bi-' + t[1] + '"></i> ' + esc(t[2]()) + '</button>'; }).join('') + '</div>') +
+      goalBlock(sc, a, p, endA.m) +
       startBlock(b, auto, ov) +
       '<p class="wi-note muted">' + esc(K('ui.wi-note2', 'Today’s kroner – no price growth or pay rises. Your part of {n} loans is paid down month by month; your part of the home counts at today’s value.', { n: b.loans.length })) + '</p>');
     var lf = el.querySelector('select[name=loan]'); if (lf) { var tg = function () { [].forEach.call(el.querySelectorAll('.wi-loanf'), function (x) { x.hidden = !lf.value; }); }; lf.addEventListener('change', tg); tg(); }
@@ -135,6 +149,8 @@
   });
   el.addEventListener('change', function (e) { if (e.target.matches('[data-wiyrs]')) { var sc = store(); sc.years = +e.target.value; save(sc); render(); } });
   el.addEventListener('submit', function (e) {
+    var gf = e.target.closest('[data-wigoal]');
+    if (gf) { e.preventDefault(); var s1 = store(), v = num(gf.elements.amount.value); if (isFinite(v) && v > 0) s1.target = Math.round(v); else delete s1.target; save(s1); render(); return; }
     var st = e.target.closest('[data-wistart]');
     if (st) {
       e.preventDefault();

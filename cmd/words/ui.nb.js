@@ -1,5 +1,10 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.wi-goal-q": ["When will I have … in savings? (kr)", "Når har jeg … i sparepenger? (kr)"],
+  "ui.wi-goal-go": ["Show", "Vis"],
+  "ui.wi-goal-not": ["not by {m}", "ikke innen {m}"],
+  "ui.wi-goal-earlier": ["{n} months earlier", "{n} måneder tidligere"],
+  "ui.wi-goal-later": ["{n} months later", "{n} måneder senere"],
   "ui.err-digest": ["Error reports this week: {n}", "Feilrapporter denne uken: {n}"],
   "ui.err-digest-sub": ["{k} different kinds – see Diagnostics in Admin", "{k} ulike slags – se Diagnostikk i Admin"],
   "ui.backup-unreadable": ["The backup that was just saved could not be opened again. Try once more, and keep an older backup until a new one works.", "Sikkerhetskopien som nettopp ble lagret, kunne ikke åpnes igjen. Prøv én gang til, og ta vare på en eldre kopi til en ny fungerer."],
