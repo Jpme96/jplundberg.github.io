@@ -76,10 +76,10 @@
     return null;
   }
   /* a bank account that has no match in cmd yet (JP 2026-11-20: "I need more, like Brukskonto") becomes a new cmd
-     account: its own name from the bank (with the bank's in front when that name is taken) and a type from the name */
+     account: its own name from the bank (with its last four digits when that name is taken) and a type from the name */
   function newName(bank, a) {
     var n = String(a.name || K('ui.bk-account', 'Account')).trim(), taken = accts().some(function (x) { return (x.label || '').toLowerCase() === n.toLowerCase(); });
-    return taken ? bank + ' ' + n : n;
+    return taken ? n + (a.last4 ? ' ••' + a.last4 : ' (' + bank + ')') : n;   /* SpareBank 1 calls five accounts BRUKSKONTO */
   }
   function newKind(bank, a) {
     var n = (a.name || '').toLowerCase();
@@ -101,7 +101,7 @@
   var naming = false;
   function nameAccts() {
     if (naming) return; var todo = [];
-    ((B() || {}).links || []).forEach(function (l) { (l.accts || []).forEach(function (a) { if (!a.named && a.uid) todo.push(a.uid); }); });
+    ((B() || {}).links || []).forEach(function (l) { (l.accts || []).forEach(function (a) { if ((!a.named || (a.holder && a.name === a.holder)) && a.uid) todo.push(a.uid); }); });
     if (!todo.length) return; naming = true;
     Promise.all(todo.map(function (uid) { return api('GET', '/accounts/' + uid + '/details').then(function (j) { return { uid: uid, j: j }; }, function () { return { uid: uid, j: null }; }); })).then(function (res) {
       saveBank(function (b) { b.links.forEach(function (l) { (l.accts || []).forEach(function (a) {
