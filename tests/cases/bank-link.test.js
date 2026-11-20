@@ -57,7 +57,8 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   check(nw.id && nw.name === 'Made-up savings' && nw.kind === 'savings' && nw.inList && nw.opt, '"+ New account" makes "Made-up savings" as a savings account and matches it ' + JSON.stringify(nw));
 
   /* the clear button on Finances → Accounts (JP: it was only behind the upload icon) */
-  check(await p.evaluate(() => { const x = document.getElementById('bkAcctBtn'); return !!x && x.hasAttribute('data-bkfetch') && /Fetch from bank/.test(x.textContent) && !!x.closest('.card.myaccts'); }), '"Fetch from bank" on the Your accounts card');
+  await p.evaluate(() => { const t = document.querySelector('[data-ftab-go="accts"]'); if (t) t.click(); }); await sl(400);
+  check(await p.evaluate(() => { const x = document.getElementById('bkAcctBtn'); return !!x && x.hasAttribute('data-bkfetch') && /Fetch from bank/.test(x.textContent) && !!x.closest('.card.myaccts') && parseFloat(getComputedStyle(x).fontSize) > 10 && x.offsetWidth > 80; }), '"Fetch from bank" on the Your accounts card, in words (not shrunk to an icon)');
   /* balances by themselves: every matched account's balance from the bank, no review (JP: "say how much I have in my account") */
   const nb = await p.evaluate(async () => { const n = await BankLink.balances(); const d = Vault.get(); const A = (d.budget.acctList || []).find(a => a.id === window.__sal) || {}; return { n, bal: A.bal, src: A.balSrc, sheetOpen: !!document.querySelector('.im-box [data-import]') }; });
   check(nb.n >= 1 && nb.bal === 12345.6 && nb.src === 'bank' && !nb.sheetOpen, 'balances are set from the bank by themselves ' + JSON.stringify(nb));

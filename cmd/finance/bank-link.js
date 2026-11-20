@@ -349,7 +349,7 @@
   function acctBtn() {
     var ed = document.getElementById('fpMoneyEdit'); if (!ed) return;
     var b = B(), on = b && b.key && mappedAccts().length, el = document.getElementById('bkAcctBtn');
-    if (!el) { el = document.createElement('button'); el.type = 'button'; el.id = 'bkAcctBtn'; el.className = 'text-btn bk-acbtn'; ed.parentNode.insertBefore(el, ed); }
+    if (!el) { el = document.createElement('button'); el.type = 'button'; el.id = 'bkAcctBtn'; el.className = 'text-btn bk-acbtn mp'; ed.parentNode.insertBefore(el, ed); }   /* mp: keeps its words (modern.js would make it an icon) */
     el.removeAttribute('data-bkfetch'); el.removeAttribute('data-bksetup'); el.setAttribute(on ? 'data-bkfetch' : 'data-bksetup', '');
     el.innerHTML = '<i class="bi bi-' + (on ? 'arrow-repeat' : 'bank') + '"></i> ' + esc(on ? K('ui.bk-fetch-bank', 'Fetch from bank') : K('ui.bk-connect-bank', 'Connect bank'));
   }
