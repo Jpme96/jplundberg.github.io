@@ -24,7 +24,7 @@
     "app.js",
     "quick.js",
     "receipt.js",
-    "notify.js", "notes-panel.js",
+    "notify.js", "notes-panel.js", "place-remind.js",
     "ahealth.js",
     "tilekit.js",
     "pagekit.js",

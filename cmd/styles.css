@@ -4280,3 +4280,13 @@ html.fv-on, html.fv-on body { overflow: hidden; }@media (max-width: 600px) {
 .nt-empty { color: var(--muted); margin: 12px 2px; }
 .nt-foot { margin: 12px 2px 2px; font-size: var(--fs-s, 13px); }
 .nt-foot a { color: var(--accent); text-decoration: none; }
+
+/* reminders by place (2026-11-20) */
+.td-place { display: flex; align-items: center; gap: 6px; margin: 12px 0 4px; }
+.td-place i { color: var(--accent); }
+.td-plbtn { margin: 10px 0 2px; }
+.td-plfind { margin-top: 12px; }
+.td-plres { display: grid; gap: 4px; margin: 6px 0; }
+.td-plr { text-align: left; display: flex; flex-direction: column; padding: 8px 10px; border-radius: var(--r-ctl, 10px); border: 1px solid var(--line); background: none; color: inherit; font: inherit; cursor: pointer; }
+.td-plr small { color: var(--muted); }
+.td-pin i { color: var(--accent); }

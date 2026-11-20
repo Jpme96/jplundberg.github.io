@@ -1,5 +1,10 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.pl-at": ["Remind me at {p}", "Minn meg på ved {p}"],
+  "ui.pl-add": ["Remind me at a place", "Minn meg på et sted"],
+  "ui.pl-ph": ["A shop or an address", "En butikk eller en adresse"],
+  "ui.pl-note": ["You’re told when cmd is open on your phone near the place – it can’t watch in the background.", "Du får beskjed når cmd er åpent på telefonen nær stedet – det kan ikke følge med i bakgrunnen."],
+  "ui.pl-near": ["You’re near {p}", "Du er nær {p}"],
   "ui.nt-today": ["Today", "I dag"],
   "ui.nt-yesterday": ["Yesterday", "I går"],
   "ui.nt-tomorrow": ["Tomorrow", "I morgen"],

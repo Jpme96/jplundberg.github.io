@@ -380,16 +380,28 @@
   document.addEventListener('click', function (e) { if (e.target.closest('[data-tdall]')) { todoAll = !todoAll; renderTodos(); } });
   /* steps inside a task ("Book tannlege → call, confirm"): from the task menu; the chip shows how far you are */
   function stepsChip(t) {
-    var st = t.steps || []; if (!st.length) return '';
+    var pin = t.place && !t.done ? ' <span class="td-steps td-pin" data-tdsteps title="' + esc(t.place.name) + '"><i class="bi bi-geo-alt"></i></span>' : '';
+    var st = t.steps || []; if (!st.length) return pin;
     var d = st.filter(function (x) { return x.d; }).length;
-    return ' <span class="td-steps' + (d === st.length ? ' all' : '') + '" data-tdsteps title="Steps"><i class="bi bi-list-check"></i> ' + d + '/' + st.length + '</span>';
+    return ' <span class="td-steps' + (d === st.length ? ' all' : '') + '" data-tdsteps title="Steps"><i class="bi bi-list-check"></i> ' + d + '/' + st.length + '</span>' + pin;
+  }
+  /* "Remind me at a place" (2026-11-20): a to-do can have a place; while cmd is open on your phone and you're within
+     about 250 m of it, you're told (place-remind.js). A web app can't watch where you are in the background. */
+  var plQ = '', plRes = [], plOpen = false;
+  function placeBlock(t) {
+    if (t.place) return '<div class="td-place"><i class="bi bi-geo-alt-fill"></i> <span>' + esc(I18N.k('ui.pl-at', 'Remind me at {p}', { p: t.place.name })) + '</span> <button type="button" class="text-btn" data-plrm>' + esc(I18N.k('ui.remove', 'Remove')) + '</button></div>';
+    if (!window.Places || !navigator.geolocation) return '';
+    if (!plOpen) return '<button type="button" class="text-btn td-plbtn" data-plopen><i class="bi bi-geo-alt"></i> ' + esc(I18N.k('ui.pl-add', 'Remind me at a place')) + '</button>';
+    return '<form class="add-row td-plfind"><input placeholder="' + esc(I18N.k('ui.pl-ph', 'A shop or an address')) + '" maxlength="80" autocomplete="off" value="' + esc(plQ) + '"><button class="pill-btn" type="submit" aria-label="' + esc(I18N.k('ui.search', 'Search')) + '"><i class="bi bi-search"></i></button></form>' +
+      (plRes.length ? '<div class="td-plres">' + plRes.map(function (r, i) { return '<button type="button" class="td-plr" data-plpick="' + i + '"><b>' + esc(r.name) + '</b>' + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</button>'; }).join('') + '</div>' : '') +
+      '<p class="muted lf-sub">' + esc(I18N.k('ui.pl-note', 'You’re told when cmd is open on your phone near the place – it can’t watch in the background.')) + '</p>';
   }
   function stepsSheet(t) {
     var bg = document.createElement('div'); bg.className = 'fo-bg lf-bg';
     bg.innerHTML = '<div class="fo-box lf-box" role="dialog" aria-modal="true" aria-label="Steps" data-t-aria-label="ui.steps"></div>';
     document.body.appendChild(bg); requestAnimationFrame(function () { bg.classList.add('open'); });
     var box = bg.firstChild;
-    function close() { bg.remove(); document.removeEventListener('keydown', key, true); renderTodos(); }
+    function close() { bg.remove(); document.removeEventListener('keydown', key, true); plOpen = false; plRes = []; plQ = ''; renderTodos(); }
     function key(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
     document.addEventListener('keydown', key, true);
     function draw() {
@@ -397,15 +409,28 @@
       box.innerHTML = '<div class="lf-head"><h3><i class="bi bi-list-check"></i> ' + esc(t.text) + '</h3><button type="button" class="icon-btn sm" data-stclose aria-label="Close" data-t-aria-label="ui.close"><i class="bi bi-x-lg"></i></button></div>' +
         '<p class="muted lf-sub" data-t="ui.break-it-into-small-steps-tick-them-off">Break it into small steps – tick them off as you go.</p>' +
         st.map(function (x, i) { return '<div class="td-step"><label class="lf-check"><input type="checkbox" data-st="' + i + '"' + (x.d ? ' checked' : '') + '> <span' + (x.d ? ' class="dn"' : '') + '>' + esc(x.t) + '</span></label><button type="button" class="icon-btn sm" data-stdel="' + i + '" aria-label="Remove step"><i class="bi bi-x"></i></button></div>'; }).join('') +
-        '<form class="add-row td-stadd"><input placeholder="Add a step" data-t-placeholder="ui.add-a-step" maxlength="120" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add step" data-t-aria-label="ui.add-step"><i class="bi bi-plus-lg"></i></button></form>';
+        '<form class="add-row td-stadd"><input placeholder="Add a step" data-t-placeholder="ui.add-a-step" maxlength="120" autocomplete="off"><button class="pill-btn" type="submit" aria-label="Add step" data-t-aria-label="ui.add-step"><i class="bi bi-plus-lg"></i></button></form>' +
+        placeBlock(t);
     }
     box.addEventListener('click', function (e) {
       var b;
       if (e.target === bg || e.target.closest('[data-stclose]')) return close();
       if ((b = e.target.closest('[data-stdel]'))) { t.steps.splice(+b.dataset.stdel, 1); if (!t.steps.length) delete t.steps; save('dash.todos', todos); draw(); }
+      if (e.target.closest('[data-plopen]')) { plOpen = true; plRes = []; draw(); var pi = box.querySelector('.td-plfind input'); if (pi) pi.focus(); }
+      if (e.target.closest('[data-plrm]')) { delete t.place; save('dash.todos', todos); draw(); }
+      if ((b = e.target.closest('[data-plpick]'))) {
+        var r = plRes[+b.dataset.plpick]; if (!r || r.lat == null) return;
+        t.place = { name: r.name, lat: +r.lat, lon: +r.lon }; plOpen = false; plRes = []; plQ = ''; save('dash.todos', todos); draw();
+        try { navigator.geolocation.getCurrentPosition(function () {}, function () {}, { maximumAge: 6e5, timeout: 15000 }); } catch (x) {}   // asks for the location once
+      }
     });
     bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
     box.addEventListener('change', function (e) { var i = e.target.dataset.st; if (i == null) return; t.steps[+i].d = e.target.checked; save('dash.todos', todos); draw(); });
+    box.addEventListener('submit', function (e) {
+      var pf = e.target.closest('.td-plfind'); if (!pf) return;
+      e.preventDefault(); e.stopImmediatePropagation(); plQ = pf.querySelector('input').value.trim(); if (!plQ) return;
+      window.Places.search(plQ, { limit: 5 }).then(function (l) { plRes = l || []; draw(); }, function () { plRes = []; draw(); });
+    }, true);
     box.addEventListener('submit', function (e) { e.preventDefault(); var inp = box.querySelector('.td-stadd input'), v = inp.value.trim(); if (!v) return; t.steps = t.steps || []; t.steps.push({ t: v, d: false }); save('dash.todos', todos); draw(); box.querySelector('.td-stadd input').focus(); });
     draw(); setTimeout(function () { var i = box.querySelector('.td-stadd input'); if (i) i.focus(); }, 40);
   }
@@ -510,6 +535,7 @@
       t.done ? null : ['top', 'trophy', inTop ? 'Remove from top 3' : 'Top 3 today'],
       ['today', 'sun', 'Today'], ['tomorrow', 'sunrise', 'Tomorrow'], ['week', 'calendar-week', 'Next week'], ['nodate', 'calendar-x', 'No date'],
       t.done ? null : ['steps', 'list-check', (t.steps || []).length ? 'Steps' : 'Add steps'],
+      t.done || t.place || !window.Places ? null : ['place', 'geo-alt', I18N.k('ui.pl-add', 'Remind me at a place')],
       t.done || !window.Focus ? null : ['timer', 'stopwatch', 'Focus timer – 25 min'],
       ['focus', 'star', t.focus ? 'Not focus' : 'Focus this week'], ['del', 'trash3', 'Delete']
     ].filter(Boolean);
@@ -540,6 +566,7 @@
       else if (a === 'focus') { t.focus = !t.focus; renderTodos(); }
       else if (a === 'timer') window.Focus.start(t.text, t.id);
       else if (a === 'steps') stepsSheet(t);
+      else if (a === 'place') { plOpen = true; stepsSheet(t); }
       else if (a === 'top') {
         if (inTop) { delete t.today; delete t.rank; }
         else { var n = todos.filter(function (z) { return z.today === td && !z.done; }).length; if (n >= 3) { if (window.Quick) window.Quick.toast('<i class="bi bi-trophy"></i> Top 3 is full – take one out in Plan my day'); return; } t.today = td; t.rank = n + 1; }
