@@ -500,6 +500,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
+    out += welcomeCard();
     out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard() + weekCard();
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
@@ -508,6 +509,20 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     out += mine.length ? actionList(mine) : '<p class="t-empty">' + L('Nothing open for you.', 'Ingenting åpent for deg.') + '</p>';
     out += '</div><div class="t-col">' + projectsCard() + '</div></div>';   /* two columns on a computer (JP 2026-11-17 11:43) */
     return out;
+  }
+  /* a welcome guide for someone new to the team (2026-11-20, plan Part 4): what to do first and where things are –
+     until they close it (kept per team on this device) */
+  function welcomeCard() {
+    var key = 'team.welcome.' + S.tid; try { if (localStorage.getItem(key) || (navigator.webdriver && !window.__welcomeTest)) return ''; } catch (e) { return ''; }   /* tests skip it, like the switch screen */
+    var steps = [
+      ['home', L('Overview', 'Oversikt'), L('Your open actions and the next meeting – start here each day.', 'Dine åpne oppgaver og neste møte – start her hver dag.')],
+      ['docs', L('Documents', 'Dokumenter'), L('The document requirements, what has come in and the report for each project.', 'Dokumentkravene, det som har kommet inn og rapporten for hvert prosjekt.')],
+      ['cal', L('Meetings', 'Møter'), L('Agendas, minutes and the actions that come out of them.', 'Saksliste, referat og oppgavene som kommer ut av dem.')],
+      ['gear', L('Settings', 'Innstillinger'), L('Turn on notifications to hear when something changes – only who changed what kind, never the content.', 'Slå på varsler for å høre når noe endres – bare hvem som endret hva slags, aldri innholdet.')]
+    ];
+    return '<div class="t-card t-welcome"><h2>' + L('Welcome to ', 'Velkommen til ') + esc(S.me.team.name) + '</h2><p class="t-small">' + L('Everything here is encrypted in your browser – the server never sees what you write.', 'Alt her krypteres i nettleseren din – serveren ser aldri det du skriver.') + '</p><ol class="t-wsteps">' +
+      steps.map(function (s) { return '<li>' + ic(s[0]) + '<span><b>' + esc(s[1]) + '</b><small>' + esc(s[2]) + '</small></span></li>'; }).join('') + '</ol>' +
+      '<button class="t-btn sm ghost" type="button" data-act="welcomeOk">' + L('Got it', 'Skjønner') + '</button></div>';
   }
   function meetingCard(m) {
     var open = actions().filter(function (a) { return a.d.meeting === m.id && !a.d.done; }).length;
@@ -1358,6 +1373,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'upopen') { var um = (S.upMeta || {})[t.dataset.fid]; if (um) openFile(um); return; }
     if (a === 'upkeep') { t.disabled = true; await keepUploads([t.dataset.fid]); return; }
     if (a === 'uprm') { if (!(await sure(L('Remove this file from the list? If it was kept, it stays in the shared files.', 'Fjerne denne filen fra listen? Er den lagt til, blir den liggende i de delte filene.')))) return; t.disabled = true; try { await api('uprm', { method: 'POST', body: { lid: t.dataset.lid, fids: [t.dataset.fid] } }); toast(L('Removed', 'Fjernet')); draw(); } catch (x) { t.disabled = false; toast(failMsg(x)); } return; }
+    if (a === 'welcomeOk') { try { localStorage.setItem('team.welcome.' + S.tid, '1'); } catch (x) {} render(); return; }
     if (a === 'updel') { var ld = S.recs[t.dataset.id]; if (!ld || !ld.d || !(await sure(L('Delete this upload link and everything that came in on it? Files you kept stay in the shared files.', 'Slette denne opplastingslenken og alt som kom inn med den? Filer du har lagt til, blir liggende i de delte filene.')))) return; try { await api('uprm', { method: 'POST', body: { lid: ld.d.lid, all: true } }); await delRec(ld.id, L('Upload link', 'Opplastingslenke')); toast(L('Deleted', 'Slettet')); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'logreset') { if (!(await sure(L('Empty the whole change log for this team? One line will say that you did it.', 'Tømme hele endringsloggen for dette teamet? Én linje sier at du gjorde det.')))) return; try { await api('log', { method: 'DELETE' }); await loadLog(); closeSheet(); draw(); toast(L('The log is empty', 'Loggen er tømt')); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'upkeepall') { t.disabled = true; await keepUploads(t.dataset.fids.split(',')); return; }

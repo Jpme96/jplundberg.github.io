@@ -107,6 +107,8 @@
   C.importKey('raw', ub64(keyB), 'AES-GCM', false, ['encrypt', 'decrypt']).then(function (k) { key = k; return call('info'); }).then(function (j) {
     exp = j.exp; var who = ''; try { who = localStorage.getItem(ME) || ''; } catch (e) {}
     $app.innerHTML = '<h1>' + esc(L('Send files', 'Send filer')) + '</h1><p class="u-muted">' + esc(label ? L('To the project ', 'Til prosjektet ') + label : L('To the project team', 'Til prosjektteamet')) + '</p>' +
+      /* how it works, in three lines (2026-11-20, the welcome guide for contractors) */
+      '<ol class="u-how"><li>' + esc(L('Write who you are.', 'Skriv hvem du er.')) + '</li><li>' + esc(L('Pick the files, or take a photo – they are encrypted here in your browser before they leave.', 'Velg filene, eller ta et bilde – de krypteres her i nettleseren før de sendes.')) + '</li><li>' + esc(L('You see each file arrive; the team is told when they come in. No account needed.', 'Du ser hver fil komme fram; teamet får beskjed når de kommer. Du trenger ingen konto.')) + '</li></ol>' +
       '<div class="u-card">' +
         '<label class="u-lbl">' + esc(L('Your name and company', 'Navn og firma')) + '<input id="who" autocomplete="organization" maxlength="120" value="' + esc(who) + '" placeholder="' + esc(L('e.g. Kari Nordmann, Bygg AS', 'f.eks. Kari Nordmann, Bygg AS')) + '"></label>' +
         '<p class="u-bad" id="needWho" hidden>' + esc(L('Write who you are, so the team knows who sent it.', 'Skriv hvem du er, så teamet vet hvem som sendte det.')) + '</p>' +

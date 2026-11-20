@@ -36,3 +36,7 @@ h2 { font-size: 18px; margin: 26px 0 6px; }
 .u-msg { margin: 0 0 4px; font-size: 14px; color: var(--muted); white-space: pre-wrap; }
 .u-tag { flex: none; font-size: 12px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .u-tag.ok { color: var(--ok); border-color: rgba(34,179,94,.4); }
+
+/* how it works (2026-11-20) */
+.u-how { margin: 0 0 14px; padding-left: 20px; color: var(--muted); line-height: 1.5; }
+.u-how li { margin: 2px 0; }

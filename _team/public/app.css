@@ -263,3 +263,11 @@ html.t-modal { overflow: hidden; }
 .t-setbtns > .t-btn { flex: 0 1 auto; }
 .t-setdel { margin-top: 10px; }
 .t-setfoot { margin: 18px 0 12px; }
+
+/* welcome guide (2026-11-20) */
+.t-welcome h2 { margin-bottom: 4px; }
+.t-wsteps { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 10px; }
+.t-wsteps li { display: flex; gap: 10px; align-items: flex-start; }
+.t-wsteps li > svg, .t-wsteps li > i { flex: none; margin-top: 2px; color: var(--acc); }
+.t-wsteps span { display: flex; flex-direction: column; }
+.t-wsteps small { color: var(--muted, #8a94a3); }
