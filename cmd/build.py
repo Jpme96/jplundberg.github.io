@@ -92,6 +92,12 @@ if '--report' in sys.argv:
     sys.exit(0)
 
 stale = _dcn_stale
+# the avatar maker loads on demand (avatar.js withPage) – its version goes into avatar.js before the bundles (2026-11-20)
+_AV = os.path.join(HERE, 'avatar.js'); _av = io.open(_AV, encoding='utf-8').read()
+_av2 = re.sub(r"var AVPAGE_V = '[^']*';", "var AVPAGE_V = '%s';" % hashlib.sha1(open(os.path.join(HERE, 'avatar-page.js'), 'rb').read()).hexdigest()[:10], _av)
+if _av2 != _av:
+    if check: print('out of date (version): cmd/avatar.js'); stale = True
+    else: io.open(_AV, 'w', encoding='utf-8').write(_av2)
 nb_v = write('nb.js', bundle(M['nb']))
 head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
 stale |= nb_v is None

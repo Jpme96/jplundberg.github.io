@@ -441,8 +441,21 @@
       '<span style="display:flex;align-items:center;gap:12px"><span style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none;background:rgba(127,127,127,.15)">' + mkCrop(figure(MKPLAIN, Object.assign({}, mkMigrate(look()), { pet: 'none' })), '58 12 84 80') + '</span>' +
       '<span>' + L('Your avatar', 'Avataren din') + '<small class="st-rsub">' + L('Look, how it moves, and its settings', 'Utseende, hvordan den beveger seg, og innstillinger') + '</small></span></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button></div>';
   }
+  /* the avatar maker (avatar-page.js, ~17 kB) loads the first time it's opened, not with every page (2026-11-20,
+     plan Part 1). build.py writes its version here. Avatar.page starts as a stub that loads it and then opens it. */
+  var AVPAGE_V = 'e0adae8ec6';
+  function realPage() { return window.Avatar && window.Avatar.page && !window.Avatar.page.__stub ? window.Avatar.page : null; }
+  function withPage(fn) {
+    if (realPage()) return fn();
+    var s = document.createElement('script'); s.src = '/cmd/avatar-page.js?v=' + AVPAGE_V;
+    s.onload = function () { if (realPage()) fn(); };
+    s.onerror = function () { if (window.Ask) window.Ask.alert(L('The avatar maker could not load – check the connection and try again.', 'Avatarmakeren kunne ikke lastes – sjekk nettet og prøv igjen.')); };
+    document.head.appendChild(s);
+  }
+  function pageStub() { var a = arguments; withPage(function () { realPage().apply(null, a); }); }
+  pageStub.__stub = true;
   /* opens your own avatar page (avatar-page.js) */
-  function openMine() { var S = window.ShareSpace, pl = null; try { pl = S && S.partnerLook ? S.partnerLook() : null; } catch (e) {} if (window.Avatar && window.Avatar.page) window.Avatar.page(L('Your avatar', 'Avataren din'), mkMigrate(look()), function (lk) { saveWhole(lk); }, { mine: true, match: pl ? { look: pl, name: S.partnerName ? S.partnerName() : '' } : null }); }
+  function openMine() { var S = window.ShareSpace, pl = null; try { pl = S && S.partnerLook ? S.partnerLook() : null; } catch (e) {} withPage(function () { window.Avatar.page(L('Your avatar', 'Avataren din'), mkMigrate(look()), function (lk) { saveWhole(lk); }, { mine: true, match: pl ? { look: pl, name: S.partnerName ? S.partnerName() : '' } : null }); }); }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-avp-open]')) { e.preventDefault(); openMine(); } });
   document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('[data-avsay]') && window.Delight && window.Delight.set) { window.Delight.set({ avSay: e.target.value }); idx = 0; } });
   window.addEventListener('st:page', function (e) { if (e.detail === 'touches') setTimeout(maker, 0); });
@@ -464,7 +477,7 @@
   var RELC = { family: '#d55181', friend: '#3987e5', work: '#e8743b', other: '#7a8794' };
   function personLook(p, topC) { return Object.assign({}, seedLook((p && (p.id || p.name)) || '', topC || (p && RELC[p.rel]) || '#3987e5'), (p && p.look) || {}); }
   /* the same maker as yours, on its own page (avatar-page.js) – onSave(look) gets the full look */
-  function editor(title, start, onSave, opts) { if (window.Avatar && window.Avatar.page) window.Avatar.page(title, mkMigrate(start), onSave, opts || {}); }
+  function editor(title, start, onSave, opts) { withPage(function () { realPage()(title, mkMigrate(start), onSave, opts || {}); }); }
 
   /* ---------- the two of you (shared home): holding hands, a high five, a hug or a kiss ----------
      a, b = the two looks (a stands on the left). Two figures side by side in one picture; tap the picture to
@@ -513,6 +526,6 @@
     ctx = ctx || {}; var h = new Date().getHours();
     if (ctx.hi5) return 'hi5'; if (ctx.hug) return 'hug'; if (h >= 20 || h < 1) return 'kiss'; return 'hold';
   }
-  window.Avatar = { wear: wear, trimLook: trimLook, act25: act25, cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
+  window.Avatar = { page: pageStub, wear: wear, trimLook: trimLook, act25: act25, cheer: function (say) { cheer(say); }, dressed: function (L) { return dressed(L); }, couple: couple, coupleKind: coupleKind, COUPLE_KINDS: ['hold', 'hi5', 'hug', 'kiss', 'selfie', 'dance', 'cook', 'sofa'], figure: figure, look: look, moments: moments, personLook: personLook, editor: editor, MOMENTS: MOMENTS, openMine: openMine,
     _mk: { MKT: MKT, MKO: MKO, MKC: MKC, sec: mkSec, rand: mkRand, migrate: mkMigrate, act: mkAct, css: mkCss, crop: mkCrop, figure: figure, MOMENTS: MOMENTS, PLAIN: MKPLAIN, PLAIN0: PLAIN0, save: saveWhole, look: look, esc: esc } };
 })();
