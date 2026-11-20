@@ -10,6 +10,7 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
 (async () => {
   const { b, p } = await open(393);
   await go(p, 'finance/', 3000);
+  check(await p.evaluate(() => { const x = document.getElementById('bkAcctBtn'); return !!x && x.hasAttribute('data-bksetup') && /Connect bank/.test(x.textContent); }), 'before connecting: "Connect bank" on the Your accounts card');
 
   /* the server lets only the read-only calls through */
   const refused = await p.evaluate(async () => (await fetch('/cmd/api/bank?p=' + encodeURIComponent('/payments'), { method: 'POST', headers: { authorization: 'Bearer a.b.c' } })).status);
@@ -55,6 +56,8 @@ const eb = () => new Promise(r => http.get('http://localhost:' + PORT + '/__eb',
   const nw = await p.evaluate(() => { const d = Vault.get(), id = d.bank.links[0].accts[1].acct, A = (d.budget.acctList || []).find(a => a.id === id) || {}; return { id, name: A.name, kind: A.kind, inList: Accts.list(d).some(a => a.id === id), opt: !!document.querySelector('[data-bkmap="0:1"] option[value="' + id + '"]:checked') }; });
   check(nw.id && nw.name === 'Made-up savings' && nw.kind === 'savings' && nw.inList && nw.opt, '"+ New account" makes "Made-up savings" as a savings account and matches it ' + JSON.stringify(nw));
 
+  /* the clear button on Finances → Accounts (JP: it was only behind the upload icon) */
+  check(await p.evaluate(() => { const x = document.getElementById('bkAcctBtn'); return !!x && x.hasAttribute('data-bkfetch') && /Fetch from bank/.test(x.textContent) && !!x.closest('.card.myaccts'); }), '"Fetch from bank" on the Your accounts card');
   /* balances by themselves: every matched account's balance from the bank, no review (JP: "say how much I have in my account") */
   const nb = await p.evaluate(async () => { const n = await BankLink.balances(); const d = Vault.get(); const A = (d.budget.acctList || []).find(a => a.id === window.__sal) || {}; return { n, bal: A.bal, src: A.balSrc, sheetOpen: !!document.querySelector('.im-box [data-import]') }; });
   check(nb.n >= 1 && nb.bal === 12345.6 && nb.src === 'bank' && !nb.sheetOpen, 'balances are set from the bank by themselves ' + JSON.stringify(nb));

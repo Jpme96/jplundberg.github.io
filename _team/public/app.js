@@ -31,6 +31,27 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
   theme(); window.__teamTheme = theme; if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme); } catch (e) {} })();
 
+/* errors into cmd's error list (2026-11-20, JP): Team's own script errors, masked here (no numbers, no emails, never
+   who it was), are sent to Team's server every few seconds and when the page closes; cmd's error list shows them as "Team". */
+(function () {
+  var Q = {}, T = 0, V = (((document.querySelector('script[src*="app.js"]') || {}).src || '').split('v=')[1] || '?').slice(0, 16);
+  function mask(x) { return String(x == null ? '' : x).replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '@').replace(/\d/g, '#').replace(/\s+/g, ' ').trim().slice(0, 200); }
+  function add(k, m, a) {
+    m = mask(m); if (!m || /ResizeObserver loop/.test(m)) return;
+    var key = k + '|' + m + '|' + (a || ''), x = Q[key] || (Q[key] = { k: k, m: m, a: mask(a), p: (location.hash.split('=')[0] || '#').slice(0, 20), v: V, n: 0, t: 0 });
+    x.n++; x.t = Date.now(); clearTimeout(T); T = setTimeout(send, 8000);
+  }
+  function send(keep) {
+    var l = Object.keys(Q).map(function (k) { return Q[k]; }); if (!l.length || navigator.onLine === false) return Promise.resolve(0);
+    Q = {}; var ua = navigator.userAgent;
+    var body = { os: /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : 'other', br: /CriOS|Chrome\//.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'other', w: Math.round(innerWidth / 10) * 10, errs: l };
+    try { return fetch('/api/errlog', { method: 'POST', headers: { 'x-team': '1', 'content-type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body), keepalive: !!keep }).then(function (r) { return r.ok ? l.length : 0; }, function () { return 0; }); } catch (e) { return Promise.resolve(0); }
+  }
+  window.addEventListener('error', function (e) { if (e && e.message) add('js', e.message, String(e.filename || '').split('/').pop().split('?')[0] + ':' + (e.lineno || 0)); });
+  window.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; add('promise', (r && r.message) || String(r), ''); });
+  window.addEventListener('pagehide', function () { if (Object.keys(Q).length) send(true); });
+  window.TeamErr = { add: add, send: send };
+})();
 (function () {
   'use strict';
   var nb = (function () { try { var v = localStorage.getItem('team.lang'); if (v) return v === 'nb'; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || ''); })();

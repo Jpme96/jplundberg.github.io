@@ -260,6 +260,7 @@
   var busy = false, cache = null;
   function fetchAll(pre) {
     if (busy) return; busy = true;
+    if (!pre) balances().catch(function () {});
     var list = mappedAccts(), said = [];
     if (!list.length) { busy = false; setup(); return; }
     if (!pre) sheet('<h2 class="im-h"><i class="bi bi-bank"></i> ' + esc(K('ui.bk-fetching', 'Fetching from the bank …')) + '</h2><p class="muted im-p">' + list.map(function (x) { return esc(x.link.aspsp + ' · ' + x.a.name); }).join('<br>') + '</p>');
@@ -343,9 +344,20 @@
       saveBank(function (b) { var a = b.links[+p[0]] && b.links[+p[0]].accts[+p[1]]; if (a) a.acct = val; }); var f = document.querySelector('.qa-acts [data-bkfetch]'); if (!f) setup(); return; }
     var pk = e.target.closest('[data-bkpick]'); if (pk) pk.dataset.touched = '1';
   });
+  /* a clear button on Finances → Accounts (JP 2026-11-20: it was only behind the small upload icon on Spending):
+     "Fetch from bank" when connected, "Connect bank" before; the balances refresh first, then the review */
+  function acctBtn() {
+    var ed = document.getElementById('fpMoneyEdit'); if (!ed) return;
+    var b = B(), on = b && b.key && mappedAccts().length, el = document.getElementById('bkAcctBtn');
+    if (!el) { el = document.createElement('button'); el.type = 'button'; el.id = 'bkAcctBtn'; el.className = 'text-btn bk-acbtn'; ed.parentNode.insertBefore(el, ed); }
+    el.removeAttribute('data-bkfetch'); el.removeAttribute('data-bksetup'); el.setAttribute(on ? 'data-bkfetch' : 'data-bksetup', '');
+    el.innerHTML = '<i class="bi bi-' + (on ? 'arrow-repeat' : 'bank') + '"></i> ' + esc(on ? K('ui.bk-fetch-bank', 'Fetch from bank') : K('ui.bk-connect-bank', 'Connect bank'));
+  }
+  window.addEventListener('fin:change', acctBtn);
   function hash() { if (location.hash === '#bank') { history.replaceState(null, '', location.pathname + location.search); setTimeout(setup, 350); } }
   window.addEventListener('hashchange', hash);
-  window.Vault.onUnlock(function () { back(); hash(); setTimeout(quiet, 2500); });
+  window.Vault.onUnlock(function () { back(); hash(); acctBtn(); setTimeout(quiet, 2500); });
+  acctBtn();
 
   window.BankLink = { block: block, setup: setup, fetch: fetchAll, balances: balances, jwt: jwt, der: der, pull: pull, _api: api };
 })();

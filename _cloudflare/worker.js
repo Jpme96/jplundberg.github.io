@@ -1607,12 +1607,14 @@ async function errlogApi(request, url, env, who) {
   const load = async w => (JSON.parse(await env.VAULT.get(ERR_KEY(w)) || '[]') || []).filter(x => x && x.t > cut);
   if (request.method === 'GET') {
     if (who !== 'o') return json({ error: 'not allowed' }, 403);
-    const lists = { o: await load('o'), p: await load('p') };
+    /* Team's lines (work.jplundberg.com, 2026-11-20) come over the service binding – the same list, a third part */
+    const team = async () => { try { if (!env.TEAMSVC) return []; const r = await env.TEAMSVC.fetch(new Request('https://internal/api/errlog-internal')); const j = await r.json(); return (j.list || []).filter(x => x && x.t > cut); } catch (e) { return []; } };
+    const lists = { o: await load('o'), p: await load('p'), t: await team() };
     if (url.searchParams.get('format') === 'text') {
       const lines = ['cmd error reports · ' + new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC · last ' + ERR_DAYS + ' days'];
-      for (const w of ['o', 'p']) {
+      for (const w of ['o', 'p', 't']) {
         const l = lists[w].sort((a, b) => b.t - a.t);
-        lines.push('', (w === 'o' ? 'cmd (owner)' : 'shared app') + ' – ' + l.length + ' line(s)');
+        lines.push('', ({ o: 'cmd (owner)', p: 'shared app', t: 'Team (work.jplundberg.com)' })[w] + ' – ' + l.length + ' line(s)');
         l.forEach(e => lines.push('- ' + new Date(e.t).toISOString().slice(5, 16).replace('T', ' ') + ' ' + e.k + ' ' + e.p + ' ' + (e.a || '') + ' ×' + e.n + ' [' + e.v + ' · ' + e.d + ']: ' + e.m));
       }
       return new Response(lines.join('\n') + '\n', { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -1633,6 +1635,7 @@ async function errlogApi(request, url, env, who) {
   if (request.method === 'DELETE') {
     if (who !== 'o') return json({ error: 'not allowed' }, 403);
     await env.VAULT.delete(ERR_KEY('o')); await env.VAULT.delete(ERR_KEY('p'));
+    if (env.TEAMSVC) { try { await env.TEAMSVC.fetch(new Request('https://internal/api/errlog-internal', { method: 'DELETE' })); } catch (e) {} }
     return json({ ok: true });
   }
   return json({ error: 'method not allowed' }, 405);

@@ -52,6 +52,7 @@ env.ASSETS = { fetch: async req => {
 } };
 
 http.createServer(async (req, res) => {
+  if (req.url === '/__internal/errlog') { const r = await mod.default.fetch(new Request('https://internal/api/errlog-internal'), env); return res.end(await r.text()); }   /* what the /cmd Worker gets over its service binding */
   if (req.url === '/__mem') { const all = []; for (const [n, m] of mems) for (const [k, v] of m) all.push([n === 'team' ? k : n + '/' + k, v]); return res.end(JSON.stringify(all)); }
   const ch = []; for await (const c of req) ch.push(c);
   const who = ((req.headers.cookie || '').match(/(?:^|;\s*)who=([^;]+)/) || [])[1];

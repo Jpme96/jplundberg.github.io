@@ -37,6 +37,12 @@ export default {
       return env.TEAM.get(env.TEAM.idFromName(up[1])).fetch(new Request('https://team/up/' + up[2] + '/' + up[3], { method: request.method, headers: { 'content-type': 'application/json' }, body }));
     }
     if (url.pathname.startsWith('/api/up/')) return json({ error: 'not found' }, 404);
+    /* Team's error lines for cmd's error list (2026-11-20, JP): only the /cmd Worker asks, over its service binding –
+       a request from the internet always carries work.jplundberg.com, never the host 'internal' */
+    if (url.pathname === '/api/errlog-internal') {
+      if (url.hostname !== 'internal') return json({ error: 'not found' }, 404);
+      return env.TEAM.get(env.TEAM.idFromName('dir')).fetch(new Request('https://team/dir/errlog', { method: request.method === 'DELETE' ? 'DELETE' : 'GET' }));
+    }
     if (!env.TEAM_DOMAIN || !env.POLICY_AUD || !env.OWNER) return json({ error: 'worker not configured' }, 503);
     const check = await verifyAccess(request, env).catch(e => ({ ok: false, reason: 'error: ' + e.message }));
     if (!check.ok || !check.email) return json({ error: 'unauthorized', reason: check.reason || 'no email' }, 401);
@@ -76,6 +82,11 @@ export default {
       if (id !== 'team') await dir.fetch(new Request('https://team/dir/del?id=' + id, { method: 'POST', headers: h }));
       return json({ ok: true });
     }
+    /* the app's error lines (masked in the app and again here; never who it was) – kept in 'dir' for 21 days */
+    if (url.pathname === '/api/errlog' && request.method === 'POST') {
+      const eb = await request.text(); if (eb.length > 40000) return json({ error: 'too big' }, 413);
+      return dir.fetch(new Request('https://team/dir/errlog', { method: 'POST', headers: { 'content-type': 'application/json' }, body: eb }));
+    }
     const tid = request.headers.get('x-tid') || 'team';
     if (!TID.test(tid)) return json({ error: 'bad team' }, 400);
     if (tid !== 'team') { const ok = await (await dir.fetch(new Request('https://team/dir/has?id=' + tid, { headers: h }))).json(); if (!ok.has) return json({ error: 'no such team' }, 404); }
@@ -92,7 +103,7 @@ export class TeamStore {
 
   async fetch(request) {
     const url = new URL(request.url), m = request.method, p = url.pathname.replace(/^\/api\//, '').replace(/\/+$/, '');
-    if (p.startsWith('/dir/')) return this.dir(p.slice(5), url);   /* only the Durable Object 'dir' is ever asked these */
+    if (p.startsWith('/dir/')) return this.dir(p.slice(5), url, request);   /* only the Durable Object 'dir' is ever asked these */
     if (p.startsWith('/up/')) { try { return await this.upPublic(p.slice(4), m, request, url); } catch (e) { return json({ error: 'server error' }, 500); } }
     const email = request.headers.get('x-email') || '', owner = request.headers.get('x-owner') || '';
     let b = {};
@@ -149,7 +160,8 @@ export class TeamStore {
   }
 
   /* the list of teams besides the first: ids only (each team keeps its own name) */
-  async dir(p, url) {
+  async dir(p, url, request) {
+    if (p === 'errlog') return this.errlog(request);
     const ids = (await this.s.get('ids')) || [];
     if (p === 'list') return json({ ids });
     if (p === 'has') return json({ has: ids.includes(url.searchParams.get('id')) });
@@ -157,6 +169,28 @@ export class TeamStore {
     if (p === 'vapid') return json(await makeVapid(this.s));
     if (p === 'add') { if (ids.length >= 50) return json({ error: 'too many teams' }, 409); const id = hex(crypto.getRandomValues(new Uint8Array(6))); ids.push(id); await this.s.put('ids', ids); return json({ id }); }
     return json({ error: 'not found' }, 404);
+  }
+
+  /* error lines from the app, like cmd's: kind, masked message and place, the view, the version, the device type, a count */
+  async errlog(request) {
+    const cut = Date.now() - 21 * 864e5, m = request.method;
+    const l = ((await this.s.get('errlog')) || []).filter(x => x && x.t > cut);
+    if (m === 'GET') return json({ list: l });
+    if (m === 'DELETE') { await this.s.delete('errlog'); return json({ ok: true }); }
+    if (m !== 'POST') return json({ error: 'method not allowed' }, 405);
+    let b = {}; try { b = JSON.parse((await request.text()) || '{}') || {}; } catch (e) { return json({ error: 'bad json' }, 400); }
+    const mask = x => String(x == null ? '' : x).replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '@').replace(/\d/g, '#').replace(/\s+/g, ' ').trim();
+    const dev = [b.os, b.br, b.w ? b.w + 'px' : ''].map(x => String(x || '').replace(/[^\w ()]/g, '').slice(0, 24)).filter(Boolean).join(' ').slice(0, 60) || '?';
+    let n = 0;
+    (Array.isArray(b.errs) ? b.errs : []).slice(0, 40).forEach(e => {
+      if (!e || !e.m) return;
+      const x = { k: String(e.k || 'js').replace(/[^\w-]/g, '').slice(0, 12), m: mask(e.m).slice(0, 200), a: mask(e.a).slice(0, 80), p: String(e.p || '').replace(/[^\w#=-]/g, '').slice(0, 24), v: String(e.v || '').replace(/[^\w.-]/g, '').slice(0, 16), d: dev, n: Math.max(1, Math.min(9999, +e.n || 1)), t: Math.min(Date.now(), +e.t || Date.now()) };
+      const hit = l.find(y => y.k === x.k && y.m === x.m && y.a === x.a && y.p === x.p && y.v === x.v && y.d === x.d);
+      if (hit) { hit.n = Math.max(hit.n, x.n); hit.t = Math.max(hit.t, x.t); } else l.push(x);
+      n++;
+    });
+    l.sort((a, b2) => a.t - b2.t); await this.s.put('errlog', l.slice(-300));
+    return json({ ok: true, n });
   }
 
   async touch(me) { const now = Date.now(); if (!me.seen || now - me.seen > 300e3) { me.seen = now; await this.s.put('m:' + me.email, me); } }

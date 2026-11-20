@@ -17,6 +17,8 @@ I18N.add({
   "ui.nt-del": ["Remove", "Fjern"],
   "ui.nt-clear": ["Clear all", "Fjern alle"],
   "ui.bk-account": ["Account", "Konto"],
+  "ui.bk-fetch-bank": ["Fetch from bank", "Hent fra banken"],
+  "ui.bk-connect-bank": ["Connect bank", "Koble til bank"],
   "ui.bk-new-acct": ["+ New account: {n}", "+ Ny konto: {n}"],
   "ui.bk-another": ["Connect another bank", "Koble til en bank til"],
   "ui.bk-app-bad": ["That doesn’t look like an application ID", "Det ser ikke ut som en applikasjons-ID"],

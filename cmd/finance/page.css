@@ -679,3 +679,6 @@
 .bk-add { display: flex; gap: 8px; flex-wrap: wrap; }
 .bk-add select { flex: 1; min-width: 0; }
 .bk-new { border: 0; border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12.5px; background: rgba(var(--ok-rgb), .16); color: var(--ok); cursor: pointer; margin-left: auto; margin-right: 6px; }
+.card.myaccts .card-head { gap: 8px; flex-wrap: wrap; }
+.bk-acbtn { margin-left: auto; }
+.bk-acbtn + #fpMoneyEdit { margin-left: 0; }

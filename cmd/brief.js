@@ -10,7 +10,7 @@
       if (!navigator.onLine || !window.fetch) return;
       fetch('/cmd/api/errlog', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
         if (!j) return;
-        var cut = Date.now() - 7 * 864e5, l = [].concat(j.o || [], j.p || []).filter(function (x) { return x && x.t > cut; }), kinds = {};
+        var cut = Date.now() - 7 * 864e5, l = [].concat(j.o || [], j.p || [], j.t || []).filter(function (x) { return x && x.t > cut; }), kinds = {};
         l.forEach(function (x) { kinds[(x.k || '') + '|' + (x.m || '').slice(0, 60)] = 1; });
         try { localStorage.setItem('dash.errDigest', JSON.stringify({ day: day, n: l.reduce(function (a, x) { return a + (+x.n || 1); }, 0), k: Object.keys(kinds).length })); } catch (e) {}
       }).catch(function () {});
