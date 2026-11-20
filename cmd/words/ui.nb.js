@@ -1,5 +1,17 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.dc-hand-btn": ["Handover package", "Overleveringspakke"],
+  "ui.dc-hand-none": ["No approved files with a file on this device yet – approve lines first.", "Ingen godkjente filer på denne enheten ennå – godkjenn linjer først."],
+  "ui.dc-hand-making": ["Making the package …", "Lager pakken …"],
+  "ui.dc-hand": ["Handover", "Overlevering"],
+  "ui.dc-hand-report": ["Report", "Rapport"],
+  "ui.dc-hand-plan": ["Document plan", "Dokumentplan"],
+  "ui.dc-hand-date": ["Made", "Laget"],
+  "ui.dc-hand-incl": ["Approved files ({n})", "Godkjente filer ({n})"],
+  "ui.dc-hand-miss": ["Not approved or missing ({n})", "Ikke godkjent eller mangler ({n})"],
+  "ui.dc-hand-contents": ["Contents", "Innhold"],
+  "ui.dc-hand-done": ["{n} approved files in the package", "{n} godkjente filer i pakken"],
+  "ui.dc-hand-failed": ["The package could not be made.", "Pakken kunne ikke lages."],
   "ui.sum-row": ["Your week", "Uka di"],
   "ui.sum-row-sub": ["Sunday 19:00 – spent, workouts, the week ahead", "Søndag 19:00 – brukt, trening, uka som kommer"],
   "ui.sum-spent": ["Spent {a}", "Brukt {a}"],

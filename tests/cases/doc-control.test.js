@@ -112,6 +112,19 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(rp.h2 === '1 Summary|2 Missing documents|3 Not approved and comments|4 File names' && /235/.test(rp.t) && /Made-up: version number/.test(rp.t) && /random scan 7\.pdf/.test(rp.t), 'the report: summary, missing, not approved with the comment, and the file-name problems ' + JSON.stringify(rp.h2));
   const pdf = await p.evaluate(async () => { const r = Features.list('dctl')[0], f = await window.FdvPdf.html(document.querySelector('#wkDocCtl .rp-doc').innerHTML, 'Made-up foot', 'x.pdf'); const t = new TextDecoder().decode(new Uint8Array(await f.slice(0, 8).arrayBuffer())); return { pdf: t.slice(0, 5), pages: f._pages }; });
   check(pdf.pdf === '%PDF-' && pdf.pages >= 1, 'the report becomes a PDF on the device ' + JSON.stringify(pdf));
+  /* the handover package (2026-11-20): approved lines with a file → folders per code, the report, the plan, a contents list */
+  await p.evaluate(() => { const r = Features.list('dctl')[0], l = r.lines.find(x => (x.files || []).length); const t = Features.tools(); t.dctl.find(x => x.id === r.id).lines.find(x => x.id === l.id).st = 'ok'; Features.saveTools(t); });
+  await sl(600);
+  const hz = await p.evaluate(async () => {
+    let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; };
+    document.querySelector('[data-dchand]').click();
+    for (let i = 0; i < 60 && !got; i++) await new Promise(r => setTimeout(r, 250));
+    FdvPdf.share = old; if (!got) return null;
+    const u = new Uint8Array(await got.arrayBuffer()), names = []; let i = 0;
+    while (i < u.length - 46) { if (u[i] === 0x50 && u[i + 1] === 0x4b && u[i + 2] === 1 && u[i + 3] === 2) { const n = u[i + 28] | (u[i + 29] << 8); names.push(new TextDecoder().decode(u.slice(i + 46, i + 46 + n))); i += 46 + n; } else i++; }
+    return { name: got.name, names };
+  });
+  check(hz && /\.zip$/.test(hz.name) && hz.names.some(n => /^Contents\.txt$/.test(n)) && hz.names.some(n => /^\d{3}[^/]*\/.+/.test(n)) && hz.names.some(n => /\.pdf$/.test(n) && /^Report/.test(n)) && hz.names.some(n => /^Document plan.*\.xlsx$/.test(n)), 'the handover package: contents, a folder per code with the approved file, the report and the plan ' + JSON.stringify(hz));
   /* Excel with colours opens the file to see and edit (JP 21:47): sheet tabs, the colours, systems with no document type in grey, any cell changed, kept and downloaded */
   await tap('[data-dcxcol]');
   check(await until(() => !!document.querySelector('.xv .xv-t td')), 'the coloured plan opens in the viewer');

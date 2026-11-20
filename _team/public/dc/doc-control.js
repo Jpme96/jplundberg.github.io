@@ -665,7 +665,7 @@
     return h;
   }
   function reportTab(p) {
-    return '<div class="fdv-rbar"><span class="spacer"></span><button type="button" class="pill-btn ghost" data-dcxcol="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> <span>' + esc(k('ui.dc-x-btn', 'Excel with colours')) + '</span></button><button type="button" class="pill-btn" data-dcpdf="' + esc(p.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
+    return '<div class="fdv-rbar"><span class="spacer"></span><button type="button" class="pill-btn ghost" data-dchand="' + esc(p.id) + '"><i class="bi bi-box-seam"></i> <span>' + esc(k('ui.dc-hand-btn', 'Handover package')) + '</span></button><button type="button" class="pill-btn ghost" data-dcxcol="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> <span>' + esc(k('ui.dc-x-btn', 'Excel with colours')) + '</span></button><button type="button" class="pill-btn" data-dcpdf="' + esc(p.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
       '<p class="fdv-pdfnote muted" hidden></p><article class="rp-doc rp-inline">' + report(p) + '</article>';
   }
 
@@ -1098,6 +1098,43 @@
   /* a small .xlsx (stored zip, inline strings): the same columns as a document plan, so it reads back in Document control */
   var CRCT = (function () { var t = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var j = 0; j < 8; j++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   function crc(u) { var c = 0xFFFFFFFF; for (var i = 0; i < u.length; i++) c = CRCT[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  /* The handover package (2026-11-20, plan Part 4): one .zip for the client – every approved file, sorted into a folder
+     per NS 3451 code and named by its planned name where the plan has one, the report as a PDF, the plan as Excel with
+     colours (delivered vs missing) and a contents list. Made on the device; nothing is uploaded. */
+  function safeName(s) { return String(s || '').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120); }
+  function handover(btn) {
+    var p = proj(btn.dataset.dchand); if (!p || btn.disabled) return;
+    var lbl = btn.querySelector('span'), F = {}; (p.files || []).forEach(function (f) { F[f.id] = f; });
+    var lines = (p.lines || []).slice().sort(lineOrder), okL = lines.filter(function (l) { return l.st === 'ok' && (l.files || []).some(function (id) { return F[id] && !F[id].nf; }); });
+    if (!okL.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-hand-none', 'No approved files with a file on this device yet – approve lines first.'))); return; }
+    btn.disabled = true; lbl.textContent = k('ui.dc-hand-making', 'Making the package …');
+    var out = [], used = {}, listed = [], me = profile();
+    var uniq = function (path) { var p0 = path, i = 2; while (used[path.toLowerCase()]) { path = p0.replace(/(\.[^.\/]+)?$/, ' (' + (i++) + ')$1'); } used[path.toLowerCase()] = 1; return path; };
+    var jobs = [];
+    okL.forEach(function (l) {
+      var dir = safeName((l.code || '000') + ' ' + lineTitle(l)) || 'Andre';
+      l.files.forEach(function (id, n) {
+        var f = F[id]; if (!f || f.nf) return;
+        var ext = (f.name.match(/\.[a-z0-9]{1,6}$/i) || [''])[0], base = l.name ? safeName(l.name) + (l.files.length > 1 ? ' ' + (n + 1) : '') + ext : safeName(f.name);
+        jobs.push(getBlob(id).then(function (bl) { if (!bl) return; return bl.arrayBuffer().then(function (ab) { var path = uniq(dir + '/' + base); out.push([path, new Uint8Array(ab)]); listed.push(path); }); }).catch(function () {}));
+      });
+    });
+    var nm = safeName([p.no, k('ui.dc-hand', 'Handover'), p.name].filter(Boolean).join(' ')) || 'Handover';
+    var foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, k('ui.doc-control', 'Document control'), p.no, p.name].filter(Boolean).join('  ·  ');
+    if (window.FdvPdf && window.FdvPdf.html) jobs.push(window.FdvPdf.html(report(p), foot, nm + '.pdf').then(function (file) { return file.arrayBuffer().then(function (ab) { out.push([uniq(k('ui.dc-hand-report', 'Report') + ' – ' + nm + '.pdf'), new Uint8Array(ab)]); }); }).catch(function () {}));
+    jobs.push(planXlsx(p, true).then(function (f) { return f && f.arrayBuffer().then(function (ab) { out.push([uniq(k('ui.dc-hand-plan', 'Document plan') + ' – ' + nm + '.xlsx'), new Uint8Array(ab)]); }); }).catch(function () {}));
+    Promise.all(jobs).then(function () {
+      var miss = lines.filter(function (l) { return l.st !== 'ok' && l.st !== 'na'; });
+      var txt = [nm, siteLine(p), k('ui.dc-hand-date', 'Made') + ': ' + new Date().toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB'), [me.name, me.employer].filter(Boolean).join(', '), '',
+        k('ui.dc-hand-incl', 'Approved files ({n})', { n: listed.length }) + ':'].concat(listed.sort().map(function (x) { return '  ' + x; }), ['', k('ui.dc-hand-miss', 'Not approved or missing ({n})', { n: miss.length }) + ':'],
+        miss.map(function (l) { return '  ' + (l.code || '') + ' ' + (l.name || lineTitle(l)) + ' – ' + stName(l.st); })).join('\r\n');
+      out.unshift([k('ui.dc-hand-contents', 'Contents') + '.txt', '﻿' + txt]);
+      var z = zipStore(out), file = new File([z], nm + '.zip', { type: 'application/zip' });
+      btn.disabled = false; lbl.textContent = k('ui.dc-hand-btn', 'Handover package');
+      toast('<i class="bi bi-box-seam"></i> ' + esc(k('ui.dc-hand-done', '{n} approved files in the package', { n: listed.length })));
+      if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(file); else { var a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+    }).catch(function () { btn.disabled = false; lbl.textContent = k('ui.dc-hand-btn', 'Handover package'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-hand-failed', 'The package could not be made.'))); });
+  }
   function zipStore(files) {
     var enc = new TextEncoder(), parts = [], cen = [], off = 0;
     files.forEach(function (f) {
@@ -1648,6 +1685,7 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; Fe.saveTools(t4); draw(); });
       setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000); return;
     }
+    if ((b = t.closest('[data-dchand]'))) { handover(b); return; }
     if ((b = t.closest('[data-dcxcol]'))) {   /* Excel with colours: see it, change any cell, download (JP 21:47) */
       var px2 = proj(b.dataset.dcxcol); if (!px2 || b.disabled) return; b.disabled = true;
       Promise.all([planXlsx(px2, true), needXV().catch(function () { return null; })]).then(function (x) {

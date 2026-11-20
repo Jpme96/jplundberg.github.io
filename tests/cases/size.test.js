@@ -68,7 +68,8 @@ const BUDGET_KB = { total: 1689 };   /* +4 kB every page (2026-11-20, plan Part 
 /* −17 kB every page (2026-11-20, plan Part 1): the avatar maker (avatar-page.js) loads the first time it is opened */
 /* finance +2 kB (2026-11-20): What if? – the savings target and floating-rate steps */
 /* +4 kB every page (2026-11-20, plan Part 3 C): paste to add (smart.js), the Sunday summary (notify.js), quieter network logging */
-const PAGE_KB = { 'index.html': 1446, 'admin/index.html': 1363, 'calendar/index.html': 1292, 'finance/index.html': 1689, 'food/index.html': 1380, 'goals/index.html': 1310, 'habits/index.html': 1338, 'house/index.html': 1653, 'papers/index.html': 1331, 'people/index.html': 1379, 'travel/index.html': 1435, 'wish/index.html': 1395, 'work/index.html': 1642 };
+/* work +4 kB (2026-11-20, plan Part 4): the handover package in Documentation */
+const PAGE_KB = { 'index.html': 1446, 'admin/index.html': 1363, 'calendar/index.html': 1292, 'finance/index.html': 1689, 'food/index.html': 1380, 'goals/index.html': 1310, 'habits/index.html': 1338, 'house/index.html': 1653, 'papers/index.html': 1331, 'people/index.html': 1379, 'travel/index.html': 1435, 'wish/index.html': 1395, 'work/index.html': 1646 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
