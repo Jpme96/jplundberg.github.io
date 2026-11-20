@@ -108,7 +108,7 @@ def csp(html):
     import base64
     hashes = ["'sha256-%s'" % base64.b64encode(hashlib.sha256(m.encode('utf-8')).digest()).decode() for m in re.findall(r'<script>(.*?)</script>', html, re.S)]
     pol = ("default-src 'self'; script-src 'self' %s https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
-           "img-src 'self' data: blob: https://server.arcgisonline.com; font-src 'self' data:; connect-src 'self' blob: data: %s; worker-src 'self' blob:; "
+           "img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: %s; worker-src 'self' blob:; "
            "frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'") % (' '.join(hashes), ' '.join(CSP_CONNECT))
     tag = '<meta http-equiv="Content-Security-Policy" content="%s">' % pol
     if '<meta http-equiv="Content-Security-Policy"' in html:
