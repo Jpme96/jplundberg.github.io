@@ -324,7 +324,7 @@
     var mode = h >= 5 && h < 11 && on('morning') ? 'm' : h >= 17 && on('evening') ? 'e' : '';
     if (mode === 'm') {
       var items = (window.BriefItems || []).filter(function (x) { return !x.fold && !x.review && x.title && !/^(Plan your day|Planlegg dagen)/.test(x.title); }).slice(0, 3);
-      var bits = items.map(function (x) { return lower1(tr(x.title)); });
+      var bits = items.map(function (x) { return lower1(tr(x.title)).replace(/[?!.:]+$/, ''); });   /* "clock in?, training" read oddly in the middle of a sentence (2026-11-20) */
       txt = '<b>' + L('Good morning', 'God morgen') + '</b> – ' + (bits.length ? esc(joinAnd(bits)) + '.' : L('nothing pressing today. Enjoy it.', 'ingenting som haster i dag. Nyt det.'));
     } else if (mode === 'e') {
       var td = today(), t2 = new Date(); t2.setDate(t2.getDate() + 1); var tk = dkey(t2);

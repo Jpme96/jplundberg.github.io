@@ -2230,7 +2230,7 @@ button.br-item { width: 100%; border: 0; background: none; font: inherit; text-a
   .link-btn::after { inset: -12px -6px; }
   button.check::after { inset: -10px; border-radius: 50%; }
   .tl-chip::after { inset: -8px -2px; }
-  .seg button, .hb-day, .todo-item .del, .tx .del, .stepper button, .month-nav button, .tr-swap, .hb-name, .fold-hint, .ah-chip, .cc-ev, .tl-x,
+  .seg button, .hb-day, .todo-item .del, .tx .del, .stepper button, .month-nav button, .tr-grid .tr-swap, .hb-name, .fold-hint, .ah-chip, .cc-ev, .tl-x,
   .fp-hero figcaption a, .kit-foot a, .cl-today, .cl-bar .pill-btn, .cl-filter, .tv-more, .lf-chip, .pt-start, .mh-chip { position: relative; }
   .seg button::after, .hb-day::after, .todo-item .del::after, .tx .del::after, .stepper button::after, .month-nav button::after, .tr-swap::after,
   .hb-name::after, .fold-hint::after, .ah-chip::after, .cc-ev::after, .tl-x::after, .fp-hero figcaption a::after, .kit-foot a::after, .cl-today::after,
@@ -3832,7 +3832,7 @@ a.hf-wait { opacity: .6; pointer-events: none; } a.hf-gone { opacity: .5; pointe
 .tr-grid { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important; align-items: end; }
 .tr-grid label { display: grid; gap: 4px; min-width: 0; } .tr-grid label span { font-size: 12.5px; color: var(--muted); }
 .tr-grid select { width: 100%; min-width: 0; }
-.tr-swap { margin-bottom: 4px; }
+.tr-grid .tr-swap { margin-bottom: 4px; }   /* the Home travel card's swap stays absolute between From and To (2026-11-20: the tap-area rule made it relative, so it sat on its own row) */
 .tr-list { margin-top: 4px; }
 .mn-tr { margin: 12px 0 4px; } .qa-tr { display: flex; margin: 4px 0 2px; font-size: 14px; }
 /* Finances → Now: accounts at a glance, pace, you and your partner, latest (fin-now2.js) */
