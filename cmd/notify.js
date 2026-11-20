@@ -17,7 +17,7 @@
   function at(key, hh, mm) { var p = String(key).split('-'); return new Date(+p[0], p[1] - 1, +p[2], hh, mm || 0).getTime(); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
-  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, house: true, people: true, timer: true, commute: false, morning: true }, detail: 'private' };
+  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, summary: true, house: true, people: true, timer: true, commute: false, morning: true }, detail: 'private' };
   function prefs() { var p = readJSON(KEY, {}); var o = Object.assign({}, DEF, p); o.k = Object.assign({}, DEF.k, p.k || {}); return o; }
   function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
   function devId() { var p = prefs(); if (!p.id) { p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save(p); } return p.id; }
@@ -132,6 +132,19 @@
       var sun = new Date(); sun.setDate(sun.getDate() + (7 - sun.getDay()) % 7);
       var wk = window.Checkin.weekOf(sun);
       if ((d.checkins || []).indexOf(wk.key) < 0) add('checkin:' + wk.key, at(dkey(sun), 18), I18N.k('ui.weekly-check-in', 'Weekly check-in'), I18N.k('ui.checkin-sub2', '5 minutes: spending, the week ahead and habits'), '/cmd/#checkin');
+    }
+    /* the Sunday summary (2026-11-20, list of 16 Nov point 24): Sunday 19:00 – money spent this week, workouts, and the
+       week ahead. Worked out now, so it's as fresh as the last time the dashboard was open. */
+    if (p.k.summary !== false) {
+      var su = new Date(); su.setDate(su.getDate() + (7 - su.getDay()) % 7); var suK = dkey(su), mo = new Date(su); mo.setDate(mo.getDate() - 6); var moK = dkey(mo);
+      var spent = on('finance', true) ? (d.expenses || []).filter(function (e) { return e && e.date >= moK && e.date <= suK; }).reduce(function (a, e) { return a + (+e.amount || 0); }, 0) : null;
+      var wo = null; try { var hw = window.HealthPlus && window.HealthPlus.week ? window.HealthPlus.week(moK) : null; wo = hw ? hw.workouts : null; } catch (e) {}
+      var ahead = 0; try { if (C && on('calendar', true)) { var n1 = new Date(su.getFullYear(), su.getMonth(), su.getDate() + 1), n7 = new Date(su.getFullYear(), su.getMonth(), su.getDate() + 7, 23, 59); ahead = C.occurrences(n1, n7, { card: true }).filter(function (o) { return !o.ev || !o.ev.reminder; }).length; } } catch (e) {}
+      var bits = [];
+      if (spent != null) bits.push(I18N.k('ui.sum-spent', 'Spent {a}', { a: kr(spent) }));
+      if (wo != null) bits.push(I18N.k(wo === 1 ? 'ui.sum-wo1' : 'ui.sum-wo', wo === 1 ? '1 workout' : '{n} workouts', { n: wo }));
+      bits.push(I18N.k(ahead === 1 ? 'ui.sum-ahead1' : 'ui.sum-ahead', ahead === 1 ? '1 event next week' : '{n} events next week', { n: ahead }));
+      add('summary:' + suK, at(suK, 19), I18N.k('ui.sum-title', 'Your week'), full ? bits.join(' · ') : I18N.k('ui.sum-private', 'Your week in short – open the dashboard'), '/cmd/');
     }
     /* document deadlines (JP 23:46): a week before and on the day, 08:00, while documents are still missing or not approved */
     if (Fe && Fe.list) (Fe.list('dctl') || []).forEach(function (pj) {

@@ -339,6 +339,7 @@
             (r ? '<button type="button" class="icon-btn sm" data-mlrec="' + esc(r.id) + '" aria-label="Open the recipe"><i class="bi bi-journal-text"></i></button>' : '<span class="hl-sp"></span>') + '</li>';
         }).join('') + '</ul><datalist id="hlRecipes">' + rs.map(function (r) { return '<option value="' + esc(r.title) + '">'; }).join('') + '</datalist>' +
         '<div class="hl-acts">' + (withR.length ? '<button type="button" class="pill-btn" data-mlshop><i class="bi bi-cart-plus"></i> Ingredients to the shopping list</button>' : '') +
+        (function () { var prev = days.filter(function (k) { return k >= tk && !m[k] && m[addDays(k, -7)]; }); return prev.length ? '<button type="button" class="text-btn" data-mlsame><i class="bi bi-arrow-repeat"></i> ' + esc(I18N.k('ui.ml-same', 'Same as last week ({n})', { n: prev.length })) + '</button>' : ''; })() +
         (rs.length && planned.length < 7 ? '<button type="button" class="text-btn" data-mlfill><i class="bi bi-shuffle"></i> <span data-t="ui.fill-the-empty-days">Fill the empty days</span></button>' : '') +
         (votePartner() && !ML.voting ? '<button type="button" class="text-btn" data-vtnew><i class="bi bi-hand-index-thumb"></i> ' + esc(I18N.k('ui.let-x-choose', 'Let {x} choose', { x: votePartner() })) + '</button>' : '') +
         (planned.length ? '<span class="muted hl-small">' + planned.length + ' of 7 planned</span>' : '') + '</div></section>';
@@ -355,6 +356,14 @@
     el.addEventListener('focusout', function () { setTimeout(function () { if (!el.contains(document.activeElement)) draw(); }, 50); });
     el.addEventListener('click', function (e) {
       var b;
+      if (e.target.closest('[data-mlsame]')) {
+        /* "Same as last week" (2026-11-20): each empty day from today gets what that weekday had a week earlier */
+        var m1 = meals(), tk1 = today(), m01 = monday(ML.wk), done1 = [];
+        for (var i1 = 0; i1 < 7; i1++) { var k1 = addDays(m01, i1), was = m1[addDays(k1, -7)]; if (k1 >= tk1 && !m1[k1] && was) { setMeal(k1, was); done1.push(k1); } }
+        draw();
+        if (done1.length) toast('<i class="bi bi-arrow-repeat"></i> ' + esc(I18N.k('ui.ml-same-done', '{n} dinners from last week', { n: done1.length })), function () { done1.forEach(function (k) { setMeal(k, ''); }); draw(); });
+        return;
+      }
       if (e.target.closest('[data-vtnew]')) { ML.voting = true; draw(); var f0 = el.querySelector('[data-vtform] input'); if (f0) f0.focus(); return; }
       if (e.target.closest('[data-vtcancel]')) { ML.voting = false; return draw(); }
       if ((b = e.target.closest('[data-vtdel]'))) { var t0 = Fe.tools(); t0.votes = (t0.votes || []).filter(function (v) { return v.id !== b.dataset.vtdel; }); Fe.saveTools(t0); return; }

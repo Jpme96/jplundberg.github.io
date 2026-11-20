@@ -147,6 +147,42 @@ window.Smart = (function () {
   var SPORT_NAME = { strength: 'Strength', run: 'Running', walk: 'Walking', bike: 'Cycling', swim: 'Swimming', ball: 'Ball sports', yoga: 'Yoga / mobility', other: 'Workout' };
   var EVENT_WORDS = /\b(møte|meeting|avtale|appointment|tannlege|dentist|lege|legen|doctor|frisør|hairdresser|middag med|dinner with|lunsj med|lunch with|bursdag|birthday|fest|party|konsert|concert|kino|cinema|intervju|interview|kurs|course|fly|flight|tog|train to|bryllup|wedding|date)\b/i;
 
+  /* "Paste to add" (2026-11-20): a pasted bank SMS, receipt, bill or booking confirmation becomes one thing to add –
+     an expense, a to-do to pay the bill by its due date, or an event on the day of the trip. Returns null if unsure. */
+  function pDate(t, now) {
+    var m = t.match(/\b(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?\b/);
+    if (m) { var y = m[3] ? (+m[3] < 100 ? 2000 + +m[3] : +m[3]) : now.getFullYear(), d = new Date(y, +m[2] - 1, +m[1]); if (!m[3] && d < addDays(now, -200)) d.setFullYear(y + 1); if (d.getMonth() === +m[2] - 1) return dkey(d); }
+    var mo = { jan: 0, feb: 1, mar: 2, apr: 3, mai: 4, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, okt: 9, oct: 9, nov: 10, des: 11, dec: 11 };
+    m = t.match(/\b(\d{1,2})\.?\s+(jan|feb|mar|apr|mai|may|jun|jul|aug|sep|okt|oct|nov|des|dec)[a-zæøå]*\.?(?:\s+(\d{4}))?/i);
+    if (m) { var d2 = new Date(m[3] ? +m[3] : now.getFullYear(), mo[m[2].toLowerCase()], +m[1]); if (!m[3] && d2 < addDays(now, -200)) d2.setFullYear(d2.getFullYear() + 1); return dkey(d2); }
+    m = t.match(/\b(20\d\d)-(\d\d)-(\d\d)\b/); return m ? m[1] + '-' + m[2] + '-' + m[3] : null;
+  }
+  function pAmount(t) {
+    var m = t.match(/(?:kr\.?|nok)\s*(\d{1,3}(?:[ . ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)/i) || t.match(/(\d{1,3}(?:[ . ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:kr|nok|,-)/i);
+    if (!m) return null; var n = parseFloat(m[1].replace(/[ . ](?=\d{3}\b)/g, '').replace(',', '.')); return n > 0 && n < 1e7 ? n : null;
+  }
+  function fromPaste(raw, now, opts) {
+    var t = raw.replace(/\s+/g, ' '), low = t.toLowerCase(), amt = pAmount(t), date = pDate(t, now);
+    var time = t.match(/\b(?:kl\.?|klokken|at)\s*([01]?\d|2[0-3])[:.]([0-5]\d)\b/i) || t.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+    if (/faktura|regning|invoice|forfall|due date|betalingsfrist|kid\b|kid-nummer|kontonummer/.test(low) && amt) {
+      var due = (t.match(/(?:forfall(?:sdato)?|betalingsfrist|due(?: date)?|betal innen)\D{0,12}(\d{1,2}[.\/]\d{1,2}(?:[.\/]\d{2,4})?)/i) || [])[1];
+      var from = (t.match(/(?:fra|from|avsender)\s*:?\s*([A-ZÆØÅ][\wÆØÅæøå&.\- ]{2,30})/) || [])[1] || (t.match(/^([A-ZÆØÅ][\wÆØÅæøå&.\- ]{2,30}?)\s+(?:faktura|regning|invoice)/i) || [])[1] || '';
+      return { kind: 'todo', text: cap((window.I18N && I18N.lang === 'nb' ? 'Betal ' : 'Pay ') + (from ? from.trim() + ' ' : '') + Math.round(amt).toLocaleString('nb-NO') + ' kr'), due: due ? pDate(due, now) : date, strong: true, pasted: 'bill' };
+    }
+    if (/booking|bestilling|reservasjon|reservation|bekreftelse|confirmation|flight|flyvning|avgang|departure|check-in|innsjekk|hotell|hotel/.test(low) && date) {
+      var what = /hotell|hotel|innsjekk|check-in/.test(low) ? 'Hotel' : /fly|flight|gate|boarding/.test(low) ? 'Flight' : /tog|train|vy\b|sj\b/.test(low) ? 'Train' : /ferje|ferry|color line|fjord line/.test(low) ? 'Ferry' : 'Trip';
+      var to = (t.match(/(?:til|to|destinasjon|destination)\s*:?\s*([A-ZÆØÅ][a-zæøåA-ZÆØÅ\- ]{2,24})/) || [])[1];
+      var title = what + (to ? ' – ' + to.trim().replace(/\s+(den|on|at|kl)$/i, '') : '');
+      return time ? { kind: 'event', title: title, date: date, start: pad(+time[1]) + ':' + time[2], allDay: false, location: '', repeat: '', strong: true, pasted: 'booking' }
+        : { kind: 'event', title: title, date: date, allDay: true, location: '', repeat: '', strong: true, pasted: 'booking' };
+    }
+    if (amt && /kjøp|varekjøp|betalt|belastet|purchase|paid|kortkjøp|reservert|transaksjon|kvittering|receipt|total/.test(low)) {
+      var shop = (t.match(/(?:hos|i|at|til|ved)\s+([A-ZÆØÅ0-9][\wÆØÅæøå&.'\- ]{1,30}?)(?=[,.]|\s+(?:den|kl|on|dato|med|with)\b|$)/) || [])[1] || (t.match(/^([A-ZÆØÅ0-9][\wÆØÅæøå&.'\- ]{2,24}?)\s/) || [])[1] || '';
+      shop = cap(shop.trim());
+      return { kind: 'expense', amount: Math.round(amt * 100) / 100, note: shop, cat: guessCat(shop || t, opts && opts.memory), date: date && date <= dkey(now) ? date : dkey(now), strong: true, pasted: 'purchase' };
+    }
+    return null;
+  }
   function cap(s) { s = String(s || '').replace(/\s{2,}/g, ' ').replace(/^[\s,.:;–-]+|[\s,.:;–-]+$/g, ''); return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
   function strip(s, used) { return used ? s.replace(used, ' ') : s; }
   function money(s) {
@@ -160,6 +196,7 @@ window.Smart = (function () {
     opts = opts || {};
     var now = opts.now || new Date(), raw = String(line || '').trim();
     if (!raw) return null;
+    if (raw.length > 90 || /\n/.test(raw)) { var pz = fromPaste(raw, now, opts); if (pz) return pz; }
     var s = ' ' + raw + ' ', m, out;
 
     /* explicit: "notat: …", "todo: …", "husk å …" */

@@ -227,7 +227,7 @@
     if (u.origin === location.origin) { var m = u.pathname.match(/^\/cmd\/api\/([a-z]+)/); return m ? 'api/' + m[1] : null; }
     return SERVICES[u.hostname.replace(/^www\./, '')] || null;
   }
-  var netOk = {};
+  var netOk = {}, netMiss = {};
   function netCheck(url, status, init) {
     var s = svc(url); if (!s) return;
     var hd = init && init.headers; if (hd && (hd['X-Diag-Probe'] || (hd.get && hd.get('X-Diag-Probe')))) return;
@@ -236,6 +236,14 @@
     if (!status && navigator.onLine === false) return;                     // offline: the sync notice already says so
     if (s === 'api/vault' && status === 404) return;                         // nothing saved on the server yet
     if (status === 409 || status === 412) return;                            // "changed elsewhere" – handled where it happens
+    /* no answer at all (a train, a tunnel, a weak signal) is normal: changes wait on the device and the "N changes
+       waiting" chip says so. Only a service that keeps not answering for 10 minutes, with nothing getting through,
+       is written down (2026-11-20 – these were the biggest group in the error log). */
+    if (!status) {
+      var nw = Date.now(), q = netMiss[s] = (netMiss[s] || []).filter(function (t) { return nw - t < 10 * 60e3; }); q.push(nw);
+      if (q.length < 3 || (netOk[s] && nw - netOk[s] < 10 * 60e3) || nw - q[0] < 5 * 60e3) return;
+      netMiss[s] = [];
+    }
     log('net', s + ' ' + method + ' ' + (status || 'no answer'), '', { raw: true });
   }
   if (window.fetch) {

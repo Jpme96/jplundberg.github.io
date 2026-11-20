@@ -1,5 +1,16 @@
 /* Texts by name for ui: [English, Norwegian]. Made by cmd/i18n-keys.py – add new ones by hand the same way. */
 I18N.add({
+  "ui.sum-row": ["Your week", "Uka di"],
+  "ui.sum-row-sub": ["Sunday 19:00 – spent, workouts, the week ahead", "Søndag 19:00 – brukt, trening, uka som kommer"],
+  "ui.sum-spent": ["Spent {a}", "Brukt {a}"],
+  "ui.sum-wo1": ["1 workout", "1 treningsøkt"],
+  "ui.sum-wo": ["{n} workouts", "{n} treningsøkter"],
+  "ui.sum-ahead1": ["1 event next week", "1 avtale neste uke"],
+  "ui.sum-ahead": ["{n} events next week", "{n} avtaler neste uke"],
+  "ui.sum-title": ["Your week", "Uka di"],
+  "ui.sum-private": ["Your week in short – open the dashboard", "Uka di i korte trekk – åpne dashbordet"],
+  "ui.ml-same": ["Same as last week ({n})", "Samme som forrige uke ({n})"],
+  "ui.ml-same-done": ["{n} dinners from last week", "{n} middager fra forrige uke"],
   "ui.wi-goal-q": ["When will I have … in savings? (kr)", "Når har jeg … i sparepenger? (kr)"],
   "ui.wi-goal-go": ["Show", "Vis"],
   "ui.wi-goal-not": ["not by {m}", "ikke innen {m}"],
