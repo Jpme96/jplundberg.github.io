@@ -20,7 +20,7 @@
       add(g, 'path', { d: hp, fill: '#27694a' });
       var tr = 'M0 200 L110 200'; for (var x2 = 110; x2 <= 330; x2 += 10) tr += ' L' + x2 + ' ' + (YG(x2) + .5).toFixed(1); tr += ' L356 108';
       add(g, 'path', { d: tr, fill: 'none', stroke: '#d8c8a8', 'stroke-width': 2, 'stroke-dasharray': '4 4', opacity: .7 });
-      [[176, '#3d85dc'], [252, '#e57a3c']].forEach(function (m) { var yy = YG(m[0]) + .5, ms = KS(m[0]) / .5; add(g, 'line', { x1: m[0], y1: yy, x2: m[0], y2: yy - 62 * ms, stroke: '#cdd3d9', 'stroke-width': 1.8 * ms }); add(g, 'path', { d: 'M' + m[0] + ' ' + (yy - 62 * ms) + ' l' + (16 * ms) + ' ' + (6 * ms) + ' l' + (-16 * ms) + ' ' + (6 * ms) + ' Z', fill: m[1] }); add(g, 'ellipse', { cx: m[0], cy: yy, rx: 4 * ms, ry: 1.2 * ms, fill: 'rgba(0,0,0,.25)' }); });
+      /* (the blue and orange milestone flags were removed – JP 2026-11-21: the gold goal flag and the savings pennant are enough) */
       /* a What if savings goal (2026-11-21, JP): the summit flag is the goal (gold, drawn with the planted flag); here a gold line
          fills the trail from the bottom up to where your savings have got, and a bright pennant with the % marks that point */
       if (data.wi) {
@@ -41,7 +41,7 @@
       var g = add(sv, 'g', {}), cx = 60, face = 0, w = 0, pose = {}, lift = 0, planted = false;
       function YG(x) { return 200 - 92 * E(CL((x - 110) / 220)); }
       function KS(x) { return .5 - .17 * E(CL((x - 110) / 220)); }
-      /* far mountains, the trail hill, little flags for the other goals */
+      /* far mountains, the trail hill */
       if (st.pact) { cx = 335; face = 0; } else if (t < .4) face = 90 * E(SEG(t, 0, .4)); else if (t < 7.0) { face = 90; cx = LERP(60, 335, SEG(t, .4, 7.0)); w = Math.min(1, (t - .4) / .2, (7.0 - t) / .2); } else { face = 90; cx = 335; }
       var gy = YG(cx), k = KS(cx), s = k / .5, nh = SIDE(1, 90), CARRY = B(96, 18),   /* the flag in his far hand: the pole rests behind him, not across his chest */ UPP = [cx + 15 * s, gy - 74 * s], DN = [cx + 15 * s, gy - 30 * s], pf = 0;
       var sitF = 0, kid = null, helpLean = 0;
