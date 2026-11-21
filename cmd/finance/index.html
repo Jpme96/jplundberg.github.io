@@ -16,7 +16,7 @@
   <link href="/cmd/manifest.webmanifest" rel="manifest">
   <link rel="preload" href="../assets/fonts/inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/inter-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
-  <link href="/cmd/assets/bi/bi.css?v=cbf5d569d7" rel="stylesheet">
+  <link href="/cmd/assets/bi/bi.css?v=c2dc7096ea" rel="stylesheet">
   <script>
     /* Lock first, and apply the saved theme before anything is drawn. */
     (function (r) {
@@ -71,7 +71,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=e73591f4c7" rel="stylesheet">
+  <link href="../styles.css?v=a8a81aac9c" rel="stylesheet">
   <link href="page.css?v=fc9cbe6905" rel="stylesheet">
   <link href="../modern.css?v=0d4933abd3" rel="stylesheet">
   <link href="../sidenav.css?v=3f1593c639" rel="stylesheet">
@@ -232,6 +232,7 @@
         </section>
         </div>
         <div data-tool="ebud" hidden></div>
+        <div data-tool="lp-climate" hidden></div>
         <section class="card taxyear" id="fpYearCard">
           <div class="card-head"><h2 data-t="ui.the-year-ahead"><i class="bi bi-calendar3-range"></i> The year ahead</h2><span class="muted" id="fpYearNote"></span></div>
           <div id="fpYearAhead"></div>
@@ -261,6 +262,8 @@
           <div id="fpAcct"></div>
         </section>
         <div data-tool="subs" class="fp-billtool" hidden></div>
+        <div data-tool="lp-ladmin" hidden></div>
+        <div data-tool="lp-deals" hidden></div>
         <div data-tool="recur" class="fp-billtool" hidden></div>
         <section class="card bills" hidden>
           <div class="card-head"><h2><i class="bi bi-calendar-check"></i> Bills this month</h2><button data-t="ui.due-dates" class="text-btn" id="billsEdit" type="button">Due dates</button></div>
@@ -972,9 +975,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=79c6083eb2"></script>
+  <script src="../dist/head.js?v=1b2c2c1807"></script>
   <script src="../dist/page-finance.js?v=3fe82b8570"></script>
-  <script src="../dist/tail.js?v=8d772a932f"></script>
+  <script src="../dist/tail.js?v=f4a18cbc32"></script>
   <!-- /scripts -->
 </body>
 </html>

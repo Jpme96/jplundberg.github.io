@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1217 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?528892443b") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1231 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?c7fd3a000d") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -133,10 +133,20 @@
 .bi-book::before{content:"\f194"}
 .bi-book-fill::before{content:"\f192"}
 .bi-book-half::before{content:"\f193"}
+.bi-bookmark::before{content:"\f1a2"}
 .bi-bookmark-check::before{content:"\f196"}
 .bi-bookmark-check-fill::before{content:"\f195"}
+.bi-bookmark-dash::before{content:"\f198"}
+.bi-bookmark-dash-fill::before{content:"\f197"}
+.bi-bookmark-fill::before{content:"\f199"}
+.bi-bookmark-heart::before{content:"\f19b"}
+.bi-bookmark-heart-fill::before{content:"\f19a"}
 .bi-bookmark-plus::before{content:"\f19d"}
 .bi-bookmark-plus-fill::before{content:"\f19c"}
+.bi-bookmark-star::before{content:"\f19f"}
+.bi-bookmark-star-fill::before{content:"\f19e"}
+.bi-bookmark-x::before{content:"\f1a1"}
+.bi-bookmark-x-fill::before{content:"\f1a0"}
 .bi-box::before{content:"\f1c8"}
 .bi-box-arrow-down::before{content:"\f1b9"}
 .bi-box-arrow-down-left::before{content:"\f1b7"}
@@ -157,6 +167,8 @@
 .bi-box-fill::before{content:"\f7d2"}
 .bi-box-seam::before{content:"\f1c7"}
 .bi-box-seam-fill::before{content:"\f7d3"}
+.bi-box2-heart::before{content:"\f70c"}
+.bi-box2-heart-fill::before{content:"\f70b"}
 .bi-briefcase::before{content:"\f1cc"}
 .bi-briefcase-fill::before{content:"\f1cb"}
 .bi-brightness-alt-high::before{content:"\f1ce"}
@@ -782,6 +794,8 @@
 .bi-house-up-fill::before{content:"\f896"}
 .bi-house-x::before{content:"\f899"}
 .bi-house-x-fill::before{content:"\f898"}
+.bi-houses::before{content:"\f8c6"}
+.bi-houses-fill::before{content:"\f8c5"}
 .bi-hr::before{content:"\f426"}
 .bi-image::before{content:"\f42a"}
 .bi-image-alt::before{content:"\f428"}

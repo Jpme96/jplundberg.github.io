@@ -106,6 +106,14 @@ _sh2 = re.sub(r"var CHAT_V = '[^']*'", "var CHAT_V = '%s'" % (chat_v or 'x'), _s
 if _sh2 != _sh:
     if check: print('out of date (version): cmd/share.js'); stale = True
     else: io.open(_SH, 'w', encoding='utf-8').write(_sh2)
+# the life sections' cards load only when one of them is switched on and its page has a slot (life-plus.js) – 2026-11-21
+lpp_v = write('life-plus.page.js', bundle(['life-plus.page.js']))
+stale |= lpp_v is None
+_LP = os.path.join(HERE, 'life-plus.js'); _lp = io.open(_LP, encoding='utf-8').read()
+_lp2 = re.sub(r"var LPP_V = '[^']*'", "var LPP_V = '%s'" % (lpp_v or 'x'), _lp)
+if _lp2 != _lp:
+    if check: print('out of date (version): cmd/life-plus.js'); stale = True
+    else: io.open(_LP, 'w', encoding='utf-8').write(_lp2)
 nb_v = write('nb.js', bundle(M['nb']))
 head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
 stale |= nb_v is None

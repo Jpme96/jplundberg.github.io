@@ -96,7 +96,7 @@
     'Home life': 'Each one is its own page in the menu. Switching one off hides it – nothing is deleted.'
   };
   /* added in October 2026 – marked until you've tried them */
-  var NEW = { voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
+  var NEW = { ready: 1, hood: 1, ladmin: 1, deals: 1, climate: 1, parties: 1, moments: 1, family: 1, pets: 1, clubs: 1, sleep: 1, calm: 1, media: 1, later: 1, digital: 1, career: 1, outdoor: 1, voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
   function render() {
     var groups = [];
     F.LIST.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
@@ -109,7 +109,7 @@
           var adv = F.ADV && F.ADV.indexOf(x.id) > -1;
           if (adv && simp) return '';
           return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
-            '<span class="st-label">' + x.name + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + I18N.k('ui.ftd-' + x.id, x.desc) + '</small></span>' +
+            '<span class="st-label">' + I18N.k('ui.ftn-' + x.id, x.name) + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + I18N.k('ui.ftd-' + x.id, x.desc) + '</small></span>' +
             '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + x.name + '"></label>';
         }).join('') + (GROUP_NOTE[g] ? '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>' : '');
     }).join('');
