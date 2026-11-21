@@ -7,6 +7,8 @@ const PAGES = ['finance', 'food', 'work', 'habits', 'papers', 'calendar', 'goals
 (async () => {
   const { b, p } = await open(420);
   await p.evaluate(() => { const t0 = Features.tools(); t0.people = [{ id: 'tp1', name: 'Ada Test', rel: 'friend' }]; Features.saveTools(t0); ['flex', 'meetings', 'ptime', 'healthpage', 'habits', 'training', 'papers', 'calendar', 'goals', 'wish', 'people', 'work', 'food', 'finance'].forEach(f => { try { Features.set(f, true); } catch (e) {} }); });
+  /* a What if savings goal, so Goals' "walk down to your savings pennant" action is measured with its real path (2026-11-21) */
+  await p.evaluate(() => { const t0 = Features.tools(); t0.whatif = [{ id: 'main', name: 'Test plan', changes: [], years: 5, target: 100000, base: { assets: 40000 } }]; Features.saveTools(t0); });
   for (const pg of PAGES) {
     await go(p, pg + '/', 3000);
     if (await until(p, () => !!document.querySelector('#scIllu svg.sc25'), 10000) === null) { check(false, pg + ': the scene is there'); continue; }

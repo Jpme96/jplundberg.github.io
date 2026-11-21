@@ -449,7 +449,17 @@
       part('glActive', allDone ? 'hot' : '', '<line x1="120" y1="30" x2="120" y2="10" class="sc-pole"/><path d="M120 10 h16 l-4 5 l4 5 h-16z" class="sc-gflag' + (allDone ? ' won' : '') + '"/>') + climbers +
       (allDone ? sceneMe(88, -26, 44, 64, 'win') : (function () { var q = at(Math.min(.9, Math.max(.04, avg))); return '<g transform="translate(' + q[0].toFixed(1) + ' ' + q[1].toFixed(1) + ') rotate(-8)">' + sceneMe(-24, -68, 48, 69, 'plain') + '</g>'; })());
     var list = l.map(function (g) { return { t: g.name + ' · ' + Math.round((GS ? GS.pct(g) : 0) * 100) + ' %', h: '#glActive' }; });
-    return { svg: svg, label: L('Your goals', 'Målene dine'), list: list, empty: L('Add a goal and start climbing.', 'Legg inn et mål og begynn å klatre.') };
+    /* a What if savings goal (Finances → Insights): how far your savings have got – the gold pennant on the trail (2026-11-21) */
+    var wi = null;
+    try {
+      var wl = Fe.tools().whatif, sc0 = Array.isArray(wl) && wl[0];
+      if (sc0 && sc0.target > 0) {
+        var vd = (window.Vault && Vault.get && Vault.get()) || {}, have = sc0.base && sc0.base.assets != null ? +sc0.base.assets : ((vd.accounts || []).filter(function (a) { return a && a.kind !== 'debt'; }).reduce(function (n, a) { return n + (+a.balance || 0); }, 0));
+        wi = { pct: Math.max(0, Math.min(1, have / sc0.target)), target: sc0.target };
+        list.push({ t: L('Savings goal ', 'Sparemål ') + Math.round(sc0.target).toLocaleString('nb-NO') + ' kr · ' + Math.round(wi.pct * 100) + ' %', h: '/cmd/finance/#wiCard' });
+      }
+    } catch (e) {}
+    return { svg: svg, label: L('Your goals', 'Målene dine'), list: list, empty: L('Add a goal and start climbing.', 'Legg inn et mål og begynn å klatre.'), live: wi ? { wi: wi } : {} };
   }
 
   /* ---------------- Papers: a filing cabinet – a drawer lights up when something is about to expire ---------------- */
