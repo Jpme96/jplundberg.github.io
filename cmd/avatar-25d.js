@@ -51,7 +51,8 @@
   /* a cmd look → what the 2.5D body needs. Choices that share a shape are drawn by the same part. */
   var TOPS = { tee: { bare: 'short' }, tank: { bare: 'arms' }, polo: { collar: 1, bare: 'short' }, sweater: {}, knit: {}, hoodie: {}, shirt: {}, jersey: { stripe: 1 }, kit: { bare: 'short' },
     varsity: { sleeve: '#f4f1ea' }, suit: { jacket: '#2e3340' }, puffer: { quilt: 1 }, rain: { hood: 1, zip: 1 }, jacket: { zip: 1 }, dress: { bare: 'short', skirt: 'knee' }, bunad: { band: 1, sleeve: '#f4f4f2' },
-    scrubs: { vneck: 1, bare: 'short' }, chef: { buttons2: 1 }, pjs: { stripes: 1 }, robe: { wrap: 1 }, none: { bare: 'arms' } };
+    scrubs: { vneck: 1, bare: 'short' }, chef: { buttons2: 1 }, pjs: { stripes: 1 }, robe: { wrap: 1 }, none: { bare: 'arms' },
+    turtle: {}, cardigan: { btns: 1 } };   /* 2026-11-21 (JP: more outfits): a turtleneck and a knitted cardigan over a shirt collar */
   /* how each top is cut (JP 2026-11-15: clothes must fit the body, not be drawn on it): e = how loose round the body, hem = where it ends
      (146 the hips, 170 mid-thigh, 182 the knee), neck = crew, v, stand (a collar band), hood, open; rib = a knitted band at the hem and cuffs;
      se = how much fuller the sleeve is than the arm; pk = pockets (kanga, hip, chest) */
@@ -59,7 +60,8 @@
     hoodie: { e: 1.08, hem: 150, neck: 'hood', rib: 1, se: 1.2, pk: 'kanga' }, shirt: { e: 1.03, hem: 149, cuff: 1 }, jersey: { e: 1.03, neck: 'crew', cuff: 1 }, kit: { e: 1.03, neck: 'v', shoulder: 1 },
     varsity: { e: 1.08, hem: 148, neck: 'stand', rib: 1, se: 1, pk: 'hip' }, suit: { e: 1.04, hem: 157, pk: 'hip', cuff: 1 }, puffer: { e: 1.18, hem: 151, neck: 'stand', se: 2.6, rib: 1 },
     rain: { e: 1.12, hem: 171, neck: 'hood', se: 1.6, pk: 'hip' }, jacket: { e: 1.1, hem: 151, neck: 'stand', se: 1.2, pk: 'hip', rib: 1 }, dress: { e: 1.02, neck: 'crew' }, bunad: { e: 1.03, hem: 150 },
-    scrubs: { e: 1.05, pk: 'chest' }, chef: { e: 1.07, hem: 153, neck: 'stand', cuff: 1 }, pjs: { e: 1.05, hem: 149, neck: 'crew', cuff: 1 }, robe: { e: 1.1, hem: 183, se: 1.8 }, none: { e: 1 } };
+    scrubs: { e: 1.05, pk: 'chest' }, chef: { e: 1.07, hem: 153, neck: 'stand', cuff: 1 }, pjs: { e: 1.05, hem: 149, neck: 'crew', cuff: 1 }, robe: { e: 1.1, hem: 183, se: 1.8 }, none: { e: 1 },
+    turtle: { e: 1.04, hem: 148, neck: 'turtle', rib: 1, se: .6 }, cardigan: { e: 1.07, hem: 150, neck: 'v', vdeep: 1, vfill: '#f4f1ea', rib: 1, se: 1, pk: 'hip', shirtCol: 1 } };
   var SHOES = { sneakers: '#1a1a1a', hightops: '#d93a3a', boots: '#5b3a1e', sandals: '#8a5e44', slippers: '#e0559a', cleats: '#1a1a1a' };
   /* the build changes the whole body, not only its width (JP, 2026-11-12: "the composition does not fit the body"):
      w = body width, d = depth (front to back), sh = shoulders, wa = waist, hp = hips, arm / leg = how thick */
@@ -92,6 +94,7 @@
     var add = function (n, at) { g.appendChild(el(n, at)); }, W = hw * k;
     if (t.jacket) { add('path', { d: TD, fill: t.jacket }); if (front) { var v1 = P(-9, 80 + bob, 15), v2 = P(0, 112 + bob, 16), v3 = P(9, 80 + bob, 15); add('path', { d: 'M' + v1.X + ' ' + v1.Y + ' L' + v2.X + ' ' + v2.Y + ' L' + v3.X + ' ' + v3.Y + ' Z', fill: '#f4f4f2' }); var ti = P(0, 84 + bob, 16), tb = P(0, 108 + bob, 17); add('path', { d: 'M' + (ti.X - 2 * k) + ' ' + ti.Y + ' L' + (ti.X + 2 * k) + ' ' + ti.Y + ' L' + (tb.X + 2.4 * k) + ' ' + tb.Y + ' L' + tb.X + ' ' + (tb.Y + 3 * k) + ' L' + (tb.X - 2.4 * k) + ' ' + tb.Y + ' Z', fill: '#d42a2f' }); } }
     if (t.quilt) for (var qy = 1; qy <= 4; qy++) { var yy = t1.Y + (t2.Y - t1.Y) * qy / 5; add('path', { d: 'M' + (t1.X - W) + ' ' + yy + ' L' + (t1.X + W) + ' ' + yy, stroke: dk(L.topC, .75), 'stroke-width': 1.4 * k }); }
+    if (t.btns && front) [104, 116, 128, 140].forEach(function (y) { var bp = P(0, y + bob, 16.5); add('circle', { cx: bp.X, cy: bp.Y, r: 1.25 * k, fill: dk(L.topC, .55) }); });   /* the cardigan's buttons down the front */
     if (t.zip && front) { var z1 = P(0, 82 + bob, 16), z2 = P(0, 146 + bob, 17); add('path', { d: 'M' + z1.X + ' ' + z1.Y + ' L' + z2.X + ' ' + z2.Y, stroke: dk(L.topC, .65), 'stroke-width': 1.6 * k }); }
     if (t.stripe) { var sy = t1.Y + 20 * k; add('rect', { x: t1.X - W, y: sy, width: W * 2, height: 6 * k, fill: '#f4f1ea', opacity: .9 }); }
     if (t.band) { var by = t1.Y + 16 * k; add('rect', { x: t1.X - W, y: by, width: W * 2, height: 9 * k, fill: '#d42a2f' }); add('rect', { x: t1.X - W, y: by + 3 * k, width: W * 2, height: 3 * k, fill: '#f2c94c' }); }
@@ -113,7 +116,8 @@
     if (GMt.neck === 'crew' && L.top !== 'none' && k >= .8) {   /* a thin line – only where it can be seen (scene-speed) */ var cn = around(9.5, 81.2, -1.5, 1.5, 1.6); if (cn) parts.push([0.021, el('path', { d: cn, fill: 'none', stroke: dc, 'stroke-width': 1.8 * k, 'stroke-linecap': 'round' })]); }
     if (GMt.polo && front) { var pc1 = P(-10, 80 + bob, 9), pc2 = P(-3, 88 + bob, 13.5), pc3 = P(0, 81.5 + bob, 13), pc4 = P(10, 80 + bob, 9), pc5 = P(3, 88 + bob, 13.5); parts.push([0.022, el('path', { d: 'M' + pc1.X + ' ' + pc1.Y + ' L' + pc2.X + ' ' + pc2.Y + ' L' + pc3.X + ' ' + pc3.Y + ' Z M' + pc4.X + ' ' + pc4.Y + ' L' + pc5.X + ' ' + pc5.Y + ' L' + pc3.X + ' ' + pc3.Y + ' Z', fill: dk(L.topC, .84), stroke: dk(L.topC, .7), 'stroke-width': .8 * k, 'stroke-linejoin': 'round' })]); }   /* the polo's collar points */
     if (GMt.shirtCol && front && k >= .8) { var sc1 = P(-7, 80.5 + bob, 11.5), sc2 = P(-1, 86.5 + bob, 13.5), sc3 = P(0, 82 + bob, 13), sc4 = P(7, 80.5 + bob, 11.5), sc5 = P(1, 86.5 + bob, 13.5); parts.push([0.022, el('path', { d: 'M' + sc1.X + ' ' + sc1.Y + ' L' + sc2.X + ' ' + sc2.Y + ' L' + sc3.X + ' ' + sc3.Y + ' Z M' + sc4.X + ' ' + sc4.Y + ' L' + sc5.X + ' ' + sc5.Y + ' L' + sc3.X + ' ' + sc3.Y + ' Z', fill: '#f4f1ea' })]); }   /* the shirt's collar over the sweater's neck */
-    if (GMt.neck === 'v' && front) { var vv1 = P(-6, 80.5 + bob, 12), vv2 = P(0, 90 + bob, 14.5), vv3 = P(6, 80.5 + bob, 12); parts.push([0.021, el('path', { d: 'M' + vv1.X + ' ' + vv1.Y + ' L' + vv2.X + ' ' + vv2.Y + ' L' + vv3.X + ' ' + vv3.Y, fill: L.skin, stroke: dc, 'stroke-width': 1.4 * k, 'stroke-linejoin': 'round' })]); }
+    if (GMt.neck === 'v' && front) { var vv1 = P(GMt.vdeep ? -7.5 : -6, 80.5 + bob, 12), vv2 = P(0, (GMt.vdeep ? 101 : 90) + bob, GMt.vdeep ? 16 : 14.5), vv3 = P(GMt.vdeep ? 7.5 : 6, 80.5 + bob, 12); parts.push([0.021, el('path', { d: 'M' + vv1.X + ' ' + vv1.Y + ' L' + vv2.X + ' ' + vv2.Y + ' L' + vv3.X + ' ' + vv3.Y, fill: GMt.vfill || L.skin, stroke: dc, 'stroke-width': 1.4 * k, 'stroke-linejoin': 'round' })]); }
+    /* the turtleneck's collar is drawn with the neck (it has to cover it): see below */
     if (GMt.neck === 'stand') { var sn = around(10, 79.4, -3.2, 3.2, 0); if (sn) parts.push([0.021, el('path', { d: sn, fill: 'none', stroke: dk(L.topC, .9), 'stroke-width': 4 * k, 'stroke-linecap': 'round' })]); }   /* a collar band standing round the neck */
     if (GMt.neck === 'hood') {   /* the hood lies round the neck and down the back: its rim shows over the shoulders from the front, the hood itself from behind */
       var hf = around(12, 80.5, -1.7, 1.7, 1.2), hbk = around(12.5, 79, 1.5, 4.8, -1.2); if (hbk) parts.push([-0.25, el('path', { d: hbk, fill: 'none', stroke: dk(L.topC, .85), 'stroke-width': 6.5 * k, 'stroke-linecap': 'round' })]);
@@ -323,6 +327,11 @@
     /* the neck: its own part, from under the chin down into the shoulders (the head itself is drawn smaller, see HSC) */
     var nk1 = P(0, 66 + hb6, 0), nk2 = P(0, 85 + bob, 0), nkw = (5.2 + .8 * Math.abs(Math.sin(a))) * BW * (1 + .1 * (L.bp.mus || 0)) * k;
     parts.push([0.4, el('path', { d: 'M' + (nk1.X - nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk1.X + nkw).toFixed(1) + ' ' + nk1.Y.toFixed(1) + ' L' + (nk2.X + nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' L' + (nk2.X - nkw * 1.25).toFixed(1) + ' ' + nk2.Y.toFixed(1) + ' Z', fill: C.skin2 })]);
+    if ((GARM[L.top] || {}).neck === 'turtle') {   /* the turtleneck: a tall folded collar round the neck up under the jaw, its fold showing (2026-11-21) */
+      var tc1 = P(0, 69.5 + hb6 * .4, 0), tc2 = P(0, 84 + bob, 0), tw1 = nkw * 1.32, tw2 = nkw * 1.5, tf = P(0, 76.5 + bob * .6, 0);
+      parts.push([0.405, el('path', { d: 'M' + (tc1.X - tw1).toFixed(1) + ' ' + tc1.Y.toFixed(1) + ' Q' + tc1.X.toFixed(1) + ' ' + (tc1.Y + 2.4 * k).toFixed(1) + ' ' + (tc1.X + tw1).toFixed(1) + ' ' + tc1.Y.toFixed(1) + ' L' + (tc2.X + tw2).toFixed(1) + ' ' + tc2.Y.toFixed(1) + ' Q' + tc2.X.toFixed(1) + ' ' + (tc2.Y + 2 * k).toFixed(1) + ' ' + (tc2.X - tw2).toFixed(1) + ' ' + tc2.Y.toFixed(1) + ' Z', fill: dk(L.topC, .84) })]);
+      if (k >= .8) parts.push([0.406, el('path', { d: 'M' + (tf.X - tw1 * 1.04).toFixed(1) + ' ' + tf.Y.toFixed(1) + ' Q' + tf.X.toFixed(1) + ' ' + (tf.Y + 2.4 * k).toFixed(1) + ' ' + (tf.X + tw1 * 1.04).toFixed(1) + ' ' + tf.Y.toFixed(1), fill: 'none', stroke: dk(L.topC, .7), 'stroke-width': 1 * k })]);
+    }
     /* the head kept between frames (scene-speed, 2026-11-16): everything from here to the wrap below only moves with
        the head while the turn, the size, the lean, the face and the look are the same – walking or breathing just
        moves it. A frame like that re-uses the same pooled elements and only shifts their wrapper (translate). */
@@ -529,6 +538,16 @@
       head.appendChild(el('ellipse', { cx: hc.X, cy: cy1 - 16 * k, rx: R * 1.15, ry: 12 * k, fill: '#ffffff' })); }
     if (L.hat === 'cowboy') { var cby = hc.Y - R * .62; head.appendChild(el('ellipse', { cx: hc.X, cy: cby, rx: R * 1.75, ry: (4 + 4 * Math.abs(Math.sin(a)) * 0) * k + 3 * k, fill: dk(L.hatC, .8) }));
       head.appendChild(el('path', { d: 'M' + (hc.X - R * .82) + ' ' + cby + ' Q' + (hc.X - R * .9) + ' ' + (cby - 18 * k) + ' ' + hc.X + ' ' + (cby - 15 * k) + ' Q' + (hc.X + R * .9) + ' ' + (cby - 18 * k) + ' ' + (hc.X + R * .82) + ' ' + cby + ' Z', fill: L.hatC })); }
+    /* a bucket hat and a beret (2026-11-21, JP: more looks): the bucket's soft brim slopes down all round; the beret sits
+       flat on the crown, pulled a little to the side he faces away from, with its small stalk */
+    if (L.hat === 'bucket') { var bky = hc.Y - R * .42;   /* a wide soft brim sloping down, a tall rounded crown with a band */
+      head.appendChild(el('path', { d: 'M' + (hc.X - R * 1.62) + ' ' + (bky + 7 * k) + ' Q' + (hc.X - R * 1.2) + ' ' + (bky - 4 * k) + ' ' + hc.X + ' ' + (bky - 4 * k) + ' Q' + (hc.X + R * 1.2) + ' ' + (bky - 4 * k) + ' ' + (hc.X + R * 1.62) + ' ' + (bky + 7 * k) + ' Q' + hc.X + ' ' + (bky + 6 * k) + ' ' + (hc.X - R * 1.62) + ' ' + (bky + 7 * k) + ' Z', fill: dk(L.hatC, .82) }));
+      head.appendChild(el('path', { d: 'M' + (hc.X - R * 1.0) + ' ' + (bky - 1 * k) + ' L' + (hc.X - R * .86) + ' ' + (bky - 21 * k) + ' Q' + hc.X + ' ' + (bky - 27 * k) + ' ' + (hc.X + R * .86) + ' ' + (bky - 21 * k) + ' L' + (hc.X + R * 1.0) + ' ' + (bky - 1 * k) + ' Q' + hc.X + ' ' + (bky + 2 * k) + ' ' + (hc.X - R * 1.0) + ' ' + (bky - 1 * k) + ' Z', fill: L.hatC }));
+      head.appendChild(el('path', { d: 'M' + (hc.X - R * .97) + ' ' + (bky - 5 * k) + ' Q' + hc.X + ' ' + (bky - 2 * k) + ' ' + (hc.X + R * .97) + ' ' + (bky - 5 * k), fill: 'none', stroke: dk(L.hatC, .62), 'stroke-width': 3 * k })); }
+    if (L.hat === 'beret') { var bry = hc.Y - R * .95, bsh = -Math.sin(a) * R * .3 + R * .18;   /* a wide flat disc pulled over to one side, its stalk on top */
+      head.appendChild(el('path', { d: 'M' + (hc.X - R * 1.05) + ' ' + (bry + 6 * k) + ' Q' + (hc.X - R * 1.25 + bsh) + ' ' + (bry - 9 * k) + ' ' + (hc.X + bsh) + ' ' + (bry - 10 * k) + ' Q' + (hc.X + R * 1.45 + bsh) + ' ' + (bry - 8 * k) + ' ' + (hc.X + R * 1.32 + bsh) + ' ' + (bry + 4 * k) + ' Q' + hc.X + ' ' + (bry + 10 * k) + ' ' + (hc.X - R * 1.05) + ' ' + (bry + 6 * k) + ' Z', fill: L.hatC }));
+      head.appendChild(el('path', { d: 'M' + (hc.X - R * 1.0) + ' ' + (bry + 5.5 * k) + ' Q' + hc.X + ' ' + (bry + 9.5 * k) + ' ' + (hc.X + R * 1.28 + bsh) + ' ' + (bry + 3.5 * k), fill: 'none', stroke: dk(L.hatC, .7), 'stroke-width': 1.8 * k }));
+      head.appendChild(el('rect', { x: hc.X + bsh - 1.3 * k, y: bry - 14 * k, width: 2.6 * k, height: 5 * k, rx: 1.3 * k, fill: dk(L.hatC, .78) })); }
     if (L.hat === 'crown') {
       var cw = R * .95, cy0 = hc.Y - R * 1.18, ch = 14 * k, pts2 = [[hc.X - cw * .82, cy0 + ch]];
       for (var ci2 = 0; ci2 <= 8; ci2++) pts2.push([hc.X - cw * .82 + cw * 1.64 * ci2 / 8, cy0 + (ci2 % 2 ? ch * .45 : 0)]);

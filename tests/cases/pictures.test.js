@@ -22,7 +22,10 @@ const CASES = [
   ['hoodie-side', 'day', { top: 'hoodie', topC: '#3a6ea5', glasses: 'aviator', ears: 'hoops', _view: 'side' }],
   ['suit-quarter', 'day', { top: 'suit', neck: 'tie', ears: 'studs', hair: 'long', hairC: '#1e140d', _view: 'q' }],
   /* 2026-11-13: the crest of a mohawk in two halves, the chin beard, a pet in the body's look */
-  ['mohawk-goatee-cat', 'day', { hair: 'mohawk', beard: 'goatee', pet: 'cat', _view: 'q' }]
+  ['mohawk-goatee-cat', 'day', { hair: 'mohawk', beard: 'goatee', pet: 'cat', _view: 'q' }],
+  /* 2026-11-21 (JP approved the preview): a turtleneck with a bucket hat, a cardigan with a beret from the quarter view */
+  ['turtle-bucket', 'day', { top: 'turtle', topC: '#d9c7a8', hat: 'bucket', hatC: '#2f7a55' }],
+  ['cardigan-beret-q', 'day', { top: 'cardigan', topC: '#8a6fdf', hat: 'beret', hatC: '#d93a3a', hair: 'long', _view: 'q' }]
 ];
 (async () => {
   const { b, p } = await open(1280);
