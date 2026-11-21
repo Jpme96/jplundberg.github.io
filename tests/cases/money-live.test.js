@@ -31,6 +31,7 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   const fin = await p.evaluate(() => ({ api: !!(window.AHealth && AHealth.days), card: typeof window.__ahCard, src: [...document.scripts].some(s => /ahealth\.page\.js/.test(s.src)) }));
   check(fin.api && fin.card === 'undefined' && !fin.src, 'Finances: Apple Health data works, the card code is not loaded ' + JSON.stringify(fin));
   await p.evaluate(() => { Features.set('ahealth', true); const d = Vault.get(); d.health = { days: { [new Date().toISOString().slice(0, 10)]: { steps: 4321 } } }; Vault.save(d); });
+  await sl(1500);   /* let the encrypted save finish before changing page (CI) */
   await go(p, 'habits/', 3000);
   const hb = await until(p, () => { const c = document.getElementById('ahCard'); return c && /4\D?321/.test(c.textContent) ? true : null; }, 10000);
   const hf = await p.evaluate(() => ({ f: typeof window.__ahCard, card: !!document.getElementById('ahCard'), t: ((document.getElementById('ahCard') || {}).textContent || '').slice(0, 80) }));
