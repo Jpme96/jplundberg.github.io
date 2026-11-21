@@ -568,6 +568,17 @@
   function hook() { if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(startCheck); else setTimeout(hook, 200); }
   hook();
   window.addEventListener('sync:state', function (e) { if (e.detail === 'ok') mark('syncOk'); mark('syncState', e.detail); });
+  /* the day's check is kept, so a problem it found stayed listed after it was fixed – "Nothing from Apple Health for 41
+     hours" while the morning's numbers had already come in (JP 2026-11-21). When something the check looks at changes
+     (new Health numbers, a good sync, a backup), a check that found problems runs again quietly – at most every 2 minutes. */
+  var recheckT = 0, recheckAt = 0;
+  function recheck() {
+    var c = state().check; if (!c || !(c.issues || []).length || !window.Vault || !window.Vault.get()) return;
+    clearTimeout(recheckT); recheckT = setTimeout(function () { if (Date.now() - recheckAt < 12e4) return; recheckAt = Date.now(); selfCheck(true); }, 1500);
+  }
+  ['health:change', 'vault:in', 'backup:done'].forEach(function (ev) { window.addEventListener(ev, recheck); });
+  window.addEventListener('sync:state', function (e) { if (e.detail === 'ok') recheck(); });
+  if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(recheck, 12000); });
 
   /* ---------- the Diagnostics page in Settings ---------- */
   function ago(t) {

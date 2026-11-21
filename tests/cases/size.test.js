@@ -92,7 +92,8 @@ const BUDGET_KB = { total: 1653 };   /* Finances +1 kB (2026-11-21): bills tick 
 /* Habits +1 kB (2026-11-21): the Apple Health card's own page file and its helper hand-over */
 /* Finances +1 kB (2026-11-21): the Subscriptions card waits for money-plus.js and draws again */
 /* Finances +1 kB (2026-11-21): bills tick themselves off from the bank (amount + day match, Not this bill) */
-const PAGE_KB = { 'index.html': 1383, 'admin/index.html': 1296, 'calendar/index.html': 1225, 'finance/index.html': 1653, 'food/index.html': 1314, 'goals/index.html': 1246, 'habits/index.html': 1291, 'house/index.html': 1587, 'papers/index.html': 1265, 'people/index.html': 1313, 'travel/index.html': 1369, 'wish/index.html': 1329, 'work/index.html': 1398 };
+/* +1 kB where needed (2026-11-21): a self-check that found problems runs again when Health numbers, a sync or a backup come in */
+const PAGE_KB = { 'index.html': 1383, 'admin/index.html': 1296, 'calendar/index.html': 1226, 'finance/index.html': 1653, 'food/index.html': 1315, 'goals/index.html': 1246, 'habits/index.html': 1292, 'house/index.html': 1587, 'papers/index.html': 1265, 'people/index.html': 1313, 'travel/index.html': 1370, 'wish/index.html': 1329, 'work/index.html': 1399 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
