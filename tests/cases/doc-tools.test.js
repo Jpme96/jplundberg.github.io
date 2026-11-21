@@ -34,7 +34,11 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(await p.evaluate(() => { const o = document.querySelector('#wkDocCtl .dx-tov'); return !!o && getComputedStyle(o).position === 'fixed' && !!o.querySelector('.dx-ren'); }), 'a tool opens in a popup over the list, not in the page (JP 2026-11-17 20:11)');
   await (await p.$('input[data-dxrenf]')).uploadFile(zf, lone); await sl(2500);
   /* a file opens in a popup (JP 2026-11-17 08:07): R(/name/) opens it and gives its full row */
-  const defR = () => p.evaluate(() => { window.R = async re => { const c = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(x => re.test(x.textContent)); if (c) { c.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 350)); } return document.querySelector('.dcn-fpop .dcn-row'); }; });
+  /* CI only (2026-11-21): a slow runner sometimes loses an async evaluate ("Promise was collected") while the list
+     redraws – try such a step again once the page has settled (the helper R is set up again first) */
+  const ev0 = p.evaluate.bind(p);
+  p.evaluate = async (fn, ...args) => { for (let i = 0; ; i++) { try { return await ev0(fn, ...args); } catch (e) { if (i >= 2 || !/Promise was collected|Execution context was destroyed/.test(e.message)) throw e; await sl(1000); try { await defR(); } catch (e2) {} } } };
+  const defR = () => ev0(() => { window.R = async re => { const c = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(x => re.test(x.textContent)); if (c) { c.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 350)); } return document.querySelector('.dcn-fpop .dcn-row'); }; });
   await defR();
   const r1 = await p.evaluate(async () => ({ rows: [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].map(li => li.textContent.replace(/\s+/g, ' ').trim()), rules: !!document.querySelector('.dx-ren .dcn-rules'), sum: (document.querySelector('.dx-rsum') || {}).textContent || '',
     sugg: ((await R(/Datablad radiator/)) || { querySelector: () => ({}) }).querySelector('[data-dcncode]').value, plan: /Not in the plan/.test(document.querySelector('.dx-ren').textContent) }));
