@@ -40,3 +40,7 @@ h2 { font-size: 18px; margin: 26px 0 6px; }
 /* how it works (2026-11-20) */
 .u-how { margin: 0 0 14px; padding-left: 20px; color: var(--muted); line-height: 1.5; }
 .u-how li { margin: 2px 0; }
+/* what the team still needs (2026-11-21) */
+.u-needs li { align-items: flex-start; }
+.u-code { flex: none; font: 600 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); min-width: 3.2em; }
+.u-tag.late { color: var(--danger, #e66767); border-color: rgba(230,103,103,.45); }

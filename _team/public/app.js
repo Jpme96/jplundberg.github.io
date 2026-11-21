@@ -455,6 +455,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function draw() {
     if (!S.me || !S.me.member) return;
     S.stale = false;
+    clearTimeout(S.needsT); S.needsT = setTimeout(pushNeeds, 2500);   /* the contractors' lists follow the project */
     var h = location.hash.slice(1), body;
     if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? viewMeetings() : viewMeeting(S.edit.id)) + '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
@@ -1198,6 +1199,34 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     for (var i = 0; i < fids.length; i++) { var uk = (S.upMeta || {})[fids[i]]; if (!uk) continue; lid = uk.lid; if (await putRec('file', 'fl' + uk.fid.slice(0, 20), uk, L('File: ', 'Fil: ') + uk.name)) done.push(uk.fid); }
     if (done.length) { api('upkept', { method: 'POST', body: { lid: lid, fids: done } }).catch(function () {}); toast(L(done.length === 1 ? 'Kept in the project files' : done.length + ' files kept in the project files', done.length === 1 ? 'Lagt i prosjektfilene' : done.length + ' filer lagt i prosjektfilene')); draw(); }
   }
+  /* the contractor's live list (2026-11-21, JP): for every open upload link on a project, what is still missing or
+     sent back – code, document type, planned name, due date – encrypted with that link's key (only someone with the
+     link can read it) and sent when it changes. The upload page shows it. */
+  function needsFor(pid) {
+    var p = (docRO().dctl || []).filter(function (x) { return x.id === pid; })[0]; if (!p) return null;
+    var out = [];
+    (p.lines || []).forEach(function (l) {
+      var st = l.st || 'missing'; if (['missing', 'rej', 'cmt'].indexOf(st) < 0) return;
+      out.push({ c: String(l.code || '').slice(0, 12), s: String(l.sys || '').slice(0, 80), t: String(l.type || l.name || '').slice(0, 60), p: String(l.planned || '').slice(0, 120), st: st, due: String(l.due || '').slice(0, 10) });
+    });
+    return out.slice(0, 600);
+  }
+  async function pushNeeds() {
+    if (!S.me || !S.me.member || S.me.member.role === 'read') return;   /* only those who may write; the server checks too */
+    var L0 = links().filter(function (r) { return r.d && r.d.pid && r.d.key && !r.d.off && r.d.exp > Date.now(); });
+    for (var i = 0; i < L0.length; i++) {
+      var d = L0[i].d, items = needsFor(d.pid); if (!items) continue;
+      var body = JSON.stringify({ v: 1, items: items }), mark = 'team.needs.' + d.lid, h = body.length + ':' + body.split('').reduce(function (a, c) { return (a * 31 + c.charCodeAt(0)) | 0; }, 7);
+      try { if (localStorage.getItem(mark) === h) continue; } catch (e) {}
+      try {
+        var k = await C.importKey('raw', ub64(d.key), 'AES-GCM', false, ['encrypt']), iv = rnd(12);
+        var ct = await C.encrypt({ name: 'AES-GCM', iv: iv, additionalData: TE.encode(d.lid + '|needs') }, k, TE.encode(body));
+        await api('upneeds', { method: 'POST', body: { lid: d.lid, iv: b64(iv), ct: b64(ct) } });
+        try { localStorage.setItem(mark, h); } catch (e) {}
+      } catch (e) { /* read-only members, or offline: the next draw tries again */ }
+    }
+  }
+  window.__pushNeeds = pushNeeds;
   function linkUrl(d) { return 'https://jplundberg.com/upload/#' + S.tid + '.' + d.lid + '.' + d.key + '.' + encodeURIComponent(projName(d.pid) || d.label || ''); }
   function uplinkSheet() {
     openSheet('<h2>' + L('Upload link for a contractor', 'Opplastingslenke til en entreprenør') + '</h2><p class="t-small">' + L('Anyone with the link can send files to the project – no account needed. The files are encrypted in their browser; only the team can open them. Nobody can see what is already there.', 'Alle med lenken kan sende filer til prosjektet – uten konto. Filene krypteres i nettleseren deres; bare teamet kan åpne dem. Ingen kan se det som allerede ligger der.') + '</p>' +

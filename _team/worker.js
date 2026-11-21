@@ -29,7 +29,7 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('not found', { status: 404 });
     /* a contractor's upload link (jplundberg.com/upload/ → the /cmd Worker → here): no sign-in – the link itself is the permission,
        and what is uploaded is already encrypted with the link's key, which never reaches a server (it is in the #part of the link) */
-    const up = url.pathname.match(/^\/api\/up\/(team|[a-z0-9]{12})\/([a-f0-9]{16})\/(info|list|chunk|done)$/);
+    const up = url.pathname.match(/^\/api\/up\/(team|[a-z0-9]{12})\/([a-f0-9]{16})\/(info|list|chunk|done|needs)$/);
     if (up) {
       if (up[1] !== 'team') { const ok = await (await env.TEAM.get(env.TEAM.idFromName('dir')).fetch(new Request('https://team/dir/has?id=' + up[1]))).json(); if (!ok.has) return json({ error: 'this link does not work' }, 404); }
       const body = request.method === 'GET' ? undefined : await request.text();
@@ -144,6 +144,14 @@ export class TeamStore {
       if (p === 'log' && m === 'DELETE') { if (rank < 3) return json({ error: 'admins only' }, 403); return this.logReset(email); }
       if (p === 'upkept' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = String(b.lid || ''), fids = Array.isArray(b.fids) ? b.fids.slice(0, 300) : []; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); for (const fid of fids) { if (!FID.test(String(fid))) continue; const k = 'uf:' + lid + ':' + fid, f = await this.s.get(k); if (f && !f.kept) { f.kept = Date.now(); await this.s.put(k, f); } } return json({ ok: true }); }
       if (p === 'uplink' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.upLink(email, b); }
+      /* the contractor's live list: the app sends the project's missing documents, already encrypted with the link's key */
+      if (p === 'upneeds' && m === 'POST') {
+        if (rank < 1) return json({ error: 'read only' }, 403);
+        const lid = String(b.lid || ''); if (!LID.test(lid) || !blob(b) || b.ct.length > 160000) return json({ error: 'bad list' }, 400);
+        const l = await this.s.get('u:' + lid); if (!l) return json({ error: 'no such link' }, 404);
+        l.needs = { iv: b.iv, ct: b.ct }; l.needsAt = Date.now(); await this.s.put('u:' + lid, l);
+        return json({ ok: true, at: l.needsAt });
+      }
       if (p === 'uplink' && m === 'DELETE') { if (rank < 1) return json({ error: 'read only' }, 403); const lid = url.searchParams.get('lid') || ''; if (!LID.test(lid)) return json({ error: 'bad link' }, 400); const l = await this.s.get('u:' + lid); if (l) { l.exp = Math.min(l.exp, Date.now()); l.off = 1; await this.s.put('u:' + lid, l); await this.log(email, 'uplink-off', {}); } return json({ ok: true }); }
       if (!isAdmin) return json({ error: 'admins only' }, 403);
       if (p === 'invites' && m === 'POST') return this.invite(email, b);
@@ -416,6 +424,8 @@ export class TeamStore {
     const [lid, what] = rest.split('/'), l = LID.test(lid || '') ? await this.s.get('u:' + lid) : null, team = await this.s.get('team');
     if (!l || !team || l.exp < Date.now()) return json({ error: 'this link has run out or was switched off' }, 410);
     if (what === 'info' && m === 'GET') return json({ ok: true, exp: l.exp, n: l.n, left: Math.max(0, LINKFILES - l.n) });
+    /* what's still missing on the link's project – encrypted by the team's app with the link's key (2026-11-21, JP) */
+    if (what === 'needs' && m === 'GET') return json({ needs: l.needs || null, at: l.needsAt || 0 });
     /* what was sent on this link – for the sender's own log (the names are opened in their browser with the link's key) */
     if (what === 'list' && m === 'GET') {
       const out = [];

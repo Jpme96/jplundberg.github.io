@@ -81,10 +81,27 @@
     var fails = picked.filter(function (p) { return p.st === 'fail'; }).length;
     document.getElementById('done').innerHTML = ok ? esc(L(ok + (ok === 1 ? ' file was sent' : ' files were sent') + (label ? ' to ' + label : '') + '. Thank you!', ok + (ok === 1 ? ' fil ble sendt' : ' filer ble sendt') + (label ? ' til ' + label : '') + '. Takk!')) + (fails ? ' ' + esc(L(fails + ' did not go – tap "Try again".', fails + ' ble ikke sendt – trykk «Prøv igjen».')) : '') : '';
     if (ok && !fails) { picked = picked.filter(function (p) { return p.st !== 'sent'; }); document.getElementById('msg').value = ''; }
-    draw(); log();
+    draw(); log(); needs();
   }
 
   /* ---------- 3. what was sent on this link ---------- */
+  /* what the team is still waiting for on this project (2026-11-21, JP): kept up to date by the team's app, encrypted
+     with this link's key – opened here */
+  async function needs() {
+    var box = document.getElementById('needs'); if (!box) return;
+    try {
+      var j = await call('needs'); if (!j.needs) { box.hidden = true; return; }
+      var data = JSON.parse(TD.decode(await open(j.needs, lid + '|needs'))), items = (data && data.items) || [];
+      var head = document.getElementById('needsH'); if (head) head.hidden = false; box.hidden = false;
+      if (!items.length) { box.innerHTML = '<p class="u-ok">✓ ' + esc(L('Nothing is missing right now – thank you!', 'Ingenting mangler nå – takk!')) + '</p>'; return; }
+      var back = items.filter(function (x) { return x.st !== 'missing'; }), miss = items.filter(function (x) { return x.st === 'missing'; });
+      var today = new Date().toISOString().slice(0, 10);
+      var row = function (x) { return '<li><span class="u-code">' + esc(x.c) + '</span><span class="grow">' + esc(x.t || x.s || '') + (x.p ? '<small>' + esc(x.p) + '</small>' : x.s && x.t ? '<small>' + esc(x.s) + '</small>' : '') + '</span>' + (x.due ? '<span class="u-tag' + (x.due < today ? ' late' : '') + '">' + esc(L('by ', 'innen ') + new Date(x.due + 'T12:00').toLocaleDateString(nb ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short' })) + '</span>' : '') + '</li>'; };
+      box.innerHTML = '<p class="u-muted">' + esc(L(items.length + ' document' + (items.length === 1 ? '' : 's') + ' still needed · updated ', items.length + ' dokument' + (items.length === 1 ? '' : 'er') + ' mangler · oppdatert ') + when(j.at)) + '</p>' +
+        (back.length ? '<p class="u-bh"><b>' + esc(L('Sent back – please send a new version', 'Sendt tilbake – send en ny versjon')) + '</b></p><ul class="u-list u-needs">' + back.map(row).join('') + '</ul>' : '') +
+        (miss.length ? '<p class="u-bh"><b>' + esc(L('Missing', 'Mangler')) + '</b></p><ul class="u-list u-needs">' + miss.map(row).join('') + '</ul>' : '');
+    } catch (e) { box.hidden = true; }
+  }
   async function log() {
     var box = document.getElementById('log'); if (!box) return;
     try {
@@ -121,6 +138,7 @@
         '<button class="u-btn" type="button" id="send" disabled>' + esc(L('Send', 'Send')) + '</button>' +
         '<p class="u-ok" id="done" role="status"></p>' +
         '<p class="u-small">' + esc(L('Encrypted in your browser before it is sent – only the team can open it.', 'Krypteres i nettleseren din før det sendes – bare teamet kan åpne det.')) + '</p></div>' +
+      '<h2 id="needsH" hidden>' + esc(L('What the team still needs', 'Hva teamet fortsatt trenger')) + '</h2><div class="u-card" id="needs" hidden></div>' +
       '<h2>' + esc(L('Sent on this link', 'Sendt med denne lenken')) + '</h2><div class="u-card" id="log"><p class="u-muted">…</p></div>' +
       '<p class="u-muted">' + esc(L('The link works until ', 'Lenken virker til ') + new Date(exp).toLocaleDateString(nb ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '.') + '</p>';
     ['pick', 'cam'].forEach(function (id) { document.getElementById(id).addEventListener('change', function (e) { var f = Array.prototype.slice.call(e.target.files || []); e.target.value = ''; if (f.length) add(f); }); });
@@ -132,6 +150,6 @@
     ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('on'); }); });
     drop.addEventListener('drop', function (e) { var f = Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || []); if (f.length) add(f); });
     window.addEventListener('beforeunload', function (e) { if (sending || ready().length) { e.preventDefault(); e.returnValue = ''; } });
-    draw(); log();
+    draw(); log(); needs();
   }).catch(function (e) { stop(e.status === 410 ? L('This link has run out or was switched off. Ask for a new one.', 'Denne lenken har gått ut eller er slått av. Be om en ny.') : L('Could not open the link. Check the connection and try again.', 'Klarte ikke å åpne lenken. Sjekk nettet og prøv igjen.')); });
 })();
