@@ -784,8 +784,17 @@
     try { return '<span>' + A.figure(A.MOMENTS && A.MOMENTS.day || { k: 'day', bg: '#1d2533', sky: 'sun', i: 'sun', c: '#f2c94c' }, lk) + '</span>'; } catch (e) { return '<span><i class="bi bi-person"></i></span>'; }
   }
   var chatOn = false;
+  /* the chat's code (chat.js, ~85 kB) loads when the chat starts, not with every page (2026-11-21, JP: "faster Home");
+     build.py writes CHAT_V */
+  var CHAT_V = '78368cce00', chatLoading = null;
+  function chatCode() {
+    if (window.HomeChat) return Promise.resolve();
+    if (!chatLoading) chatLoading = new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = '/cmd/dist/chat.js?v=' + CHAT_V; sc.onload = ok; sc.onerror = function () { chatLoading = null; no(); }; document.head.appendChild(sc); });
+    return chatLoading;
+  }
   function chatInit() {
-    var s = st(); if (!s || !window.HomeChat) return;
+    var s = st(); if (!s) return;
+    if (!window.HomeChat) { chatCode().then(chatInit, function () {}); return; }
     if (chatOn === s.key) return; chatOn = s.key;
     HomeChat.init({ key: s.key, keys: oldKeys, me: 'o', no: false, missing: 'The chat is not switched on yet – paste the new worker.js in Cloudflare (dashboard-sync → Edit code → Deploy).',
       name: function (side) { return side === 'o' ? (owner() || 'You') : pname(); },
@@ -804,7 +813,7 @@
   /* a small bubble in the corner (not in the bar): it opens the chat as a pop-up */
   function chatButton() { if (window.HomeChat && st()) HomeChat.bubble({ label: 'Chat with ' + pname() }); }
   function chatBadge() {}
-  function openChat() { if (!window.HomeChat || !st()) return; chatInit(); chatButton(); HomeChat.openPop(); }
+  function openChat() { if (!st()) return; if (!window.HomeChat) { chatCode().then(openChat, function () {}); return; } chatInit(); chatButton(); HomeChat.openPop(); }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-hcopen]'); if (b) { e.preventDefault(); var stp = document.getElementById('settings'); if (stp && !stp.hidden && b.closest('#settings')) { var cl = document.getElementById('stClose'); if (cl) cl.click(); } openChat(); return; }
     var t = e.target.closest('[data-hcttl]'); if (t && window.HomeChat) { HomeChat.setTtl(+t.dataset.hcttl); t.parentNode.querySelectorAll('[data-hcttl]').forEach(function (x) { x.classList.toggle('on', x === t); x.setAttribute('aria-pressed', String(x === t)); }); }

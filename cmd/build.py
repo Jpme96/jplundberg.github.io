@@ -98,6 +98,14 @@ _av2 = re.sub(r"var AVPAGE_V = '[^']*';", "var AVPAGE_V = '%s';" % hashlib.sha1(
 if _av2 != _av:
     if check: print('out of date (version): cmd/avatar.js'); stale = True
     else: io.open(_AV, 'w', encoding='utf-8').write(_av2)
+# the chat loads when it starts (share.js chatInit, 1.2 s after unlock) – built on its own, its version into share.js (2026-11-21)
+chat_v = write('chat.js', bundle(['chat.js']))
+stale |= chat_v is None
+_SH = os.path.join(HERE, 'share.js'); _sh = io.open(_SH, encoding='utf-8').read()
+_sh2 = re.sub(r"var CHAT_V = '[^']*'", "var CHAT_V = '%s'" % (chat_v or 'x'), _sh)
+if _sh2 != _sh:
+    if check: print('out of date (version): cmd/share.js'); stale = True
+    else: io.open(_SH, 'w', encoding='utf-8').write(_sh2)
 nb_v = write('nb.js', bundle(M['nb']))
 head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
 stale |= nb_v is None
