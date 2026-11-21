@@ -559,6 +559,16 @@
   var PERIODS = [['monthly', I18N.k('ui.every-month', 'Every month')], ['quarterly', I18N.k('ui.every-3-months', 'Every 3 months')], ['yearly', I18N.k('ui.every-year', 'Every year')]];
   var PER_MONTH = { monthly: 1, quarterly: 1 / 3, yearly: 1 / 12 };
   var SUB_CATS = [['streaming', 'Streaming & music'], ['software', 'Apps & software'], ['phone', 'Phone & internet'], ['training', I18N.k('ui.training', 'Training')], ['news', 'News & magazines'], ['insurance', I18N.k('ui.insurance', 'Insurance')], ['other', I18N.k('ui.other', 'Other')]];
+  /* repeating payments found in the bank or your spending that aren't a subscription or fixed cost yet (money-plus.js detect) –
+     one line that opens the Recurring payments card, where each is added in one tap (2026-11-21, JP: "find subscriptions") */
+  function subFound() {
+    var MP = window.MoneyPlus; if (!MP || !MP.detect) { if (!subFound.wait) { subFound.wait = 1; setTimeout(function () { subFound.wait = 0; if (window.MoneyPlus) window.dispatchEvent(new Event('tools:change')); }, 0); } return ''; }   /* money-plus.js comes with tail.js, after this page's scripts: draw again once it's there */
+    var l = []; try { l = MP.detect().filter(function (r) { return !r.ignored && !r.sub && !r.fixed && r.active; }); } catch (e) { return ''; }
+    if (!l.length) return '';
+    var m = l.reduce(function (a, r) { return a + r.amount; }, 0);
+    return '<a class="sub-found" href="/cmd/finance/#recur"><i class="bi bi-search"></i><span><b>' + esc(I18N.k('ui.sub-found', '{n} repeating payments found in your bank', { n: l.length })) + '</b><small>' +
+      esc(I18N.k('ui.sub-found-sub', '{a} a month together – look and add them', { a: kr(m) })) + '</small></span><i class="bi bi-chevron-right"></i></a>';
+  }
   K.collection({
     mount: $t('subs'), feature: 'subs', key: 'subs', title: I18N.k('ui.subscriptions', 'Subscriptions'), icon: 'arrow-repeat',
     addTitle: 'Add subscription', editTitle: 'Edit subscription',
@@ -577,7 +587,7 @@
       var m = act.reduce(function (a, s) { return a + (+s.amount || 0) * (PER_MONTH[s.period] || 1); }, 0);
       var next = act.slice().sort(function (a, b) { return F.nextRenewal(a) > F.nextRenewal(b) ? 1 : -1; })[0];
       return items.length ? '<div class="kit-tiles">' + tile(I18N.k('ui.per-month', 'Per month'), kr(m)) + tile(I18N.k('ui.per-year', 'Per year'), kr(m * 12)) +
-        (next ? tile(I18N.k('ui.sub-next', 'Next'), esc(next.name), fmt(F.nextRenewal(next), { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</div>' + (window.SubCheck ? window.SubCheck(act) : '') : '';
+        (next ? tile(I18N.k('ui.sub-next', 'Next'), esc(next.name), fmt(F.nextRenewal(next), { weekday: 'short', day: 'numeric', month: 'short' })) : '') + '</div>' + subFound() + (window.SubCheck ? window.SubCheck(act) : '') : subFound();
     },
     row: function (s) {
       var per = { monthly: '/ month', quarterly: '/ 3 months', yearly: '/ year' }[s.period] || '';

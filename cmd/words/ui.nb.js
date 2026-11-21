@@ -2885,6 +2885,8 @@ I18N.add({
   "ui.sub-update-price": ["Update the price", "Oppdater prisen"],
   "ui.sub-not-now": ["Not now", "Ikke nå"],
   "ui.sub-still": ["Still using it? {a} a year", "Bruker du den fortsatt? {a} i året"],
+  "ui.sub-found": ["{n} repeating payments found in your bank", "{n} faste trekk funnet i banken"],
+  "ui.sub-found-sub": ["{a} a month together – look and add them", "{a} i måneden til sammen – se og legg dem til"],
   "ui.sub-keep": ["Keep", "Behold"],
   "ui.sub-cancel": ["Cancel it", "Si den opp"],
   "ui.sub-check": ["Subscription check", "Abonnementssjekk"],

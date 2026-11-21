@@ -454,7 +454,12 @@
     try {
       var wl = Fe.tools().whatif, sc0 = Array.isArray(wl) && wl[0];
       if (sc0 && sc0.target > 0) {
-        var vd = (window.Vault && Vault.get && Vault.get()) || {}, have = sc0.base && sc0.base.assets != null ? +sc0.base.assets : ((vd.accounts || []).filter(function (a) { return a && a.kind !== 'debt'; }).reduce(function (n, a) { return n + (+a.balance || 0); }, 0));
+        /* what you have saved right now: the savings and fund accounts' balances (moved on by the bank and imports, 2026-11-21 JP),
+           else the Net worth assets, else the starting number typed into What if */
+        var vd = (window.Vault && Vault.get && Vault.get()) || {}, AL = window.Accts ? Accts.list(vd).filter(function (a) { return (a.kind === 'savings' || a.kind === 'fund') && a.bal != null && a.nw; }) : [];
+        var have = AL.length ? AL.reduce(function (n, a) { return n + a.bal; }, 0)
+          : (vd.accounts || []).some(function (a) { return a && a.kind !== 'debt' && +a.balance; }) ? (vd.accounts || []).filter(function (a) { return a && a.kind !== 'debt'; }).reduce(function (n, a) { return n + (+a.balance || 0); }, 0)
+          : (sc0.base && sc0.base.assets != null ? +sc0.base.assets : 0);
         wi = { pct: Math.max(0, Math.min(1, have / sc0.target)), target: sc0.target };
         list.push({ t: L('Savings goal ', 'Sparemål ') + Math.round(sc0.target).toLocaleString('nb-NO') + ' kr · ' + Math.round(wi.pct * 100) + ' %', h: '/cmd/finance/#wiCard' });
       }

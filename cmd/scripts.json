@@ -24,7 +24,9 @@
     "app.js",
     "quick.js",
     "receipt.js",
-    "notify.js", "notes-panel.js", "place-remind.js",
+    "notify.js",
+    "notes-panel.js",
+    "place-remind.js",
     "ahealth.js",
     "tilekit.js",
     "pagekit.js",
@@ -123,7 +125,9 @@
       "budget.js",
       "finance.js",
       "finance/fin.js",
-      "finance/import.js", "finance/bank-link.js", "finance/sort-other.js",
+      "finance/import.js",
+      "finance/bank-link.js",
+      "finance/sort-other.js",
       "finance/fin-plan.js",
       "finance/fin-setup.js",
       "finance/fin-bill.js",
@@ -135,7 +139,9 @@
       "profile.js",
       "links.js",
       "tidy.js",
-      "whatif.js", "whatif.page.js", "scene-finance.js"
+      "whatif.js",
+      "whatif.page.js",
+      "scene-finance.js"
     ],
     "habits/index.html": [
       "budget.js",
@@ -255,7 +261,8 @@
     ],
     "habits/index.html": [
       "life-pages.page.js",
-      "life-more.page.js"
+      "life-more.page.js",
+      "ahealth.page.js"
     ],
     "goals/index.html": [
       "goals.page.js"
