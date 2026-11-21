@@ -1149,3 +1149,22 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-pkc input:checked::after { border-color: var(--accent); }
 .dcn-row.dcn-pkd { background: rgba(var(--accent-rgb), .06); box-shadow: none; }
 .dcn-pkc.dcn-pkall { width: auto; gap: 10px; padding-right: 6px; font-size: 14.5px; font-weight: 500; }
+.dc-selrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dc-selbtn { white-space: nowrap; }
+.dc-ck { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid rgba(var(--ink-rgb), .35); display: inline-grid; place-items: center; margin-right: 8px; color: transparent; }
+.dc-ck i { font-size: 14px; }
+.picked > .dc-ck, .picked .dc-ck { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dc-line.picked > .dc-lmain, .dc-frow.picked, .dr-line.picked { background: var(--accent-soft); border-radius: 10px; }
+.dc-frow[data-dcpick], .dr-line[data-dcpick] { cursor: pointer; }
+.dc-frow[data-dcpick] [data-dcfdel] { display: none; }
+.dr-line[data-dcpick] { display: flex; align-items: flex-start; }
+.dc-selbar { position: fixed; z-index: 60; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); max-width: 620px; margin: 0 auto; padding: 10px 12px; border-radius: 16px; background: rgb(var(--card-rgb)); box-shadow: 0 8px 30px rgba(0,0,0,.35); border: 1px solid rgba(var(--ink-rgb), .12); }
+.dc-selh { display: flex; align-items: center; gap: 10px; }
+.dc-selh b { flex: 1; }
+.dc-selacts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.dc-seldue { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-s, 13px); }
+.dc-seldue input { min-height: 34px; }
+.dc-selhint { margin: 6px 0 0; font-size: var(--fs-s, 13px); }
+.dc-line.selm > .dc-lmain { position: relative; padding-left: 40px; }
+.dc-line.selm > .dc-lmain > .dc-ck { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); margin: 0; }
+.dc-selpad { height: 170px; }

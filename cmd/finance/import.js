@@ -129,7 +129,7 @@
     var d = window.Vault.get() || {}, have = {}, memory = d.catMemory || {}, fixed = (d.budget && d.budget.fixed) || [];
     /* expenses you logged yourself (quick add, the Spending form): the bank row for the same purchase
        shouldn't count twice – same amount, within three days */
-    var manual = (d.expenses || []).filter(function (e) { return (!e.src || e.src === 'trip') && !e.ref && +e.amount > 0; }), claimed = {};
+    var manual = (d.expenses || []).filter(function (e) { return (!e.src || e.src === 'trip') && !e.ref && +e.amount > 0; }), claimed = {}, gClaim = {};
     function dayN(k) { return Math.round(new Date(k + 'T12:00') / 864e5); }
     (d.expenses || []).forEach(function (e) {
       if (e.ref) have[e.ref] = 1;
@@ -184,7 +184,20 @@
       }
       var ref = 'bank:' + x.date + '|' + amount + '|' + norm(x.desc);
       if (have[ref] || have[x.date + '|' + Math.round(amount) + '|' + norm(note)]) { skipped.dup++; return; }
-      var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0];
+      var bill = fixed.filter(function (f) { return f.name && norm(x.desc).indexOf(norm(f.name)) > -1; })[0] || fixed.filter(function (f) { return (f.bank || []).indexOf(norm(x.desc)) > -1; })[0], guess = false;
+      /* Bills tick themselves off (2026-11-21, JP): a payment whose text doesn't name the bill still pays it when the amount
+         (a varying bill: within a quarter of that month's amount) and the day (±4) fit one bill not yet paid that month.
+         The preview says it is a guess, with "Not this bill"; importing remembers the bank's text on the bill for next time. */
+      if (!bill && !TRANSFER.test(x.desc)) {
+        var gm = x.date.slice(0, 7), gd = +x.date.slice(8, 10), pd = (d.paid && d.paid[gm]) || [];
+        var cand = fixed.filter(function (f) {
+          if (!f.id || gClaim[f.id + gm] || pd.indexOf(f.id) > -1 || (f.acct && acct && f.acct !== acct)) return false;
+          var want = f.vary && f.months && f.months[gm] != null ? +f.months[gm] : +f.amount; if (!(want > 0)) return false;
+          var tol = f.vary ? Math.max(50, want * .25) : Math.max(2, want * .02), dd = Math.abs(gd - Math.min(28, +f.day || 1)); dd = Math.min(dd, 31 - dd);
+          return Math.abs(amount - want) <= tol && dd <= 4;
+        });
+        if (cand.length === 1) { bill = cand[0]; guess = true; gClaim[bill.id + gm] = 1; }
+      }
       var transfer = TRANSFER.test(x.desc), why = transfer ? 'transfer' : '';
       var tw = !bill && !transfer && window.Budget && window.Budget.transferWhy ? window.Budget.transferWhy(x.desc + ' ' + note, ownName) : '';
       if (tw) { transfer = true; why = tw; }
@@ -204,7 +217,7 @@
         var ms = {}; (d.expenses || []).forEach(function (e) { if (e.note && norm(e.ref ? String(e.ref).split('|').slice(2).join('|') : e.note) === rk || (e.note && norm(e.note) === norm(note))) { var mk = String(e.date).slice(0, 7); if (mk < x.date.slice(0, 7) && Math.abs(+e.amount - amount) <= Math.max(15, amount * .15)) ms[mk] = 1; } });
         recur = Object.keys(ms).filter(function (mk) { return mk >= shiftKey(x.date.slice(0, 7), -3); }).length >= 2;
       }
-      out.push({ recur: recur, date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : (memory[norm(note)] || guess2(note, x.desc, memory)), ref: ref, on: !transfer && !mine, bill: bill || null, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
+      out.push({ recur: recur, date: x.date, amount: amount, note: note, desc: x.desc, cat: bill ? 'fixed' : mine ? mine.cat : (memory[norm(note)] || guess2(note, x.desc, memory)), ref: ref, on: !transfer && !mine, bill: bill || null, guess: guess, transfer: transfer, why: why, mine: mine, acct: acct, ccpay: ccpay });
     });
     /* moves between your own connected accounts (bank-link.js matched money out of one and into another, same amount,
        within a day): a transfer, left out of spending and of money in (JP 2026-11-20) */
@@ -341,7 +354,8 @@
         return '<li class="im-row' + (r.on ? '' : ' off') + (r.income ? ' in' : '') + '"><input type="checkbox" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="Import ' + esc(r.note) + '">' +
           '<span class="im-x"><b>' + esc(r.note) + '</b><small>' + esc(new Date(r.date + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) +
           (r.mine ? ' · <i class="bi bi-person-check"></i> you logged it already: ' + esc(r.mine.note || 'expense') + ', ' + esc(new Date(String(r.mine.date).slice(0, 10) + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : '') +
-          (r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · ' + esc(r.why || 'from your own account') : ' · adds to this period’s budget') : r.transfer ? ' · ' + esc(r.why || 'transfer') : '') + '</small></span>' +
+          (r.bill && r.guess ? ' · <i class="bi bi-calendar-check"></i> ' + esc(I18N.k('ui.im-bill-guess', 'Looks like {b} (same amount and date) – ticks it as paid', { b: r.bill.name })) + ' <button type="button" class="text-btn im-nobill" data-nobill="' + i + '">' + esc(I18N.k('ui.im-nobill', 'Not this bill')) + '</button>' :
+           r.bill ? ' · <i class="bi bi-calendar-check"></i> ' + esc(r.bill.name) + ' – a fixed cost, ticks it as paid' : r.income ? (r.transfer ? ' · ' + esc(r.why || 'from your own account') : ' · adds to this period’s budget') : r.transfer ? ' · ' + esc(r.why || 'transfer') : '') + '</small></span>' +
           '<span class="money">' + (r.income ? '+' : '') + esc(nf.format(r.amount)) + '</span>' +
           (r.bill ? '<span class="im-fixed" data-t="ui.fixed-cost">Fixed cost</span>' : r.income ? '<span class="im-fixed im-in">Money in</span>' : '<select data-cat="' + i + '" aria-label="Category">' + CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === r.cat ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('') + '</select>') +
           (r.recur && r.on && !r.bill && !r.income ? '<label class="im-mk"><input type="checkbox" data-mk="' + i + '"' + (r.mk ? ' checked' : '') + '> Comes every month – make it a fixed cost</label>' : '') + '</li>';
@@ -383,6 +397,7 @@
       if (r.income) { d.extra.push({ id: uid(), date: r.date, amount: r.amount, note: r.note, src: 'bank', ref: r.ref, acct: found.acct || undefined }); nin++; return; }
       if (r.bill) {
         var k = r.date.slice(0, 7), l = d.paid[k] = d.paid[k] || []; if (l.indexOf(r.bill.id) < 0) l.push(r.bill.id); bills++;
+        if (r.guess && r.desc) ((d.budget && d.budget.fixed) || []).forEach(function (f) { if (f.id !== r.bill.id) return; var nk = norm(r.desc); f.bank = (f.bank || []).filter(function (x) { return x !== nk; }).concat([nk]).slice(-5); });   /* next time the bank's text names this bill */
         /* a bill whose amount changes: what the bank took is that month's amount (unless you typed one in) */
         ((d.budget && d.budget.fixed) || []).forEach(function (f) {
           if (f.id !== r.bill.id || !f.vary) return;
@@ -447,6 +462,8 @@
     if (pa) { chosen = pa.dataset.pickacct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} bg.querySelectorAll('[data-pickacct]').forEach(function (b) { b.setAttribute('aria-checked', b === pa); }); var pk = bg.querySelector('[data-pick]'); if (pk) pk.disabled = false; return; }
     if (e.target.closest('[data-pick]')) { if (!chosen && bg.querySelector('[data-pickacct]')) return; file.value = ''; file.click(); return; }
     if (e.target.closest('[data-import]')) { doImport(); return; }
+    var nb = e.target.closest('[data-nobill]');
+    if (nb && found) { var rr = found.rows[+nb.dataset.nobill]; if (rr) { rr.bill = null; rr.guess = false; rr.cat = guess2(rr.note, rr.desc, (window.Vault.get() || {}).catMemory || {}); preview(found); } return; }
     var ab = e.target.closest('[data-acct]');
     if (ab && found && found.source) { chosen = ab.dataset.acct; try { localStorage.setItem('dash.imAcct', chosen); } catch (x) {} preview(analyse(found.source, { acct: chosen, own: found.own })); return; }
   });

@@ -561,7 +561,7 @@
     if (/^g\d$/.test(filt)) chips.unshift([filt, filt.slice(1) + ' ' + (grpName(filt.slice(1)) || ''), L.filter(matchesFilt).length]);
     var ql = q.toLowerCase(), shown = L.filter(function (l) { return matchesFilt(l) && (!ql || (l.code + ' ' + l.sys + ' ' + l.type + ' ' + l.planned + ' ' + (l.cmt || '')).toLowerCase().indexOf(ql) >= 0); });
     var h = '<div class="dc-chips" role="tablist">' + chips.map(function (x) { return '<button type="button" class="dc-chip" aria-pressed="' + (x[0] === filt) + '" data-dcfilt="' + x[0] + '">' + esc(x[1]) + ' <b>' + x[2] + '</b></button>'; }).join('') + '</div>' +
-      '<label class="dc-quick"><input type="checkbox" data-dcquick' + (quick ? ' checked' : '') + '> ' + esc(k('ui.dc-quick', 'Quick check – buttons on every line')) + '</label>' +
+      '<div class="dc-selrow"><label class="dc-quick"><input type="checkbox" data-dcquick' + (quick ? ' checked' : '') + '> ' + esc(k('ui.dc-quick', 'Quick check – buttons on every line')) + '</label>' + selBtn('d', p.id) + '</div>' +
       '<input type="search" class="dc-q" data-dcq placeholder="' + esc(k('ui.dc-search', 'Search code, system or name')) + '" value="' + esc(q) + '">';
     if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLineForm(p);
     var big = shown.length > 40 && !ql;   /* a long plan opens folded per NS group; only open groups are drawn (JP 13:48 – 800+ lines were one long page) */
@@ -569,12 +569,14 @@
     h += byGroup(shown).map(function (g) {
       var seen = {}, key = 'c:' + p.id + ':' + g[0], cg = counts(g[1]), op = !big || !!gopen[key] || g[1].some(function (l) { return l.id === openLine; });
       return foldHead(big, key, op, g[0], k('ui.dc-gsum', '{n} documents · {m} missing', { n: cg.all, m: cg.missing })) + (!op ? '' : '<ul class="dc-lines">' + g[1].slice().sort(lineOrder).map(function (l) {
+        var sel = selOn('d', p.id);
         var sub = seen[l.code] ? '' : '<li class="dc-csub"><span class="dc-code">' + esc(l.code) + '</span><b data-noi18n>' + esc(lineTitle(l)) + (l.fire ? ' <i class="bi bi-fire dc-fi"></i>' : '') + '</b></li>'; seen[l.code] = 1;
         var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean), isOpen = openLine === l.id;
-        var h2 = sub + '<li class="dc-line' + (isOpen ? ' open' : '') + '"><button type="button" class="dc-lmain" data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"><span class="dc-code"></span>' +
+        if (sel) isOpen = false;
+        var h2 = sub + '<li class="dc-line' + (isOpen ? ' open' : '') + (sel ? ' selm' : '') + (sel && SEL.ids[l.id] ? ' picked' : '') + '"><button type="button" class="dc-lmain" ' + (sel ? 'data-dcpick="' + esc(l.id) + '" aria-pressed="' + !!SEL.ids[l.id] + '"' : 'data-dcline="' + esc(l.id) + '" aria-expanded="' + isOpen + '"') + '>' + (sel ? selBox(l.id) : '') + '<span class="dc-code"></span>' +
           '<span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</b><small data-noi18n>' + esc([l.planned && !l.ex ? l.planned : '', fs.length ? k('ui.dc-n-files', '{n} files', { n: fs.length }) : ''].filter(Boolean).join(' · ')) + '</small>' + dueWho(l) +
           (l.cmt && !isOpen ? '<small class="dc-cmt" data-noi18n>' + esc(l.cmt) + '</small>' : '') + '</span>' + chip(l.st) + '</button>';
-        if (quick && !isOpen) h2 += '<div class="dc-qk">' + [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant']].filter(function (x) { return can(stAct(x[0]), gOf(p, 'dctl')); }).map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + stc(x[0]) + '" aria-pressed="' + (l.st === x[0]) + '" data-dcst="' + esc(l.id) + ':' + x[0] + '" data-dctoggle><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') + '</div>';
+        if (quick && !isOpen && !sel) h2 += '<div class="dc-qk">' + [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant']].filter(function (x) { return can(stAct(x[0]), gOf(p, 'dctl')); }).map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + stc(x[0]) + '" aria-pressed="' + (l.st === x[0]) + '" data-dcst="' + esc(l.id) + ':' + x[0] + '" data-dctoggle><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') + '</div>';
         if (isOpen) {
           h2 += '<div class="dc-ledit">' + (l.note ? '<p class="muted dc-pnote" data-noi18n>' + esc(l.note) + '</p>' : '') + (l.planned ? '<p class="dc-pnote"><span class="muted">' + esc(l.ex ? k('ui.dc-example-name', 'Example name') : k('ui.dc-planned-name', 'Planned name')) + ':</span> <span data-noi18n>' + esc(l.planned) + '</span></p>' : '') +
             (l.hint ? '<p class="dc-hint"><span class="muted">' + esc(k('ui.dc-should-contain', 'Should contain')) + ':</span> <span data-noi18n>' + esc(l.hint).replace(/\n/g, '<br>') + '</span></p>' : '') + (l.opt ? '<p class="muted dc-pnote">' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</p>' : '') +
@@ -588,6 +590,12 @@
         return h2 + '</li>';
       }).join('') + '</ul>') + (big ? '</details>' : '');
     }).join('');
+    if (selOn('d', p.id)) {
+      var g0 = gOf(p, 'dctl'), acts = [['ok', 'check-lg', 'ui.dc-q-ok', 'Approved'], ['rej', 'x-lg', 'ui.dc-q-rej', 'Not approved'], ['na', 'dash-lg', 'ui.dc-q-na', 'Not relevant'], ['missing', 'arrow-counterclockwise', 'ui.dc-sel-reset', 'Not checked']].filter(function (x) { return can(stAct(x[0]), g0); })
+        .map(function (x) { return '<button type="button" class="dc-qb" style="--c:' + stc(x[0]) + '" data-dcselst="' + x[0] + '"><i class="bi bi-' + x[1] + '"></i> ' + esc(k(x[2], x[3])) + '</button>'; }).join('') +
+        '<label class="dc-seldue"><span>' + esc(k('ui.dc-due', 'Deadline')) + '</span><input type="date" data-dcseldue></label>';
+      h += selBar('d', p.id, shown.filter(function (l) { return !big || gopen['c:' + p.id + ':' + String(l.code).charAt(0)]; }).map(function (l) { return l.id; }), acts);
+    }
     return h + addLineForm(p);
   }
   function addLineForm(p, kind) {
@@ -611,14 +619,17 @@
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
     h += '<p class="dc-note">' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad })) + '</p>';
     if (namingOn()) { var N = naming(); return h + (N ? N.files(p, F) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>'); }
+    var fsel = selOn('f', p.id);
+    h += '<div class="dc-selrow">' + selBtn('f', p.id) + '</div>';
     h += '<ul class="dc-files">' + F.map(function (f) {
       var l = f.line && lineOf(p, f.line);
-      return '<li class="dc-frow' + (!f.line ? ' loose' : '') + '"><div class="dc-fh">' + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><small class="muted">' + esc(size(f.size || 0)) + '</small>') +
+      return '<li class="dc-frow' + (!f.line ? ' loose' : '') + (fsel && SEL.ids[f.id] ? ' picked' : '') + '"' + (fsel ? ' data-dcpick="' + esc(f.id) + '"' : '') + '><div class="dc-fh">' + (fsel ? selBox(f.id) : '') + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><small class="muted">' + esc(size(f.size || 0)) + '</small>') +
         '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div>' +
         ((f.iss || []).length ? '<ul class="dc-iss">' + f.iss.map(function (x) { return '<li class="' + x[0] + '"><i class="bi bi-' + (x[0] === 'err' ? 'x-octagon' : 'exclamation-triangle') + '"></i> ' + esc(issueText(x, f)) + '</li>'; }).join('') + '</ul>' : '') +
         (l ? '<p class="dc-to"><i class="bi bi-arrow-return-right"></i> <b>' + esc(l.code) + '</b> <span data-noi18n>' + esc(lineTitle(l)) + '</span> · ' + esc(typeLabel(l)) + '</p>' :
-          '<select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select>') + '</li>';
+          (fsel ? '' : '<select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select>')) + '</li>';
     }).join('') + '</ul>';
+    if (fsel) h += selBar('f', p.id, F.map(function (f) { return f.id; }), '<button type="button" class="dc-qb" style="--c:' + stc('rej') + '" data-dcselfdel><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-sel-del-files', 'Remove the files')) + '</button>');
     return h;
   }
   function linkOpts(p, f) {
@@ -1001,6 +1012,21 @@
      contractor" makes the PDF / the Excel here and remembers what was sent, so a change afterwards shows; own project types get
      "+ New type" and a pen – admin only in Team */
   var rpen = false, rsend = false, tpen = false, tform = null, kpdf = null;
+  /* Tick several (2026-11-21, JP): a "Select" button on Received's Documents and Files and on the Requirements list;
+     ticked rows get one bar with what can be done to all of them at once. Only this screen's memory – nothing saved. */
+  var SEL = { k: '', ids: {} };
+  function selOn(kind, pid) { return SEL.k === kind + ':' + pid; }
+  function selN() { return Object.keys(SEL.ids).length; }
+  function selIds() { return Object.keys(SEL.ids); }
+  function selBtn(kind, pid) { var on = selOn(kind, pid); return '<button type="button" class="text-btn dc-selbtn" aria-pressed="' + on + '" data-dcsel="' + kind + ':' + esc(pid) + '"><i class="bi bi-' + (on ? 'x-lg' : 'check2-square') + '"></i> ' + esc(on ? k('ui.dc-sel-done', 'Done selecting') : k('ui.dc-sel', 'Select several')) + '</button>'; }
+  function selBox(id) { var on = !!SEL.ids[id]; return '<span class="dc-ck" role="checkbox" aria-checked="' + on + '" data-dcpick="' + esc(id) + '"><i class="bi bi-check-lg"></i></span>'; }
+  function selBar(kind, pid, shown, acts) {
+    var n = selN(), all = shown.length && shown.every(function (id) { return SEL.ids[id]; });
+    return '<div class="dc-selbar" role="toolbar" aria-label="' + esc(k('ui.dc-sel', 'Select several')) + '"><div class="dc-selh"><b class="tnum">' + esc(k('ui.dc-sel-n', '{n} selected', { n: n })) + '</b>' +
+      '<button type="button" class="text-btn" data-dcselall="' + (all ? '' : '1') + '" data-ids="' + esc(shown.join(' ')) + '">' + esc(all ? k('ui.dc-sel-none', 'None') : k('ui.dc-sel-all', 'All shown ({n})', { n: shown.length })) + '</button>' +
+      '<button type="button" class="icon-btn sm" data-dcsel="' + kind + ':' + esc(pid) + '" aria-label="' + esc(k('ui.dc-sel-done', 'Done selecting')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+      (n ? '<div class="dc-selacts">' + acts + '</div>' : '<p class="muted dc-selhint">' + esc(k('ui.dc-sel-hint', 'Tap the rows you want')) + '</p>') + '</div><div class="dc-selpad" aria-hidden="true"></div>';   /* room so the last rows can scroll up past the bar */
+  }
   function blurIn() { var a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); }
   /* the access matrix (Team, JP 2026-11-16): an action, on a project's group id – cmd is yours alone, so everything */
   function can(a, g) { return !HOST || !HOST.can || HOST.can(a, g); }
@@ -1064,18 +1090,21 @@
       '<button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-mot', 'To Received') : k('ui.dx-start-mot', 'Next: Received')) + '</button></div>';
     h += rsend ? sendForm(p) : '';
     h += sentHtml(p);
-    h += '<div class="dx-lh"><h3 class="fdv-h">' + esc(k('ui.dx-the-list', 'The list')) + '</h3>' + (can('edit', gOf(p, 'dckrav')) ? '<button type="button" class="icon-btn sm dx-pen" aria-pressed="' + rpen + '" data-drpen aria-label="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '" title="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '"><i class="bi bi-' + (rpen ? 'check2' : 'pencil') + '"></i></button>' : '') + (rpen ? '<span class="muted dc-help">' + esc(k('ui.dx-pen-help', 'Remove lines or add new ones')) + '</span>' : '') + '</div>';
+    h += '<div class="dx-lh"><h3 class="fdv-h">' + esc(k('ui.dx-the-list', 'The list')) + '</h3>' + (can('edit', gOf(p, 'dckrav')) ? '<button type="button" class="icon-btn sm dx-pen" aria-pressed="' + rpen + '" data-drpen aria-label="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '" title="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '"><i class="bi bi-' + (rpen ? 'check2' : 'pencil') + '"></i></button>' : '') + (can('edit', gOf(p, 'dckrav')) ? selBtn('r', p.id) : '') + (rpen ? '<span class="muted dc-help">' + esc(k('ui.dx-pen-help', 'Remove lines or add new ones')) + '</span>' : '') + '</div>';
     var big = L.length > 40;
     if (big) h += foldBar('r:' + p.id, byGroup(L).map(function (g) { return g[0]; }));
     h += byGroup(L).map(function (g) {
       var key = 'r:' + p.id + ':' + g[0], op = !big || !!gopen[key], ns = byCode(g[1]).length;
       return foldHead(big, key, op, g[0], k('ui.dc-gsum2', '{c} systems · {n} documents', { c: ns, n: g[1].length })) + (!op ? '' : '<ul class="dr-syss">' + byCode(g[1]).map(function (c) {
         return '<li class="dr-sys"><div class="dr-sh"><span class="dc-code">' + esc(c[0]) + '</span><b data-noi18n>' + esc(c[1]) + '</b></div><ul class="dr-types">' + c[2].map(function (l) {
-          return '<li class="dr-line"><span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + (l.opt ? ' <small>· ' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</small>' : '') + '</b>' +
-            (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(hintText(l)).replace(/\n/g, '<br>') + '</small>' : '') + '</span>' + (rpen ? '<button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
+          var rs = selOn('r', p.id);
+          return '<li class="dr-line' + (rs && SEL.ids[l.id] ? ' picked' : '') + '"' + (rs ? ' data-dcpick="' + esc(l.id) + '"' : '') + '>' + (rs ? selBox(l.id) : '') + '<span class="dc-lx"><b data-noi18n>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + (l.opt ? ' <small>· ' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</small>' : '') + '</b>' +
+            (l.hint ? '<small class="dr-hint" data-noi18n>' + esc(hintText(l)).replace(/\n/g, '<br>') + '</small>' : '') + '</span>' + (rpen && !selOn('r', p.id) ? '<button type="button" class="icon-btn sm" data-drldel="' + esc(l.id) + '" aria-label="' + esc(k('ui.dc-remove-line', 'Remove the line')) + '"><i class="bi bi-x-lg"></i></button>' : '') + '</li>';
         }).join('') + '</ul></li>';
       }).join('') + '</ul>') + (big ? '</details>' : '');
     }).join('');
+    if (selOn('r', p.id)) h += selBar('r', p.id, L.filter(function (l) { return !big || gopen['r:' + p.id + ':' + String(l.code).charAt(0)]; }).map(function (l) { return l.id; }),
+      '<button type="button" class="dc-qb" style="--c:var(--blue)" data-drselopt><i class="bi bi-file-earmark-text"></i> ' + esc(k('ui.dc-sel-opt', 'Only if in the contract')) + '</button><button type="button" class="dc-qb" style="--c:' + stc('rej') + '" data-drseldel><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-sel-del-lines', 'Remove the lines')) + '</button>');
     h += (rpen ? '<div class="dc-facts"><button type="button" class="pill-btn" data-drpick><i class="bi bi-ui-checks"></i> ' + esc(k('ui.dc-pick-more', 'Add from the checklist')) + '</button></div>' + addLineForm(p, 'req') : '') +
       '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3>' + (redit ? '<form class="dc-pform" data-dredit>' + '<label><span>' + esc(k('ui.dc-project', 'Project')) + '</span><input name="name" maxlength="120" required value="' + esc(p.name) + '"></label><label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40" value="' + esc(p.no || '') + '"></label>' + siteFields(p) +
         '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-dreditx>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>' :
@@ -1548,6 +1577,35 @@
 
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
+    var sb;
+    if ((sb = e.target.closest('[data-dcsel]'))) { SEL = SEL.k === sb.dataset.dcsel ? { k: '', ids: {} } : { k: sb.dataset.dcsel, ids: {} }; if (SEL.k) { openLine = null; rpen = false; } draw(); return; }
+    if (SEL.k && (sb = e.target.closest('[data-dcpick]')) && !e.target.closest('[data-dcview], select, input, a')) { var pi = sb.dataset.dcpick; if (SEL.ids[pi]) delete SEL.ids[pi]; else SEL.ids[pi] = 1; draw(); return; }
+    if (SEL.k && (sb = e.target.closest('[data-dcselall]'))) { var on1 = !!sb.dataset.dcselall; SEL.ids = {}; if (on1) (sb.dataset.ids || '').split(' ').filter(Boolean).forEach(function (x) { SEL.ids[x] = 1; }); draw(); return; }
+    if (SEL.k && (sb = e.target.closest('[data-dcselst]'))) {   /* the same status on every ticked line; "Not checked" puts each back to received or missing */
+      var sv = sb.dataset.dcselst, ids1 = selIds(), pr1 = proj(open); if (!pr1 || !can(stAct(sv), gOf(pr1, 'dctl'))) return;
+      var keep1 = JSON.parse(JSON.stringify(pr1));
+      saveP(open, function (p) { ids1.forEach(function (id) { var l = lineOf(p, id); if (l) l.st = sv === 'missing' ? ((l.files || []).length ? 'recv' : 'missing') : sv; }); });
+      SEL.ids = {}; draw();
+      toast('<i class="bi bi-check2-all"></i> ' + esc(k('ui.dc-sel-st-done', '{n} lines: {s}', { n: ids1.length, s: sv === 'missing' ? k('ui.dc-sel-reset', 'Not checked') : stName(sv) })), function () { var t1 = Fe.tools(); t1.dctl = (t1.dctl || []).map(function (x) { return x.id === keep1.id ? keep1 : x; }); Fe.saveTools(t1); draw(); });
+      return;
+    }
+    if (SEL.k && e.target.closest('[data-dcselfdel]')) {
+      var ids2 = selIds(), pr2 = proj(open); if (!pr2 || !ids2.length) return; var keep2 = JSON.parse(JSON.stringify(pr2));
+      saveP(open, function (p) { (p.files || []).forEach(function (f) { if (ids2.indexOf(f.id) >= 0 && f.line) unlink(p, f.line, f.id); }); p.files = (p.files || []).filter(function (x) { return ids2.indexOf(x.id) < 0; }); });
+      SEL.ids = {}; draw();
+      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-sel-files-gone', '{n} files removed', { n: ids2.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t2); draw(); });
+      var op2 = open; setTimeout(function () { var p = proj(op2); ids2.forEach(function (id) { if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }); }, 9000);
+      return;
+    }
+    if (SEL.k && (e.target.closest('[data-drseldel]') || e.target.closest('[data-drselopt]'))) {
+      var del3 = !!e.target.closest('[data-drseldel]'), ids3 = selIds(), kp3 = krav(ropen); if (!kp3 || !ids3.length || !can('edit', gOf(kp3, 'dckrav'))) return; kp3 = JSON.parse(JSON.stringify(kp3));
+      var allOpt = (kp3.lines || []).filter(function (l) { return ids3.indexOf(l.id) >= 0; }).every(function (l) { return l.opt; });
+      saveP(ropen, function (p) { if (del3) p.lines = (p.lines || []).filter(function (x) { return ids3.indexOf(x.id) < 0; }); else (p.lines || []).forEach(function (l) { if (ids3.indexOf(l.id) >= 0) { if (allOpt) delete l.opt; else l.opt = 1; } }); }, 'dckrav');
+      SEL.ids = {}; draw();
+      toast('<i class="bi bi-' + (del3 ? 'trash3' : 'check2-all') + '"></i> ' + esc(del3 ? k('ui.dc-sel-lines-gone', '{n} lines removed', { n: ids3.length }) : allOpt ? k('ui.dc-sel-opt-off', '{n} lines: always needed', { n: ids3.length }) : k('ui.dc-sel-opt-on', '{n} lines: only if in the contract', { n: ids3.length })),
+        function () { var t3 = Fe.tools(); t3.dckrav = (t3.dckrav || []).map(function (x) { return x.id === kp3.id ? kp3 : x; }); Fe.saveTools(t3); draw(); });
+      return;
+    }
     /* Send to Team (work.jplundberg.com): the project as a file you import there – the plan, statuses and comments, never
        the files themselves (they stay on this device). Nothing goes from this dashboard's storage to Team's. */
     if (e.target.closest('[data-drmove]') && !HOST) {   /* every list, the client checklists and your own project types in one file for Team's "Import from /cmd" */
@@ -1759,7 +1817,11 @@
       document.querySelectorAll('.dc-ptg [data-dcptg]').forEach(function (row) { var any2 = false; row.querySelectorAll('[data-dcptype]').forEach(function (b) { var on2 = !qq || b.textContent.toLowerCase().indexOf(qq) >= 0; b.hidden = !on2; any2 = any2 || on2; }); row.hidden = !any2; }); document.querySelectorAll('.dc-pg').forEach(function (d) { var any = false; d.querySelectorAll('li[data-dcpc]').forEach(function (li) { var on = !qq || li.textContent.toLowerCase().indexOf(qq) >= 0; li.hidden = !on; any = any || on; }); d.hidden = !any; if (qq && any) d.open = true; }); return; }
     if (t.matches && t.matches('[data-dcq]')) { q = t.value; clearTimeout(t._t); t._t = setTimeout(function () { draw(); var i = document.querySelector('[data-dcq]'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }, 250); } });
   document.addEventListener('change', function (e) {
-    var t = e.target; if (!t.matches || !t.matches('[data-dcdue], [data-dcwho]')) return;
+    var t = e.target;
+    if (t.matches && t.matches('[data-dcseldue]') && SEL.k) { var dv = /^\d{4}-\d{2}-\d{2}$/.test(t.value) ? t.value : '', ids4 = selIds(), pr4 = proj(open); if (!dv || !pr4 || !ids4.length) return; var keep4 = JSON.parse(JSON.stringify(pr4));
+      saveP(open, function (p) { ids4.forEach(function (id) { var l = lineOf(p, id); if (l) l.due = dv; }); }); SEL.ids = {}; setTimeout(draw, 50);
+      toast('<i class="bi bi-calendar-check"></i> ' + esc(k('ui.dc-sel-due-done', '{n} lines: deadline {d}', { n: ids4.length, d: fmt(dv) })), function () { var t5 = Fe.tools(); t5.dctl = (t5.dctl || []).map(function (x) { return x.id === keep4.id ? keep4 : x; }); Fe.saveTools(t5); draw(); }); return; }
+    if (!t.matches || !t.matches('[data-dcdue], [data-dcwho]')) return;
     var id = t.dataset.dcdue || t.dataset.dcwho, due = !!t.dataset.dcdue, v = due ? (/^\d{4}-\d{2}-\d{2}$/.test(t.value) ? t.value : '') : t.value.trim().slice(0, 60);
     saveP(open, function (p) { var l = lineOf(p, id); if (l) { if (v) l[due ? 'due' : 'who'] = v; else delete l[due ? 'due' : 'who']; } }); setTimeout(draw, 300);
   });
