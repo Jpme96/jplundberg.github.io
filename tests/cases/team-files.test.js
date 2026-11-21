@@ -30,7 +30,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.click('button[type=submit]');
   check(await until(own, () => !!document.querySelector('.t-tabs'), 20000), 'the owner is in the app');
   const proj = path.join(tmp, 'p.json');
-  fs.writeFileSync(proj, JSON.stringify({ team: 'dctl', p: { name: 'Testveien 9', no: '9', lines: [{ id: 'a1', code: '223', name: 'Plan', st: 'ok' }, { id: 'a2', code: '231', name: 'Section', st: 'missing' }, { id: 'a3', code: '320', name: 'Pipes', st: 'recv' }] } }));
+  fs.writeFileSync(proj, JSON.stringify({ team: 'dctl', p: { name: 'Testveien 9', no: '9', lines: [{ id: 'a1', code: '223', name: 'Plan', st: 'ok' }, { id: 'a2', code: '231', name: 'Section', st: 'missing', due: '2026-01-05' }, { id: 'a3', code: '320', name: 'Pipes', st: 'recv' }] } }));
   await own.goto(T + '#docs'); await own.waitForSelector('input[data-dcimport]');
   await (await own.$('input[data-dcimport]')).uploadFile(proj);
   check(await until(own, () => /Imported/.test(document.body.innerText) || location.hash.startsWith('#dc='), 15000), 'a made-up project is imported');
@@ -113,6 +113,13 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await con.reload(); 
   check(await until(con, () => /Received/.test((document.getElementById('log') || {}).innerText || ''), 10000), 'the sender sees "Received" once the team has kept it');
   /* switching the link off */
+  /* remind the contractor: the card counts what is late and "Remind" makes a message with those items and the link */
+  await own.evaluate(() => { window.__shared = null; navigator.share = o => { window.__shared = o.text; return Promise.resolve(); }; });
+  await own.evaluate(() => window.__teamDraw ? window.__teamDraw() : null); await sl(300);
+  const rm = await own.evaluate(() => { const c = document.querySelector('.t-upl'); const l = c && c.querySelector('.t-late'), bt = c && c.querySelector('[data-act=upremind]'); if (bt) bt.click(); return { late: l ? l.textContent : '', btn: !!bt }; });
+  await sl(300);
+  const msg = await own.evaluate(() => window.__shared || '');
+  check(/1 item is late/.test(rm.late) && rm.btn && /231 Section/.test(msg) && /05\.01\.2026/.test(msg) && msg.indexOf(link) > -1 && !/Plan\b|Pipes/.test(msg), 'Remind: 1 late item on the card, the message lists it with its deadline and the link ' + JSON.stringify([rm, msg.slice(0, 160)]));
   await own.evaluate(() => document.querySelector('[data-act=upoff]').click()); await sl(1200);
   const offInfo = await raw('/api/up/team/' + link.split('#')[1].split('.')[1] + '/info', { cookie: 'noauth=1' });
   await con.goto('about:blank'); await con.goto(SITE + 'upload/' + link.slice(link.indexOf('#')));

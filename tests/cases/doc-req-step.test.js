@@ -24,7 +24,13 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => { const t = Features.tools(); t.dckrav[0].lines = t.dckrav[0].lines.slice(0, 2); Features.saveTools(t); }); await sl(500);
   const s2 = await p.evaluate(() => ({ ch: !!document.querySelector('#wkDocReq .dx-sent.dx-ch'), t: (document.querySelector('#wkDocReq .dx-sent') || {}).textContent || '', btn: (document.querySelector('[data-drsend]') || {}).textContent }));
   check(s2.ch && /Changed after it was sent/.test(s2.t) && /Send again/.test(s2.btn), 'a change after sending shows "Changed after it was sent" and Send again ' + JSON.stringify(s2));
-  /* + New type */
+  /* "Som Boligbyggs vedlegg 7": the same list laid out like their document plan, saved for a look and read back as a plan */
+  const bby = await p.evaluate(async () => { window.__bf = null; FdvPdf.share = f => { window.__bf = f; return Promise.resolve(); }; document.querySelector('[data-drsend]') && !document.querySelector('form[data-drsendf]') && document.querySelector('[data-drsend]').click(); await new Promise(r => setTimeout(r, 300));
+    const b = document.querySelector('form[data-drsendf] [data-drxbby]'); if (!b) return null; b.click(); await new Promise(r => setTimeout(r, 400)); const f = window.__bf; if (!f) return { btn: true };
+    const u8 = new Uint8Array(await f.arrayBuffer()); let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return { name: f.name, b64: btoa(s) }; });
+  check(bby && bby.b64 && /Dokumentplan.*\.xlsx$/.test(bby.name), 'Send has "Excel – like Boligbygg’s Vedlegg 7" and makes the file ' + JSON.stringify(bby && { name: bby.name }));
+  if (bby && bby.b64) require('fs').writeFileSync(require('path').join(__dirname, '..', '.tmp', 'bby.xlsx'), Buffer.from(bby.b64, 'base64'));
+
   await p.evaluate(() => document.querySelector('[data-drpen]').click()); await sl(200);
   await p.evaluate(() => document.querySelector('[data-drpick]').click()); await sl(600);
   await p.evaluate(() => document.querySelector('[data-dctnew]').click()); await sl(300);

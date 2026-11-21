@@ -4,19 +4,7 @@
   "use strict";
 
   var $ = function (id) { return document.getElementById(id); };
-  var CATS = [
-    { id: 'groceries', name: 'Groceries', color: '#11a597' },
-    { id: 'eating', name: 'Eating out', color: '#d95926' },
-    { id: 'transport', name: 'Transport', color: '#3987e5' },
-    { id: 'shopping', name: 'Shopping', color: '#c98500' },
-    { id: 'home', name: 'Home', color: '#a0673a' },
-    { id: 'fun', name: 'Fun', color: '#d55181' },
-    { id: 'health', name: 'Health', color: '#8a6fdf' },
-    { id: 'travel', name: 'Travel', color: '#0891b2' },
-    { id: 'other', name: 'Other', color: '#6b6d73' }
-  ];
-  var catById = {};
-  CATS.forEach(function (c) { catById[c.id] = c; });
+  var CATS = window.FinCats ? FinCats.live('obj') : [{ id: 'other', name: 'Other', color: '#6b6d73' }];   /* fin-cats.js */
 
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
   var nfc = new Intl.NumberFormat('nb-NO', { notation: 'compact', maximumFractionDigits: 1 });
@@ -106,11 +94,12 @@
     return { months: months, years: years };
   }
   var CAT_IDS = CATS.map(function (c) { return c.id; });
+  window.addEventListener('cats:change', function () { CAT_IDS = CATS.map(function (c) { return c.id; }); IDX = null; IDXkey = ''; });
   function index() {
     var ex = (D && D.expenses) || [], k = fingerprint(ex);
     if (k === IDXkey && IDX) return IDX;
     if (ex.length >= BIG && typeof Worker !== 'undefined' && idxAsync(ex, k)) return null;   // comes back in a moment
-    IDX = buildIndex(ex, CAT_IDS); IDXkey = k; return IDX;
+    CAT_IDS = CATS.map(function (c) { return c.id; }); IDX = buildIndex(ex, CAT_IDS); IDXkey = k; return IDX;
   }
   function idxAsync(ex, k) {
     if (waiting === k) return true;
@@ -122,7 +111,7 @@
         worker.onerror = function () { worker = null; waiting = ''; BIG = Infinity; schedule(); };
       }
       waiting = k;
-      worker.postMessage({ k: k, cats: CAT_IDS, ex: ex.map(function (e) { return { date: e.date, amount: e.amount, cat: e.cat }; }) });
+      CAT_IDS = CATS.map(function (c) { return c.id; }); worker.postMessage({ k: k, cats: CAT_IDS, ex: ex.map(function (e) { return { date: e.date, amount: e.amount, cat: e.cat }; }) });
       return true;
     } catch (er) { BIG = Infinity; return false; }
   }
@@ -551,7 +540,7 @@
     $('fpTopNote').textContent = periodName(months);
     if (!list.length) { $('fpTop').innerHTML = '<li class="fp-empty" data-t="ui.nothing-logged-in-this-period">Nothing logged in this period.</li>'; return; }
     $('fpTop').innerHTML = list.map(function (e) {
-      var c = catById[e.cat] || catById.other;
+      var c = FinCats.get(e.cat);
       var d = new Date(e.date + 'T12:00');
       return '<li class="tx">' + dot(c.color) + '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' +
         esc(c.name) + ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }) +
@@ -563,7 +552,7 @@
   $('fpExport').addEventListener('click', function () {
     if (!D) return;
     var rows = [['Date', 'Category', 'Note', 'Amount (NOK)']].concat((D.expenses || []).slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).map(function (e) {
-      return [e.date, (catById[e.cat] || catById.other).name, e.note || '', String(e.amount).replace('.', ',')];
+      return [e.date, FinCats.get(e.cat).name, e.note || '', String(e.amount).replace('.', ',')];
     }));
     var csv = '﻿' + rows.map(function (r) { return r.map(function (v) { return /[;"\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v; }).join(';'); }).join('\r\n');
     var a = document.createElement('a');

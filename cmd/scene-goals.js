@@ -30,7 +30,7 @@
         add(g, 'ellipse', { cx: MX, cy: my, rx: 4 * ms2, ry: 1.2 * ms2, fill: 'rgba(0,0,0,.25)' });
         add(g, 'line', { x1: MX, y1: my, x2: MX, y2: my - 34 * ms2, stroke: '#cdd3d9', 'stroke-width': 1.6 * ms2, 'stroke-linecap': 'round' });
         add(g, 'path', { d: 'M' + MX + ' ' + (my - 34 * ms2).toFixed(1) + ' l' + (22 * ms2).toFixed(1) + ' ' + (6 * ms2).toFixed(1) + ' l' + (-22 * ms2).toFixed(1) + ' ' + (6 * ms2).toFixed(1) + ' Z', fill: '#f2c94c' });
-        S.txt(g, { x: (MX + 2 * ms2).toFixed(1), y: (my - 37 * ms2).toFixed(1), 'font-size': (8 * ms2).toFixed(1), 'font-weight': 700, fill: '#f2c94c' }, Math.round((data.wi.pct || 0) * 100) + ' %');
+        S.txt(g, { x: (MX + 2 * ms2).toFixed(1), y: (my - 37 * ms2).toFixed(1), 'font-size': Math.max(9.5, 8 * ms2).toFixed(1), 'font-weight': 700, fill: '#f2c94c' }, Math.round((data.wi.pct || 0) * 100) + ' %');
       }
       }, gen: { out: true },
       /* the page's own action (F3): a rest on the rock at the top, looking out over the view */
@@ -88,7 +88,9 @@
       var FC = data.wi ? '#f2c94c' : '#d6453f';   /* with a savings goal the summit flag is the goal: gold */
       function flag(par, top, ss, wave) { add(par, 'path', { d: 'M' + top[0].toFixed(1) + ' ' + top[1].toFixed(1) + ' q' + (8 * ss) + ' ' + (-3 * ss + wave) + ' ' + (16 * ss) + ' ' + (1 * ss) + ' l0 ' + (12 * ss) + ' q' + (-8 * ss) + ' ' + (-3 * ss - wave) + ' ' + (-16 * ss) + ' ' + (1 * ss) + ' Z', fill: FC }); }
       var PX = 335 + 15 * KS(335) / .5, PY = YG(335);
-      if (planted) { var s2 = KS(335) / .5; add(g, 'line', { x1: PX, y1: PY + 1, x2: PX, y2: PY - 62 * s2, stroke: '#cdd3d9', 'stroke-width': 1.8 * s2 }); flag(g, [PX, PY - 62 * s2], s2, 2 * Math.sin(now / 160)); if (data.wi && data.wi.target) S.txt(g, { x: (PX + 1).toFixed(1), y: (PY - 66 * s2).toFixed(1), 'font-size': 6.5, 'font-weight': 700, fill: '#f2c94c' }, S.kr(data.wi.target)); }
+      if (planted) { var s2 = KS(335) / .5; add(g, 'line', { x1: PX, y1: PY + 1, x2: PX, y2: PY - 62 * s2, stroke: '#cdd3d9', 'stroke-width': 1.8 * s2 }); flag(g, [PX, PY - 62 * s2], s2, 2 * Math.sin(now / 160)); if (data.wi && data.wi.target) { var amt = S.kr(data.wi.target), aw = amt.length * 5.9 + 10, ax = Math.min(PX + 4, 396 - aw / 2), ay = PY - 62 * s2 - 9;   /* the goal on a small dark sign over the flag – readable on a phone (JP 2026-11-21) */
+          add(g, 'rect', { x: (ax - aw / 2).toFixed(1), y: (ay - 10).toFixed(1), width: aw.toFixed(1), height: 14, rx: 4, fill: '#1d2128', opacity: .82 });
+          S.txt(g, { x: ax.toFixed(1), y: (ay + .5).toFixed(1), 'font-size': 10.5, 'font-weight': 700, fill: '#f2c94c', 'text-anchor': 'middle' }, amt); } }
       if (st.pact === 'sit') { var rs = 1.4 * k / .5; add(g, 'path', { d: 'M' + (cx - 16 * rs) + ' ' + (gy + 1) + ' Q' + (cx - 15 * rs) + ' ' + (gy - 15 * rs) + ' ' + cx + ' ' + (gy - 16 * rs) + ' Q' + (cx + 16 * rs) + ' ' + (gy - 14 * rs) + ' ' + (cx + 15 * rs) + ' ' + (gy + 1) + ' Z', fill: '#6f7781' }); }   /* the rock he sits on */
       if (kid) { var kg = add(g, 'g', { opacity: kid.op.toFixed(2) }), kph = LIFE(st, kid.pose, kid.w, 'kid'); FIG(kg, { who: 'kid', look: KID, cx: kid.cx, gy: YG(kid.cx), k: KS(kid.cx) * .74, face: kid.face, ph: kph, w: kid.w, pose: kid.pose }); }
       FIG(g, { cx: cx, gy: gy, k: k, face: face, ph: ph, w: w, pose: pose, items: function (H) { if (planted || !H.s1) return [];

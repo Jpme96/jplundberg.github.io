@@ -1154,7 +1154,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var ls = links();
     if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off;
       return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"><h2>' + esc(projName(r.d.pid) || r.d.label || L('Upload link', 'Opplastingslenke')) + ' <span class="t-chip t-upcount"></span></h2><p class="t-small">' + esc(live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off', 'Slått av')) + '</p><ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul>' +
-        (live ? '<div class="t-acts2"><button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button><button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button></div>' : (rank() >= 1 ? '<div class="t-acts2"><button class="t-btn sm ghost t-danger" type="button" data-act="updel" data-id="' + esc(r.id) + '">' + L('Delete the link and what came in', 'Slett lenken og det som kom inn') + '</button></div>' : '')) + '</div>'; }).join('');
+        (live ? lateLine(r) + '<div class="t-acts2">' + remindBtn(r) + '<button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button><button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button></div>' : (rank() >= 1 ? '<div class="t-acts2"><button class="t-btn sm ghost t-danger" type="button" data-act="updel" data-id="' + esc(r.id) + '">' + L('Delete the link and what came in', 'Slett lenken og det som kom inn') + '</button></div>' : '')) + '</div>'; }).join('');
     fl.forEach(function (r) { var k = r.d.pid || ''; (by[k] = by[k] || []).push(r); });
     out += '<p class="t-h"><span>' + L('Shared files', 'Delte filer') + '</span><span>' + fl.length + '</span></p>';
     if (!fl.length) return out + '<p class="t-empty">' + L('No files yet. Files here are encrypted and shared with the team.', 'Ingen filer ennå. Filer her er kryptert og delt med teamet.') + '</p>';
@@ -1227,6 +1227,23 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }
   }
   window.__pushNeeds = pushNeeds;
+  /* remind the contractor (2026-11-21, JP): on a live link with a project, what is late (deadline passed, still missing or
+     sent back) is counted on the card, and "Remind" makes a short message with those items and the link – shared from the
+     phone (Mail, SMS, Teams …) or copied. Nothing is sent by the server. */
+  function today0() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function lateOf(pid) { var n = needsFor(pid) || [], t = today0(); return { all: n, late: n.filter(function (x) { return x.due && x.due < t && (x.st === 'missing' || x.st === 'rej'); }) }; }
+  function lateLine(r) { if (!r.d.pid) return ''; var o = lateOf(r.d.pid); return o.late.length ? '<p class="t-small t-late">' + esc(L(o.late.length === 1 ? '1 item is late' : o.late.length + ' items are late', o.late.length === 1 ? '1 dokument er forsinket' : o.late.length + ' dokumenter er forsinket')) + '</p>' : ''; }
+  function remindBtn(r) {
+    if (!r.d.pid || rank() < 1) return ''; var o = lateOf(r.d.pid); if (!o.all.length) return '';
+    return '<button class="t-btn sm" type="button" data-act="upremind" data-id="' + esc(r.id) + '">' + esc(o.late.length ? L('Remind about the late ones', 'Påminn om de forsinkede') : L('Remind about what is missing', 'Påminn om det som mangler')) + '</button>';
+  }
+  function fmtDue(s) { var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '.' + m[2] + '.' + m[1] : ''; }
+  function remindText(d) {
+    var o = lateOf(d.pid), use = (o.late.length ? o.late : o.all).slice(0, 40), more = (o.late.length ? o.late : o.all).length - use.length, pn = projName(d.pid) || '';
+    var line = function (x) { return '– ' + [x.c, x.t || x.s].filter(Boolean).join(' ') + (x.st === 'rej' ? L(' (sent back – needs a new version)', ' (sendt i retur – trenger ny versjon)') : '') + (x.due ? L(' – deadline ', ' – frist ') + fmtDue(x.due) : ''); };
+    return [L('Hi!', 'Hei!'), '', (o.late.length ? L('A reminder about documentation for ' + pn + ' that is past its deadline:', 'En påminnelse om FDV-dokumentasjon for ' + pn + ' som har passert fristen:') : L('A reminder about what is still missing for ' + pn + ':', 'En påminnelse om det som fortsatt mangler for ' + pn + ':')), '']
+      .concat(use.map(line), more > 0 ? [L('… and ' + more + ' more – see the list on the page.', '… og ' + more + ' til – se listen på siden.')] : [], ['', L('Send the files here (the page shows the whole list):', 'Send filene her (siden viser hele listen):'), linkUrl(d), '', L('Thanks!', 'Takk!')]).join('\n');
+  }
   function linkUrl(d) { return 'https://jplundberg.com/upload/#' + S.tid + '.' + d.lid + '.' + d.key + '.' + encodeURIComponent(projName(d.pid) || d.label || ''); }
   function uplinkSheet() {
     openSheet('<h2>' + L('Upload link for a contractor', 'Opplastingslenke til en entreprenør') + '</h2><p class="t-small">' + L('Anyone with the link can send files to the project – no account needed. The files are encrypted in their browser; only the team can open them. Nobody can see what is already there.', 'Alle med lenken kan sende filer til prosjektet – uten konto. Filene krypteres i nettleseren deres; bare teamet kan åpne dem. Ingen kan se det som allerede ligger der.') + '</p>' +
@@ -1429,6 +1446,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'upkeepall') { t.disabled = true; await keepUploads(t.dataset.fids.split(',')); return; }
     if (a === 'fdl') { if (S.prevFile) saveFile(S.prevFile); return; }
     if (a === 'fshare') { if (S.prevFile && navigator.canShare && navigator.canShare({ files: [S.prevFile] })) navigator.share({ files: [S.prevFile] }).catch(function () {}); else if (S.prevFile) saveFile(S.prevFile); return; }
+    if (a === 'upremind') { var rr = S.recs[t.dataset.id]; if (!rr || !rr.d) return; var txt = remindText(rr.d);
+      if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Message copied – paste it in an e-mail or SMS', 'Meldingen er kopiert – lim den inn i en e-post eller SMS')); }, function () { showText(L('The message', 'Meldingen'), txt); });
+      return; }
     if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText(L('The link', 'Lenken'), lu); }); return; }
     if (a === 'upoff') { var lo = S.recs[t.dataset.id]; if (!lo || !lo.d || !(await sure(L('Switch off this upload link? Files already sent stay.', 'Slå av denne opplastingslenken? Filer som er sendt, blir liggende.')))) return; try { await api('uplink?lid=' + lo.d.lid, { method: 'DELETE' }); await putRec('upl', lo.id, Object.assign({}, lo.d, { off: 1, exp: Math.min(lo.d.exp, Date.now()) })); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'weekCopy') { var wt = weekText(), txt = S.me.team.name + ' – ' + L('this week', 'denne uka') + '\n' + wt.lines.map(function (x) { return '• ' + x; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText('', txt); }); return; }

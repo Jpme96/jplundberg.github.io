@@ -257,14 +257,16 @@
         add(64, 'apple', '#e66767', 'Nothing from Apple Health for ' + Math.floor((Date.now() - lastH) / 864e5) + ' days', 'Check that the Shortcut automation still runs', '?settings=ahealth', { key: 'ahstale:' + today, tip: true });
     }
 
-    /* a backup once a month (the encrypted file, kept wherever you like) */
+    /* a backup every week (JP 2026-11-21 – it was once a month): the encrypted file, kept wherever you like; one tap downloads it.
+       "Later" hides it for that week. A backup on another device counts too (d.lastBackup is synced). */
     if (d) {
-      var lb = d.lastBackup || +localStorage.getItem('dash.lastBackup') || 0, age = lb ? Math.floor((Date.now() - lb) / 864e5) : null;
+      var lb = Math.max(+d.lastBackup || 0, +localStorage.getItem('dash.lastBackup') || 0), age = lb ? Math.floor((Date.now() - lb) / 864e5) : null;
       var much = (d.expenses || []).length + (readJSON('dash.todos') || []).length > 8;
-      if ((age === null && much) || age >= 30) {
-        ACTIONS['backup:' + ym] = function () { window.Vault.backup(); };
+      var wk = (function () { var t = new Date(); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return t.getFullYear() + '-' + (t.getMonth() + 1) + '-' + t.getDate(); })();
+      if ((age === null && much) || age >= 7) {
+        ACTIONS['backup:' + wk] = function () { window.Vault.backup(); };
         add(56, 'shield-check', '#11a597', I18N.k('ui.time-for-a-backup', 'Time for a backup'), age === null ? 'You haven’t downloaded one yet – it takes a second' : 'Last one ' + age + ' days ago', '?settings=data',
-          { key: 'backupx:' + ym, act: { id: 'backup:' + ym, label: 'Download' } });
+          { key: 'backupx:' + wk, act: { id: 'backup:' + wk, label: 'Download' } });
       }
     }
 

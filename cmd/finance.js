@@ -7,19 +7,7 @@
   if (!$('budgetBody')) return;           // the cards live on the Finances page
   var NS = 'http://www.w3.org/2000/svg';
 
-  var CATS = [
-    { id: 'groceries', name: 'Groceries', color: '#11a597' },
-    { id: 'eating', name: 'Eating out', color: '#d95926' },
-    { id: 'transport', name: 'Transport', color: '#3987e5' },
-    { id: 'shopping', name: 'Shopping', color: '#c98500' },
-    { id: 'home', name: 'Home', color: '#a0673a' },
-    { id: 'fun', name: 'Fun', color: '#d55181' },
-    { id: 'health', name: 'Health', color: '#8a6fdf' },
-    { id: 'travel', name: 'Travel', color: '#0891b2' },
-    { id: 'other', name: 'Other', color: '#6b6d73' }
-  ];
-  var catById = {};
-  CATS.forEach(function (c) { catById[c.id] = c; });
+  var CATS = window.FinCats ? FinCats.live('obj') : [{ id: 'other', name: 'Other', color: '#6b6d73' }];   /* the built-in and your own categories, kept up to date (fin-cats.js) */
 
   var nf = new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', maximumFractionDigits: 0 });
   var nfShort = new Intl.NumberFormat('nb-NO', { notation: 'compact', maximumFractionDigits: 1 });
@@ -399,7 +387,7 @@
     if (sheetOpen) renderSheet(list);
   }
   function txRow(e, withDate) {
-    var c = catById[e.cat] || catById.other, d = new Date(e.date + 'T12:00');
+    var c = FinCats.get(e.cat), d = new Date(e.date + 'T12:00');
     return '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
       '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><span class="muted">' + esc(c.name) + (withDate ? ' · ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '') + (e.src === 'bank' ? ' · <i class="bi bi-bank" title="From your bank" data-t-title="ui.from-your-bank"></i>' : '') + (e.shared ? ' · <i class="bi bi-people" title="Shared – your share" data-t-title="ui.shared-your-share"></i>' + (e.full != null ? ' of ' + esc(kr(e.full)) : '') : '') + '</span></span>' +
       money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
@@ -426,7 +414,7 @@
   }
   function renderSheet(list) {
     $('spSheetTitle').textContent = monthName(viewMonth);
-    var q = sheetQ.toLowerCase(), rows = list.filter(function (e) { return (!sheetCat || e.cat === sheetCat) && (!q || (e.note || '').toLowerCase().indexOf(q) > -1 || (catById[e.cat] || catById.other).name.toLowerCase().indexOf(q) > -1); });
+    var q = sheetQ.toLowerCase(), rows = list.filter(function (e) { return (!sheetCat || e.cat === sheetCat) && (!q || (e.note || '').toLowerCase().indexOf(q) > -1 || (FinCats.get(e.cat)).name.toLowerCase().indexOf(q) > -1); });
     $('spSheetSum').innerHTML = rows.length + ' expense' + (rows.length === 1 ? '' : 's') + ' · ' + money(sum(rows)) + (rows.length !== list.length ? ' <span class="muted">of ' + money(sum(list)) + '</span>' : '');
     var lastDay = '', html = '';
     rows.forEach(function (e) {
@@ -435,7 +423,7 @@
         html += '<li class="tx-day"><span>' + esc(d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })) + '</span><span class="money">' + esc(kr(dayTotal)) + '</span></li>';
         lastDay = e.date;
       }
-      var c = catById[e.cat] || catById.other;
+      var c = FinCats.get(e.cat);
       html += '<li class="tx" data-id="' + e.id + '"><i class="dot" style="background:' + c.color + '"></i>' +
         '<span class="tx-text"><strong>' + esc(e.note || c.name) + '</strong><select class="tx-cat" data-xcat="' + e.id + '" aria-label="Category">' + CATS.map(function (x) { return '<option value="' + x.id + '"' + (x.id === e.cat ? ' selected' : '') + '>' + x.name + '</option>'; }).join('') + '</select>' + (e.src === 'bank' ? ' <i class="bi bi-bank muted" title="From your bank" data-t-title="ui.from-your-bank"></i>' : '') + '</span>' +
         money(e.amount) + '<button class="del" type="button" data-xdel="' + e.id + '" aria-label="Delete"><i class="bi bi-x"></i></button></li>';
@@ -486,7 +474,8 @@
     return '<svg class="donut" viewBox="0 0 120 120" aria-hidden="true"><circle class="track" r="' + r + '" cx="60" cy="60"></circle>' + segs + '</svg>';
   }
 
-  $('spCat').innerHTML = CATS.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+  function spCatOpts() { var el = $('spCat'); if (!el) return; var v = el.value; el.innerHTML = CATS.map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + '</option>'; }).join(''); if (v) el.value = v; }
+  spCatOpts(); window.addEventListener('cats:change', spCatOpts); if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(spCatOpts);
   $('spDate').value = today();
 
   $('spForm').addEventListener('submit', function (e) {

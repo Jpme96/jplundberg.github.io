@@ -650,8 +650,7 @@
 
   /* ================= Spending limits per category (Overview) =================
      d.budget.limits = { groceries: 5000, eating: 1500, … } – kr per budget period (payday → payday, or the month) */
-  var CATS = [['groceries', 'Groceries', '#11a597', 'basket'], ['eating', 'Eating out', '#d95926', 'cup-hot'], ['transport', 'Transport', 'var(--blue)', 'bus-front'], ['shopping', 'Shopping', 'var(--warn)', 'bag'], ['home', 'Home', '#a0673a', 'house'],
-    ['fun', 'Fun', 'var(--pink)', 'controller'], ['health', 'Health', 'var(--violet)', 'heart-pulse'], ['travel', 'Travel', '#0891b2', 'airplane'], ['other', 'Other', '#6b6d73', 'three-dots']];
+  var CATS = window.FinCats ? FinCats.live('plan') : [['other', 'Other', '#6b6d73', 'three-dots']];   /* fin-cats.js */
   var limEditing = false;
   /* what you usually spend per category in a budget period: the average of the last three full months */
   function usual(d) {

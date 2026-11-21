@@ -1044,7 +1044,8 @@
     return '<form class="dc-pform dx-send" data-drsendf><h3 class="fdv-h">' + esc(k('ui.dx-send-h', 'Send the requirements to the contractor')) + '</h3>' +
       '<label><span>' + esc(k('ui.dx-to', 'To')) + '</span><input name="to" maxlength="120" value="' + esc((p.sent || {}).to || '') + '" placeholder="' + esc(k('ui.dc-contractor-ph', 'Who delivers, e.g. the sprinkler contractor')) + '"></label>' +
       '<div class="dc-facts"><button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.dx-send-pdf', 'PDF – the requirements')) + '</span></button>' +
-      '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-xlsx', 'Excel – a document plan to fill in')) + '</button></div>' +
+      '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-xlsx', 'Excel – a document plan to fill in')) + '</button>' +
+      '<button type="button" class="pill-btn" data-drxbby><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-bby', 'Excel – like Boligbygg’s Vedlegg 7')) + '</button></div>' +
       '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dx-send-help', 'Made on this device and shared from here (e-mail, Teams …) – nothing is sent from the server. The Excel is laid out like a document plan: the contractor fills in the planned names, and you check it with Check a document plan or import it in Received.')) + '</p>' +
       '<div class="dc-facts"><button type="button" class="text-btn" data-drsendx>' + esc(k('ui.close', 'Close')) + '</button></div></form>';
   }
@@ -1191,6 +1192,67 @@
       ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
       ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf fontId="0"/><xf fontId="1" applyFont="1"/></cellXfs></styleSheet>'],
       ['xl/worksheets/sheet1.xml', sheet]]);
+  }
+  /* "Som Boligbyggs vedlegg 7" (2026-11-21, JP): the same requirements laid out like Boligbygg's Dokumentplan 4-siffer – a
+     "Generelt" sheet (project, who delivers, how to fill it in, the NS 3456 types) and one sheet per NS 3451 main group with
+     their columns, three rows per system (the code row shaded, the document types under it), the code as 310.000. The text
+     is our own; only the layout follows theirs. It reads back in Received like any document plan. */
+  var BBY_G = { 1: ['1 - Øvrig dokumentasjon', '1 Øvrig dokumentasjon'], 2: ['2 - Bygning', '2 Bygningsmessig informasjon'], 3: ['3 - VVS-installasjoner', '3 VVS'], 4: ['4 - Elkraftinstallasjoner', '4 Elektro'],
+    5: ['5 - Tele og automatisering', '5 Tele og automasjon'], 6: ['6 - Andre installasjoner', '6 Andre installasjoner'], 7: ['7 - Utendørs', '7 Utendørs'] };
+  var BBY_T = { A: 'Dokumentasjon på at kravene er oppfylt – samsvarserklæringer, ytelseserklæringer, kontroll- og testrapporter.', B: 'Hvordan anlegget driftes, brukes og rengjøres.', C: 'Hva som skal vedlikeholdes, hvordan og hvor ofte.',
+    D: 'Hvilket produkt det er og hvem som leverte det – merking, typebetegnelse, leverandør.', E: 'Produktets egenskaper – datablad, sertifikater, monteringsanvisning.', F: 'Uavhengig kontroll – sertifikater og godkjenninger fra tredjepart.',
+    G: 'Hvordan brukeren bruker anlegget riktig og trygt.', H: 'Hvordan systemet er bygget opp og virker.', I: 'Innstillinger, innreguleringer og målte verdier ved overlevering.', K: 'Oppdaterte «som bygget»-tegninger.', L: 'Bilder og video, f.eks. av skjulte installasjoner.' };
+  function bbyCode(c) { c = String(c || ''); var m = c.match(/^(\d{3})(?:\.(\d{1,3}))?$/); return m ? m[1] + '.' + (m[2] || '').padEnd(3, '0') : c; }
+  function kravXlsxBby(p) {
+    var FIRE = /^(225|23[1-3]|244|263|291|33\d|443|542|546|733)$/, L = (p.lines || []).slice().sort(lineOrder), by = {};
+    L.forEach(function (l) { var g = String(l.code || '').charAt(0); if (!BBY_G[g]) return; ((by[g] = by[g] || {})[l.code] = by[g][l.code] || []).push(l); });
+    var col = function (i) { return String.fromCharCode(65 + i); };
+    var cell = function (r, j, v, st) { return v === '' || v == null ? (st ? '<c r="' + col(j) + r + '" s="' + st + '"/>' : '') : '<c r="' + col(j) + r + '" t="inlineStr"' + (st ? ' s="' + st + '"' : '') + '><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>'; };
+    var row = function (r, cells, ht) { return '<row r="' + r + '"' + (ht ? ' ht="' + ht + '" customHeight="1"' : '') + '>' + cells.join('') + '</row>'; };
+    var ws = function (cols, view, rows, merge) { return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">' + view + '</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>' +
+      cols.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols><sheetData>' + rows.join('') + '</sheetData>' + (merge.length ? '<mergeCells count="' + merge.length + '">' + merge.map(function (m) { return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') + '</worksheet>'; };
+    var sheets = [], who = (p.sent && p.sent.to) || '';
+    /* Generelt */
+    var gr = [row(2, [cell(2, 1, 'Prosjektnavn/-nr', 5), cell(2, 3, [p.name, p.no].filter(Boolean).join(' – ')), cell(2, 6, 'Utførende', 5), cell(2, 7, who, 8)]),
+      row(4, [cell(4, 1, 'Slik fyller du ut dokumentplanen', 6)].concat([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(function (j) { return cell(4, j, '', 6); })))];
+    ['Hver fane er en hovedgruppe i NS 3451. Systemene som gjelder for prosjektet står allerede der, med kode og navn.', 'Kolonne F viser hvilke dokumenttyper (NS 3456) som skal leveres for systemet.', 'Skriv det planlagte filnavnet i kolonne G: kode, dokumentkode og en beskrivende tekst – f.eks. 320 DA Samsvarserklæring varmeanlegg.', 'Send planen tilbake før dokumentasjonen leveres. Kolonne H er til kommentarer.']
+      .forEach(function (t, i) { gr.push(row(5 + i, [cell(5 + i, 1, (i + 1) + '.'), cell(5 + i, 2, t)])); });
+    gr.push(row(11, [cell(11, 1, 'Leveranse av FDVU-dokumentasjon', 1), cell(11, 2, '', 1), cell(11, 3, '', 1)]));
+    gr.push(row(12, [cell(12, 1, 'Kode', 7), cell(12, 2, 'Type', 7), cell(12, 3, 'Beskrivelse', 7)]));
+    [['A', 'Kravoppnåelse'], ['B, C', 'Drift, Vedlikehold'], ['D', 'Identifikasjon'], ['E', 'Produktinformasjon'], ['F', 'Attestasjon'], ['G', 'Bruksanvisning'], ['H', 'Beskrivelse'], ['I', 'Protokoll'], ['K', 'Tegning'], ['L', 'Bilde']].forEach(function (t, i) {
+      var r = 13 + i; gr.push(row(r, [cell(r, 1, t[0], 8), cell(r, 2, t[1], 8), cell(r, 3, t[0] === 'B, C' ? BBY_T.B + ' ' + BBY_T.C : BBY_T[t[0]], 8)]));
+    });
+    sheets.push(['Generelt', ws([1.3, 7, 18.3, 44.5, 8.7, 8.7, 10.3, 24, 8.7, 8.7, 8.7, 8.7, 8.7], '', gr, ['B2:C2', 'D2:F2', 'H2:M2', 'B4:M4', 'C5:M5', 'C6:M6', 'C7:M7', 'C8:M8', 'B11:D11'])]);
+    /* one sheet per main group */
+    Object.keys(by).sort().forEach(function (g) {
+      var G = BBY_G[g], rows = [row(1, [cell(1, 0, G[0], 1)].concat([1, 2, 3, 4, 5, 6, 7].map(function (j) { return cell(1, j, '', 1); })), 21),
+        row(2, [cell(2, 0, G[0], 2), cell(2, 1, 'Anleggsnummer', 2), cell(2, 2, 'Anleggsnavn', 2), cell(2, 3, 'Kategori anlegg', 2), cell(2, 4, 'Brannbok', 2), cell(2, 5, 'Dokument typer som skal leveres', 2), cell(2, 6, 'Planlagt navngivning', 2), cell(2, 7, 'Kommentar', 2)], 23)], r = 3;
+      Object.keys(by[g]).sort().forEach(function (c) {
+        var ls = by[g][c], n = Math.max(3, ls.length);
+        for (var i = 0; i < n; i++) {
+          var l = ls[i], st = i ? 4 : 3, tp = l ? (l.t ? l.t.split('').map(function (x) { var q = TYPES.filter(function (y) { return y[0] === x; })[0]; return q ? q[1] : x; }).join(', ') : (l.type || l.name || '')) : '';
+          var note = l ? [l.name && l.t ? l.name : '', hintText(l), l.opt ? 'Hvis kontraktsfestet' : ''].filter(Boolean).join(' – ') : '';
+          rows.push(row(r, i ? [cell(r, 0, '', st), cell(r, 1, '', st), cell(r, 2, '', st), cell(r, 3, '', st), cell(r, 4, '', st), cell(r, 5, tp, st), cell(r, 6, '', st), cell(r, 7, note, st)]
+            : [cell(r, 0, g, st), cell(r, 1, bbyCode(c), st), cell(r, 2, lineTitle(ls[0]), st), cell(r, 3, G[1], st), cell(r, 4, FIRE.test(String(c).slice(0, 3)) ? 'Ja' : 'Nei', st), cell(r, 5, tp, st), cell(r, 6, '', st), cell(r, 7, note, st)]));
+          r++;
+        }
+      });
+      sheets.push([G[0], ws([25.5, 16.5, 40.5, 30.5, 11.5, 40.5, 55.5, 55.5], '<pane xSplit="2" ySplit="2" topLeftCell="C3" activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="G3" sqref="G3"/>', rows, ['A1:H1'])]);
+    });
+    var ST = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<fonts count="3"><font><sz val="10"/><color rgb="FF2C2C2C"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FF2C2C2C"/><name val="Arial"/></font><font><b/><sz val="14"/><color rgb="FF2C2C2C"/><name val="Arial"/></font></fonts>' +
+      '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF9C66B"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD0BFAE"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF8F0DD"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE9DFD3"/></patternFill></fill></fills>' +
+      '<borders count="3"><border/><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/></border><border><left style="medium"/><right style="medium"/><top style="medium"/><bottom style="medium"/></border></borders><cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+      '<cellXfs count="9"><xf/><xf fontId="2" fillId="2" borderId="2" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center"/></xf><xf fontId="1" fillId="5" borderId="2" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>' +
+      '<xf fontId="0" fillId="3" borderId="1" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf><xf fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf><xf fontId="1" applyFont="1"/>' +
+      '<xf fontId="1" fillId="4" applyFont="1" applyFill="1"/><xf fontId="1" fillId="3" borderId="2" applyFont="1" applyFill="1" applyBorder="1"/><xf fontId="0" borderId="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    var parts = [['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+        sheets.map(function (x, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map(function (x, i) { return '<sheet name="' + xmlEsc(x[0]) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (x, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', ST]].concat(sheets.map(function (x, i) { return ['xl/worksheets/sheet' + (i + 1) + '.xml', x[1]]; }));
+    return zipStore(parts);
   }
   /* ---------- the plan back as Excel, coloured by status (JP 2026-11-14): your own file when this device has it, else a new one ---------- */
   var FILL = { missing: 'FFF4CCCC', rej: 'FFF4CCCC', recv: 'FFFFF2CC', cmt: 'FFFCE4D6', ok: 'FFD9EAD3', na: 'FFD9D9D9' };   /* grey 15 % – visible next to white rows (JP 22:17) */
@@ -1643,6 +1705,7 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t8 = Fe.tools(); t8.dckrav = (t8.dckrav || []).map(function (x) { return x.id === kp.id ? kp : x; }); Fe.saveTools(t8); draw(); }); return; }
     if ((b = t.closest('[data-drdel]'))) { var did = b.dataset.drdel, allK = JSON.parse(JSON.stringify(Fe.tools().dckrav || [])); var t9 = Fe.tools(); t9.dckrav = (t9.dckrav || []).filter(function (x) { return x.id !== did; }); Fe.saveTools(t9); rback();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dr-deleted', 'Requirements deleted')), function () { var t10 = Fe.tools(); t10.dckrav = allK; Fe.saveTools(t10); draw(); }); return; }
+    if (t.closest('[data-drxbby]')) { var pb = krav(ropen); if (!pb) return; if (rsend) markSent(pb.id, 'xlsx'); var fb = new File([kravXlsxBby(pb)], fileName(pb, 'Dokumentplan', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fb); return; }
     if (t.closest('[data-drxlsx]')) { var px = krav(ropen); if (!px) return; if (rsend) markSent(px.id, 'xlsx'); var fx = new File([kravXlsx(px)], fileName(px, 'Dokumentkrav', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fx); return; }
     if (t.closest('[data-drstart]')) { var ps = krav(ropen); if (!ps) return; var nid = uid(), tt2 = Fe.tools(), had = (tt2.dctl || []).filter(function (x) { return x && x.krav === ps.id; })[0];
       if (had) {   /* started before: open that one and add what is new in the requirements (JP 13:05 – a second tap made a second project) */

@@ -559,6 +559,7 @@ window.DC_NB = {
 "ui.dx-ren-zip": "Filer med nye navn",
 "ui.dx-send": "Send til entreprenør",
 "ui.dx-send-again": "Send på nytt",
+"ui.dx-send-bby": "Excel – som Boligbyggs vedlegg 7",
 "ui.dx-send-h": "Send kravene til entreprenøren",
 "ui.dx-send-help": "Lages på denne enheten og deles herfra (e-post, Teams …) – ingenting sendes fra serveren. Excel-filen er satt opp som en dokumentplan: entreprenøren fyller inn planlagte navn, og du sjekker den med Sjekk en dokumentplan eller importerer den i Mottak.",
 "ui.dx-send-pdf": "PDF – kravene",

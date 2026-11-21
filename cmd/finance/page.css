@@ -699,3 +699,17 @@
 .mn-src { font-size: 10.5px; }
 .mn-key { font-size: 12.5px; margin: 6px 2px 0; }
 .mn-key small { opacity: .8; }
+/* Spending categories sheet (2026-11-21) */
+.fcx-list { list-style: none; margin: 8px 0 14px; padding: 0; display: grid; gap: 6px; }
+.fcx-row { display: flex; align-items: center; gap: 8px; }
+.fcx-name { flex: 1; min-width: 0; }
+.fcx-dot { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: inline-grid; place-items: center; background: var(--c); color: #fff; }
+.fcx-own { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 0 6px 38px; }
+.fcx-sw { display: flex; flex-wrap: wrap; gap: 6px; }
+.fcx-c { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; background: var(--c); padding: 0; }
+.fcx-c[aria-pressed="true"] { border-color: var(--text, #fff); box-shadow: 0 0 0 2px var(--c); }
+.fcx-delbox { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(var(--danger-rgb), .08); }
+.fcx-add { display: grid; gap: 8px; padding-top: 6px; border-top: 1px solid rgba(var(--ink-rgb), .1); }
+.fcx-addr { display: flex; align-items: center; gap: 8px; }
+.fcx-addr input { flex: 1; min-width: 0; }
+.im-h3 { margin: 6px 0 0; font-size: var(--fs-m, 15px); }

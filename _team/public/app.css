@@ -271,3 +271,4 @@ html.t-modal { overflow: hidden; }
 .t-wsteps li > svg, .t-wsteps li > i { flex: none; width: 20px; height: 20px; margin-top: 2px; color: var(--acc); }   /* an svg with no size filled the card (seen live 2026-11-20) */
 .t-wsteps span { display: flex; flex-direction: column; }
 .t-wsteps small { color: var(--muted, #8a94a3); }
+.t-late { color: var(--bad); font-weight: 600; margin: 4px 0 0; }

@@ -17,7 +17,7 @@
   function at(key, hh, mm) { var p = String(key).split('-'); return new Date(+p[0], p[1] - 1, +p[2], hh, mm || 0).getTime(); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
-  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, summary: true, house: true, people: true, timer: true, commute: false, morning: true }, detail: 'private' };
+  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, summary: true, monthly: true, house: true, people: true, timer: true, commute: false, morning: true }, detail: 'private' };
   function prefs() { var p = readJSON(KEY, {}); var o = Object.assign({}, DEF, p); o.k = Object.assign({}, DEF.k, p.k || {}); return o; }
   function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
   function devId() { var p = prefs(); if (!p.id) { p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save(p); } return p.id; }
@@ -151,6 +151,25 @@
       if (wo != null) bits.push(I18N.k(wo === 1 ? 'ui.sum-wo1' : 'ui.sum-wo', wo === 1 ? '1 workout' : '{n} workouts', { n: wo }));
       bits.push(I18N.k(ahead === 1 ? 'ui.sum-ahead1' : 'ui.sum-ahead', ahead === 1 ? '1 event next week' : '{n} events next week', { n: ahead }));
       add('summary:' + suK, at(suK, 19), I18N.k('ui.sum-title', 'Your week'), full ? bits.join(' · ') : I18N.k('ui.sum-private', 'Your week in short – open the dashboard'), '/cmd/#c=brief');
+    }
+    /* your month in money (JP 2026-11-21): the 1st at 09:00 – what last month cost against the month before, the category that
+       changed most, and how far the savings goal has come. Worked out on the device; the private setting shows no numbers. */
+    if (p.k.monthly !== false && on('finance', true)) {
+      try {
+        var m1 = new Date(); m1 = new Date(m1.getFullYear(), m1.getMonth() + 1, 1); var m1K = dkey(m1);
+        var mk = function (dt, n) { var x = new Date(dt.getFullYear(), dt.getMonth() + n, 1); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0'); };
+        var lm = mk(m1, -1), pm = mk(m1, -2), byC = function (ym) { var o = { t: 0 }; (d.expenses || []).forEach(function (e) { if (e && String(e.date).slice(0, 7) === ym) { var a = +e.amount || 0; o.t += a; o[e.cat || 'other'] = (o[e.cat || 'other'] || 0) + a; } }); return o; };
+        var A = byC(lm), B = byC(pm);
+        if (A.t > 0) {
+          var mb = [I18N.k('ui.msum-spent', '{m}: {a}', { m: new Date(lm + '-15').toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { month: 'long' }), a: kr(A.t) })];
+          if (B.t > 0) { var dp = Math.round((A.t - B.t) / B.t * 100); mb.push(dp === 0 ? I18N.k('ui.msum-same', 'same as the month before') : I18N.k(dp > 0 ? 'ui.msum-up' : 'ui.msum-down', dp > 0 ? '{p} % more than the month before' : '{p} % less than the month before', { p: Math.abs(dp) })); }
+          var big = null; Object.keys(A).concat(Object.keys(B)).forEach(function (c) { if (c === 't') return; var dc = (A[c] || 0) - (B[c] || 0); if (!big || Math.abs(dc) > Math.abs(big[1])) big = [c, dc]; });
+          if (big && B.t > 0 && Math.abs(big[1]) >= 500) { var cn = window.FinCats && window.FinCats.name ? window.FinCats.name(big[0]) : big[0]; mb.push(I18N.k(big[1] > 0 ? 'ui.msum-cat-up' : 'ui.msum-cat-down', big[1] > 0 ? '{c} +{a}' : '{c} −{a}', { c: cn, a: kr(Math.abs(big[1])) })); }
+          var wi0 = ((Fe && Fe.tools && Fe.tools().whatif) || [])[0];
+          if (wi0 && +wi0.target > 0 && window.Accts) { var sv = window.Accts.list(d).filter(function (a) { return (a.kind === 'savings' || a.kind === 'fund') && a.bal != null && a.nw; }).reduce(function (a, x) { return a + x.bal; }, 0); if (sv > 0) mb.push(I18N.k('ui.msum-goal', 'savings goal {p} %', { p: Math.min(100, Math.round(sv / wi0.target * 100)) })); }
+          add('monthly:' + lm, at(m1K, 9), I18N.k('ui.msum-title', 'Your month in money'), full ? mb.join(' · ') : I18N.k('ui.msum-private', 'Last month in short – open Finances'), '/cmd/finance/#c=flow');
+        }
+      } catch (e) {}
     }
     /* document deadlines (JP 23:46): a week before and on the day, 08:00, while documents are still missing or not approved */
     if (Fe && Fe.list) (Fe.list('dctl') || []).forEach(function (pj) {
