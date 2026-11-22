@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -40,5 +41,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                                           sessionRole: connectingSceneSession.role)
         config.delegateClass = SceneDelegate.self
         return config
+    }
+}
+
+/* Pages that aren't ours (the Cloudflare Access sign-in) are made for a normal browser and slide under the notch in the
+   app. On any host other than jplundberg.com this pads the page by the phone's safe area (2026-11-22). Our own pages
+   already do that themselves (viewport-fit=cover + env(safe-area-inset-*)). Used from Main.storyboard. */
+class MainViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        let js = """
+        (function () {
+          if (/(^|\\.)jplundberg\\.com$/.test(location.hostname)) return;
+          var m = document.querySelector('meta[name=viewport]');
+          if (!m) { m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width,initial-scale=1'; document.head.appendChild(m); }
+          if (!/viewport-fit/.test(m.content)) m.content += ',viewport-fit=cover';
+          var s = document.createElement('style');
+          s.textContent = 'html{padding-top:env(safe-area-inset-top)!important;padding-bottom:env(safe-area-inset-bottom)!important;box-sizing:border-box}';
+          document.head.appendChild(s);
+        })();
+        """
+        webView?.configuration.userContentController.addUserScript(WKUserScript(source: js, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
     }
 }
