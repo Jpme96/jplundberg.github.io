@@ -45,6 +45,10 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => window.__L.appUrlOpen({ url: 'jplcmd://cmd/food/#shop' }));
   await sl(2500);
   check(/\/cmd\/food\/$/.test(await p.evaluate(() => location.pathname)), 'jplcmd://cmd/food/ opens Food');
+  /* the app's WebKit has no "Safari" in its name: page changes must still take Safari's plain path (JP: "very laggy") */
+  await p.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 cmdapp/1');
+  await go(p, '', 2500);
+  check(await p.evaluate(() => window.SoftNav && window.SoftNav.webkit === true), 'the iPhone app gets Safari’s plain page changes, not the view-transition glide');
   check(!p.errs.length, 'no errors ' + p.errs.join(' | '));
   await b.close(); done();
 })();

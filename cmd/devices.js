@@ -15,7 +15,7 @@
   function guess() {
     var u = navigator.userAgent, p = /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows PC' : /Linux/.test(u) ? 'Linux' : 'Device';
     var b = /Edg\//.test(u) ? 'Edge' : /Firefox\//.test(u) ? 'Firefox' : /CriOS|Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : '';
-    var app = matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'app' : b;
+    var app = /cmdapp\/|homeapp\//.test(u) ? 'iPhone app' : matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'app' : b;
     return p + (app ? ' · ' + app : '');
   }
   function name() { return rs(NAME_KEY) || guess(); }

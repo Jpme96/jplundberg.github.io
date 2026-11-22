@@ -137,7 +137,9 @@
   function getHtml(u) { var k = u.pathname; return htmlCache[k] ? Promise.resolve(htmlCache[k]) : fetch(u.pathname, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) { htmlCache[k] = t; return t; }); }
   function srcOf(doc, re) { var s = [].filter.call(doc.querySelectorAll('script[src]'), function (x) { return re.test(x.getAttribute('src')); })[0]; return s ? new URL(s.getAttribute('src'), s.ownerDocument === document ? location.href : base).href : ''; }
   var base = location.href, busy = false, next = null, HEAD = '', stage = '', vtOn = false;
-  var SAFARI = /safari/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent);
+  /* Apple's WebKit: Safari, the home-screen app and the iPhone apps (_app/ – their WebKit has no "Safari" in its name,
+     so until 2026-11-22 they got the view-transition glide that stutters there; JP: "very laggy") */
+  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI;
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
     /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
