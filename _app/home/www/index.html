@@ -3,4 +3,4 @@
 b{display:block;font-size:20px;margin-bottom:8px}p{color:#9aa3ab;margin:0 0 22px}button{font:inherit;background:#14b8a6;color:#04201c;border:0;border-radius:12px;padding:12px 22px}</style>
 <div><b id="t">No connection</b><p id="s">The app opens your dashboard from the internet the first time. Check the network and try again.</p><button id="r">Try again</button></div>
 <script>if((navigator.language||'').slice(0,2)==='nb'||(navigator.language||'').slice(0,2)==='no'){t.textContent='Ingen forbindelse';s.textContent='Appen åpner dashbordet fra nettet første gang. Sjekk nettet og prøv igjen.';r.textContent='Prøv igjen'}
-r.onclick=function(){location.replace(document.referrer||'/')}</script></html>
+var U='https://jplundberg.com/cmd/home/';r.onclick=function(){r.disabled=true;location.replace(U)};addEventListener('online',function(){location.replace(U)})</script></html>
