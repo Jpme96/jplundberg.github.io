@@ -15,5 +15,10 @@
     "contentInset": "never",
     "limitsNavigationsToAppBoundDomains": true
   },
-  "backgroundColor": "#0e0f10"
+  "backgroundColor": "#0e0f10",
+  "plugins": {
+    "Keyboard": {
+      "resize": "none"
+    }
+  }
 }

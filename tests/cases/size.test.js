@@ -104,7 +104,8 @@ const BUDGET_KB = { total: 1718 };   /* 2026-11-22: native.js (the iPhone app he
 /* +2 kB on the Travel page (2026-11-22, JP: passport lines and confirmations): the loader and the fields for number, name and the scan */
 /* 2026-11-22: life sections in calendar, reminders, search and ⌘K, evening wrap-up, rain push, leave-now (Entur), Siri say=, birthday greeting (~20 kB) */
 /* 2026-11-22: native.js (the iPhone app helper) and on-phone reminders in notify.js (~3 kB) */
-const PAGE_KB = { 'index.html': 1443, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1718, 'food/index.html': 1378, 'goals/index.html': 1306, 'habits/index.html': 1352, 'house/index.html': 1650, 'papers/index.html': 1325, 'people/index.html': 1376, 'travel/index.html': 1432, 'wish/index.html': 1390, 'work/index.html': 1461 };
+/* 2026-11-22: hide the keyboard's form toolbar in the iPhone app (native.js, <1 kB) */
+const PAGE_KB = { 'index.html': 1444, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1718, 'food/index.html': 1378, 'goals/index.html': 1307, 'habits/index.html': 1352, 'house/index.html': 1650, 'papers/index.html': 1326, 'people/index.html': 1376, 'travel/index.html': 1432, 'wish/index.html': 1390, 'work/index.html': 1461 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

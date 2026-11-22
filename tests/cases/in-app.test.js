@@ -16,12 +16,14 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
         cancel: o => { window.__cancel += o.notifications.length; pend.length = 0; return Promise.resolve(); },
         schedule: o => { o.notifications.forEach(n => { pend.push(n); window.__sched.push(n); }); return Promise.resolve(); },
         addListener: (n, f) => { window.__L['ln:' + n] = f; return Promise.resolve({ remove() {} }); } },
+      Keyboard: { setAccessoryBarVisible: o => { window.__bar = o.isVisible; return Promise.resolve(); } },
       App: { addListener: (n, f) => { window.__L[n] = f; return Promise.resolve({ remove() {} }); }, getLaunchUrl: () => Promise.resolve({}) } } };
   });
   await go(p, '', 2500);
   const r = await p.evaluate(() => ({ on: Native.on, app: Native.app, cls: document.documentElement.classList.contains('in-app'), url: !!window.__L.appUrlOpen }));
   check(r.on && r.app === 'cmd' && r.cls, 'in the app: Native.on, the cmd app, html.in-app');
   check(r.url, 'listens for app links');
+  check(await p.evaluate(() => window.__bar) === false, 'hides the form toolbar above the keyboard');
   /* reminders on the phone, with titles */
   await p.evaluate(() => { const pad = n => String(n).padStart(2, '0'), d = new Date(Date.now() + 2 * 864e5), k = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     localStorage.setItem('dash.todos', JSON.stringify([{ id: 'td-made-up', text: 'Made-up task for the app', due: k }]));
