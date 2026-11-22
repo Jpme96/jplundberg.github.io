@@ -22,10 +22,10 @@ const { open, go, sl, until } = require('../lib/browser'); const { check, done }
   check(await p.evaluate(() => getComputedStyle(document.querySelector('.nt-ov')).position === 'fixed'), 'the popup floats over the page');
   /* remove one, then clear the rest of "Earlier"; removed ones stay gone after reopening (JP 2026-11-20) */
   const del = await p.evaluate(async () => {
-    const ov = document.querySelector('.nt-ov'), n0 = ov.querySelectorAll('.nt-item').length;
+    const ov = document.querySelector('.nt-ov'), n0 = ov.querySelectorAll('.nt-item').length; const pl = () => [...ov.querySelectorAll('.nt-item')].filter(x => /plumber/.test(x.textContent)).length, p0 = pl();
     const it = [...ov.querySelectorAll('.nt-item')].find(x => /plumber/.test(x.textContent)); it.querySelector('[data-ntdel]').click();
     await new Promise(r => setTimeout(r, 100));
-    const still = !!document.querySelector('.nt-ov'), n1 = ov.querySelectorAll('.nt-item').length, plumber = [...ov.querySelectorAll('.nt-row b')].some(x => /plumber/.test(x.textContent));
+    const still = !!document.querySelector('.nt-ov'), n1 = ov.querySelectorAll('.nt-item').length, plumber = pl() !== p0 - 1;   /* the evening wrap-up can name the plumber too (2026-11-22): exactly one fewer */
     return { still, n0, n1, plumber };
   });
   check(del.still && del.n1 === del.n0 - 1 && !del.plumber, 'the × removes one and the popup stays open ' + JSON.stringify(del));
