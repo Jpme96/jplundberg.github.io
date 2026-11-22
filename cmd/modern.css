@@ -221,6 +221,13 @@ html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px;
   .modern .tabbar .tb-pill { border-radius: 19px; background: var(--accent); }
   .modern .tabbar a[aria-current="page"], .modern .tabbar a.going { color: var(--on-accent); }
   .modern .tabbar:has(a.going) a[aria-current="page"] { color: var(--muted); }
+  /* the tab you tap takes its name and width at once, while the highlight slides there (2026-11-22, JP: the menu
+     "very laggy" – the highlight arrived icon-sized and jumped wider when the page came) */
+  .modern .tabbar a { transition: width .26s cubic-bezier(.3, .7, .2, 1), color .25s, transform .15s var(--ease-ios); }
+  .modern .tabbar a.going { width: 112px; }
+  .modern .tabbar a.going > span:last-child { display: inline; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
+  .modern .tabbar:has(a.going) a[aria-current="page"]:not(.going) { width: 50px; }
+  .modern .tabbar:has(a.going) a[aria-current="page"]:not(.going) > span:last-child { display: none; }
 }
 
 /* ---------- home: the hero instead of the big clock ---------- */

@@ -1111,6 +1111,7 @@ body.st-open { overflow: hidden; }
   transition: color .25s, transform .15s var(--ease-ios);
 }
 .tabbar a span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tabbar a .tb-pill { max-width: none; overflow: visible; }   /* the highlight sits in the current tab but slides to (and takes the width of) another */
 .tabbar a i { font-size: 19px; line-height: 1; }
 .tabbar a[aria-current="page"], .tabbar a.going { color: var(--accent); }
 .tabbar:has(a.going) a[aria-current="page"] { color: var(--muted); }

@@ -112,10 +112,15 @@
      while the next page loads – so the menu never feels like it's waiting. */
   function slideTo(a) {
     var pill = nav.querySelector('.tb-pill'), home = pill && pill.parentNode; if (!pill) return;
+    var tabs = [].slice.call(nav.querySelectorAll('a')), mark = function () { tabs.forEach(function (x) { x.classList.toggle('going', x === a); }); };
+    /* where the tab will be once it has its name (phone: the tapped tab widens, the current one narrows – modern.css):
+       measured with the tabs' own slide switched off, then put back so they slide there together with the highlight */
+    tabs.forEach(function (x) { x.style.transition = 'none'; }); mark();
     var h = home.getBoundingClientRect(), r = a.getBoundingClientRect();
+    tabs.forEach(function (x) { x.classList.remove('going'); }); void nav.offsetWidth;
+    tabs.forEach(function (x) { x.style.transition = ''; }); void nav.offsetWidth; mark();
     pill.style.transition = 'transform .26s cubic-bezier(.3,.7,.2,1), width .26s cubic-bezier(.3,.7,.2,1)';
     pill.style.transform = 'translateX(' + (r.left - h.left) + 'px)'; pill.style.width = r.width + 'px';
-    nav.querySelectorAll('a').forEach(function (x) { x.classList.toggle('going', x === a); });
   }
   function unslide() { var pill = nav.querySelector('.tb-pill'); if (pill) { pill.style.transform = ''; pill.style.width = ''; } nav.querySelectorAll('a.going').forEach(function (x) { x.classList.remove('going'); }); }
   var pressed = null;
