@@ -35,7 +35,7 @@ to TestFlight – that's what the GitHub workflow `.github/workflows/ios.yml` do
 
 ## TestFlight (both of you)
 1. App Store Connect → Apps → + → New App, once per app: name, the bundle id above, SKU = the bundle id.
-2. Users and Access → Integrations → App Store Connect API → a key with the App Manager role. Put its id, the issuer id
+2. Users and Access → Integrations → App Store Connect API → a key with the **Admin** role (App Manager can't use Apple's cloud signing). Put its id, the issuer id
    and the `.p8` text in the repo's Actions secrets (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`) and the team id in
    `APPLE_TEAM_ID`. Never in the repo or the chat.
 3. Actions → "iPhone apps" → Run. Then TestFlight → Internal testing: add yourself and Iago (he needs to be a user in

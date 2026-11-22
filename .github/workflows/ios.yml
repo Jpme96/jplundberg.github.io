@@ -2,7 +2,7 @@
 # Runs by hand (Actions → "iPhone apps" → Run) and when something in _app/ changes on main. Changes to cmd itself
 # need no new app version – the apps open the live pages.
 # Needs these repository secrets (Settings → Secrets and variables → Actions) – never in the repo or the chat:
-#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8  – an App Store Connect API key (Users and Access → Integrations, role App Manager)
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8  – an App Store Connect API key (Users and Access → Integrations, role Admin – App Manager can't cloud-sign)
 #   APPLE_TEAM_ID                          – the 10-character team id (developer.apple.com → Membership)
 # Without them the job says so and stops (green), so nothing breaks before the Apple account is ready.
 name: iPhone apps
