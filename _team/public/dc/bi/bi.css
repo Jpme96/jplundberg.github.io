@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1231 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?c7fd3a000d") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1233 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?2505440b64") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -1028,6 +1028,8 @@
 .bi-router::before{content:"\f6ec"}
 .bi-router-fill::before{content:"\f6eb"}
 .bi-rulers::before{content:"\f523"}
+.bi-safe::before{content:"\f65a"}
+.bi-safe-fill::before{content:"\f651"}
 .bi-save::before{content:"\f525"}
 .bi-save-fill::before{content:"\f524"}
 .bi-scissors::before{content:"\f528"}

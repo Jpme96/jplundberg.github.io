@@ -40,7 +40,7 @@
     if (on('ready')) {
       var ex = list('ready').filter(function (x) { return isKey(x.exp) && days(t, x.exp) <= 30; });
       if (ex.length) add(58, 'box2-heart', 'var(--warn)', ex.length === 1 ? K('ui.lp-ready-exp1', '{n} in your emergency kit runs out soon', { n: ex[0].name }) : K('ui.lp-ready-exp', '{n} things in your emergency kit run out soon', { n: ex.length }),
-        ex.slice(0, 3).map(function (x) { return x.name; }).join(', '), '/cmd/homelife/#lp-ready');
+        ex.slice(0, 3).map(function (x) { return x.name; }).join(', '), '/cmd/house/#lp-ready');
     }
     if (on('ladmin')) list('ladmin').forEach(function (x) {
       if (!/^\d{2}-\d{2}$/.test(x.md || '') || +x.doneY === yr) return;

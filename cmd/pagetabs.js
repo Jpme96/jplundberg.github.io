@@ -27,17 +27,17 @@
       /* a 4th value: the tab only shows while that feature (or one of a list) is on · Docs holds the FDV binder and Claims */
       /* a 5th value (true): only while you look at the home you live in now (not an earlier one – house-homes.js) */
       tabs: [['shared', I18N.k('ui.shared', 'Shared'), 'people', null, true], ['upkeep', I18N.k('ui.upkeep', 'Upkeep'), 'tools', null, true], ['energy', I18N.k('ui.energy', 'Energy'), 'lightning-charge', null, true], ['things', I18N.k('ui.things', 'Things'), 'box-seam', null, true],
-        ['projects', I18N.k('ui.projects', 'Projects'), 'hammer', null], ['docs', I18N.k('ui.docs', 'Docs'), 'journal-bookmark', ['hdocs', 'hclaim']], ['history', I18N.k('ui.history', 'History'), 'clock-history']],
+        ['projects', I18N.k('ui.projects', 'Projects'), 'hammer', null], ['docs', I18N.k('ui.docs', 'Docs'), 'journal-bookmark', ['hdocs', 'hclaim']], ['safe', I18N.k('ui.tab-safe', 'Safety & neighbours'), 'shield-check', ['ready', 'hood'], true], ['history', I18N.k('ui.history', 'History'), 'clock-history']],
       map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hfdvup"]', 'upkeep'], ['[data-tool="hchores"]', 'upkeep'], ['[data-tool="hplants"]', 'upkeep'], ['[data-tool="henergy"]', 'energy'], ['[data-tool="hpros"]', 'projects'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
-        ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
-      feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
+        ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things'], ['[data-tool="lp-ready"]', 'safe'], ['[data-tool="lp-hood"]', 'safe']],
+      feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'], safe: ['ready', 'hood'] }
     },
     /* the life pages (2026-11-21, JP chose Home life · Life admin · Me): a tab shows only while one of its sections is on */
     homelife: {
-      tabs: [['plans', I18N.k('ui.tab-plans', 'Plans'), 'balloon', ['parties', 'moments', 'family']], ['animals', I18N.k('ui.tab-pets-clubs', 'Pets & clubs'), 'heart', ['pets', 'clubs']], ['home', I18N.k('ui.tab-home-safe', 'Home'), 'houses', ['ready', 'hood']]],
-      map: [['[data-tool="lp-parties"]', 'plans'], ['[data-tool="lp-moments"]', 'plans'], ['[data-tool="lp-family"]', 'plans'], ['[data-tool="lp-pets"]', 'animals'], ['[data-tool="lp-clubs"]', 'animals'], ['[data-tool="lp-ready"]', 'home'], ['[data-tool="lp-hood"]', 'home']],
-      feats: { plans: ['parties', 'moments', 'family'], animals: ['pets', 'clubs'], home: ['ready', 'hood'] }
+      tabs: [['plans', I18N.k('ui.tab-plans', 'Plans'), 'balloon', ['parties', 'moments', 'family']], ['animals', I18N.k('ui.tab-pets-clubs', 'Pets & clubs'), 'heart', ['pets', 'clubs']]],
+      map: [['[data-tool="lp-parties"]', 'plans'], ['[data-tool="lp-moments"]', 'plans'], ['[data-tool="lp-family"]', 'plans'], ['[data-tool="lp-pets"]', 'animals'], ['[data-tool="lp-clubs"]', 'animals']],
+      feats: { plans: ['parties', 'moments', 'family'], animals: ['pets', 'clubs'] }
     },
     lifeadmin: {
       tabs: [['yearly', I18N.k('ui.tab-yearly', 'Yearly'), 'clipboard-check', ['ladmin', 'deals']], ['digital', I18N.k('ui.tab-digital', 'Digital'), 'shield-lock', ['digital']], ['climate', I18N.k('ui.tab-climate', 'Climate'), 'globe-europe-africa', ['climate']]],

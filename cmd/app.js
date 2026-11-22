@@ -94,8 +94,8 @@
     ['Health', 'heart-pulse', I18N.k('ui.ftg-health', 'Health'), I18N.k('ui.ftg-health-n', 'Shown on the Health page.')],
     ['Work', 'briefcase', I18N.k('ui.ftg-work', 'Work'), I18N.k('ui.ftg-work-n', 'Turning on any of these adds a Work page to the menu.')],
     ['Travel', 'airplane', I18N.k('ui.ftg-travel', 'Travel'), I18N.k('ui.ftg-travel-n', 'Shown under Trips on the Travel page.')],
-    ['House', 'house-gear', I18N.k('ui.ftg-house', 'House'), ''],
-    ['Home life', 'house-heart', I18N.k('ui.nav-homelife', 'Home life'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
+    ['House', 'house-gear', I18N.k('ui.ftg-house', 'House'), I18N.k('ui.ftg-house-n', 'Shown on the House page.')],
+    ['Home life', 'people-fill', I18N.k('ui.nav-homelife', 'Family'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
     ['Life admin', 'clipboard-check', I18N.k('ui.nav-lifeadmin', 'Life admin'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
     ['Me', 'person-heart', I18N.k('ui.nav-me', 'Me'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')]
   ];

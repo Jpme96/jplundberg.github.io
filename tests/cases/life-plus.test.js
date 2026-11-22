@@ -3,7 +3,7 @@
    minute opens and closes; nothing is shown while a section is off. Made-up data only. */
 const { open, go, sl, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 const IDS = ['ready', 'hood', 'ladmin', 'deals', 'climate', 'parties', 'moments', 'family', 'pets', 'clubs', 'sleep', 'calm', 'media', 'later', 'digital', 'career', 'outdoor'];
-const PAGE = { ready: 'homelife', hood: 'homelife', parties: 'homelife', moments: 'homelife', family: 'homelife', pets: 'homelife', clubs: 'homelife', ladmin: 'lifeadmin', deals: 'lifeadmin', digital: 'lifeadmin', climate: 'lifeadmin', sleep: 'me', calm: 'me', media: 'me', later: 'me', career: 'me', outdoor: 'me' };
+const PAGE = { ready: 'house', hood: 'house', parties: 'homelife', moments: 'homelife', family: 'homelife', pets: 'homelife', clubs: 'homelife', ladmin: 'lifeadmin', deals: 'lifeadmin', digital: 'lifeadmin', climate: 'lifeadmin', sleep: 'me', calm: 'me', media: 'me', later: 'me', career: 'me', outdoor: 'me' };
 (async () => {
   const { b, p } = await open(1280);
   const errs = []; p.on('pageerror', e => errs.push(e.message));
@@ -19,14 +19,14 @@ const PAGE = { ready: 'homelife', hood: 'homelife', parties: 'homelife', moments
     t.outdoor = [{ id: 'ou1', title: 'Made-up hike', date: k(1), done: false }, { id: 'ou2', title: 'Made-up ski', date: k(-10), km: 12, done: true }];
     Features.saveTools(t); }, IDS);
   await sl(800);
-  for (const pg of ['homelife', 'lifeadmin', 'me']) {
+  for (const pg of ['house', 'homelife', 'lifeadmin', 'me']) {
     await go(p, pg + '/?customize', 3000);
     const ids = IDS.filter(i => PAGE[i] === pg);
     const shown = await p.evaluate(ids => ids.map(i => { const el = document.querySelector('[data-tool="lp-' + i + '"]'); return [i, !!el && !el.hidden && el.innerHTML.length > 50]; }), ids);
     check(shown.every(x => x[1]), pg + ': the cards are drawn ' + JSON.stringify(shown));
   }
   /* starting lists */
-  await go(p, 'homelife/?customize', 3000);
+  await go(p, 'house/?customize', 3000);
   await p.evaluate(() => { const n = document.querySelector('[data-lpready-n]'); n.value = '3'; document.querySelector('[data-lpact="readyseed"]').click(); }); await sl(500);
   const rd = await p.evaluate(() => { const l = Features.list('ready'); return { n: l.length, water: (l.find(x => /water|vann/i.test(x.name)) || {}).qty }; });
   check(rd.n >= 12 && rd.water === '60 l', 'Emergency preparedness: the recommended list, water for three people ' + JSON.stringify(rd));
@@ -58,7 +58,7 @@ const PAGE = { ready: 'homelife', hood: 'homelife', parties: 'homelife', moments
   check(/Breathe in|Hold/.test(br2.t) && br2.gone, 'Mind and rest: the breathing minute opens and closes ' + JSON.stringify(br2));
   /* instant page changes: the cards come back on each page and a tick still flips once (no doubled listeners) */
   const nav = async path => { const n0 = await p.evaluate(() => SoftNav.count); await p.evaluate(h => { const a = document.createElement('a'); a.href = h; document.body.appendChild(a); a.click(); a.remove(); }, '/cmd/' + path); await until(p, n => SoftNav.count > n, 15000, n0); await sl(1200); };
-  await nav('homelife/'); await nav('me/'); await nav('homelife/');
+  await nav('house/'); await nav('me/'); await nav('house/');
   const sn = await p.evaluate(async () => { const id = Features.list('ready')[1].id, before = Features.list('ready')[1].have; const b = document.querySelector('[data-lpact="readyhave"][data-lpid="' + id + '"]'); if (!b) return null; b.click(); await new Promise(r => setTimeout(r, 300)); return { before, after: Features.list('ready')[1].have }; });
   check(sn && sn.after === !sn.before, 'after instant page changes the card is there and a tick flips once ' + JSON.stringify(sn));
   /* off again: nothing shown */

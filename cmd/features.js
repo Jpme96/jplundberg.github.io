@@ -41,8 +41,8 @@
     { id: 'recur', group: 'Finances', name: 'Recurring payments', icon: 'arrow-repeat', c: '#11a597', desc: 'Charges that come back every month – add them to the budget in one tap', def: true },
     { id: 'shared', group: 'Finances', name: 'Shared expenses', icon: 'people', c: '#22b35e', desc: 'Split a payment with someone, see who owes what and settle up', def: false },
     /* life sections (2026-11-21, JP: "do everything" – off until switched on; cards from life-plus.page.js) */
-    { id: 'ready', group: 'Home life', name: 'Emergency preparedness', icon: 'box2-heart', c: '#e57a3c', desc: 'The home kit for a week on your own – water, heat, light, medicine – with best-before dates', def: false },
-    { id: 'hood', group: 'Home life', name: 'Neighbourhood', icon: 'houses', c: '#3a8a78', desc: 'Housing association meetings, dugnad days, local events and notes about the neighbours', def: false },
+    { id: 'ready', group: 'House', name: 'Emergency preparedness', icon: 'box2-heart', c: '#e57a3c', desc: 'The home kit for a week on your own – water, heat, light, medicine – with best-before dates', def: false },
+    { id: 'hood', group: 'House', name: 'Neighbourhood', icon: 'houses', c: '#3a8a78', desc: 'Housing association meetings, dugnad days, local events and notes about the neighbours', def: false },
     { id: 'ladmin', group: 'Life admin', name: 'Yearly tasks', icon: 'clipboard-check', c: '#3d85dc', desc: 'The tax return, back-tax, renewals – the yearly paperwork, ticked off each year', def: false },
     { id: 'deals', group: 'Life admin', name: 'Deal checks', icon: 'arrow-left-right', c: '#3d85dc', desc: 'Power, mobile, internet, insurance, the loan rate – when it’s time to compare again', def: false },
     { id: 'climate', group: 'Life admin', name: 'Climate footprint', icon: 'globe-europe-africa', c: '#2f9d62', desc: 'A rough estimate of your footprint from what you spend, and where it weighs most', def: false },
