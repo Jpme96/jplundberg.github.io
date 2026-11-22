@@ -3377,7 +3377,7 @@ I18N.add({
   "ui.ftd-style": ["Your sizes, clothes to replace and things to buy on sale", "Størrelsene dine, klær som må byttes og ting å kjøpe på salg"],
   "ui.lp-last-time": ["Last time", "Sist gang"],
   "ui.nav-overview": ["Overview", "Oversikt"],
-  "ui.tab-safe": ["Safety & neighbours", "Beredskap og naboer"],
+  "ui.tab-safe": ["Safety", "Beredskap"],
   "ui.ftg-house-n": ["Shown on the House page.", "Vises på Hus-siden."],
   "ui.lp-ladmin": ["Yearly tasks", "Årlige oppgaver"],
   "ui.lp-ladmin-add": ["A yearly task", "En årlig oppgave"],
