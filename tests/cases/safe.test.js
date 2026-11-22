@@ -38,7 +38,8 @@ const state = p => p.evaluate(() => ({ bar: !!document.getElementById('safeBar')
 
   /* self-healing page changes: two failures → normal loads on this device */
   /* from now on, every new page refuses to fetch other pages (also the early fetch of the menu pages) */
-  await p.evaluateOnNewDocument(() => { if (sessionStorage.getItem('t.nopage')) { const f = window.fetch; window.fetch = function (u) { if (/^\/cmd\/[a-z]*\/?$/.test(String(u && u.url || u))) return Promise.reject(new Error('test: no page')); return f.apply(this, arguments); }; } });
+  await p.evaluateOnNewDocument(() => { if (sessionStorage.getItem('t.nopage')) { const cm = window.caches && caches.match.bind(caches); if (cm) caches.match = function (r) { if (/^\/cmd\/[a-z]*\/?$/.test(String(r && r.url || r))) return Promise.resolve(undefined); return cm.apply(null, arguments); };   /* and no kept copies either (softnav uses them first since 2026-11-22) */
+    const f = window.fetch; window.fetch = function (u) { if (/^\/cmd\/[a-z]*\/?$/.test(String(u && u.url || u))) return Promise.reject(new Error('test: no page')); return f.apply(this, arguments); }; } });
   await p.evaluate(() => sessionStorage.setItem('t.nopage', '1'));
   await go(p, '', 1500);
   for (let i = 0; i < 2; i++) {

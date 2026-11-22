@@ -134,7 +134,30 @@
   /* ---------- going to a page ---------- */
   var htmlCache = {};
   function page(u) { var x = new URL(u, location.href); return x.origin === location.origin && PAGES.indexOf(x.pathname) > -1 ? x : null; }
-  function getHtml(u) { var k = u.pathname; return htmlCache[k] ? Promise.resolve(htmlCache[k]) : fetch(u.pathname, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) { htmlCache[k] = t; return t; }); }
+  /* pages ready before the tap (2026-11-22, JP: "every page has to load, and then it stutters"): the copy kept on the phone
+     is used at once and a fresh one is fetched behind it; the menu's pages are fetched while you're idle, and a page starts
+     loading the moment a finger touches its link. A newer version found on the way still loads normally once (below). */
+  var htmlAt = {}, htmlBusy = {};
+  function netHtml(k) {
+    if (htmlBusy[k]) return htmlBusy[k];
+    return (htmlBusy[k] = fetch(k, { credentials: 'same-origin' }).then(function (r) { if (!r.ok || r.redirected) throw new Error(r.status); return r.text(); })
+      .then(function (t) { htmlCache[k] = t; htmlAt[k] = Date.now(); delete htmlBusy[k]; return t; }, function (e) { delete htmlBusy[k]; throw e; }));
+  }
+  function stored(k) { return window.caches && caches.match ? caches.match(k).then(function (h) { return h ? h.text() : null; }).catch(function () { return null; }) : Promise.resolve(null); }
+  function getHtml(u) {
+    var k = u.pathname;
+    if (htmlCache[k]) { if (Date.now() - (htmlAt[k] || 0) > 5 * 60e3) netHtml(k).catch(function () {}); return Promise.resolve(htmlCache[k]); }
+    if (htmlBusy[k]) return htmlBusy[k];
+    return stored(k).then(function (t) { if (t && /<html/i.test(t)) { netHtml(k).catch(function () {}); return t; } return netHtml(k); });
+  }
+  function prefetch(k) { if (!on || htmlCache[k] || htmlBusy[k] || PAGES.indexOf(k) < 0 || k === location.pathname) return; netHtml(k).catch(function () {}); }
+  document.addEventListener('pointerdown', function (e) { var a = e.target.closest && e.target.closest('a[href]'); if (!a) return; try { var u = new URL(a.getAttribute('href'), location.href); if (u.origin === location.origin) prefetch(u.pathname); } catch (er) {} }, { passive: true, capture: true });
+  function idle() {
+    var ks = [].map.call([].filter.call(document.querySelectorAll('.tabbar a[href]'), function (a) { return a.offsetWidth > 0; }), function (a) { try { return new URL(a.getAttribute('href'), location.href).pathname; } catch (e) { return ''; } })
+      .filter(function (k, i, all) { return k && all.indexOf(k) === i; });
+    (function one() { var k = ks.shift(); if (!k) return; prefetch(k); sT.call(window, one, 700); })();
+  }
+  if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { sT.call(window, idle, 3000); });
   function keepFresh(path, text) {   /* replaces the page's copy in every cache that has one (the service worker's) */
     if (!window.caches || !caches.keys) return Promise.resolve(0);
     return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.open(k).then(function (c) { return c.match(path).then(function (h) { if (h) return c.put(path, new Response(text, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })).then(function () { return 1; }); return 0; }); }); })); })
@@ -144,7 +167,7 @@
   var base = location.href, busy = false, next = null, HEAD = '', stage = '', vtOn = false;
   /* Apple's WebKit: Safari, the home-screen app and the iPhone apps (_app/ – their WebKit has no "Safari" in its name,
      so until 2026-11-22 they got the view-transition glide that stutters there; JP: "very laggy") */
-  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI; window.SoftNav.keepFresh = keepFresh;
+  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI; window.SoftNav.keepFresh = keepFresh; window.SoftNav.ready = function (k) { return !!htmlCache[k]; };
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
     /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
@@ -156,6 +179,10 @@
     var dog = sT.call(window, function () { if (arrived) return; var why = 'A page change to ' + u.pathname + ' took too long – loaded it normally (stuck at: ' + stage + (vtOn ? ', with the glide' : '') + ')';
       try { sessionStorage.setItem('softnav.err', why); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', why, 'softnav.js'); failed(why); full(); }, 6000);
     getHtml(u).then(function (text) {
+      /* a kept copy from another version: ask the network before deciding it's a new version */
+      if (HEAD && text && srcOf(new DOMParser().parseFromString(text, 'text/html'), /dist\/head\.js/) !== HEAD) return netHtml(u.pathname).catch(function () { return text; });
+      return text;
+    }).then(function (text) {
       mark('sn:html'); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
       /* a new version of the dashboard: load it properly */
