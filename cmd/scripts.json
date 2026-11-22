@@ -240,21 +240,24 @@
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-homelife.js"
     ],
     "lifeadmin/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-lifeadmin.js"
     ],
     "me/index.html": [
       "budget.js",
       "kit.js",
       "tools.js",
       "profile.js",
-      "links.js"
+      "links.js",
+      "scene-me.js"
     ]
   },
   "late": {

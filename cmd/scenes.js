@@ -47,10 +47,12 @@
   function todPose(dflt) { var h = new Date().getHours(); return h >= 5 && h < 11 ? 'morning' : h >= 18 ? 'evening' : (dflt || 'plain'); }
   window.SceneMe = sceneMe; window.SceneTod = todPose;
 
-  var PAGE = (location.pathname.match(/\/cmd\/(people|food|work|habits|finance|travel|wish|goals|papers|calendar)\/$/) || [])[1];
+  var PAGE = (location.pathname.match(/\/cmd\/(people|food|work|habits|finance|travel|wish|goals|papers|calendar|homelife|lifeadmin|me)\/$/) || [])[1];
   if (!PAGE) return;
-  var KEY = { people: 'scPeople', food: 'scFood', work: 'scWork', habits: 'scHealth', finance: 'scFin', travel: 'scTravel', wish: 'scWish', goals: 'scGoals', papers: 'scPapers', calendar: 'scCal' }[PAGE];
-  var FEAT = { people: 'people', food: 'food', work: 'work', habits: 'healthpage', finance: 'finance', travel: 'travel', wish: 'wish', goals: 'goals', papers: 'papers', calendar: 'calendar' }[PAGE];
+  var KEY = { people: 'scPeople', food: 'scFood', work: 'scWork', habits: 'scHealth', finance: 'scFin', travel: 'scTravel', wish: 'scWish', goals: 'scGoals', papers: 'scPapers', calendar: 'scCal', homelife: 'scFamily', lifeadmin: 'scLifeAdmin', me: 'scMePage' }[PAGE];
+  var FEAT = { people: 'people', food: 'food', work: 'work', habits: 'healthpage', finance: 'finance', travel: 'travel', wish: 'wish', goals: 'goals', papers: 'papers', calendar: 'calendar',
+    homelife: ['parties', 'moments', 'family', 'pets', 'clubs'], lifeadmin: ['ladmin', 'deals', 'digital', 'climate'], me: ['mood', 'journal', 'wins', 'wheel', 'sleep', 'calm', 'screen', 'bodycare', 'style', 'media', 'later', 'outdoor', 'hobbies', 'career', 'learning'] }[PAGE];
+  function featOn() { return Array.isArray(FEAT) ? FEAT.some(function (f) { return Fe.on(f); }) : Fe.on(FEAT); }   /* the life pages show while any of their sections is on */
 
   /* ---------------- People ---------------- */
   /* a person at the table in the same style as your avatar: look picked from the name, shirt in the relation colour */
@@ -505,11 +507,39 @@
   }
   /* the drawings the living Journey (scene-travel.js) builds its stage from */
   window.SceneArt = { VEH: VEH, vehicle: vehicle, track: track, kindOf: kindOf, place: placeSvg, stop: stopArt };
-  var MAKE = { wish: wish, goals: goals, papers: papers, calendar: calendar, people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
+  /* ---------------- the life pages (2026-11-22): the pictures are all 2.5D (scene-homelife.js, scene-lifeadmin.js, scene-me.js);
+     here only their facts for the live line and the data the scene uses ---------------- */
+  var K = function (k, e, o) { return window.I18N ? I18N.k(k, e, o) : e; };
+  function todayKey() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function daysTo(k) { return Math.round((new Date(k + 'T12:00') - new Date(todayKey() + 'T12:00')) / 864e5); }
+  function family() {
+    var list = [], t = todayKey(), P = Fe.on('parties') ? Fe.list('parties').filter(function (x) { return x.date && x.date >= t; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }) : [];
+    if (P[0]) { var n = daysTo(P[0].date); list.push({ t: P[0].title + ' · ' + (n === 0 ? K('ui.sc-today', 'today') : n === 1 ? K('ui.sc-tomorrow', 'tomorrow') : K('ui.sc-in-days', 'in {n} days', { n: n })), h: '#lp-parties' }); }
+    var pets = Fe.on('pets') ? Fe.list('pets') : [], LP = window.LifePlus;
+    if (pets.length && LP && LP.petJobs) { var due = 0; pets.forEach(function (p) { LP.petJobs(p).forEach(function (j) { if (j[2] && daysTo(j[2]) <= 7) due++; }); }); if (due) list.push({ t: K('ui.sc-pet-due', '{n} pet jobs this week', { n: due }), h: '#lp-pets' }); }
+    var k0 = pets[0] ? String(pets[0].kind || '').toLowerCase() : '', kind = /katt|cat|kat\b|kitt/.test(k0) ? 'cat' : /kanin|rabbit|bunny|hare/.test(k0) ? 'bunny' : /fugl|bird|undulat|papeg|parrot|budgie/.test(k0) ? 'bird' : 'dog';   /* the animal is free text, English or Norwegian */
+    return { svg: '', label: K('ui.nav-homelife', 'Family'), list: list, empty: K('ui.sc-fam-empty', 'Plan a celebration and it shows here.'), live: { pet: pets.length ? kind : '' } };
+  }
+  function lifeadmin() {
+    var list = [], y = new Date().getFullYear(), L = Fe.on('ladmin') ? Fe.list('ladmin') : [], done = L.filter(function (x) { return +x.doneY === y; }).length;
+    if (L.length) list.push({ t: K('ui.sc-la-done', '{d} of {n} yearly tasks done', { d: done, n: L.length }), h: '#lp-ladmin' });
+    var D = Fe.on('deals') ? Fe.list('deals').filter(function (x) { var LP = window.LifePlus; return LP && LP.nextDue && LP.nextDue(x.last, x.every) <= todayKey(); }) : [];
+    if (D.length) list.push({ t: K('ui.sc-la-deals', '{n} deals to check', { n: D.length }), h: '#lp-deals' });
+    return { svg: '', label: K('ui.nav-lifeadmin', 'Life admin'), list: list, empty: K('ui.sc-la-empty', 'Turn on Yearly tasks and they show here.'), live: { done: done } };
+  }
+  function mePage() {
+    var list = [], t = todayKey(), j = Fe.on('mood') || Fe.on('journal') ? Fe.list('journal').filter(function (x) { return x.date === t; })[0] : null;
+    if (j && +j.mood) list.push({ t: K('ui.sc-me-mood', 'Mood today: {m}/5', { m: +j.mood }), h: '#lp-mood' });
+    var reading = Fe.on('media') ? Fe.list('media').filter(function (x) { return x.status === 'now'; }) : [];
+    if (reading[0]) list.push({ t: K('ui.sc-me-now', 'Now: {t}', { t: reading[0].title }), h: '#lp-media' });
+    var scr = (Fe.tools().screen || {}), free = Fe.on('screen') && Array.isArray(scr.days) && scr.days.indexOf(t) > -1;
+    return { svg: '', label: K('ui.nav-me', 'Me'), list: list, empty: K('ui.sc-me-empty', 'A quiet corner for you.'), live: { phoneFree: free } };
+  }
+  var MAKE = { homelife: family, lifeadmin: lifeadmin, me: mePage, wish: wish, goals: goals, papers: papers, calendar: calendar, people: people, food: food, work: work, habits: health, finance: finance, travel: function () { return travelTab() === 'journey' ? journey() : travel(); } };
   function draw() {
     var hero = document.querySelector('.fp-hero, .tv-hero'); if (!hero) return;
     var box = document.getElementById('scIllu');
-    var ok = on(KEY) && Fe.on(FEAT) && document.documentElement.classList.contains('unlocked');
+    var ok = on(KEY) && featOn() && document.documentElement.classList.contains('unlocked');
     if (!ok) { if (box) box.remove(); hero.classList.remove('has-illu'); if (window.PageLive) PageLive.set([]); return; }
     var s; try { s = MAKE[PAGE](); } catch (e) { console.error(e); s = null; }
     if (!s) { if (box) box.remove(); hero.classList.remove('has-illu'); if (window.PageLive) PageLive.set([]); return; }

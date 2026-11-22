@@ -23,7 +23,7 @@
   var reduce = function () { return root.classList.contains('mo-off') || matchMedia('(prefers-reduced-motion: reduce)').matches; };
 
   /* ---------- settings ---------- */
-  var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, scWish: true, scGoals: true, scPapers: true, scCal: true, scMe: true, avWear: true, avMood: true, play: true, tod: true, wx: 'all', season: true, confetti: true,
+  var DEF = { scPeople: true, scFood: true, scWork: true, scHealth: true, scFin: true, scTravel: true, scWish: true, scGoals: true, scPapers: true, scCal: true, scFamily: true, scLifeAdmin: true, scMePage: true, scMe: true, avWear: true, avMood: true, play: true, tod: true, wx: 'all', season: true, confetti: true,
     flames: true, morning: true, evening: true, badgeHouse: true, badgeBday: true, poster: true, swipe: true, avatar: true, avBadge: true, avSay: 'nomoney' };
   function all() { var s = readJSON('dash.settings', {}) || {}; return Object.assign({}, DEF, s.touch || {}); }
   function on(k) { return !!all()[k]; }
@@ -492,6 +492,7 @@
       row('scTravel', L('Travel', 'Reise'), L('Suitcase, countdown tag and a plane on its way', 'Koffert, nedtellingslapp og et fly på vei')) +
       row('scWish', L('Wishlist', 'Ønskeliste'), L('Wishes float as stars – green when they fit', 'Ønsker svever som stjerner – grønne når de passer')) + row('scGoals', L('Goals', 'Mål'), L('A mountain with a climber for each goal', 'Et fjell med en klatrer for hvert mål')) +
       row('scPapers', L('Papers', 'Papirer'), L('A filing cabinet that opens when something expires', 'Et arkivskap som åpner seg når noe utløper')) + row('scCal', L('Calendar', 'Kalender'), L('Today’s date, the time and today’s plans', 'Dagens dato, klokka og dagens planer')) +
+      row('scFamily', I18N.k('ui.nav-homelife', 'Family'), I18N.k('ui.sc-fam-row', 'A party day at home: the cake, the photos, the pet')) + row('scLifeAdmin', I18N.k('ui.nav-lifeadmin', 'Life admin'), I18N.k('ui.sc-la-row', 'Binders, the wall calendar, the desk and the lamp')) + row('scMePage', I18N.k('ui.nav-me', 'Me'), I18N.k('ui.sc-me-row', 'An evening corner: books, the armchair, the mat')) +
       row('play', L('Play with the pictures', 'Lek med bildene'), L('They tilt as you move, react when you tap, and the avatar follows you with its eyes', 'De vipper når du beveger deg, reagerer når du trykker, og avataren følger deg med øynene')) + '</div>' +
       sub('brightness-alt-high', L('Living details', 'Levende detaljer')) + '<div class="st-group">' +
       row('tod', L('Time of day', 'Tid på døgnet'), L('Lit windows in the evening, sun or moon', 'Lys i vinduene om kvelden, sol eller måne')) +
