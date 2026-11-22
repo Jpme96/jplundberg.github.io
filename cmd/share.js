@@ -795,7 +795,7 @@
   var chatOn = false;
   /* the chat's code (chat.js, ~85 kB) loads when the chat starts, not with every page (2026-11-21, JP: "faster Home");
      build.py writes CHAT_V */
-  var CHAT_V = '78368cce00', chatLoading = null;
+  var CHAT_V = 'f6531a4b3d', chatLoading = null;
   function chatCode() {
     if (window.HomeChat) return Promise.resolve();
     if (!chatLoading) chatLoading = new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = '/cmd/dist/chat.js?v=' + CHAT_V; sc.onload = ok; sc.onerror = function () { chatLoading = null; no(); }; document.head.appendChild(sc); });

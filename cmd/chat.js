@@ -651,6 +651,10 @@
       document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; var v = document.querySelector('.hc-view'); if (v) { v.remove(); C.viewShut = Date.now(); return; } if (B.pop && !B.pop.querySelector('.hc-menu') && !document.querySelector('.hc-gal, .fv-bg')) closePop(); });   /* Escape closes the photo first, then the chat */
       if (window.visualViewport) { visualViewport.addEventListener('resize', fitPop); visualViewport.addEventListener('scroll', fitPop); }
     }
+    /* an instant page change empties the page (softnav.js keeps only the lock screen): put the bubble back, and forget a
+       pop-up that went with the old page, so the chat is there on every page (2026-11-22, JP: "the chat vanishes") */
+    if (!B.btn.isConnected) document.body.appendChild(B.btn);
+    if (B.pop && !B.pop.isConnected) { B.pop = null; B.btn.classList.remove('on'); document.documentElement.classList.remove('hc-lock'); }
     if (o.bottom) document.documentElement.style.setProperty('--hc-bub-b', o.bottom);
     if (o.zoom) document.documentElement.style.setProperty('--hc-zoom', o.zoom);
     B.btn.setAttribute('aria-label', o.label || L('Chat', 'Chat')); B.btn.title = o.label || '';
