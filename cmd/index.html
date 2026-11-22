@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RuQB8XH2eVVLLa1uN3v/2EuC8zdLaIXOKkwH1P5yjbY=' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: https://api.entur.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://archive-api.open-meteo.com https://api.frankfurter.app https://nominatim.openstreetmap.org https://api.github.com https://raw.githubusercontent.com https://www.hvakosterstrommen.no https://data.norges-bank.no https://cdn.jsdelivr.net https://work.jplundberg.com; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wEFNH7WhSyzrk+Fpto7gITfAzpIqEb6IVO3j70rterE=' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: https://api.entur.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://archive-api.open-meteo.com https://api.frankfurter.app https://nominatim.openstreetmap.org https://api.github.com https://raw.githubusercontent.com https://www.hvakosterstrommen.no https://data.norges-bank.no https://cdn.jsdelivr.net https://work.jplundberg.com; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="theme-color" content="#0e0f11">
@@ -50,7 +50,7 @@
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
           habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false) || on('gym', false) || on('rest', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) || on('fdv', false) || on('holiday', false) || on('ptime', false),
-          house: on('house', false), people: on('people', false), food: on('food', false), papers: on('papers', true), wish: on('wish', true), goals: on('goals', true), admin: (s.admin || {}).tab !== false };
+          house: on('house', false), people: on('people', false), food: on('food', false), papers: on('papers', true), wish: on('wish', true), goals: on('goals', true), homelife: on('ready', false) || on('hood', false) || on('parties', false) || on('moments', false) || on('family', false) || on('pets', false) || on('clubs', false), lifeadmin: on('ladmin', false) || on('deals', false) || on('digital', false) || on('climate', false), me: on('sleep', false) || on('calm', false) || on('media', false) || on('later', false) || on('career', false) || on('outdoor', false), admin: (s.admin || {}).tab !== false };
         var nvo = Array.isArray(s.navOff) ? s.navOff : []; Object.keys(tabs).forEach(function (k) { if (!tabs[k] || nvo.indexOf(k) > -1) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
@@ -73,12 +73,12 @@
       });
     })(document.documentElement);
   </script>
-  <link href="styles.css?v=a8a81aac9c" rel="stylesheet">
+  <link href="styles.css?v=2baa48d02f" rel="stylesheet">
   <link href="modern.css?v=0d4933abd3" rel="stylesheet">
   <link href="sidenav.css?v=3f1593c639" rel="stylesheet">
 </head>
 <body>
-  <nav data-t-aria-label="ui.pages" class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span data-t="ui.home">Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span data-t="ui.calendar">Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span data-t="ui.travel">Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span data-t="ui.finances">Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span data-t="ui.health">Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span data-t="ui.work">Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span data-t="ui.house">House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span data-t="ui.people">People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span data-t="ui.food">Food</span></a><a href="/cmd/wish/" data-pg="wish"><i class="bi bi-stars"></i><span data-t="ui.wishlist">Wishlist</span></a><a href="/cmd/goals/" data-pg="goals"><i class="bi bi-bullseye"></i><span data-t="ui.goals">Goals</span></a><a href="/cmd/papers/" data-pg="papers"><i class="bi bi-folder2-open"></i><span data-t="ui.nav-papers">Papers</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
+  <nav data-t-aria-label="ui.pages" class="tabbar" id="tabbar" aria-label="Pages"><a href="/cmd/" data-pg="home" aria-current="page"><span class="tb-pill" aria-hidden="true"></span><i class="bi bi-house-door"></i><span data-t="ui.home">Home</span></a><a href="/cmd/calendar/" data-pg="calendar"><i class="bi bi-calendar3"></i><span data-t="ui.calendar">Calendar</span></a><a href="/cmd/travel/" data-pg="travel"><i class="bi bi-signpost-split"></i><span data-t="ui.travel">Travel</span></a><a href="/cmd/finance/" data-pg="finance"><i class="bi bi-wallet2"></i><span data-t="ui.finances">Finances</span></a><a href="/cmd/habits/" data-pg="habits"><i class="bi bi-heart-pulse"></i><span data-t="ui.health">Health</span></a><a href="/cmd/work/" data-pg="work"><i class="bi bi-briefcase"></i><span data-t="ui.work">Work</span></a><a href="/cmd/house/" data-pg="house"><i class="bi bi-house-gear"></i><span data-t="ui.house">House</span></a><a href="/cmd/people/" data-pg="people"><i class="bi bi-people"></i><span data-t="ui.people">People</span></a><a href="/cmd/food/" data-pg="food"><i class="bi bi-basket"></i><span data-t="ui.food">Food</span></a><a href="/cmd/wish/" data-pg="wish"><i class="bi bi-stars"></i><span data-t="ui.wishlist">Wishlist</span></a><a href="/cmd/goals/" data-pg="goals"><i class="bi bi-bullseye"></i><span data-t="ui.goals">Goals</span></a><a href="/cmd/papers/" data-pg="papers"><i class="bi bi-folder2-open"></i><span data-t="ui.nav-papers">Papers</span></a><a href="/cmd/homelife/" data-pg="homelife"><i class="bi bi-house-heart"></i><span data-t="ui.nav-homelife">Home life</span></a><a href="/cmd/lifeadmin/" data-pg="lifeadmin"><i class="bi bi-clipboard-check"></i><span data-t="ui.nav-lifeadmin">Life admin</span></a><a href="/cmd/me/" data-pg="me"><i class="bi bi-person-heart"></i><span data-t="ui.nav-me">Me</span></a><a href="/cmd/admin/" data-pg="admin"><i class="bi bi-speedometer2"></i><span>Admin</span></a></nav>
   <div class="bg" aria-hidden="true"></div>
 
   <!-- Lock screen -->
@@ -760,9 +760,9 @@
   </div>
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="dist/head.js?v=1b2c2c1807"></script>
+  <script src="dist/head.js?v=d36cdafed0"></script>
   <script src="dist/page-home.js?v=b2f6c5a809"></script>
-  <script src="dist/tail.js?v=f4a18cbc32"></script>
+  <script src="dist/tail.js?v=8534f1a627"></script>
   <!-- /scripts -->
 </body>
 </html>

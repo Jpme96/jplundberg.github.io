@@ -3,20 +3,20 @@
 (function () {
   "use strict";
   var path = location.pathname.replace(/index\.html$/, '');
-  var base = path.replace(/(finance|habits|travel|calendar|work|house|people|food|wish|goals|papers|admin)\/$/, '');          // the /cmd/ folder
-  var page = (path.match(/(finance|habits|travel|calendar|work|house|people|food|wish|goals|papers|admin)\/$/) || [, 'home'])[1];
+  var base = path.replace(/(finance|habits|travel|calendar|work|house|people|food|wish|goals|papers|homelife|lifeadmin|me|admin)\/$/, '');          // the /cmd/ folder
+  var page = (path.match(/(finance|habits|travel|calendar|work|house|people|food|wish|goals|papers|homelife|lifeadmin|me|admin)\/$/) || [, 'home'])[1];
   var Fe = window.Features;
   function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   /* The menu is written into every page (so it's there from the very first frame and the
      highlight can glide between pages). Here it only follows Settings → Features. */
-  var SHOWS = { calendar: ['calendar'], travel: ['travel', 'bucket'], finance: ['finance', 'subs', 'warranty'], habits: ['healthpage'], work: ['work'], house: ['house'], people: ['people'], food: ['food'], wish: ['wish'], goals: ['goals'], papers: ['papers'] };
+  var SHOWS = { calendar: ['calendar'], travel: ['travel', 'bucket'], finance: ['finance', 'subs', 'warranty'], habits: ['healthpage'], work: ['work'], house: ['house'], people: ['people'], food: ['food'], wish: ['wish'], goals: ['goals'], papers: ['papers'], homelife: ['ready', 'hood', 'parties', 'moments', 'family', 'pets', 'clubs'], lifeadmin: ['ladmin', 'deals', 'digital', 'climate'], me: ['sleep', 'calm', 'media', 'later', 'career', 'outdoor'] };
   var nav = document.getElementById('tabbar');
   /* a page you switched off in Settings → Menu & pages stays out of the menu, its features keep working elsewhere */
   function sets() { try { return JSON.parse(localStorage.getItem('dash.settings')) || {}; } catch (e) { return {}; } }
   function saveSets(fn) { var st = sets(); fn(st); try { localStorage.setItem('dash.settings', JSON.stringify(st)); } catch (e) {} window.dispatchEvent(new Event('dash:local')); }
   function navOff() { var o = sets().navOff; return Array.isArray(o) ? o : []; }
   /* switching a page on whose features are all off turns on its main one */
-  var MAIN = { calendar: 'calendar', travel: 'travel', finance: 'finance', habits: 'habits', work: 'flex', house: 'house', people: 'people', food: 'food', wish: 'wish', goals: 'goals', papers: 'papers' };
+  var MAIN = { calendar: 'calendar', travel: 'travel', finance: 'finance', habits: 'habits', work: 'flex', house: 'house', people: 'people', food: 'food', wish: 'wish', goals: 'goals', papers: 'papers', homelife: 'parties', lifeadmin: 'ladmin', me: 'sleep' };
   function pageOn(k) { if (k === 'admin') return sets().admin ? sets().admin.tab !== false : true; return !!(Fe && SHOWS[k] && SHOWS[k].some(Fe.on)) && navOff().indexOf(k) < 0; }
   function draw() {
     if (!Fe) return;
@@ -34,7 +34,7 @@
   function navOrder() { try { var o = (JSON.parse(localStorage.getItem('dash.settings')) || {}).navOrder; return Array.isArray(o) ? o : null; } catch (e) { return null; } }
   function pages() { return Array.prototype.map.call(nav ? nav.querySelectorAll('a[data-pg]') : [], function (a) { return a.dataset.pg; }).filter(function (k) { return k !== 'home'; }); }
   function sortedPages() {
-    var o = navOrder() || [], def = ['calendar', 'travel', 'finance', 'habits', 'work', 'house', 'people', 'food', 'wish', 'goals', 'papers', 'admin'];
+    var o = navOrder() || [], def = ['calendar', 'travel', 'finance', 'habits', 'work', 'house', 'people', 'food', 'wish', 'goals', 'papers', 'homelife', 'lifeadmin', 'me', 'admin'];
     return pages().sort(function (a, b) { var ia = o.indexOf(a), ib = o.indexOf(b); return (ia < 0 ? 50 + def.indexOf(a) : ia) - (ib < 0 ? 50 + def.indexOf(b) : ib); });
   }
   function applyOrder() {

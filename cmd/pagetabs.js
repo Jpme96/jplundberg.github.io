@@ -8,7 +8,7 @@
   "use strict";
   if (!window.Vault || !window.Features) return;
   var Fe = window.Features, main = document.getElementById('fp');
-  var page = (location.pathname.match(/\/cmd\/(habits|house|work)\//) || [])[1];
+  var page = (location.pathname.match(/\/cmd\/(habits|house|work|homelife|lifeadmin|me)\//) || [])[1];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function pad(n) { return String(n).padStart(2, '0'); }
   function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -17,28 +17,43 @@
 
   var CONF = {
     habits: {
-      tabs: [['today', I18N.k('ui.today', 'Today'), 'sun'], ['training', I18N.k('ui.training', 'Training'), 'heart-pulse'], ['body', I18N.k('ui.tab-body', 'Body'), 'apple'], ['care', I18N.k('ui.tab-care', 'Care'), 'clipboard2-pulse'], ['you', I18N.k('ui.tab-you', 'You'), 'person-heart', ['media', 'later', 'digital']]],
+      tabs: [['today', I18N.k('ui.today', 'Today'), 'sun'], ['training', I18N.k('ui.training', 'Training'), 'heart-pulse'], ['body', I18N.k('ui.tab-body', 'Body'), 'apple'], ['care', I18N.k('ui.tab-care', 'Care'), 'clipboard2-pulse']],
       map: [['#hpTiles', 'today'], ['#hsToday', 'today'], ['.hr-wrap', 'today'], ['#hpHabits', 'today'], ['#hpEmpty', 'today'],
         ['[data-tool="training"]', 'training'], ['[data-tool="gym"]', 'training'], ['[data-tool="rest"]', 'training'], ['[data-tool="hwater"]', 'today'],
-        ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care'], ['[data-tool="journal"]', 'care'],
-        ['[data-tool="lp-sleep"]', 'body'], ['[data-tool="lp-calm"]', 'care'], ['[data-tool="lp-media"]', 'you'], ['[data-tool="lp-later"]', 'you'], ['[data-tool="lp-digital"]', 'you']],
-      feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth', 'sleep'], care: ['health', 'journal', 'calm'], you: ['media', 'later', 'digital'] }
+        ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care'], ['[data-tool="journal"]', 'care']],
+      feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth'], care: ['health', 'journal'] }
     },
     house: {
       /* a 4th value: the tab only shows while that feature (or one of a list) is on · Docs holds the FDV binder and Claims */
       /* a 5th value (true): only while you look at the home you live in now (not an earlier one – house-homes.js) */
       tabs: [['shared', I18N.k('ui.shared', 'Shared'), 'people', null, true], ['upkeep', I18N.k('ui.upkeep', 'Upkeep'), 'tools', null, true], ['energy', I18N.k('ui.energy', 'Energy'), 'lightning-charge', null, true], ['things', I18N.k('ui.things', 'Things'), 'box-seam', null, true],
         ['projects', I18N.k('ui.projects', 'Projects'), 'hammer', null], ['docs', I18N.k('ui.docs', 'Docs'), 'journal-bookmark', ['hdocs', 'hclaim']], ['history', I18N.k('ui.history', 'History'), 'clock-history']],
-      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hfdvup"]', 'upkeep'], ['[data-tool="hchores"]', 'upkeep'], ['[data-tool="hplants"]', 'upkeep'], ['[data-tool="henergy"]', 'energy'], ['[data-tool="hpros"]', 'projects'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'], ['[data-tool="lp-ready"]', 'upkeep'], ['[data-tool="lp-hood"]', 'upkeep'],
+      map: [['#hlTiles', 'upkeep'], ['[data-tool="htake"]', 'shared'], ['[data-tool="hshared"]', 'shared'], ['[data-tool="hproj"]', 'projects'], ['[data-tool="hdocs"]', 'docs'], ['[data-tool="hclaim"]', 'docs'], ['[data-tool="hhist"]', 'history'], ['[data-tool="hmaint"]', 'upkeep'], ['[data-tool="hfdvup"]', 'upkeep'], ['[data-tool="hchores"]', 'upkeep'], ['[data-tool="hplants"]', 'upkeep'], ['[data-tool="henergy"]', 'energy'], ['[data-tool="hpros"]', 'projects'], ['[data-tool="hseason"]', 'upkeep'], ['[data-tool="hbins"]', 'upkeep'],
         ['[data-tool="hmeter"]', 'energy'], ['[data-tool="hpower"]', 'energy'], ['[data-tool="power"]', 'energy'],
         ['[data-tool="hinv"]', 'things'], ['[data-tool="hinfo"]', 'things'], ['[data-tool="warranty"]', 'things']],
       feats: { shared: ['shared'], energy: ['power'], things: ['warranty', 'hdocs', 'hclaim', 'hproj'] }
     },
+    /* the life pages (2026-11-21, JP chose Home life · Life admin · Me): a tab shows only while one of its sections is on */
+    homelife: {
+      tabs: [['plans', I18N.k('ui.tab-plans', 'Plans'), 'balloon', ['parties', 'moments', 'family']], ['animals', I18N.k('ui.tab-pets-clubs', 'Pets & clubs'), 'heart', ['pets', 'clubs']], ['home', I18N.k('ui.tab-home-safe', 'Home'), 'houses', ['ready', 'hood']]],
+      map: [['[data-tool="lp-parties"]', 'plans'], ['[data-tool="lp-moments"]', 'plans'], ['[data-tool="lp-family"]', 'plans'], ['[data-tool="lp-pets"]', 'animals'], ['[data-tool="lp-clubs"]', 'animals'], ['[data-tool="lp-ready"]', 'home'], ['[data-tool="lp-hood"]', 'home']],
+      feats: { plans: ['parties', 'moments', 'family'], animals: ['pets', 'clubs'], home: ['ready', 'hood'] }
+    },
+    lifeadmin: {
+      tabs: [['yearly', I18N.k('ui.tab-yearly', 'Yearly'), 'clipboard-check', ['ladmin', 'deals']], ['digital', I18N.k('ui.tab-digital', 'Digital'), 'shield-lock', ['digital']], ['climate', I18N.k('ui.tab-climate', 'Climate'), 'globe-europe-africa', ['climate']]],
+      map: [['[data-tool="lp-ladmin"]', 'yearly'], ['[data-tool="lp-deals"]', 'yearly'], ['[data-tool="lp-digital"]', 'digital'], ['[data-tool="lp-climate"]', 'climate']],
+      feats: { yearly: ['ladmin', 'deals'], digital: ['digital'], climate: ['climate'] }
+    },
+    me: {
+      tabs: [['rest', I18N.k('ui.tab-rest', 'Rest'), 'moon-stars', ['sleep', 'calm']], ['free', I18N.k('ui.tab-free', 'Free time'), 'collection-play', ['media', 'later', 'outdoor']], ['career', I18N.k('ui.tab-career', 'Career'), 'graph-up-arrow', ['career']]],
+      map: [['[data-tool="lp-sleep"]', 'rest'], ['[data-tool="lp-calm"]', 'rest'], ['[data-tool="lp-media"]', 'free'], ['[data-tool="lp-later"]', 'free'], ['[data-tool="lp-outdoor"]', 'free'], ['[data-tool="lp-career"]', 'career']],
+      feats: { rest: ['sleep', 'calm'], free: ['media', 'later', 'outdoor'], career: ['career'] }
+    },
     work: {
       tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['insp', I18N.k('ui.tab-insp', 'Inspection'), 'building-check', 'fdv'], ['doc', I18N.k('ui.tab-docu', 'Docs'), 'folder-check'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],   /* Inspections: Work → its own menu (JP 2026-11-14) */
       map: [['#hlTiles', 'today'], ['#wkToday', 'today'], ['[data-tool="flex"]', 'today'], ['[data-tool="wkday"]', 'today'], ['[data-tool="ptime"]', 'today'],
-        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocReq', 'doc'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['[data-tool="lp-career"]', 'plan'], ['#wkEmpty', 'today'], ['#wkTeam', 'today']],   /* the Team card only under Today (JP 20:38) */
-      feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday', 'learning', 'career'] }
+        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocReq', 'doc'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today'], ['#wkTeam', 'today']],   /* the Team card only under Today (JP 20:38) */
+      feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday', 'learning'] }
     }
   };
   /* tabs you switched off (Settings → Menu & pages): settings.tabOff = { work: ['insp', …] } – at least one tab always stays */

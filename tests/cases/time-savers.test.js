@@ -20,14 +20,14 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => {
     Features.set('food', true);
     const pad = n => String(n).padStart(2, '0'), k = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    const t = Features.tools(); t.meals = {}; for (let i = 1; i <= 7; i++) { const d = new Date(); d.setDate(d.getDate() - 7 + i); if (i <= 3) t.meals[k(d)] = 'Taco ' + i; } Features.saveTools(t);
+    const t = Features.tools(); t.meals = {}; for (let i = 0; i < 3; i++) { const d = new Date(); d.setDate(d.getDate() - 7 + i); t.meals[k(d)] = 'Taco ' + (i + 1); }   /* from this weekday a week ago – today is always in the week shown, tomorrow isn't on a Sunday */ Features.saveTools(t);
   });
   await go(p, 'food/', 2500);
   const s1 = await p.evaluate(() => { const b = document.querySelector('[data-mlsame]'); return b ? b.textContent : ''; });
   check(/Same as last week \([1-3]\)/.test(s1), 'the dinners offer last week for the empty days ' + s1);
   await p.evaluate(() => document.querySelector('[data-mlsame]').click()); await sl(300);
-  const s2 = await p.evaluate(() => { const pad = n => String(n).padStart(2, '0'), d = new Date(); d.setDate(d.getDate() + 1); return Features.tools().meals[d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())]; });
-  check(s2 === 'Taco 1', 'tomorrow gets what that weekday had a week ago (' + s2 + ')');
+  const s2 = await p.evaluate(() => { const pad = n => String(n).padStart(2, '0'), d = new Date(); return Features.tools().meals[d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())]; });
+  check(s2 === 'Taco 1', 'today gets what this weekday had a week ago (' + s2 + ')');
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
   await done(b);
 })();

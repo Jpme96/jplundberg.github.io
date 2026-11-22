@@ -234,6 +234,27 @@
       "admin.js",
       "writer.js",
       "diag-ui.js"
+    ],
+    "homelife/index.html": [
+      "budget.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "lifeadmin/index.html": [
+      "budget.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
+    ],
+    "me/index.html": [
+      "budget.js",
+      "kit.js",
+      "tools.js",
+      "profile.js",
+      "links.js"
     ]
   },
   "late": {

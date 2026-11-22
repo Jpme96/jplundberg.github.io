@@ -13,7 +13,7 @@ async function bad(p) {
 (async () => {
   const { b, p, b2, q } = await shared(393);
   await p.evaluate(() => { Features.LIST.forEach(f => Features.set(f.id, true)); const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.simple = false; localStorage.setItem('dash.settings', JSON.stringify(s)); });
-  const pages = ['', 'calendar/', 'travel/', 'finance/', 'house/', 'papers/', 'people/', 'habits/', 'goals/', 'work/', 'wish/', 'food/', 'health/'];
+  const pages = ['', 'calendar/', 'travel/', 'finance/', 'house/', 'papers/', 'people/', 'habits/', 'goals/', 'work/', 'wish/', 'food/', 'homelife/', 'lifeadmin/', 'me/', 'health/'];
   for (const pg of pages) {
     p.errs.length = 0; await go(p, pg, 2500);
     const where = [pg || 'home'], words = [].concat(await bad(p));

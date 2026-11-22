@@ -35,7 +35,7 @@
 
   var root = document.documentElement, epoch = 0, running = false;
   function mark(n) { try { performance.mark(n); } catch (e) {} }   /* how long each step took (Settings → Data & sync → problems, and the tests) */
-  var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/finance/', '/cmd/habits/', '/cmd/travel/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/papers/', '/cmd/wish/', '/cmd/goals/', '/cmd/admin/'];
+  var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/finance/', '/cmd/habits/', '/cmd/travel/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/papers/', '/cmd/wish/', '/cmd/goals/', '/cmd/homelife/', '/cmd/lifeadmin/', '/cmd/me/', '/cmd/admin/'];
   var KEEP = ['lock', 'dgNote'];        /* parts of the page that belong to the head (the lock screen, the problem note) */
 
   /* what glides in on Safari: the page's parts, never the bar that holds the side menu – a moving parent drags a

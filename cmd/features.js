@@ -43,7 +43,7 @@
     /* life sections (2026-11-21, JP: "do everything" – off until switched on; cards from life-plus.page.js) */
     { id: 'ready', group: 'Home life', name: 'Emergency preparedness', icon: 'box2-heart', c: '#e57a3c', desc: 'The home kit for a week on your own – water, heat, light, medicine – with best-before dates', def: false },
     { id: 'hood', group: 'Home life', name: 'Neighbourhood', icon: 'houses', c: '#3a8a78', desc: 'Housing association meetings, dugnad days, local events and notes about the neighbours', def: false },
-    { id: 'ladmin', group: 'Finance', name: 'Life admin', icon: 'clipboard-check', c: '#3d85dc', desc: 'The tax return, back-tax, renewals – the yearly paperwork, ticked off each year', def: false },
+    { id: 'ladmin', group: 'Finance', name: 'Yearly tasks', icon: 'clipboard-check', c: '#3d85dc', desc: 'The tax return, back-tax, renewals – the yearly paperwork, ticked off each year', def: false },
     { id: 'deals', group: 'Finance', name: 'Deal checks', icon: 'arrow-left-right', c: '#3d85dc', desc: 'Power, mobile, internet, insurance, the loan rate – when it’s time to compare again', def: false },
     { id: 'climate', group: 'Finance', name: 'Climate footprint', icon: 'globe-europe-africa', c: '#2f9d62', desc: 'A rough estimate of your footprint from what you spend, and where it weighs most', def: false },
     { id: 'parties', group: 'Home life', name: 'Celebrations', icon: 'balloon', c: '#e895b7', desc: 'Birthdays, Christmas and dinners – guests, menu, budget and what’s left to do', def: false },

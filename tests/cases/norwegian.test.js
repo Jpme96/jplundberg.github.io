@@ -6,12 +6,12 @@ const BUDGET = 40;     /* English bits per page, at most */
 /* texts still translated by matching the English sentence, per page (2026-11-13 evening: the Settings rows, card set-ups, tabs and the
    tax/bill texts named by hand and with --props – Finances 154 → 48, House 117 → 23, Travel 65 → 17; later that evening the home hero, page-tab rows, the calendar and tax lists – Finances 37, Calendar 4, Home 25; the tiles keep English on purpose: their saved order is keyed on the label; before that: counted 2026-11-12 night after naming the choices in lists (i18n-keys.py --opts),
    'Move {n} left/right', 'From {n}:00', '{n} people' and the Settings summaries with I18N.k and {n}; lower it as pages move over) */
-const SENT = { '': 31, 'calendar/': 10, 'travel/': 18, 'finance/': 43, 'house/': 24, 'papers/': 17, 'people/': 19, 'habits/': 43, 'goals/': 15, 'work/': 31, 'wish/': 13, 'food/': 21 };   /* the counts + 6: a few texts depend on the day and the time (dinner planned or not, the evening lines) */
+const SENT = { '': 31, 'calendar/': 10, 'travel/': 18, 'finance/': 43, 'house/': 24, 'papers/': 17, 'people/': 19, 'habits/': 43, 'goals/': 15, 'work/': 31, 'wish/': 13, 'food/': 21, 'homelife/': 10, 'lifeadmin/': 10, 'me/': 10 };   /* the counts + 6: a few texts depend on the day and the time (dinner planned or not, the evening lines) */
 (async () => {
   const { b, p } = await open(440);
   await p.evaluate(() => { Features.LIST.forEach(f => Features.set(f.id, true)); const s = JSON.parse(localStorage.getItem('dash.settings') || '{}'); s.lang = 'nb'; s.simple = false; localStorage.setItem('dash.settings', JSON.stringify(s)); });
   let worst = 0, report = [];
-  for (const pg of ['', 'calendar/', 'travel/', 'finance/', 'house/', 'papers/', 'people/', 'habits/', 'goals/', 'work/', 'wish/', 'food/']) {
+  for (const pg of ['', 'calendar/', 'travel/', 'finance/', 'house/', 'papers/', 'people/', 'habits/', 'goals/', 'work/', 'wish/', 'food/', 'homelife/', 'lifeadmin/', 'me/']) {
     await go(p, pg, 2500);
     const en = await p.evaluate(src => { const R = new RegExp(src, 'i'), out = new Set(); const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
       while ((n = w.nextNode())) { const el = n.parentElement, t = n.nodeValue.trim(); if (!t || t.length < 4 || !el || el.closest('script,style,textarea,input,code,.hc-list,[contenteditable]')) continue; if (!el.offsetParent) continue; if (R.test(t) && !/[æøå]/i.test(t)) out.add(t.slice(0, 50)); }

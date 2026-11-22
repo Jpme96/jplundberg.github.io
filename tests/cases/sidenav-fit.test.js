@@ -24,7 +24,9 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
       check(s.n >= 10, tag + ': every page is in the bar (' + s.n + ')');
       check(s.minH >= 30, tag + ': rows stay easy to hit (' + s.minH + ' px)');
       check(!s.over || s.fit2, tag + ': it only scrolls after moving the rows closer and making them smaller ' + JSON.stringify(s));
-      if (h >= 800) check(!s.over, tag + ': every page fits without scrolling ' + JSON.stringify(s));
+      /* 935 px and up (2026-11-22): with every feature on there are 16 pages since Home life · Life admin · Me – at 800 px
+         16 rows of 32 px don't fit, so the list scrolls with its arrows there (checked below) */
+      if (h >= 935) check(!s.over, tag + ': every page fits without scrolling ' + JSON.stringify(s));
       check(!s.over || s.down || s.up, tag + ': when it scrolls, the edge with more fades ' + JSON.stringify(s));
       check(s.over || (!s.up && !s.down), tag + ': no fade when everything fits');
       check(s.curIn, tag + ': the page you are on is in view');
@@ -67,7 +69,7 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   /* buttons the page adds to the bar later leave the list less room – it measures again (they used to make it scroll at
      full spacing on JP's computer) */
   await p.evaluate(() => { localStorage.setItem('dash.sideNav', 'icons'); window.dispatchEvent(new Event('dash:local')); });
-  await p.setViewport({ width: 1280, height: 860 }); await go(p, 'travel/', 1500);
+  await p.setViewport({ width: 1280, height: 1000 }); await go(p, 'travel/', 1500);
   await p.evaluate(() => { const a = document.querySelector('.mbar .mb-acts'); for (let i = 0; i < 2; i++) { const x = document.createElement('button'); x.className = 'icon-btn'; x.type = 'button'; x.textContent = '•'; a.appendChild(x); } });
   await sl(800);
   const late = await state();

@@ -64,7 +64,7 @@
       [S('Check that BankID works on a new phone or card', 'Sjekk at BankID virker på ny telefon eller kort'), '01-15', 14, '']].map(function (x) { return { name: x[0], md: x[1], lead: x[2], notes: x[3], doneY: 0 }; });
   }
   var MDS = function () { var o = []; for (var m = 1; m <= 12; m++) for (var d = 1; d <= 31; d += (d === 1 ? 14 : d === 15 ? 13 : 3)) { if (d > 28 && m === 2) continue; var md = String(m).padStart(2, '0') + '-' + String(Math.min(d, new Date(2026, m, 0).getDate())).padStart(2, '0'); if (!o.some(function (q) { return q[0] === md; })) o.push([md, new Date(2026, m - 1, +md.slice(3)).toLocaleDateString(NB() ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long' })]); } return o; };
-  card('ladmin', { icon: 'clipboard-check', title: K('ui.lp-ladmin', 'Life admin'), addTitle: K('ui.lp-ladmin-add', 'A yearly task'), editTitle: K('ui.lp-edit', 'Edit'),
+  card('ladmin', { icon: 'clipboard-check', title: K('ui.lp-ladmin', 'Yearly tasks'), addTitle: K('ui.lp-ladmin-add', 'A yearly task'), editTitle: K('ui.lp-edit', 'Edit'),
     fields: [{ k: 'name', type: 'title', label: K('ui.lp-what', 'What'), req: true }, { k: 'md', type: 'select', label: K('ui.lp-every-year', 'Every year by'), options: MDS, def: '04-30' }, { k: 'lead', type: 'select', label: K('ui.lp-remind', 'Remind me'), options: [[7, K('ui.lp-1w', 'A week before')], [14, K('ui.lp-2w', 'Two weeks before')], [30, K('ui.lp-1m', 'A month before')]], def: 14 }, { k: 'notes', type: 'textarea', rows: 2, label: K('ui.notes', 'Notes') }],
     beforeSave: function (it) { it.lead = +it.lead || 14; },
     empty: K('ui.lp-ladmin-empty', 'The paperwork that comes back every year – the tax return, back-tax, renewals and checks. Tick it off each year; At a glance reminds you before.'),
