@@ -201,6 +201,20 @@ window.Smart = (function () {
 
     /* explicit: "notat: …", "todo: …", "husk å …" */
     if ((m = raw.match(/^(?:note|notat|noter|notér)\s*[:\-]\s*([\s\S]+)/i))) return { kind: 'note', text: cap(m[1].trim()), strong: true };
+    /* more kinds for quick add (2026-11-22): shopping, dinner, mood, wish, return, gift idea, thank-you, freezer, use it up, flex */
+    var lw = raw.toLowerCase(), dd;
+    if ((m = raw.match(/^(?:handleliste|handle|shopping|shop|kjøp)\s*:\s*(.+)/i)) || (!opts.noShop && (m = raw.match(/^(?:kjøp|buy)\s+(.+)/i)) && !takeDate(' ' + m[1] + ' ', now)) || (opts.shopWords && opts.shopWords.indexOf(lw) > -1 && (m = [raw, raw])))
+      return { kind: 'shop', items: m[1].split(/\s*(?:,|\bog\b|\band\b|\+)\s*/i).map(cap).filter(Boolean), strong: true };
+    if ((m = raw.match(/^(?:middag|dinner)\s*[:\-]?\s+(.+)/i))) { dd = takeDate(' ' + m[1] + ' ', now); var dt = cap(dd ? strip(' ' + m[1] + ' ', dd.used) : m[1]); if (dt) return { kind: 'dinner', text: dt, date: dd ? dd.key : dkey(now), strong: true }; }
+    if ((m = raw.match(/^(?:humør|mood|føler meg|feeling)\s*[:\-]?\s*([1-5])\b\s*[,.:\-]?\s*(.*)$/i))) return { kind: 'mood', mood: +m[1], line: cap(m[2]), strong: true };
+    if ((m = raw.match(/^(?:dagbok|journal)\s*[:\-]\s*(.+)/i))) return { kind: 'mood', mood: 0, line: cap(m[1]), strong: true };
+    if ((m = raw.match(/^(?:ønskeliste|ønske|wishlist|wish)\s*[:\-]?\s+(.+)/i))) { var wp = m[1].match(/(\d[\d .]*)\s*(?:kr|,-)/i); return { kind: 'wish', title: cap(wp ? m[1].replace(wp[0], ' ') : m[1]), price: wp ? money(wp[1]) : '', strong: true }; }
+    if ((m = raw.match(/^(?:returner|retur|return)\s*[:\-]?\s+(.+)/i))) return { kind: 'return', title: cap(m[1]), days: 14, got: dkey(now), strong: true };
+    if ((m = raw.match(/^(?:gaveidé|gaveide|gave til|gift idea for|gift for)\s+([^\s:,]+)\s*[:\-,]?\s*(.+)/i))) return { kind: 'gift', who: cap(m[1]), idea: cap(m[2]), strong: true };
+    if ((m = raw.match(/^(?:fikk|got)\s+(.+?)\s+(?:av|fra|from)\s+(.+)$/i))) return { kind: 'thanks', what: cap(m[1]), from: cap(m[2]), date: dkey(now), strong: true };
+    if ((m = raw.match(/^(?:fryseren|fryser|frys|freezer|freeze)\s*[:\-]?\s+(.+)/i))) { var fn = m[1].match(/(?:x\s*(\d+)|(\d+)\s*(?:porsjoner|porsjon|portions?|stk))/i); return { kind: 'freezer', title: cap(fn ? m[1].replace(fn[0], ' ') : m[1]), n: fn ? +(fn[1] || fn[2]) : 1, strong: true }; }
+    if ((m = raw.match(/^(?:bruk opp|spis opp|use up|use it up)\s*[:\-]?\s+(.+)/i))) { dd = takeDate(' ' + m[1] + ' ', now); var ut = cap(dd ? strip(' ' + m[1] + ' ', dd.used) : m[1]), d2 = new Date(now); d2.setDate(d2.getDate() + 2); if (ut) return { kind: 'usefood', title: ut, by: dd ? dd.key : dkey(d2), strong: true }; }
+    if ((m = raw.match(/^(?:fleks|flex)\s*[:\-]?\s*(\d{1,2})(?:[:.](\d{2}))?\s*[-–]\s*(\d{1,2})(?:[:.](\d{2}))?/i))) { var p2 = function (n) { return ('0' + n).slice(-2); }; return { kind: 'flex', date: dkey(now), in: p2(m[1]) + ':' + (m[2] || '00'), out: p2(m[3]) + ':' + (m[4] || '00'), strong: true }; }
     var forceTodo = false;
     if ((m = raw.match(/^(?:todo|to-do|task|oppgave|gjøre|gjør)\s*[:\-]\s*(.+)/i))) { s = ' ' + m[1] + ' '; forceTodo = true; }
     else if ((m = raw.match(/^(?:husk(?:\s+å)?|remember\s+to|remind\s+me\s+to)\s+(.+)/i))) { s = ' ' + m[1] + ' '; forceTodo = true; }
@@ -297,6 +311,17 @@ window.Smart = (function () {
     if (p.kind === 'workout') return { icon: 'heart-pulse', label: 'Workout', bits: [SPORT_NAME[p.sport], p.min + ' min', p.km ? String(p.km).replace('.', ',') + ' km' : '', when(p.date)].filter(Boolean) };
     if (p.kind === 'todo') return { icon: p.repeat ? 'arrow-repeat' : 'check2-square', label: 'Task', bits: [p.text, p.repeat ? REPEAT_NAME[p.repeat] + ' · first ' + when(p.due) : p.due ? 'due ' + when(p.due) : ''].filter(Boolean) };
     if (p.kind === 'note') return { icon: 'journal-text', label: 'Note', bits: [p.text.slice(0, 60)] };
+    var Kx = (window.I18N ? I18N.k : function (k, e) { return e; });
+    if (p.kind === 'shop') return { icon: 'cart3', label: Kx('ui.qa-k-shop', 'Shopping'), bits: [p.items.join(', ')] };
+    if (p.kind === 'dinner') return { icon: 'egg-fried', label: Kx('ui.qa-k-dinner', 'Dinner'), bits: [p.text, when(p.date)] };
+    if (p.kind === 'mood') return { icon: 'emoji-smile', label: Kx('ui.qa-k-mood', 'Mood'), bits: [p.mood ? p.mood + '/5' : '', p.line].filter(Boolean) };
+    if (p.kind === 'wish') return { icon: 'stars', label: Kx('ui.qa-k-wish', 'Wish'), bits: [p.title, p.price ? nf.format(p.price) + ' kr' : ''].filter(Boolean) };
+    if (p.kind === 'return') return { icon: 'arrow-return-left', label: Kx('ui.qa-k-return', 'Return'), bits: [p.title, Kx('ui.qa-ret-14', '14 days to send it back')] };
+    if (p.kind === 'gift') return { icon: 'gift', label: Kx('ui.qa-k-gift', 'Gift idea'), bits: [p.idea, Kx('ui.qa-for-x', 'for {n}', { n: p.who })] };
+    if (p.kind === 'thanks') return { icon: 'envelope-heart', label: Kx('ui.qa-k-thanks', 'Thank-you'), bits: [p.what, Kx('ui.qa-from-x', 'from {n}', { n: p.from })] };
+    if (p.kind === 'freezer') return { icon: 'snow', label: Kx('ui.qa-k-freezer', 'Freezer'), bits: [p.title + (p.n > 1 ? ' ×' + p.n : '')] };
+    if (p.kind === 'usefood') return { icon: 'clock-history', label: Kx('ui.qa-k-usefood', 'Use it up'), bits: [p.title, Kx('ui.qa-by-x', 'by {d}', { d: when(p.by) })] };
+    if (p.kind === 'flex') return { icon: 'stopwatch', label: Kx('ui.qa-k-flex', 'Flex time'), bits: [when(p.date), p.in + '–' + p.out] };
     return null;
   }
 

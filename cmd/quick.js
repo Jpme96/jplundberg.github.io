@@ -53,20 +53,44 @@
     if (on('training', false)) k.push(['workout', 'heart-pulse', 'Workout']);
     k.push(['todo', 'check2-square', 'Task']);
     k.push(['note', 'journal-text', 'Note']);
+    if (on('food', false)) { k.push(['shop', 'cart3', K('ui.qa-k-shop', 'Shopping')]); k.push(['dinner', 'egg-fried', K('ui.qa-k-dinner', 'Dinner')]); }
+    if (on('mood', false) || on('journal', false)) k.push(['mood', 'emoji-smile', K('ui.qa-k-mood', 'Mood')]);
+    if (on('wish', false)) k.push(['wish', 'stars', K('ui.qa-k-wish', 'Wish')]);
+    if (on('returns', false)) k.push(['return', 'arrow-return-left', K('ui.qa-k-return', 'Return')]);
+    if (on('people', false)) k.push(['gift', 'gift', K('ui.qa-k-gift', 'Gift idea')]);
+    if (on('thanks', false)) k.push(['thanks', 'envelope-heart', K('ui.qa-k-thanks', 'Thank-you')]);
+    if (on('freezer', false)) k.push(['freezer', 'snow', K('ui.qa-k-freezer', 'Freezer')]);
+    if (on('usefood', false)) k.push(['usefood', 'clock-history', K('ui.qa-k-usefood', 'Use it up')]);
+    if (on('flex', false)) k.push(['flex', 'stopwatch', K('ui.qa-k-flex', 'Flex time')]);
     return k;
   }
   /* open(kind, prefill, line): a tab (and its fields filled in), or a typed line */
+  /* the extra kinds (quick-more.js) load the first time the sheet opens – stamped by build.py */
+  var QMV_V = 'e443903263';
+  function more(cb) {
+    var use = function () { var m = window.QuickMore({ Fe: Fe, esc: esc, uid: uid, today: today, pad: pad, num: num, toast: toast, K: K }); Object.assign(FORMS, m.FORMS); Object.assign(ADD, m.ADD); Object.assign(SAVE, m.SAVE); more.ok = 1; };
+    if (!more.ok && window.QuickMore) use();
+    if (more.ok) { if (cb) cb(); return; }
+    (more.q = more.q || []).push(cb); if (more.loading) return; more.loading = 1;
+    var sc = document.createElement('script'); sc.src = '/cmd/dist/quick-more.js?v=' + QMV_V;
+    sc.onload = function () { if (window.QuickMore) use(); var q = more.q || []; more.q = []; q.forEach(function (f) { if (f && more.ok) f(); }); };
+    sc.onerror = function () { more.loading = 0; more.q = []; };
+    document.head.appendChild(sc);
+  }
   function open(k, pre, line) {
     if (!window.Vault || !window.Vault.get()) return;          // locked
+    more();
     var ks = kinds();
     if (k && ks.some(function (x) { return x[0] === k; })) kind = k;
     if (!ks.some(function (x) { return x[0] === kind; })) kind = ks[0][0];
+    $('qaTabs').classList.toggle('qa-many', ks.length > 5);
     $('qaTabs').innerHTML = ks.map(function (x) {
       return '<button type="button" role="tab" data-tab="' + x[0] + '" aria-selected="' + (x[0] === kind) + '"><i class="bi bi-' + x[1] + '"></i><span>' + x[2] + '</span></button>';
     }).join('');
     var pp = pre || {};
     if (kind === 'expense' && !pp.c) { try { var lc = localStorage.getItem('dash.qa.lastCat'); if (lc) pp = Object.assign({}, pp, { c: lc }); } catch (e) {} }   /* the category you used last */
-    $('qaBody').innerHTML = FORMS[kind](pp);
+    if (!FORMS[kind]) { $('qaBody').innerHTML = '<p class="muted qa-hint">' + esc(K('ui.loading', 'Loading…')) + '</p>'; var k0 = kind, p0 = pre, l0 = line; more(function () { if (!bg.hidden) open(k0, p0, l0); }); }
+    else $('qaBody').innerHTML = FORMS[kind](pp);
     /* Today / Yesterday next to every date – the two dates you pick most */
     $('qaBody').querySelectorAll('input[type=date][name=d]').forEach(function (di) {
       var y = new Date(); y.setDate(y.getDate() - 1); var yk = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
@@ -91,11 +115,13 @@
   /* ---------- the typed line ---------- */
   var parsed = null;
   function memory() { var d = window.Vault.get() || {}; return d.catMemory || {}; }
+  /* what you usually buy (pantry and the shopping list) – typed alone, it goes on the list */
+  function shopWords() { var t = Fe.tools(), w = {}; (t.pantry || []).concat(t.shop || []).forEach(function (x) { var n = String(x.name || x.text || '').trim().toLowerCase(); if (n && n.length < 30) w[n] = 1; }); return Object.keys(w); }
   function allowed(p) { return p && kinds().some(function (x) { return x[0] === p.kind; }); }
   function preview() {
     var v = $('qaLine').value.trim(), box = $('qaPrev'), S = window.Smart;
     $('qaClear').hidden = !v;
-    parsed = v && S ? S.parse(v, { memory: memory() }) : null;
+    parsed = v && S ? S.parse(v, { memory: memory(), shopWords: allowed({ kind: 'shop' }) ? shopWords() : null, noShop: !allowed({ kind: 'shop' }) }) : null;
     var off = parsed && !allowed(parsed) ? parsed.kind : null;
     if (off) parsed = null;
     bg.classList.toggle('qa-typing', !!v);
@@ -109,7 +135,9 @@
   }
   function addLine() {
     if (!parsed) return false;
-    var p = parsed, ok = ADD[p.kind](p);
+    var p = parsed;
+    if (!ADD[p.kind]) { more(function () { if (ADD[p.kind] && ADD[p.kind](p)) { $('qaLine').value = ''; preview(); close(); setTimeout(reload, 0); } }); return false; }
+    var ok = ADD[p.kind](p);
     if (ok) { $('qaLine').value = ''; preview(); }
     return ok;
   }
@@ -122,6 +150,16 @@
     else if (p.kind === 'workout') pre = { k: p.sport, m: p.min, km: p.km, d: p.date };
     else if (p.kind === 'todo') pre = { t: p.text, due: p.due, rep: p.repeat };
     else if (p.kind === 'note') pre = { t: p.text };
+    else if (p.kind === 'shop') pre = { t: (p.items || []).join(', ') };
+    else if (p.kind === 'dinner') pre = { t: p.text, d: p.date };
+    else if (p.kind === 'mood') pre = { m: p.mood, t: p.line };
+    else if (p.kind === 'wish') pre = { t: p.title, a: p.price };
+    else if (p.kind === 'return') pre = { t: p.title, d: p.got };
+    else if (p.kind === 'gift') pre = { t: p.idea, who: p.who };
+    else if (p.kind === 'thanks') pre = { t: p.what, f: p.from };
+    else if (p.kind === 'freezer') pre = { t: p.title, n: p.n };
+    else if (p.kind === 'usefood') pre = { t: p.title, d: p.by };
+    else if (p.kind === 'flex') pre = { d: p.date, i: p.in, o: p.out };
     open(p.kind, pre, '');
   }
   function close() {
@@ -129,6 +167,7 @@
     setTimeout(function () { if (!bg.classList.contains('open')) bg.hidden = true; }, 320);
   }
   /* toast(html, undo): a short note at the bottom; with undo, an Undo button for a few seconds */
+  var K = function (k, e, o) { return window.I18N ? I18N.k(k, e, o) : String(e).replace(/\{(\w+)\}/g, function (m, x) { return o && o[x] != null ? o[x] : m; }); };
   function toast(html, undo) {
     var t = $('qaToast');
     if (!t) {
@@ -327,7 +366,7 @@
     e.preventDefault();
     var f = e.target;
     if (f.id === 'qaSmart') { if (addLine()) { close(); setTimeout(reload, 0); } return; }
-    if (SAVE[f.dataset.kind](f)) { close(); setTimeout(reload, 0); }
+    if (SAVE[f.dataset.kind] && SAVE[f.dataset.kind](f)) { close(); setTimeout(reload, 0); }
   });
   bg.addEventListener('input', function (e) { if (e.target.id === 'qaLine') preview(); });
   bg.addEventListener('change', function (e) {

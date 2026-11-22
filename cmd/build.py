@@ -114,6 +114,14 @@ _lp2 = re.sub(r"var LPP_V = '[^']*'", "var LPP_V = '%s'" % (lpp_v or 'x'), _lp)
 if _lp2 != _lp:
     if check: print('out of date (version): cmd/life-plus.js'); stale = True
     else: io.open(_LP, 'w', encoding='utf-8').write(_lp2)
+# quick add's extra kinds load the first time the sheet opens (quick.js) – 2026-11-22
+qmv_v = write('quick-more.js', bundle(['quick-more.js']))
+stale |= qmv_v is None
+_QK = os.path.join(HERE, 'quick.js'); _qk = io.open(_QK, encoding='utf-8').read()
+_qk2 = re.sub(r"var QMV_V = '[^']*'", "var QMV_V = '%s'" % (qmv_v or 'x'), _qk)
+if _qk2 != _qk:
+    if check: print('out of date (version): cmd/quick.js'); stale = True
+    else: io.open(_QK, 'w', encoding='utf-8').write(_qk2)
 nb_v = write('nb.js', bundle(M['nb']))
 head_v = write('head.js', bundle(M['head']).replace('__NBV__', nb_v or 'x'))
 stale |= nb_v is None
