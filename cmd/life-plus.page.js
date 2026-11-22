@@ -79,11 +79,11 @@
   var DEALK = [['power', K('ui.lp-deal-power', 'Power')], ['mobile', K('ui.lp-deal-mobile', 'Mobile')], ['internet', K('ui.lp-deal-net', 'Internet')], ['insurance', K('ui.lp-deal-ins', 'Insurance')], ['loan', K('ui.lp-deal-loan', 'Loan rate')], ['tv', K('ui.lp-deal-tv', 'TV and streaming')], ['other', K('ui.other', 'Other')]];
   var DEALW = { power: 'strompris.no', mobile: 'finn.no/mobilabonnement', internet: 'finn.no/bredband', insurance: 'finn.no/forsikring', loan: 'finansportalen.no' };
   card('deals', { icon: 'arrow-left-right', title: K('ui.lp-deals', 'Deal checks'), addTitle: K('ui.lp-deals-add', 'A deal to keep an eye on'), editTitle: K('ui.lp-edit', 'Edit'),
-    fields: [{ k: 'who', type: 'title', label: K('ui.lp-provider', 'Who with'), req: true, ph: K('ui.lp-provider-ph', 'e.g. Tibber, Telia, If') }, { k: 'kind', type: 'select', label: K('ui.lp-kind', 'Kind'), options: DEALK, def: 'power' }, { k: 'price', type: 'number', label: K('ui.lp-per-month', 'Per month'), suffix: 'kr' },
+    fields: [{ k: 'who', type: 'title', label: K('ui.lp-provider', 'Who with'), req: true, ph: K('ui.lp-provider-ph', 'e.g. Tibber, Telia, If') }, { k: 'kind', type: 'select', label: K('ui.lp-kind', 'Kind'), options: DEALK, def: 'power' }, { k: 'price', type: 'number', label: K('ui.lp-per-month', 'Per month'), suffix: 'kr' }, { k: 'saved', type: 'number', label: K('ui.lp-saved-yr', 'Saved by switching (a year)'), suffix: 'kr' },
       { k: 'last', type: 'date', label: K('ui.lp-last-checked', 'Last compared'), def: today }, { k: 'every', type: 'select', label: K('ui.lp-compare-every', 'Compare every'), options: [[6, K('ui.lp-6m', '6 months')], [12, K('ui.lp-12m', 'Year')], [24, K('ui.lp-24m', '2 years')]], def: 12 }, { k: 'notes', type: 'textarea', rows: 2, label: K('ui.notes', 'Notes') }],
     beforeSave: function (it) { it.every = +it.every || 12; },
     empty: K('ui.lp-deals-empty', 'Power, mobile, internet, insurance, the loan rate: note what you pay and when you last compared. At a glance says when it’s time to look again – moving is often cheaper.'),
-    summary: function (items) { var s = items.reduce(function (a, x) { return a + (+x.price || 0); }, 0); return s ? '<p class="lp-sum">' + esc(K('ui.lp-deals-sum', '{a} a month together', { a: kr(s) })) + '</p>' : ''; },
+    summary: function (items) { var s = items.reduce(function (a, x) { return a + (+x.price || 0); }, 0), sv = items.reduce(function (a, x) { return a + (+x.saved || 0); }, 0); return s || sv ? '<p class="lp-sum">' + esc([s ? K('ui.lp-deals-sum', '{a} a month together', { a: kr(s) }) : '', sv ? K('ui.lp-deals-saved', 'switching saves you {a} a year', { a: kr(sv) }) : ''].filter(Boolean).join(' · ')) + '</p>' : ''; },
     sort: function (a, b) { return nextDue(a.last, a.every) < nextDue(b.last, b.every) ? -1 : 1; },
     row: function (x) { var d = nextDue(x.last, x.every), k = (DEALK.filter(function (q) { return q[0] === x.kind; })[0] || DEALK[6]); return { icon: { power: 'lightning-charge', mobile: 'phone', internet: 'wifi', insurance: 'shield-check', loan: 'bank', tv: 'tv' }[x.kind] || 'tag', color: 'var(--blue)', title: x.who, sub: esc([k[1], x.price ? kr(x.price) + K('ui.lp-mo', '/mo') : '', DEALW[x.kind] || ''].filter(Boolean).join(' · ')), right: (d <= today() ? chip(K('ui.lp-compare-now', 'Compare now'), 'var(--warn)') : chip(fmt(d), 'var(--slate)')) + tick('dealdone', x.id, K('ui.lp-compared', 'Compared')) }; }
   });
@@ -115,7 +115,7 @@
     empty: K('ui.lp-parties-empty', 'Birthdays, Christmas, dinners: the guests, the menu, the budget and what’s left to do in one place. At a glance reminds you two weeks before.'),
     sort: function (a, b) { return (a.date || '9') < (b.date || '9') ? -1 : 1; },
     row: function (x) { var L = String(x.todo || '').split('\n').filter(function (l) { return l.trim(); }), done = L.filter(function (l) { return /^\s*\[x\]/i.test(l); }).length, g = String(x.guests || '').split(/[\n,]/).filter(function (s) { return s.trim(); }).length;
-      return { icon: 'balloon', color: 'var(--pink)', title: x.title, sub: esc([g ? K('ui.lp-n-guests', '{n} guests', { n: g }) : '', x.budget ? kr(x.budget) : '', L.length ? K('ui.lp-n-done', '{d} of {n} done', { d: done, n: L.length }) : ''].filter(Boolean).join(' · ')), right: isKey(x.date) ? when(x.date) : '' }; }
+      return { icon: 'balloon', color: 'var(--pink)', title: x.title, sub: esc([g ? K('ui.lp-n-guests', '{n} guests', { n: g }) : '', x.budget ? kr(x.budget) : '', L.length ? K('ui.lp-n-done', '{d} of {n} done', { d: done, n: L.length }) : ''].filter(Boolean).join(' · ')), right: isKey(x.date) && x.date < today() && x.date >= addDays(today(), -45) && !x.logged ? costBtn('partycost', x.id) : isKey(x.date) ? when(x.date) : '' }; }
   });
 
   /* ================= People: Big life moments (a ready checklist into your to-dos) ================= */
@@ -167,7 +167,7 @@
       { k: 'food', type: 'date', label: K('ui.lp-food-date', 'Order food by') }, { k: 'notes', type: 'textarea', rows: 2, label: K('ui.lp-pet-notes', 'Notes – vet, insurance, chip number') }],
     beforeSave: function (it) { it.vetEvery = +it.vetEvery || 12; it.wormEvery = +it.wormEvery || 3; },
     empty: K('ui.lp-pets-empty', 'Vet checks, vaccines, worming and food – each pet with its dates, and At a glance tells you a week before.'),
-    row: function (p) { var j = LP.petJobs(p)[0]; return { icon: 'heart', color: 'var(--orange)', title: p.name, sub: esc([p.kind, j ? j[1] : ''].filter(Boolean).join(' · ')), right: j ? when(j[2]) : '' }; }
+    row: function (p) { var j = LP.petJobs(p)[0]; return { icon: 'heart', color: 'var(--orange)', title: p.name, sub: esc([p.kind, j ? j[1] : ''].filter(Boolean).join(' · ')), right: (j ? when(j[2]) : '') + costBtn('petcost', p.id) }; }
   });
 
   /* ================= People: Volunteering and clubs ================= */
@@ -510,6 +510,11 @@
   });
   ACT.tydone = function (id) { setList('thanks', function (x) { if (x.id === id) x.done = true; }); };
 
+  /* money from the life sections into Finances (2026-11-22): quick add's expense form, filled in – you check the amount and save */
+  function costBtn(act, id) { return '<span role="button" tabindex="0" class="hl-chip lp-act lp-plus" style="--c:var(--ok)" data-lpact="' + act + '" data-lpid="' + esc(id) + '"><i class="bi bi-wallet2"></i> ' + esc(K('ui.lp-log-cost', 'Log the cost')) + '</span>'; }
+  function toExpense(pre) { if (window.Quick && window.Quick.open) window.Quick.open('expense', pre); }
+  ACT.partycost = function (id) { var x = Fe.list('parties').filter(function (q) { return q.id === id; })[0]; if (!x) return; toExpense({ n: x.title, c: 'fun', d: x.date, a: +x.budget || '' }); setList('parties', function (q) { if (q.id === id) q.logged = 1; }); };
+  ACT.petcost = function (id) { var p = Fe.list('pets').filter(function (q) { return q.id === id; })[0]; if (!p) return; toExpense({ n: p.name + (p.kind ? ' (' + p.kind + ')' : ''), c: 'other' }); };
   /* plain cards draw on the same changes as the Kit ones */
   function drawPlain() { drawClimate(); drawSleep(); drawCalm(); drawMood(); drawWheel(); drawScreen(); }
   ['tools:change', 'features:change', 'fin:change', 'health:change', 'vault:in'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawPlain, 30); }); });

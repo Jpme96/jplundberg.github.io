@@ -116,6 +116,7 @@
     return 'https://api.open-meteo.com/v1/forecast?latitude=' + c.lat + '&longitude=' + c.lon +
       '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m' +
       '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&hourly=precipitation_probability,precipitation' +   /* when the rain starts – for the morning push (2026-11-22) */
       '&timezone=' + encodeURIComponent(c.tz || 'auto') + '&forecast_days=5&wind_speed_unit=ms';
   }
   function profileCity() { var p = load('dash.profile', null); return p && p.city ? String(p.city).trim() : ''; }

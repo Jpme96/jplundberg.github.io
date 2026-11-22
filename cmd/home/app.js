@@ -187,7 +187,7 @@
   var stopped = false;
   /* the app's version – it must match app.js?v= in index.html. When a newer one is published the app reloads itself,
      so a phone that keeps the app open (Home Screen apps do) never stays on old code. */
-  var APPV = 344;
+  var APPV = 345;
   function checkVersion() {
     if (preview) return;
     fetch('/cmd/home/index.html?t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
@@ -274,7 +274,7 @@
   var TABS = [['today', 'sun', 'Today', 'I dag'], ['shop', 'cart3', 'Food', 'Mat'], ['chores', 'house-heart', 'Home', 'Hjem'], ['money', 'people', 'Money', 'Penger'], ['cal', 'calendar-heart', 'Plans', 'Planer'], ['me', 'person-lock', 'Me', 'Meg']];
   var showAllMoney = false;
   function tabsOn() { var w = info().what || {}, on = function (k) { return w[k] !== false; };
-    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move') || on('house'), money: on('money') || on('bills'), cal: on('cal') || on('trips'),  me: !preview && My.any() }[t[0]]; }); }
+    return TABS.filter(function (t) { return { today: true, shop: on('shop') || on('meals') || on('pantry') || on('recipes'), chores: on('chores') || on('plants') || on('move') || on('house') || ['lpfreezer', 'lpusefood', 'lppets', 'lpparties', 'lpready'].some(function (k) { return w[k] === true; }), money: on('money') || on('bills'), cal: on('cal') || on('trips'),  me: !preview && My.any() }[t[0]]; }); }
   /* avatars: yours (you make it in Settings) and the owner's */
   function mine() { var r = list('pme')[0]; return r ? r.f : {}; }
   function myName() { return mine().name || info().partner || L('You', 'Deg'); }
@@ -529,6 +529,14 @@
         return '<li><span class="h-row"><span>' + esc(x.r.f.name) + '<small>' + esc(x.r.f.room || '') + '</small></span><span class="h-chip ' + (x.n < 0 ? 'bad' : x.n === 0 ? 'warn' : '') + '">' + (x.n < 0 ? L('Thirsty', 'Tørst') : x.n === 0 ? L('Today', 'I dag') : L('In ', 'Om ') + x.n + L(' d', ' d')) + '</span></span><button type="button" class="h-x" data-water="' + esc(x.r.id) + '" aria-label="' + L('Watered', 'Vannet') + '"><i class="bi bi-droplet-fill"></i></button></li>';
       }).join('') + '</ul>';
     }
+    /* what they chose to show you from their dashboard (read-only) – 2026-11-22 */
+    [['freezer', 'snow', L('Freezer', 'Fryseren')], ['usefood', 'clock-history', L('Use it up', 'Bruk det opp')], ['pets', 'heart', L('Pets', 'Kjæledyr')], ['parties', 'balloon', L('Celebrations', 'Feiringer')], ['ready', 'shield-check', L('Emergency kit', 'Beredskap')]].forEach(function (S) {
+      if (w['lp' + S[0]] !== true) return;
+      var l = list('lp').filter(function (r) { return r.f.sec === S[0]; }).sort(function (a, b) { return (a.f.date || '9') < (b.f.date || '9') ? -1 : 1; });
+      if (l.length) out += '<h2 class="h-h"><i class="bi bi-' + S[1] + '"></i> ' + esc(S[2]) + '</h2><ul class="h-list">' + l.map(function (r) {
+        return '<li><span class="h-row"><span>' + esc(r.f.title) + (r.f.sub ? '<small>' + esc(r.f.sub) + '</small>' : '') + '</span>' + (r.f.date ? '<span class="h-chip">' + esc(fdate(r.f.date, { day: 'numeric', month: 'short' })) + '</span>' : '') + '</span></li>';
+      }).join('') + '</ul>';
+    });
     if (w.move !== false) {
       var mv = list('mv').sort(function (a, b) { return (a.f.done ? 1 : 0) - (b.f.done ? 1 : 0); });
       if (mv.length) out += '<h2 class="h-h">' + L('Moving checklist', 'Flyttesjekkliste') + (info().mvdate ? ' · ' + esc(fdate(info().mvdate, { day: 'numeric', month: 'short' })) : '') + '</h2><ul class="h-list">' + mv.map(function (r) {

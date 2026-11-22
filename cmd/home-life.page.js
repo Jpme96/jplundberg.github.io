@@ -440,7 +440,7 @@
       if (done.length) body += '<li class="sh-donehead"><button type="button" class="text-btn" data-shdonetog aria-expanded="' + shDoneOpen + '"><i class="bi bi-chevron-' + (shDoneOpen ? 'down' : 'right') + '"></i> In the cart · ' + done.length + '</button></li>' + (shDoneOpen ? done.map(row).join('') : '');
       var keep = el.querySelector('.hl-shopadd input'), typed = keep ? keep.value : '', focus = keep && document.activeElement === keep;
       el.innerHTML = '<section class="card kit-card" id="shop"><div class="card-head"><h2><i class="bi bi-cart3"></i> Shopping list' + (open.length ? ' <span class="hl-count">' + open.length + '</span>' : '') + '</h2>' +
-        '<div class="head-actions">' + (open.length && window.Awake ? window.Awake.btn() : '') + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
+        '<div class="head-actions">' + (open.length ? '<button type="button" class="text-btn" data-shmode><i class="bi bi-cart-check"></i> ' + esc(I18N.k('ui.sm-btn', 'Shop mode')) + '</button>' : '') + (open.length && window.Awake ? window.Awake.btn() : '') + (open.length ? '<button type="button" class="text-btn" data-shshare><i class="bi bi-' + (navigator.share ? 'share' : 'clipboard') + '"></i> ' + (navigator.share ? 'Share' : 'Copy') + '</button>' : '') +
         (done.length ? '<button type="button" class="text-btn" data-shclear><i class="bi bi-check2-all"></i> <span data-t="ui.clear-done">Clear done</span></button>' : '') + '</div></div>' +
         '<form class="hl-shopadd"><input placeholder="Add – milk, eggs, coffee" data-t-placeholder="ui.add-milk-eggs-coffee" maxlength="300" enterkeyhint="done" autocomplete="off" aria-label="Add to the shopping list"><button type="submit" class="icon-btn" aria-label="Add" data-t-aria-label="ui.add"><i class="bi bi-plus-lg"></i></button></form>' +
         (l.length ? '<ul class="hl-shop">' + body + '</ul>'
@@ -452,6 +452,43 @@
       var inp = el.querySelector('.hl-shopadd input'), v = inp.value; inp.value = '';
       addShop(v.split(/,|\n/), ''); inp.focus();
     });
+    /* shop mode (2026-11-22): the list big and alone, by aisle, the screen kept on; a tap ticks, ticked things slide away,
+       Iago's ticks come in live; "Done" (or all ticked) closes it */
+    var sm = null;
+    function smDraw() {
+      if (!sm) return;
+      var l = list(), open2 = l.filter(function (x) { return !x.done; }), by = {}, recent = sm.recent;
+      l.forEach(function (x) { if (!x.done || recent[x.id]) { var a = aisleOf(x.text); (by[a] = by[a] || []).push(x); } });
+      var body = Object.keys(by).sort(function (a, b) { return aisleRank(a) - aisleRank(b); }).map(function (a) {
+        return '<li class="sm-grp" style="--c:' + AISLE[a].c + '"><i class="bi bi-' + AISLE[a].ic + '"></i> ' + esc(AISLE[a].n) + '</li>' + by[a].map(function (x) {
+          return '<li class="sm-it' + (x.done ? ' done' : '') + '"><button type="button" data-smx="' + esc(x.id) + '" aria-pressed="' + !!x.done + '"><i class="bi bi-' + (x.done ? 'check-circle-fill' : 'circle') + '"></i><span>' + esc(x.text) + '</span></button></li>'; }).join('');
+      }).join('');
+      sm.box.querySelector('.sm-list').innerHTML = body || '<li class="sm-done"><i class="bi bi-bag-check"></i> ' + esc(I18N.k('ui.sm-all', 'All done – nice!')) + '</li>';
+      sm.box.querySelector('.sm-n').textContent = I18N.k('ui.sm-left', '{n} left', { n: open2.length });
+    }
+    function smOpen() {
+      if (sm) return;
+      var box = document.createElement('div'); box.className = 'sm-ov'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+      box.innerHTML = '<div class="sm-head"><b><i class="bi bi-cart-check"></i> ' + esc(I18N.k('ui.shopping-list', 'Shopping list')) + '</b><span class="sm-n"></span><button type="button" class="pill-btn" data-smclose>' + esc(I18N.k('ui.done', 'Done')) + '</button></div><ul class="sm-list"></ul>';
+      document.body.appendChild(box); document.documentElement.classList.add('sm-on');
+      sm = { box: box, recent: {}, awake: window.Awake && !window.Awake.on() };
+      if (sm.awake) window.Awake.set(true);
+      smDraw();
+    }
+    function smClose() { if (!sm) return; if (sm.awake && window.Awake) window.Awake.set(false); sm.box.remove(); document.documentElement.classList.remove('sm-on'); sm = null; }
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-shmode]')) { smOpen(); return; }
+      if (!sm) return;
+      if (e.target.closest('[data-smclose]')) { smClose(); return; }
+      var b = e.target.closest('[data-smx]'); if (!b) return;
+      var id = b.dataset.smx, it = list().filter(function (x) { return x.id === id; })[0]; if (!it) return;
+      var now = !it.done, t = Fe.tools(); if (now) { t = learn(aisleOf(it.text)); sm.recent[id] = 1; setTimeout(function () { if (sm) { delete sm.recent[id]; smDraw(); } }, 1600); }
+      save(function (l) { l.forEach(function (x) { if (x.id === id) x.done = now; }); }, t); smDraw();
+      if (now && !list().some(function (x) { return !x.done; })) setTimeout(function () { if (sm && !list().some(function (x) { return !x.done; })) smClose(); }, 2200);
+    });
+    window.addEventListener('tools:change', smDraw);
+    document.addEventListener('keydown', function (e) { if (sm && e.key === 'Escape') smClose(); });
+    window.addEventListener('softnav:swap', smClose);
     el.addEventListener('change', function (e) {
       var c = e.target.closest('[data-shx]'); if (!c) return;
       var li = c.closest('li'); li.classList.toggle('done', c.checked);

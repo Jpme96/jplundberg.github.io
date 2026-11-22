@@ -75,11 +75,22 @@
       '<ul class="pa-rgrid">' + ids.map(function (rid) { var l = by[rid], x = l[0], pdf = l.some(function (y) { return y.receiptPdf; }), pr = l.reduce(function (a, y) { return a + (+y.price || 0); }, 0);
         return '<li><a class="pa-rt" data-rcopen="' + esc(rid) + '" target="_blank" rel="noopener"><span class="pa-rth">' + (pdf ? '<i class="bi bi-file-earmark-pdf"></i>' : '<img data-rcimg="' + esc(rid) + '" alt=""><i class="bi bi-receipt"></i>') + '</span>' +
           '<b>' + esc(l.map(function (y) { return y.name; }).filter(Boolean).join(' + ') || 'Receipt') + '</b><small>' + esc([pr ? kr(pr) : '', x.bought ? fmt(x.bought, { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ') || ' ') + '</small></a>' +
+          (Fe.on('returns') && x.bought && x.bought >= addDaysK(-100) ? '<button type="button" class="pa-rgo pa-rret" data-rcret="' + esc(rid) + '" aria-label="' + esc(I18N.k('ui.pa-might-return', 'Might return this')) + '" title="' + esc(I18N.k('ui.pa-might-return', 'Might return this')) + '"><i class="bi bi-arrow-return-left"></i></button>' : '') +
           '<a class="pa-rgo" href="/cmd/house/#hinv=' + esc(x.id) + '" aria-label="Open ' + esc(x.name || 'the item') + ' in Home inventory" title="Open in Home inventory"><i class="bi bi-box-arrow-up-right"></i></a></li>'; }).join('') + '</ul></section>';
     el.hidden = false;
     if (el._h !== h) { el._h = h; el.innerHTML = h;
       ids.forEach(function (rid) { invGet(rid).then(function (b) { if (!b) return; var u = rcUrls[rid] || (rcUrls[rid] = URL.createObjectURL(b.type ? b : new Blob([b], { type: by[rid].some(function (y) { return y.receiptPdf; }) ? 'application/pdf' : 'image/jpeg' }))); var a = el.querySelector('[data-rcopen="' + rid + '"]'); if (a) a.href = u; var im = el.querySelector('img[data-rcimg="' + rid + '"]'); if (im) { im.src = u; im.onload = function () { im.parentNode.classList.add('has-img'); }; } }); }); }
   }
+  function addDaysK(n) { var d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  /* a receipt → Return deadlines (2026-11-22): what, the shop, the day it was bought, the price – 14 days unless you change it */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-rcret]'); if (!b) return; e.preventDefault();
+    var l = Fe.list('hinv').filter(function (x) { return x && x.receipt === b.dataset.rcret; }); if (!l.length) return;
+    var t = Fe.tools(), r = Array.isArray(t.returns) ? t.returns : [], title = l.map(function (y) { return y.name; }).filter(Boolean).join(' + ').slice(0, 120) || I18N.k('ui.receipts', 'Receipt');
+    if (r.some(function (x) { return x.rc === b.dataset.rcret; })) { toast(I18N.k('ui.pa-ret-there', 'Already in Return deadlines')); return; }
+    r.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), rc: b.dataset.rcret, title: title, shop: l[0].shop || l[0].where || '', got: l[0].bought, days: 14, cost: String(l.reduce(function (a, y) { return a + (+y.price || 0); }, 0) || ''), state: 'open' });
+    t.returns = r; Fe.saveTools(t); toast(I18N.k('ui.pa-ret-added', 'Added to Return deadlines – 14 days, change it there'));
+  });
   document.addEventListener('click', function (e) { var a = e.target.closest('[data-rcopen]'); if (a && !a.getAttribute('href')) { e.preventDefault(); toast('That receipt is only on the device it was added on – open House there once to sync it'); } });
   function redraw() { if (__ui().col) __ui().col.render(); drawSoon(); drawElse(); drawTiles(); drawReceipts(); }
   function travelDocs() { try { var t = JSON.parse(localStorage.getItem('dash.travel')) || {}; return Array.isArray(t.docs) ? t.docs : []; } catch (e) { return []; } }

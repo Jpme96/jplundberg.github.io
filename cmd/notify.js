@@ -17,7 +17,7 @@
   function at(key, hh, mm) { var p = String(key).split('-'); return new Date(+p[0], p[1] - 1, +p[2], hh, mm || 0).getTime(); }
   var nf = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
   function kr(n) { return nf.format(Math.round(+n || 0)) + ' kr'; }
-  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, summary: true, monthly: true, house: true, people: true, timer: true, commute: false, morning: true }, detail: 'private' };
+  var DEF = { on: false, ev: 15, k: { bills: true, tasks: true, pay: true, trips: true, checkin: true, summary: true, monthly: true, house: true, people: true, timer: true, commute: false, morning: true, life: true, evening: true, leave: true }, detail: 'private' };
   function prefs() { var p = readJSON(KEY, {}); var o = Object.assign({}, DEF, p); o.k = Object.assign({}, DEF.k, p.k || {}); return o; }
   function save(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
   function devId() { var p = prefs(); if (!p.id) { p.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); save(p); } return p.id; }
@@ -92,12 +92,34 @@
       try { if (C && on('calendar', true)) evs = C.occurrences(new Date(md.getFullYear(), md.getMonth(), md.getDate()), new Date(md.getFullYear(), md.getMonth(), md.getDate(), 23, 59), { card: true }).filter(function (o) { return !(o.ev && (o.ev.holiday || o.ev.reminder)); }); } catch (e) {}
       tasks = (readJSON('dash.todos', []) || []).filter(function (t) { return !t.done && (t.due === mk || t.today === mk); });
       if (d.budget && on('finance', true)) { var mym = mk.slice(0, 7), mpaid = (d.paid && d.paid[mym]) || []; bills = (d.budget.fixed || []).filter(function (f) { return f.day && f.src !== 'sub' && +f.day === md.getDate() && mpaid.indexOf(f.id) < 0; }); }
-      if (!evs.length && !tasks.length && !bills.length) continue;
+      var rain = rainFrom(mk);
+      if (!evs.length && !tasks.length && !bills.length && !rain) continue;
       var first = evs.filter(function (o) { return !o.allDay; })[0], parts = [];
       if (evs.length) parts.push(evs.length + (evs.length === 1 ? ' event' : ' events') + (full && first ? ' (first ' + pad(first.start.getHours()) + ':' + pad(first.start.getMinutes()) + ' ' + first.title + ')' : ''));
       if (tasks.length) parts.push(full ? 'Tasks: ' + tasks.slice(0, 3).map(function (t) { return t.text; }).join(', ') : tasks.length + (tasks.length === 1 ? ' task' : ' tasks'));
       if (bills.length) parts.push(full ? 'Due: ' + bills.map(function (f) { return f.name; }).join(', ') : bills.length + (bills.length === 1 ? ' bill due' : ' bills due'));
+      if (rain) parts.push(rain);
       add('morning:' + mk, at(mk, 7, 30), 'Today', parts.join(' · '), '/cmd/#c=brief');
+    }
+    /* the evening wrap-up (2026-11-22): 21:00 – tomorrow's first appointment (and when to leave), bin day, tomorrow's dinner
+       and what to take out of the freezer for it, and a tap for today's mood if it's not set */
+    if (p.k.evening !== false) for (var ei = Math.max(m0, 0); ei < 3; ei++) {
+      var ed = new Date(); ed.setDate(ed.getDate() + ei); var ek = dkey(ed), tm = new Date(ed); tm.setDate(tm.getDate() + 1); var tk = dkey(tm), ep = [];
+      try { if (C && on('calendar', true)) { var te = C.occurrences(new Date(tm.getFullYear(), tm.getMonth(), tm.getDate()), new Date(tm.getFullYear(), tm.getMonth(), tm.getDate(), 23, 59), { card: true }).filter(function (o) { return !o.allDay && !(o.ev && (o.ev.holiday || o.ev.reminder)); })[0];
+        if (te) { var lv = window.LeaveNow && LeaveNow.at ? LeaveNow.at(te) : null; ep.push(I18N.k('ui.eve-first', 'First tomorrow: {t} {w}', { t: pad(te.start.getHours()) + ':' + pad(te.start.getMinutes()), w: full ? te.title : '' }).trim() + (lv ? ' – ' + I18N.k('ui.eve-leave', 'leave {t}', { t: lv }) : '')); } } } catch (e) {}
+      if (Fe && Fe.on && Fe.on('house')) { var bins = (Fe.list('hbins') || []).filter(function (b) { return window.HomeLife && HomeLife.nextPickup && HomeLife.nextPickup(b, tk) === tk; }).map(function (b) { return b.title; }); if (bins.length) ep.push(I18N.k('ui.eve-bins', 'Bins out: {b}', { b: bins.join(', ') })); }
+      var dn = window.LifePlus && LifePlus.dinnerFor ? LifePlus.dinnerFor(tk) : null;
+      if (dn && dn.text) ep.push(I18N.k('ui.eve-dinner', 'Dinner tomorrow: {d}', { d: dn.text }) + (dn.frz.length ? ' – ' + I18N.k('ui.eve-thaw', 'take {f} out of the freezer', { f: dn.frz.join(', ') }) : ''));
+      if (ei === 0 && Fe && Fe.on && (Fe.on('mood') || Fe.on('journal')) && !(Fe.list('journal') || []).some(function (j) { return j.date === ek && +j.mood; })) ep.push(I18N.k('ui.eve-mood', 'How was today? Tap to log your mood'));
+      if (!ep.length) continue;
+      add('evening:' + ek, at(ek, 21, 0), I18N.k('ui.eve-title', 'Tomorrow'), ep.join(' · '), dn && dn.frz.length ? '/cmd/food/#lp-freezer' : '/cmd/?add=mood');
+    }
+    /* rain on a day, from the forecast the dashboard last fetched (dash.weather, hourly from 2026-11-22) */
+    function rainFrom(k) {
+      var w = readJSON('dash.weather', null), h = w && w.data && w.data.hourly; if (!h || !h.time) return '';
+      for (var i = 0; i < h.time.length; i++) { var tt = String(h.time[i]); if (tt.slice(0, 10) !== k || +tt.slice(11, 13) < 7 || +tt.slice(11, 13) > 21) continue;
+        if ((+h.precipitation_probability[i] || 0) >= 60 && (+h.precipitation[i] || 0) >= 0.2) return I18N.k('ui.am-rain', 'Rain from {t} – take an umbrella', { t: tt.slice(11, 16) }); }
+      return '';
     }
     /* tasks with a day */
     if (p.k.tasks) (readJSON('dash.todos', []) || []).forEach(function (t) {

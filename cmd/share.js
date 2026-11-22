@@ -37,7 +37,9 @@
       V.save(d); cache = {}; seen = {}; wj('dash.share.seen2', {}); if (window.Diag && window.Diag.log) window.Diag.log('share', 'an older key came back from another device – the newest one is used again', 'share.js');
     } else if ((+sh.keyAt || 0) > (+sk.at || 0)) { d.shareKey = { at: +sh.keyAt, on: !!sh.on, key: sh.key || null, since: sh.since || null }; V.save(d); }
   }
-  var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['pantry', 'Pantry', 'box-seam'], ['recipes', 'Recipes', 'journal-text'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart']];
+  var WHAT = [['shop', 'Shopping list', 'cart3'], ['meals', 'Dinner plan', 'egg-fried'], ['pantry', 'Pantry', 'box-seam'], ['recipes', 'Recipes', 'journal-text'], ['chores', 'Chores', 'arrow-repeat'], ['money', 'Money between you', 'people'], ['bills', 'Home bills – their part', 'receipt'], ['cal', 'Calendar events you tick', 'calendar-heart'], ['trips', 'Trips you tick', 'airplane'], ['plants', 'Plants', 'flower1'], ['move', 'Moving checklist', 'box-seam'], ['notes', 'Home notes', 'sticky'], ['house', 'House projects and documents you tick', 'house-heart'],
+    /* the life sections (2026-11-22): shown to them read-only, off until you switch one on */
+    ['lpfreezer', I18N.k('ui.lp-frz', 'Freezer'), 'snow'], ['lpusefood', I18N.k('ui.lp-use', 'Use it up'), 'clock-history'], ['lppets', I18N.k('ui.lp-pets', 'Pets'), 'heart'], ['lpparties', I18N.k('ui.lp-parties', 'Celebrations'), 'balloon'], ['lpready', I18N.k('ui.lp-ready', 'Emergency preparedness'), 'shield-check']];
   var PARTNER_ONLY = { pme: 1 };
   /* kinds either of you writes (together.js, Phase E): cmd's own changes wait in a small outbox until they're sent,
      and what's in the box is kept (never deleted just because this device's copy doesn't have it) */
@@ -107,6 +109,13 @@
       Object.keys(cd).forEach(function (k) { if (k.slice(0, 7) >= since.slice(0, 7)) put('cdone', k, { k: k, who: cd[k] }); });
     }
     if (w.cal) (rj('dash.calendar', {}).events || []).forEach(function (e) { if (e && evShared(e) && e.id) put('ev', e.id, evBox(e)); });   /* one place for an event's shared fields (evBox) – a copy here once dropped the invite */
+    /* the life sections you chose to show them (one way, read-only for them) */
+    var lpOn = function (sec) { return w['lp' + sec] === true && window.Features && Features.on(sec); }, lpPut = function (sec, x, title, sub, date) { if (x && x.id && title) put('lp', sec + '.' + x.id, { sec: sec, title: String(title).slice(0, 80), sub: String(sub || '').slice(0, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date : '' }); };
+    if (lpOn('freezer')) (t.freezer || []).forEach(function (x) { lpPut('freezer', x, x.title + ((+x.n || 1) > 1 ? ' ×' + x.n : ''), x.where, x.date); });
+    if (lpOn('usefood')) (t.usefood || []).forEach(function (x) { if (!x.done) lpPut('usefood', x, x.title, '', x.by); });
+    if (lpOn('pets')) (t.pets || []).forEach(function (x) { var j = window.LifePlus && LifePlus.petJobs ? LifePlus.petJobs(x).filter(function (q) { return q[2]; }).sort(function (a2, b2) { return a2[2] < b2[2] ? -1 : 1; })[0] : null; lpPut('pets', x, x.name, j ? j[1] : x.kind, j ? j[2] : ''); });
+    if (lpOn('parties')) (t.parties || []).forEach(function (x) { if (x.date && x.date >= dkey(new Date())) lpPut('parties', x, x.title, '', x.date); });
+    if (lpOn('ready')) (t.ready || []).forEach(function (x) { lpPut('ready', x, x.name, x.have ? '✓' : (x.qty || ''), x.exp); });
     if (w.plants) (Array.isArray(t.plants) ? t.plants : []).forEach(function (x) { if (x && x.id) put('plant', x.id, { name: String(x.name || '').slice(0, 80), room: String(x.room || '').slice(0, 60), every: +x.every || 7, last: x.last || '' }); });
     if (w.meals) { var ms = t.meals && typeof t.meals === 'object' && !Array.isArray(t.meals) ? t.meals : {}, mf = dkey(new Date(Date.now() - 864e5)); Object.keys(ms).forEach(function (k) { if (/^\d{4}-\d{2}-\d{2}$/.test(k) && k >= mf && ms[k]) put('meal', k, { date: k, text: String(ms[k]).slice(0, 80) }); }); }
     if (w.meals) { var vcut = dkey(new Date(Date.now() - 3 * 864e5)); (Array.isArray(t.votes) ? t.votes : []).filter(function (x) { return x && x.id && x.date >= vcut; }).forEach(function (x) { put('vote', x.id, { date: x.date, opts: x.opts || [], pick: x.pick, from: x.from === 'them' ? 'p' : 'o', at: x.at || 0 }); }); }

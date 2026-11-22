@@ -1,0 +1,13 @@
+
+/* Shop mode (2026-11-22): the list big and alone, one tap per thing */
+.sm-ov { position: fixed; inset: 0; z-index: 400; background: var(--bg, #0e1116); display: flex; flex-direction: column; padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+.sm-head { display: flex; align-items: center; gap: 12px; padding: 4px 0 12px; font-size: 18px; }
+.sm-head .sm-n { margin-left: auto; color: var(--muted); font-size: 14px; }
+.sm-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+.sm-grp { margin: 14px 0 4px; font-size: 13px; font-weight: 600; color: var(--c); text-transform: uppercase; letter-spacing: .04em; }
+.sm-it button { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 58px; padding: 10px 6px; border: 0; border-bottom: 1px solid rgba(var(--ink-rgb), .08); background: none; color: var(--text); font: inherit; font-size: 22px; text-align: left; cursor: pointer; }
+.sm-it button i { font-size: 26px; color: var(--muted); }
+.sm-it.done button { color: var(--muted); text-decoration: line-through; opacity: .55; transition: opacity var(--dur-2, .3s); }
+.sm-it.done button i { color: var(--ok); }
+.sm-done { padding: 40px 0; text-align: center; font-size: 20px; color: var(--ok); }
+html.sm-on { overflow: hidden; }

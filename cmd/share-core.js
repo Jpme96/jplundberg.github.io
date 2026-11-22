@@ -167,6 +167,7 @@
     led: ['date', 'note', 'kind', 'payer', 'o', 'p', 'amount'],
     ev: ['title', 'date', 'end', 'allDay', 'start', 'stop', 'repeat', 'until', 'location', 'inv'],   /* inv: an invite – 'o' the owner asks the other, 'p' the other asks the owner (2026-11-15) */
     plant: ['name', 'room', 'every', 'last'],
+    lp: ['sec', 'title', 'sub', 'date'],                                     /* the life sections you choose to show (freezer, use it up, pets, celebrations, emergency kit) – one way from cmd, off until switched on – 2026-11-22 */
     mv: ['text', 'done'],
     meal: ['date', 'text'],
     vote: ['date', 'opts', 'pick', 'from', 'at'],

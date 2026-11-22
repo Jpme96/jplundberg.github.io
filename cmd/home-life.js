@@ -173,7 +173,11 @@
     l.forEach(function (p) {
       var b = bday(p); if (!b || b.n > +pc.lead) return;
       var tel = String(p.phone || '').replace(/[^\d+]/g, '');
-      if (b.n === 0) add(8, 'balloon', '#d55181', p.name + '’s birthday today', (b.age ? 'Turns ' + b.age : 'Send a greeting') , tel ? 'sms:' + tel : '/cmd/people/', { badge: !window.Delight || window.Delight.on('badgeBday') });
+      if (b.n === 0) {   /* one tap: a text message with the greeting written (2026-11-22) – or the share sheet when there's no number */
+        var first = String(p.name || '').split(' ')[0], greet = I18N.k('ui.bd-greet', 'Happy birthday, {n}! 🎉 Hope you have a lovely day.', { n: first }), sms = tel ? 'sms:' + tel + '&body=' + encodeURIComponent(greet) : '';
+        add(8, 'balloon', '#d55181', p.name + '’s birthday today', (b.age ? 'Turns ' + b.age : 'Send a greeting'), sms || '/cmd/people/', { badge: !window.Delight || window.Delight.on('badgeBday'), act: { id: 'bdgreet:' + p.id + ':' + today(), label: I18N.k('ui.bd-send', 'Send greeting') },
+          run: function () { if (sms) location.href = sms; else if (navigator.share) navigator.share({ text: greet }).catch(function () {}); else { try { navigator.clipboard.writeText(greet); } catch (e) {} if (window.Quick) Quick.toast(I18N.k('ui.bd-copied', 'Greeting copied – paste it where you like')); } } });
+      }
       else add(b.n <= 2 ? 24 : 40, 'balloon', '#d55181', p.name + '’s birthday ' + inDays(b.n), p.gifts ? 'Gift idea: ' + String(p.gifts).split('\n')[0] : (b.age ? 'Turns ' + b.age + ' · ' : '') + 'no gift ideas yet', '/cmd/people/');
     });
     if (pc.catchup) l.filter(function (p) { return overdue(p) != null; }).sort(function (a, b) { return overdue(b) - overdue(a); }).slice(0, +pc.catchupMax || 1).forEach(function (p) {

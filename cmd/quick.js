@@ -41,7 +41,7 @@
       '<input id="qaLine" enterkeyhint="done" placeholder="Type it: 149 rema · tor 14 tannlege · løp 5 km" data-t-placeholder="ui.type-it-149-rema-tor-14-tannlege-l-p-5-k" aria-label="Type what to add" data-t-aria-label="ui.type-what-to-add" spellcheck="false">' +
       '<button type="button" class="qa-clear" id="qaClear" aria-label="Clear" data-t-aria-label="ui.clear" hidden><i class="bi bi-x-circle-fill"></i></button></form>' +
     '<div class="qa-prev" id="qaPrev" hidden></div>' +
-    '<div class="qa-manual"><div class="qa-tabs" role="tablist" id="qaTabs"></div><div class="qa-body" id="qaBody"></div></div></div>';
+    '<div class="qa-manual"><div class="qa-tabs" role="tablist" id="qaTabs"></div><div class="qa-body" id="qaBody"></div><button type="button" class="text-btn qa-siri-btn" data-qasiri><i class="bi bi-mic"></i> <span data-t="ui.qa-siri">Add with Siri</span></button></div></div>';
   document.body.appendChild(bg);
   var kind = 'expense';
   try { kind = localStorage.getItem('dash.quickKind') || 'expense'; } catch (e) {}
@@ -410,7 +410,8 @@
     var q = new URLSearchParams(location.search), a = q.get('add');
     if (!a) return;
     var line = a, pre = null, k = null;
-    if (/^(expense|event|workout|task|todo|note)$/i.test(a)) {
+    if (/^(shop|dinner|mood|wish|return|gift|thanks|freezer|usefood|flex)$/i.test(a)) { k = a.toLowerCase(); line = ''; pre = { t: q.get('text') || q.get('note') || '' }; }   /* the newer kinds (2026-11-22) */
+    else if (/^(expense|event|workout|task|todo|note)$/i.test(a)) {
       k = a.toLowerCase() === 'task' ? 'todo' : a.toLowerCase(); line = '';
       if (k === 'expense') pre = { a: num(q.get('kr') || q.get('amount')) || '', n: q.get('note') || '', c: q.get('cat') || '', d: q.get('date') || '' };
       else if (k === 'event') pre = { t: q.get('title') || q.get('note') || '', d: q.get('date') || '', s: q.get('time') || '', l: q.get('where') || '' };
@@ -421,5 +422,41 @@
     history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
     window.Vault.onUnlock(function () { setTimeout(function () { open(k, pre, line); }, 350); });
   })();
+  /* Siri (2026-11-22): /cmd/?say=<what you said> adds it straight away – no sheet to confirm. On an iPhone a Shortcut opens it
+     in Safari (it can't open a page inside the home-screen app), so what you said waits on this device (dash.qa.say) through
+     the lock screen and is added right after you unlock. What can't be understood opens quick add with the words in. */
+  (function () {
+    var q = new URLSearchParams(location.search), say = q.get('say');
+    if (say) { try { var w0 = JSON.parse(localStorage.getItem('dash.qa.say') || '[]'); w0.push({ t: say.slice(0, 300), at: Date.now() }); localStorage.setItem('dash.qa.say', JSON.stringify(w0.slice(-10))); } catch (e) {}
+      q.delete('say'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); }
+    window.Vault.onUnlock(function () { setTimeout(function () {
+      var w; try { w = JSON.parse(localStorage.getItem('dash.qa.say') || '[]'); } catch (e) { w = []; }
+      w = w.filter(function (x) { return x && x.t && Date.now() - x.at < 864e5; }); localStorage.removeItem('dash.qa.say'); if (!w.length) return;
+      more(function () {
+        w.forEach(function (x, i) {
+          var S = window.Smart, p = S ? S.parse(x.t, { memory: memory(), shopWords: allowed({ kind: 'shop' }) ? shopWords() : null, noShop: !allowed({ kind: 'shop' }) }) : null;
+          if (p && allowed(p) && ADD[p.kind] && ADD[p.kind](p)) return;
+          if (i === w.length - 1) open(null, null, x.t);   /* not understood: the sheet with the words in it */
+        });
+        setTimeout(reload, 0);
+      });
+    }, 400); });
+  })();
+  /* "Use with Siri": the steps for an iPhone Shortcut, with the link to copy */
+  function siriHelp() {
+    var link = location.origin + '/cmd/?say=';
+    $('qaBody').innerHTML = '<div class="qa-siri"><h3><i class="bi bi-mic"></i> ' + esc(K('ui.qa-siri', 'Add with Siri')) + '</h3><ol>' +
+      '<li>' + esc(K('ui.qa-siri-1', 'Open the Shortcuts app and tap + for a new shortcut. Call it something easy to say, like “Add to the dashboard”.')) + '</li>' +
+      '<li>' + esc(K('ui.qa-siri-2', 'Add the action “Dictate Text”.')) + '</li>' +
+      '<li>' + esc(K('ui.qa-siri-3', 'Add “URL” and paste the link below, then tap at the end and add the variable “Dictated Text”.')) + '</li>' +
+      '<li>' + esc(K('ui.qa-siri-4', 'Add “Open URLs”. Done – say “Hey Siri, add to the dashboard” and then “milk”, “149 Rema” or “dinner taco Friday”.')) + '</li></ol>' +
+      '<div class="qa-row"><input readonly value="' + esc(link) + '" id="qaSiriLink" aria-label="Link"><button type="button" class="pill-btn" data-qasiricopy>' + esc(K('ui.copy', 'Copy')) + '</button></div>' +
+      '<p class="muted">' + esc(K('ui.qa-siri-note', 'On an iPhone the shortcut opens the dashboard in Safari, not in the home-screen app (Apple doesn’t allow that). The first time, unlock it there – what you said waits and is added right after. It syncs to the app as usual.')) + '</p>' +
+      '<div class="qa-acts"><button type="button" class="text-btn" data-close><span data-t="ui.close">Close</span></button></div></div>';
+  }
+  bg.addEventListener('click', function (e) {
+    if (e.target.closest('[data-qasiri]')) { e.preventDefault(); siriHelp(); return; }
+    var c = e.target.closest('[data-qasiricopy]'); if (c) { var inp = $('qaSiriLink'); try { navigator.clipboard.writeText(inp.value).then(function () { toast(esc(K('ui.copied', 'Copied'))); }); } catch (x) { inp.select(); } }
+  });
   window.Quick = { open: open, close: close, toast: toast, add: function (p) { return allowed(p) && ADD[p.kind](p); } };
 })();

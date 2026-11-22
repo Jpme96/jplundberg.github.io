@@ -52,6 +52,24 @@
     {
       "name": "Finances",
       "url": "/cmd/finance/"
+    },
+    {
+      "name": "Shopping list",
+      "short_name": "Shopping",
+      "url": "/cmd/food/#shop",
+      "description": "The shopping list"
+    },
+    {
+      "name": "Quick note",
+      "short_name": "Quick",
+      "url": "/cmd/?add=note",
+      "description": "Write a note"
+    },
+    {
+      "name": "Today's mood",
+      "short_name": "Mood",
+      "url": "/cmd/?add=mood",
+      "description": "How are you today?"
     }
   ],
   "share_target": {
