@@ -135,11 +135,16 @@
   var htmlCache = {};
   function page(u) { var x = new URL(u, location.href); return x.origin === location.origin && PAGES.indexOf(x.pathname) > -1 ? x : null; }
   function getHtml(u) { var k = u.pathname; return htmlCache[k] ? Promise.resolve(htmlCache[k]) : fetch(u.pathname, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); }).then(function (t) { htmlCache[k] = t; return t; }); }
+  function keepFresh(path, text) {   /* replaces the page's copy in every cache that has one (the service worker's) */
+    if (!window.caches || !caches.keys) return Promise.resolve(0);
+    return caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.open(k).then(function (c) { return c.match(path).then(function (h) { if (h) return c.put(path, new Response(text, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })).then(function () { return 1; }); return 0; }); }); })); })
+      .then(function (n) { return n.reduce(function (a, b) { return a + b; }, 0); });
+  }
   function srcOf(doc, re) { var s = [].filter.call(doc.querySelectorAll('script[src]'), function (x) { return re.test(x.getAttribute('src')); })[0]; return s ? new URL(s.getAttribute('src'), s.ownerDocument === document ? location.href : base).href : ''; }
   var base = location.href, busy = false, next = null, HEAD = '', stage = '', vtOn = false;
   /* Apple's WebKit: Safari, the home-screen app and the iPhone apps (_app/ – their WebKit has no "Safari" in its name,
      so until 2026-11-22 they got the view-transition glide that stutters there; JP: "very laggy") */
-  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI;
+  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI; window.SoftNav.keepFresh = keepFresh;
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
     /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
@@ -156,7 +161,11 @@
       /* a new version of the dashboard: load it properly */
       /* (the normal load that follows is not a failed page change: the watchdog stops here – 14 Nov 2026, a new version took
          over 6 s to load on Windows Firefox and was counted as a failure, which paused instant page changes there) */
-      if (!HEAD || srcOf(doc, /dist\/head\.js/) !== HEAD) { arrived = true; clearTimeout(dog); return full(); }
+      if (!HEAD || srcOf(doc, /dist\/head\.js/) !== HEAD) { arrived = true; clearTimeout(dog);
+        /* the fresh page goes into the copies the service worker opens pages from first, so this one normal load lands on the
+           new version (an old copy there led to another full load on the next tap, and the next – 2026-11-22, JP: stutter) */
+        var put = keepFresh(u.pathname, text);
+        return Promise.race([put.catch(function () {}), new Promise(function (ok) { sT.call(window, ok, 400); })]).then(full); }
       var scripts = [].filter.call(doc.querySelectorAll('body script[src]'), function (x) { return !/dist\/head\.js/.test(x.getAttribute('src')); }).map(function (x) { return new URL(x.getAttribute('src'), u.href).href; });
       var swap = function () {
         leave();

@@ -106,7 +106,8 @@ const BUDGET_KB = { total: 1719 };   /* 2026-11-22: the phone menu's tapped tab 
 /* 2026-11-22: native.js (the iPhone app helper) and on-phone reminders in notify.js (~3 kB) */
 /* 2026-11-22: hide the keyboard's form toolbar in the iPhone app (native.js, <1 kB) */
 /* 2026-11-22: the phone menu's tapped tab widens with the slide (nav.js, ~1 kB) */
-const PAGE_KB = { 'index.html': 1444, 'admin/index.html': 1357, 'calendar/index.html': 1286, 'finance/index.html': 1719, 'food/index.html': 1378, 'goals/index.html': 1307, 'habits/index.html': 1352, 'house/index.html': 1651, 'papers/index.html': 1326, 'people/index.html': 1377, 'travel/index.html': 1432, 'wish/index.html': 1390, 'work/index.html': 1462 };
+/* 2026-11-22: softnav keeps the fresh page in the cache before a version-change load (<1 kB) */
+const PAGE_KB = { 'index.html': 1444, 'admin/index.html': 1358, 'calendar/index.html': 1287, 'finance/index.html': 1719, 'food/index.html': 1379, 'goals/index.html': 1307, 'habits/index.html': 1353, 'house/index.html': 1651, 'papers/index.html': 1326, 'people/index.html': 1377, 'travel/index.html': 1433, 'wish/index.html': 1391, 'work/index.html': 1462 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
