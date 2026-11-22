@@ -90,6 +90,7 @@
 	<key>WKAppBoundDomains</key>
 	<array>
 		<string>jplundberg.com</string>
+		<string>cmd-lundberg.cloudflareaccess.com</string>
 	</array>
 </dict>
 </plist>

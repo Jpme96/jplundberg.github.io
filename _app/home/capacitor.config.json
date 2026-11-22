@@ -5,7 +5,8 @@
   "server": {
     "url": "https://jplundberg.com/cmd/home/",
     "allowNavigation": [
-      "jplundberg.com"
+      "jplundberg.com",
+      "cmd-lundberg.cloudflareaccess.com"
     ],
     "errorPath": "error.html"
   },
