@@ -95,13 +95,16 @@
     ['Work', 'briefcase', I18N.k('ui.ftg-work', 'Work'), I18N.k('ui.ftg-work-n', 'Turning on any of these adds a Work page to the menu.')],
     ['Travel', 'airplane', I18N.k('ui.ftg-travel', 'Travel'), I18N.k('ui.ftg-travel-n', 'Shown under Trips on the Travel page.')],
     ['House', 'house-gear', I18N.k('ui.ftg-house', 'House'), I18N.k('ui.ftg-house-n', 'Shown on the House page.')],
+    ['Food', 'basket', I18N.k('ui.ftg-food', 'Food'), I18N.k('ui.ftg-food-n', 'Shown on the Food page.')],
+    ['Papers', 'folder2-open', I18N.k('ui.ftg-papers', 'Papers'), I18N.k('ui.ftg-papers-n', 'Shown on the Papers page.')],
+    ['People', 'people', I18N.k('ui.ftg-people', 'People'), I18N.k('ui.ftg-people-n', 'Shown on the People page.')],
     ['Home life', 'people-fill', I18N.k('ui.nav-homelife', 'Family'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
     ['Life admin', 'clipboard-check', I18N.k('ui.nav-lifeadmin', 'Life admin'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
     ['Me', 'person-heart', I18N.k('ui.nav-me', 'Me'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')]
   ];
   var openG = {}, ftq = '';   /* which groups are open and what you searched – only for this visit to Settings */
   /* added in October 2026 – marked until you've tried them */
-  var NEW = { mood: 1, wheel: 1, wins: 1, hobbies: 1, bodycare: 1, screen: 1, style: 1, ready: 1, hood: 1, ladmin: 1, deals: 1, climate: 1, parties: 1, moments: 1, family: 1, pets: 1, clubs: 1, sleep: 1, calm: 1, media: 1, later: 1, digital: 1, career: 1, outdoor: 1, voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
+  var NEW = { usefood: 1, freezer: 1, returns: 1, thanks: 1, mood: 1, wheel: 1, wins: 1, hobbies: 1, bodycare: 1, screen: 1, style: 1, ready: 1, hood: 1, ladmin: 1, deals: 1, climate: 1, parties: 1, moments: 1, family: 1, pets: 1, clubs: 1, sleep: 1, calm: 1, media: 1, later: 1, digital: 1, career: 1, outdoor: 1, voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
   function render() {
     var simp = F.simple && F.simple(), q = ftq.trim().toLowerCase(), hits = 0;
     var rowOf = function (x) {

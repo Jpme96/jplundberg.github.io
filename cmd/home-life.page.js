@@ -730,5 +730,8 @@
     }
     return out.slice(0, 4).join('');
   };
+  /* the tiles are defined above – draw them now too, not only on the next change (2026-11-22: on Food's Meals tab they popped in
+     when Iago ticked something and pushed the cards down) */
+  if (window.Vault.get && window.Vault.get()) drawHero();
   (window.__ui = window.__ui || {})["homelife"] = { workReport: workReport, $t: $t, K: K, METER: METER };
 })();

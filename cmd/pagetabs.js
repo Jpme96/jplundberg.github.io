@@ -8,7 +8,7 @@
   "use strict";
   if (!window.Vault || !window.Features) return;
   var Fe = window.Features, main = document.getElementById('fp');
-  var page = (location.pathname.match(/\/cmd\/(habits|house|work|homelife|lifeadmin|me)\//) || [])[1];
+  var page = (location.pathname.match(/\/cmd\/(habits|house|work|homelife|lifeadmin|me|food|papers|people)\//) || [])[1];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function pad(n) { return String(n).padStart(2, '0'); }
   function dkey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -51,6 +51,22 @@
       feats: { mind: ['mood', 'journal', 'wins', 'wheel'], rest: ['sleep', 'calm', 'screen'], care: ['bodycare', 'style'], free: ['media', 'later', 'outdoor', 'hobbies'], career: ['career', 'learning'] }
     },
 
+    /* Food, Papers, People (2026-11-22, JP: "Do all of it") */
+    food: {
+      tabs: [['meals', I18N.k('ui.tab-meals', 'Meals'), 'calendar-week'], ['shop', I18N.k('ui.tab-shop', 'Shopping'), 'cart3'], ['recipes', I18N.k('ui.recipes', 'Recipes'), 'journal-text'], ['pantry', I18N.k('ui.tab-pantry', 'Pantry'), 'box-seam']],
+      map: [['[data-tool="meals"]', 'meals'], ['[data-tool="shop"]', 'shop'], ['[data-tool="recipes"]', 'recipes'], ['[data-tool="pantry"]', 'pantry'], ['[data-tool="lp-usefood"]', 'pantry'], ['[data-tool="lp-freezer"]', 'pantry']],
+      feats: {}
+    },
+    papers: {
+      tabs: [['docs', I18N.k('ui.tab-docs-all', 'Documents'), 'folder2-open'], ['receipts', I18N.k('ui.tab-receipts', 'Receipts'), 'receipt'], ['soon', I18N.k('ui.tab-expiring', 'Expiring'), 'hourglass-split']],
+      map: [['[data-tool="papers"]', 'docs'], ['[data-tool="pins"]', 'docs'], ['[data-tool="paelse"]', 'docs'], ['[data-tool="parcpt"]', 'receipts'], ['[data-tool="warranty"]', 'receipts'], ['[data-tool="lp-returns"]', 'receipts'], ['[data-tool="pasoon"]', 'soon']],
+      feats: { receipts: ['warranty', 'returns'] }
+    },
+    people: {
+      tabs: [['people', I18N.k('ui.people', 'People'), 'people'], ['dates', I18N.k('ui.tab-dates', 'Dates'), 'calendar-heart'], ['gifts', I18N.k('ui.tab-gifts', 'Gifts'), 'gift']],
+      map: [['[data-tool="people"]', 'people'], ['[data-tool="pdates"]', 'dates'], ['[data-tool="pgifts"]', 'gifts'], ['[data-tool="lp-thanks"]', 'gifts']],
+      feats: { gifts: ['thanks'] }
+    },
     work: {
       tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['insp', I18N.k('ui.tab-insp', 'Inspection'), 'building-check', 'fdv'], ['doc', I18N.k('ui.tab-docu', 'Docs'), 'folder-check'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],   /* Inspections: Work → its own menu (JP 2026-11-14) */
       map: [['#hlTiles', 'today'], ['#wkToday', 'today'], ['[data-tool="flex"]', 'today'], ['[data-tool="wkday"]', 'today'], ['[data-tool="ptime"]', 'today'],

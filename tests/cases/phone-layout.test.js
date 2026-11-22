@@ -45,7 +45,8 @@ const { shared, sl, go } = require('../lib/browser'); const { check, done } = re
     if (pg === 'food/') check(await p.evaluate(() => { const v = document.querySelector('#shop .sh-vis'); return !!v && /Iago/.test(v.textContent) && v.getBoundingClientRect().width < 40; }), 'food: "Visible to Iago" is an icon on the phone (the words kept for screen readers)');
   }
   /* the PC keeps the words on the badge and the tabs in one row */
-  await p.setViewport({ width: 1580, height: 1193 }); await go(p, 'food/', 2000);
+  await p.setViewport({ width: 1580, height: 1193 }); await p.evaluate(() => localStorage.setItem('dash.ptab.food', 'shop'));   /* the list has its own tab since 2026-11-22 */
+  await go(p, 'food/', 2000);
   check(await p.evaluate(() => { const v = document.querySelector('#shop .sh-vis'); return !!v && v.getBoundingClientRect().width > 70; }), 'PC: the badge still says "Visible to Iago"');
   await go(p, 'house/', 2000);
   check(await p.evaluate(() => { const b = [...document.querySelectorAll('.fp-tabs button')].filter(x => x.offsetParent); return b.length > 5 && new Set(b.map(x => Math.round(x.getBoundingClientRect().top))).size === 1; }), 'PC: House tabs stay in one row');

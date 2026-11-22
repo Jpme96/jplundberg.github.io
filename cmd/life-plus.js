@@ -83,6 +83,12 @@
       var wl = list('wheel').filter(function (w) { return w && isKey(w.date); }).map(function (w) { return w.date; }).sort().pop();
       if (!wl || days(wl, t) > 90) add(78, 'bullseye', 'var(--accent)', K('ui.lp-wheel-due', 'Time to score your life wheel'), wl ? K('ui.lp-wheel-ago', 'Last time {n} days ago', { n: days(wl, t) }) : K('ui.lp-wheel-first', 'Takes a minute'), '/cmd/me/#lp-wheel', { key: 'wheel:' + t.slice(0, 7) });
     }
+    if (on('usefood')) { var uf = list('usefood').filter(function (x) { return !x.done && isKey(x.by) && x.by <= addDays(t, 1) && x.by >= addDays(t, -2); }); if (uf.length) add(60, 'clock-history', 'var(--warn)', K('ui.lp-use-q', 'Use it up: {t}', { t: uf.map(function (x) { return x.title; }).slice(0, 3).join(', ') }), K('ui.lp-use-qs', 'Before it goes off'), '/cmd/food/#lp-usefood', { key: 'use:' + t }); }
+    if (on('returns')) list('returns').forEach(function (x) {
+      if ((x.state || 'open') !== 'open' || !isKey(x.got)) return; var d = addDays(x.got, +x.days || 14), n = days(t, d); if (n < 0 || n > 3) return;
+      add(n <= 1 ? 52 : 62, 'arrow-return-left', 'var(--orange)', K('ui.lp-ret-q', 'Return {t}?', { t: x.title }), n === 0 ? K('ui.lp-ret-today', 'Today is the last day') : K('ui.lp-ret-in', 'Last day in {n} days', { n: n }), '/cmd/papers/#lp-returns', { key: 'ret:' + x.id });
+    });
+    if (on('thanks')) { var ty = list('thanks').filter(function (x) { return !x.done && isKey(x.date) && days(x.date, t) >= 2 && days(x.date, t) <= 60; }); if (ty.length) add(74, 'envelope-heart', 'var(--pink)', K('ui.lp-ty-q', 'Say thanks for {n} gifts', { n: ty.length }), ty.slice(0, 3).map(function (x) { return x.what; }).join(', '), '/cmd/people/#lp-thanks', { key: 'ty:' + t.slice(0, 7) + ':' + ty.length }); }
     if (on('outdoor')) list('outdoor').forEach(function (x) {
       if (x.done || !isKey(x.date)) return; var n = days(t, x.date); if (n < 0 || n > 2) return;
       add(50, 'tree', 'var(--ok)', n === 0 ? K('ui.lp-trip-today', '{t} today – check the weather', { t: x.title }) : K('ui.lp-trip-in', '{t} in {n} days – check the weather', { t: x.title, n: n }), x.place || '', '/cmd/me/#lp-outdoor');
@@ -97,8 +103,8 @@
   });
 
   /* the cards (life-plus.page.js) load only when a section is on and this page has its slot – most pages never need them */
-  var LPP_V = '288ac7e01e';   /* stamped by cmd/build.py */
-  var IDS = ['ready', 'hood', 'ladmin', 'deals', 'climate', 'parties', 'moments', 'family', 'pets', 'clubs', 'sleep', 'calm', 'media', 'later', 'digital', 'career', 'outdoor', 'mood', 'wheel', 'wins', 'hobbies', 'bodycare', 'screen', 'style'];
+  var LPP_V = '90cb931d82';   /* stamped by cmd/build.py */
+  var IDS = ['ready', 'hood', 'ladmin', 'deals', 'climate', 'parties', 'moments', 'family', 'pets', 'clubs', 'sleep', 'calm', 'media', 'later', 'digital', 'career', 'outdoor', 'mood', 'wheel', 'wins', 'hobbies', 'bodycare', 'screen', 'style', 'usefood', 'freezer', 'returns', 'thanks'];
   /* the life pages (Home life · Life admin · Me): a note when none of their sections is on */
   function pgEmpty() {
     document.querySelectorAll('[data-pgempty]').forEach(function (e) {

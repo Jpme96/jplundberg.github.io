@@ -445,6 +445,71 @@
   });
   window.LifePlusMe = { blackFriday: blackFriday, bodyDue: bodyDue, bodySeed: bodySeed };
 
+  /* ================= Food: Use it up (things to eat soon, and your recipes that use them) ================= */
+  function recipesWith(name) {
+    var w = String(name || '').toLowerCase().trim().split(/\s+/)[0]; if (w.length < 3) return [];
+    var rx = new RegExp('(^|[^a-zæøå])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    return (Fe.tools().recipes || []).filter(function (r) { return r && rx.test(String(r.ingr || '') + ' ' + String(r.title || r.name || '')); });
+  }
+  card('usefood', { icon: 'clock-history', title: K('ui.lp-use', 'Use it up'), addTitle: K('ui.lp-use-add', 'Something to use soon'), editTitle: K('ui.lp-edit', 'Edit'), limit: 8,
+    fields: [{ k: 'title', type: 'title', label: K('ui.lp-what', 'What'), req: true, ph: K('ui.lp-use-ph', 'e.g. Spinach, cream, half a chicken') }, { k: 'by', type: 'date', label: K('ui.lp-use-by', 'Use by'), def: function () { return addDays(today(), 2); } }, { k: 'done', type: 'check', label: K('ui.lp-use-done', 'Used') }],
+    empty: K('ui.lp-use-empty', 'Write down what needs eating soon – the card shows which of your recipes use it, soonest first.'),
+    sort: function (a, b) { return (a.done ? 1 : 0) - (b.done ? 1 : 0) || ((a.by || '9') < (b.by || '9') ? -1 : 1); },
+    summary: function (items) { var n = items.filter(function (x) { return !x.done && isKey(x.by) && x.by <= addDays(today(), 1); }).length; return n ? '<p class="lp-sum">' + esc(K('ui.lp-use-sum', '{n} to use today or tomorrow', { n: n })) + '</p>' : ''; },
+    row: function (x) {
+      var rs = x.done ? [] : recipesWith(x.title);
+      return { icon: 'basket', color: !x.done && isKey(x.by) && x.by <= today() ? 'var(--warn)' : 'var(--ok)', cls: x.done ? 'lp-done' : '', title: x.title,
+        sub: rs.length ? esc(K('ui.lp-use-rec', 'In: {r}', { r: rs.slice(0, 3).map(function (r) { return r.title || r.name; }).join(', ') })) : esc(x.done ? '' : K('ui.lp-use-norec', 'None of your recipes uses it yet')),
+        right: (isKey(x.by) && !x.done ? when(x.by) : '') + (x.done ? '' : tick('useddone', x.id, K('ui.lp-use-done', 'Used'))) };
+    }
+  });
+  ACT.useddone = function (id) { setList('usefood', function (x) { if (x.id === id) x.done = true; }); };
+
+  /* ================= Food: Freezer (what's in it and since when, oldest first) ================= */
+  card('freezer', { icon: 'snow', title: K('ui.lp-frz', 'Freezer'), addTitle: K('ui.lp-frz-add', 'Into the freezer'), editTitle: K('ui.lp-edit', 'Edit'), limit: 10,
+    fields: [{ k: 'title', type: 'title', label: K('ui.lp-what', 'What'), req: true, ph: K('ui.lp-frz-ph', 'e.g. Bolognese, bread, berries') }, { k: 'n', type: 'number', label: K('ui.lp-frz-n', 'Portions'), def: 1 }, { k: 'date', type: 'date', label: K('ui.lp-frz-in', 'Frozen'), def: today }, { k: 'where', label: K('ui.lp-frz-where', 'Where'), ph: K('ui.lp-frz-where-ph', 'e.g. top drawer') }],
+    empty: K('ui.lp-frz-empty', 'What’s in the freezer and since when – oldest first, so nothing gets lost at the bottom. Tap −1 when you take a portion.'),
+    sort: function (a, b) { return (a.date || '9') < (b.date || '9') ? -1 : 1; },
+    summary: function (items) { var n = items.reduce(function (s, x) { return s + (+x.n || 1); }, 0), old = items.filter(function (x) { return isKey(x.date) && days(x.date, today()) > 180; }).length; return items.length ? '<p class="lp-sum">' + esc(K('ui.lp-frz-sum', '{n} portions', { n: n })) + (old ? ' · ' + esc(K('ui.lp-frz-old', '{n} in for more than 6 months', { n: old })) : '') + '</p>' : ''; },
+    row: function (x) { var d = isKey(x.date) ? days(x.date, today()) : 0; return { icon: 'snow', color: d > 180 ? 'var(--warn)' : 'var(--blue)', title: x.title + ((+x.n || 1) > 1 ? ' ×' + (+x.n) : ''),
+      sub: esc([isKey(x.date) ? K('ui.lp-frz-since', 'in since {d}', { d: fmt(x.date) }) : '', x.where].filter(Boolean).join(' · ')), right: '<span role="button" tabindex="0" class="hl-chip lp-act lp-plus" style="--c:var(--blue)" data-lpact="frzone" data-lpid="' + esc(x.id) + '">−1</span>' }; }
+  });
+  ACT.frzone = function (id) {
+    var t = Fe.tools(), l = Array.isArray(t.freezer) ? t.freezer : [], x = l.filter(function (q) { return q.id === id; })[0]; if (!x) return;
+    var was = JSON.parse(JSON.stringify(l));
+    if ((+x.n || 1) > 1) x.n = (+x.n || 1) - 1; else t.freezer = l.filter(function (q) { return q.id !== id; });
+    Fe.saveTools(t); toast(K('ui.lp-frz-took', 'Taken out'), function () { var t2 = Fe.tools(); t2.freezer = was; Fe.saveTools(t2); });
+  };
+
+  /* ================= Papers: Return deadlines (14 days for buying online in Norway – angrerett – or the shop's own time) ================= */
+  var RDAYS = [[14, K('ui.lp-ret-14', '14 days – bought online or by phone (angrerett)')], [30, K('ui.lp-ret-30', '30 days')], [60, K('ui.lp-ret-60', '60 days')], [100, K('ui.lp-ret-100', '100 days')], [365, K('ui.lp-ret-365', 'A year')]];
+  function retBy(x) { return isKey(x.got) ? addDays(x.got, +x.days || 14) : ''; }
+  card('returns', { icon: 'arrow-return-left', title: K('ui.lp-ret', 'Return deadlines'), addTitle: K('ui.lp-ret-add', 'Something you might return'), editTitle: K('ui.lp-edit', 'Edit'), limit: 8,
+    fields: [{ k: 'title', type: 'title', label: K('ui.lp-what', 'What'), req: true, ph: K('ui.lp-ret-ph', 'e.g. Jacket from Zalando') }, { k: 'shop', label: K('ui.lp-ret-shop', 'Shop') }, { k: 'got', type: 'date', label: K('ui.lp-ret-got', 'Received'), def: today }, { k: 'days', type: 'select', label: K('ui.lp-ret-days', 'Return within'), options: RDAYS, def: 14 }, { k: 'cost', type: 'number', label: K('ui.lp-st-price', 'Price'), suffix: 'kr' }, { k: 'state', type: 'select', label: K('ui.lp-status', 'Status'), options: [['open', K('ui.lp-ret-open', 'Deciding')], ['keep', K('ui.lp-ret-keep', 'Keeping it')], ['sent', K('ui.lp-ret-sent', 'Sent back')], ['refund', K('ui.lp-ret-refund', 'Money back')]], def: 'open' }],
+    beforeSave: function (it) { it.days = +it.days || 14; },
+    empty: K('ui.lp-ret-empty', 'Not sure you’ll keep it? Add it with the day it arrived – you see the last day to send it back, and a reminder comes three days before. Buying online in Norway you have 14 days from when you got it (angrerett); in a shop it’s the shop’s own rules.'),
+    sort: function (a, b) { var o = { open: 0, sent: 1, refund: 2, keep: 3 }; return (o[a.state] || 0) - (o[b.state] || 0) || (retBy(a) < retBy(b) ? -1 : 1); },
+    summary: function (items) { var o = items.filter(function (x) { return (x.state || 'open') === 'open' && retBy(x) >= today(); }), w = items.filter(function (x) { return x.state === 'sent'; }); return items.length ? '<p class="lp-sum">' + esc(K('ui.lp-ret-sum', '{n} still to decide', { n: o.length })) + (w.length ? ' · ' + esc(K('ui.lp-ret-wait', '{n} waiting for money back', { n: w.length })) : '') + '</p>' : ''; },
+    row: function (x) { var d = retBy(x), st = x.state || 'open', past = d && d < today();
+      return { icon: 'arrow-return-left', color: st === 'open' ? (past ? 'var(--slate)' : 'var(--orange)') : st === 'sent' ? 'var(--blue)' : 'var(--ok)', cls: st === 'keep' || st === 'refund' ? 'lp-done' : '', title: x.title,
+        sub: esc([x.shop, +x.cost ? kr(+x.cost) : '', st === 'sent' ? K('ui.lp-ret-sent', 'Sent back') : st === 'keep' ? K('ui.lp-ret-keep', 'Keeping it') : st === 'refund' ? K('ui.lp-ret-refund', 'Money back') : (past ? K('ui.lp-ret-late', 'Too late to return') : K('ui.lp-ret-last', 'last day {d}', { d: fmt(d) }))].filter(Boolean).join(' · ')),
+        right: st === 'open' && !past ? when(d) : '' }; }
+  });
+
+  /* ================= People: Thank-yous (who gave you what, and whether you've said thanks) ================= */
+  function pplOpts() { return [['', K('ui.lp-ty-someone', 'Someone else')]].concat((Fe.tools().people || []).filter(function (p) { return p && p.name; }).sort(function (a, b) { return String(a.name).localeCompare(b.name, 'nb'); }).map(function (p) { return [p.id, p.name]; })); }
+  function whoName(x) { var p = (Fe.tools().people || []).filter(function (q) { return q.id === x.pid; })[0]; return p ? p.name : (x.from || ''); }
+  card('thanks', { icon: 'envelope-heart', title: K('ui.lp-ty', 'Thank-yous'), addTitle: K('ui.lp-ty-add', 'A gift you got'), editTitle: K('ui.lp-edit', 'Edit'), limit: 10,
+    fields: [{ k: 'what', type: 'title', label: K('ui.lp-ty-what', 'What you got'), req: true, ph: K('ui.lp-ty-ph', 'e.g. A scarf, a dinner invitation') }, { k: 'pid', type: 'select', label: K('ui.lp-ty-from', 'From'), options: pplOpts }, { k: 'from', label: K('ui.lp-ty-from2', 'Or write who'), ph: K('ui.lp-ty-from2-ph', 'If they’re not in People') },
+      { k: 'date', type: 'date', label: K('ui.date', 'Date'), def: today }, { k: 'done', type: 'check', label: K('ui.lp-ty-done', 'Thanked') }],
+    empty: K('ui.lp-ty-empty', 'After a birthday or Christmas: who gave you what, and tick them off when you’ve said thanks. Next year you’ll remember who gave what.'),
+    sort: function (a, b) { return (a.done ? 1 : 0) - (b.done ? 1 : 0) || ((b.date || '') > (a.date || '') ? 1 : -1); },
+    summary: function (items) { var n = items.filter(function (x) { return !x.done; }).length; return items.length ? '<p class="lp-sum">' + esc(n ? K('ui.lp-ty-sum', '{n} still to thank', { n: n }) : K('ui.lp-ty-all', 'Everyone thanked ✓')) + '</p>' : ''; },
+    row: function (x) { return { icon: x.done ? 'envelope-check' : 'envelope-heart', color: x.done ? 'var(--ok)' : 'var(--pink)', cls: x.done ? 'lp-done' : '', title: x.what,
+      sub: esc([whoName(x) ? K('ui.lp-ty-fromx', 'from {n}', { n: whoName(x) }) : '', fmt(x.date)].filter(Boolean).join(' · ')), right: x.done ? '' : tick('tydone', x.id, K('ui.lp-ty-done', 'Thanked')) }; }
+  });
+  ACT.tydone = function (id) { setList('thanks', function (x) { if (x.id === id) x.done = true; }); };
+
   /* plain cards draw on the same changes as the Kit ones */
   function drawPlain() { drawClimate(); drawSleep(); drawCalm(); drawMood(); drawWheel(); drawScreen(); }
   ['tools:change', 'features:change', 'fin:change', 'health:change', 'vault:in'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawPlain, 30); }); });

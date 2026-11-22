@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-egyKGjp4Bbf8zQ+grOf918RfEzjJx38yyZxsFWJ+b5E=' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: https://api.entur.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://archive-api.open-meteo.com https://api.frankfurter.app https://nominatim.openstreetmap.org https://api.github.com https://raw.githubusercontent.com https://www.hvakosterstrommen.no https://data.norges-bank.no https://cdn.jsdelivr.net https://work.jplundberg.com; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-F5AUMpGZ2tAf+iRN5vgnOGj9PzUPsO54/7+tpkcv24I=' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: https://api.entur.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://archive-api.open-meteo.com https://api.frankfurter.app https://nominatim.openstreetmap.org https://api.github.com https://raw.githubusercontent.com https://www.hvakosterstrommen.no https://data.norges-bank.no https://cdn.jsdelivr.net https://work.jplundberg.com; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="theme-color" content="#0e0f11">
@@ -48,7 +48,7 @@
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
           habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false) || on('gym', false) || on('rest', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) || on('fdv', false) || on('holiday', false) || on('ptime', false),
-          house: on('house', false) || on('ready', false) || on('hood', false), people: on('people', false), food: on('food', false), papers: on('papers', true), wish: on('wish', true), goals: on('goals', true), homelife: on('parties', false) || on('moments', false) || on('family', false) || on('pets', false) || on('clubs', false), lifeadmin: on('ladmin', false) || on('deals', false) || on('digital', false) || on('climate', false), me: on('mood', false) || on('journal', false) || on('wins', false) || on('wheel', false) || on('sleep', false) || on('calm', false) || on('screen', false) || on('bodycare', false) || on('style', false) || on('media', false) || on('later', false) || on('outdoor', false) || on('hobbies', false) || on('career', false) || on('learning', false), admin: (s.admin || {}).tab !== false };
+          house: on('house', false) || on('ready', false) || on('hood', false), people: on('people', false) || on('thanks', false), food: on('food', false) || on('usefood', false) || on('freezer', false), papers: on('papers', true) || on('returns', false), wish: on('wish', true), goals: on('goals', true), homelife: on('parties', false) || on('moments', false) || on('family', false) || on('pets', false) || on('clubs', false), lifeadmin: on('ladmin', false) || on('deals', false) || on('digital', false) || on('climate', false), me: on('mood', false) || on('journal', false) || on('wins', false) || on('wheel', false) || on('sleep', false) || on('calm', false) || on('screen', false) || on('bodycare', false) || on('style', false) || on('media', false) || on('later', false) || on('outdoor', false) || on('hobbies', false) || on('career', false) || on('learning', false), admin: (s.admin || {}).tab !== false };
         var nvo = Array.isArray(s.navOff) ? s.navOff : []; Object.keys(tabs).forEach(function (k) { if (!tabs[k] || nvo.indexOf(k) > -1) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
@@ -639,9 +639,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=d66a46fbd6"></script>
+  <script src="../dist/head.js?v=7ce25a6e88"></script>
   <script src="../dist/page-me.js?v=04da252a9e"></script>
-  <script src="../dist/tail.js?v=37bf7b110e"></script>
+  <script src="../dist/tail.js?v=34ddd0ba28"></script>
   <!-- /scripts -->
 </body>
 </html>

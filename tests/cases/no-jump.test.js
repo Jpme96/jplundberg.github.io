@@ -3,6 +3,7 @@ const { shared, sl, U, go } = require('../lib/browser'); const { check, done } =
 (async () => {
   const { b, p, b2, q } = await shared();
   await p.evaluate(() => { ['food', 'shop', 'meals', 'pantry', 'recipes', 'house', 'chores'].forEach(f => Features.set(f, true)); const t = Features.tools(); t.shop = []; for (let i = 0; i < 25; i++) t.shop.push({ id: 's' + i + Date.now(), text: 'Item ' + i, done: false }); Features.saveTools(t); });
+  await p.evaluate(() => localStorage.setItem('dash.ptab.food', 'shop'));   /* looking at the list – it has its own tab since 2026-11-22 */
   await sl(3000);
   await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
   await q.evaluate(() => document.querySelector('[data-tab="shop"]').click()); await sl(800);
