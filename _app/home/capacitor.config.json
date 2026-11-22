@@ -13,7 +13,8 @@
   "ios": {
     "appendUserAgent": "homeapp/1",
     "contentInset": "never",
-    "limitsNavigationsToAppBoundDomains": true
+    "limitsNavigationsToAppBoundDomains": true,
+    "webContentsDebuggingEnabled": true
   },
   "backgroundColor": "#0e0f10",
   "plugins": {
