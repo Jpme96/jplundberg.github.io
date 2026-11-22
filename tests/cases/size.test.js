@@ -101,7 +101,8 @@ const BUDGET_KB = { total: 1695 };   /* +4 kB on every page (2026-11-22, JP: 'Yo
 /* +3 kB on every page (2026-11-22, JP: 'Do all of it'): tabs on Food, Papers, People and four new sections (feature entries, At a glance lines) */
 /* +6 kB on every page (2026-11-22, JP: quick add knows ten more things): the typed-line parser and the tabs; the forms load only when the sheet opens (dist/quick-more.js) */
 /* +4 kB on every page (2026-11-22, JP: 'You can do them'): the facts and switches for the Family, Life admin and Me pictures in scenes.js/delight.js */
-const PAGE_KB = { 'index.html': 1420, 'admin/index.html': 1333, 'calendar/index.html': 1263, 'finance/index.html': 1695, 'food/index.html': 1352, 'goals/index.html': 1283, 'habits/index.html': 1329, 'house/index.html': 1625, 'papers/index.html': 1302, 'people/index.html': 1351, 'travel/index.html': 1407, 'wish/index.html': 1366, 'work/index.html': 1436 };
+/* +2 kB on the Travel page (2026-11-22, JP: passport lines and confirmations): the loader and the fields for number, name and the scan */
+const PAGE_KB = { 'index.html': 1420, 'admin/index.html': 1333, 'calendar/index.html': 1263, 'finance/index.html': 1695, 'food/index.html': 1352, 'goals/index.html': 1283, 'habits/index.html': 1329, 'house/index.html': 1625, 'papers/index.html': 1302, 'people/index.html': 1351, 'travel/index.html': 1409, 'wish/index.html': 1366, 'work/index.html': 1436 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

@@ -72,7 +72,8 @@
     $('docList').innerHTML = docs.map(function (d) {
       var K = D[d.kind] || D.other, st = docStatus(d);
       return '<li><button type="button" class="doc-row" data-doc="' + esc(d.id) + '"><span class="ic"><i class="bi bi-' + K.icon + '"></i></span>' +
-        '<span class="x"><b>' + esc(d.name || K.name) + '</b><span class="st ' + st.cls + '">' + esc(st.text) + '</span></span><i class="bi bi-chevron-right"></i></button></li>';
+        '<span class="x"><b>' + esc(d.name || K.name) + '</b><span class="st ' + st.cls + '">' + esc(st.text) + '</span>' + (d.number || d.holder ? '<small class="doc-no">' + esc([d.holder, d.number].filter(Boolean).join(' · ')) + '</small>' : '') + '</span><i class="bi bi-chevron-right"></i></button>' +
+        (d.paper ? '<a class="text-btn doc-scan" href="/cmd/papers/#papers=' + esc(d.paper) + '"><i class="bi bi-file-earmark-image"></i> ' + esc(I18N.k('ui.ti-doc-open', 'The scan')) + '</a>' : '') + '</li>';
     }).join('');
     $('docIntro').hidden = docs.length > 0;
   }
@@ -769,6 +770,17 @@
     closeTrip();
   });
 
+  /* the passport reader and the confirmation import (travel-import.js) load the first time one of their forms opens – build.py stamps TIV_V */
+  var TIV_V = 'abc99e573e';
+  function ti(cb) {
+    if (window.TravelImport && document.getElementById('tiImpBox')) { if (cb) cb(); return; }
+    if (window.TravelImport && window.TravelImport.mount) { window.TravelImport.mount(); if (cb) cb(); return; }
+    (ti.q = ti.q || []).push(cb); if (ti.loading) return; ti.loading = 1;
+    var sc = document.createElement('script'); sc.src = '/cmd/dist/travel-import.js?v=' + TIV_V;
+    sc.onload = function () { var q = ti.q || []; ti.q = []; ti.loading = 0; q.forEach(function (f) { if (f) f(); }); };
+    sc.onerror = function () { ti.loading = 0; ti.q = []; };
+    document.head.appendChild(sc);
+  }
   /* ---------- plan item editor ---------- */
   var editingItem = null, itype = 'flight';
   $('tiTypes').innerHTML = Object.keys(T).map(function (k) {
@@ -811,6 +823,7 @@
     $('tiNotes').value = it ? (it.notes || '') : '';
     $('tiDelBox').hidden = !it;
     openSheet($('tiBg'));
+    if (!it) ti();   /* "Fill in from a confirmation" */
   }
   $('tiForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -841,6 +854,32 @@
     });
     closeSheet($('tiBg'));
   });
+  /* bookings found in a confirmation (travel-import.js): all added at once, or the first one into the form to change */
+  function costIn(it, tr) {
+    var cost = num(it.cost || '');
+    if (cost && !it.noFin) it.spendId = F.logSpend({ amount: cost, date: today(), cat: 'travel', note: (tr.name + ': ' + (it.title || (T[it.type] || T.other).name)) }) || undefined;
+  }
+  window.TripsApi = {
+    addItems: function (list) {
+      if (!current()) return;
+      update(function (tr) {
+        tr.items = tr.items || [];
+        list.forEach(function (x) {
+          var it = Object.assign({ id: F.uid() }, { type: T[x.type] ? x.type : 'other', title: String(x.title || '').slice(0, 100), date: x.date, time: x.time || '', endDate: x.endDate || '', endTime: x.endTime || '',
+            from: String(x.from || '').slice(0, 120), to: String(x.to || '').slice(0, 120), ref: String(x.ref || '').slice(0, 40), cost: x.cost ? String(num(x.cost)) : '', notes: '' });
+          if (tr.items.some(function (y) { return y.type === it.type && y.title === it.title && y.date === it.date; })) return;   /* already in the plan */
+          tr.items.push(it); costIn(it, tr);
+          if (it.date < tr.start) tr.start = it.date; var last = it.endDate || it.date; if (last > (tr.end || tr.start)) tr.end = last;
+        });
+      });
+      closeSheet($('tiBg'));
+    },
+    fillItem: function (x) {
+      setType(T[x.type] ? x.type : 'other');
+      $('tiName').value = x.title || ''; $('tiDate').value = x.date || ''; $('tiTime').value = x.time || ''; $('tiEndDate').value = x.endDate || ''; $('tiEndTime').value = x.endTime || '';
+      $('tiFrom').value = x.from || ''; $('tiTo').value = x.to || ''; $('tiRef').value = x.ref || ''; $('tiCost').value = x.cost || '';
+    }
+  };
   $('tiDelete').addEventListener('click', function () {
     update(function (tr) {
       var it = (tr.items || []).filter(function (x) { return x.id === editingItem; })[0];
@@ -874,6 +913,7 @@
     $('docNote').value = d ? (d.note || '') : '';
     $('docDelBox').hidden = !d;
     openSheet($('docBg'));
+    ti(function () { if (window.TravelImport.fillDoc) window.TravelImport.fillDoc(d); });   /* number, name, the scan in Papers, read from the passport (travel-import.js) */
   }
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-doc]');
@@ -886,6 +926,7 @@
     if (!d) { d = { id: F.uid() }; t.docs.push(d); }
     Object.assign(d, { kind: dkind, name: $('docName').value.trim().slice(0, 60) || D[dkind].name, expires: $('docExp').value || '',
       remind: +$('docRemind').value || 6, note: $('docNote').value.trim().slice(0, 120) });
+    if (window.TravelImport && window.TravelImport.readDoc) { var ex = window.TravelImport.readDoc(); Object.keys(ex).forEach(function (k) { if (ex[k]) d[k] = ex[k]; else delete d[k]; }); }
     F.saveTravel(t);
     closeSheet($('docBg'));
   });

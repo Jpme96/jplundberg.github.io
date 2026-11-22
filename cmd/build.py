@@ -114,6 +114,14 @@ _lp2 = re.sub(r"var LPP_V = '[^']*'", "var LPP_V = '%s'" % (lpp_v or 'x'), _lp)
 if _lp2 != _lp:
     if check: print('out of date (version): cmd/life-plus.js'); stale = True
     else: io.open(_LP, 'w', encoding='utf-8').write(_lp2)
+# Travel's passport reader and confirmation import load the first time one of their forms opens (trips.js) – 2026-11-22
+tiv_v = write('travel-import.js', bundle(['travel/travel-import.js']))
+stale |= tiv_v is None
+_TR = os.path.join(HERE, 'travel', 'trips.js'); _tr = io.open(_TR, encoding='utf-8').read()
+_tr2 = re.sub(r"var TIV_V = '[^']*'", "var TIV_V = '%s'" % (tiv_v or 'x'), _tr)
+if _tr2 != _tr:
+    if check: print('out of date (version): cmd/travel/trips.js'); stale = True
+    else: io.open(_TR, 'w', encoding='utf-8').write(_tr2)
 # quick add's extra kinds load the first time the sheet opens (quick.js) – 2026-11-22
 qmv_v = write('quick-more.js', bundle(['quick-more.js']))
 stale |= qmv_v is None

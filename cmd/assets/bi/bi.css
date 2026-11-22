@@ -1,5 +1,5 @@
-/* Bootstrap Icons v1.11.3 (MIT) – only the 1233 icons cmd uses. Built by cmd/icons.py – don’t edit. */
-@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?2505440b64") format("woff2")}
+/* Bootstrap Icons v1.11.3 (MIT) – only the 1234 icons cmd uses. Built by cmd/icons.py – don’t edit. */
+@font-face{font-display:block;font-family:"bootstrap-icons";src:url("bi.woff2?43b26263c0") format("woff2")}
 .bi::before, [class^="bi-"]::before, [class*=" bi-"]::before { display: inline-block; font-family: bootstrap-icons !important; font-style: normal; font-weight: normal !important; font-variant: normal; text-transform: none; line-height: 1; vertical-align: -.125em; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .bi-1-circle::before{content:"\f797"}
 .bi-1-circle-fill::before{content:"\f796"}
@@ -1196,6 +1196,7 @@
 .bi-union::before{content:"\f5fe"}
 .bi-unlock::before{content:"\f600"}
 .bi-unlock-fill::before{content:"\f5ff"}
+.bi-upc-scan::before{content:"\f601"}
 .bi-upload::before{content:"\f603"}
 .bi-wallet2::before{content:"\f615"}
 .bi-watch::before{content:"\f616"}

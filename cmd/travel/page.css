@@ -3,3 +3,22 @@
 .tp-during { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 .tp-during:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .tp-explore { min-width: 36px; }
+
+/* Fill things in for you (travel-import.js, 2026-11-22): the passport lines and booking confirmations */
+.ti-imp { margin: 0 0 12px; display: grid; gap: 8px; }
+.ti-imp details { border: 1px solid rgba(var(--ink-rgb), .12); border-radius: var(--r-ctl, 12px); padding: 10px 12px; }
+.ti-imp summary { cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.ti-imp summary i { color: var(--accent); }
+.ti-imp details[open] summary { margin-bottom: 8px; }
+.ti-imp textarea { width: 100%; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; margin-bottom: 8px; }
+.ti-imp-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ti-imp-out { margin: 8px 0 0; font-size: var(--fs-s, 13px); }
+.ti-imp-out.ok { color: var(--ok); }
+.ti-imp-out.bad { color: var(--warn); }
+.ti-imp-row { display: grid; grid-template-columns: 9em 1fr; align-items: center; gap: 8px; }
+.ti-imp-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.ti-imp-list li { display: flex; gap: 10px; align-items: flex-start; }
+.ti-imp-list i { color: var(--accent); margin-top: 2px; }
+.ti-imp-list small { display: block; color: var(--muted); }
+.doc-no { display: block; color: var(--muted); font-size: 12px; }
+.doc-scan { margin: 2px 0 6px 52px; font-size: 13px; }
