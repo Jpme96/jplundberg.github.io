@@ -86,33 +86,48 @@
   var F = window.Features;
   var box = $('ftList');
   if (!F || !box) return;
-  var GROUP_ICON = { Everyday: 'grid-1x2', Work: 'briefcase', Health: 'heart-pulse', Travel: 'airplane', Finance: 'wallet2', 'Home life': 'house-heart' };
-  var GROUP_NOTE = {
-    Everyday: 'The main parts. Switching one off hides its page, card and calendar items – nothing is deleted.',
-    Work: 'Turning on any of these adds a Work page to the menu.',
-    Health: 'Shown on the Health page (the menu tab shows when any of these or Habits is on).',
-    Travel: 'Shown under Trips on the Travel page.',
-    Finance: 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.',
-    'Home life': 'Each one is its own page in the menu. Switching one off hides it – nothing is deleted.'
-  };
+  /* grouped by where you find them (2026-11-22, JP: "clean the features, it's getting very long") – each group folds */
+  var GROUPS = [
+    ['Main pages', 'grid-1x2', I18N.k('ui.ftg-main', 'Main pages'), I18N.k('ui.ftg-main-n', 'Each one is a page in the menu. Switching one off hides its page, cards and calendar items – nothing is deleted.')],
+    ['Everywhere', 'stars', I18N.k('ui.ftg-every', 'Helpers everywhere'), ''],
+    ['Finances', 'wallet2', I18N.k('ui.ftg-fin', 'Finances'), I18N.k('ui.ftg-fin-n', 'Shown on the Finances page. Renewals and warranty dates also go in your calendar.')],
+    ['Health', 'heart-pulse', I18N.k('ui.ftg-health', 'Health'), I18N.k('ui.ftg-health-n', 'Shown on the Health page.')],
+    ['Work', 'briefcase', I18N.k('ui.ftg-work', 'Work'), I18N.k('ui.ftg-work-n', 'Turning on any of these adds a Work page to the menu.')],
+    ['Travel', 'airplane', I18N.k('ui.ftg-travel', 'Travel'), I18N.k('ui.ftg-travel-n', 'Shown under Trips on the Travel page.')],
+    ['House', 'house-gear', I18N.k('ui.ftg-house', 'House'), ''],
+    ['Home life', 'house-heart', I18N.k('ui.nav-homelife', 'Home life'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
+    ['Life admin', 'clipboard-check', I18N.k('ui.nav-lifeadmin', 'Life admin'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')],
+    ['Me', 'person-heart', I18N.k('ui.nav-me', 'Me'), I18N.k('ui.ftg-page-n', 'Turning on any of these adds this page to the menu.')]
+  ];
+  var openG = {}, ftq = '';   /* which groups are open and what you searched – only for this visit to Settings */
   /* added in October 2026 – marked until you've tried them */
-  var NEW = { ready: 1, hood: 1, ladmin: 1, deals: 1, climate: 1, parties: 1, moments: 1, family: 1, pets: 1, clubs: 1, sleep: 1, calm: 1, media: 1, later: 1, digital: 1, career: 1, outdoor: 1, voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
+  var NEW = { mood: 1, wheel: 1, wins: 1, hobbies: 1, bodycare: 1, screen: 1, style: 1, ready: 1, hood: 1, ladmin: 1, deals: 1, climate: 1, parties: 1, moments: 1, family: 1, pets: 1, clubs: 1, sleep: 1, calm: 1, media: 1, later: 1, digital: 1, career: 1, outdoor: 1, voice: 1, findtime: 1, shutdown: 1, prep: 1, fdv: 1, holiday: 1, gym: 1, rest: 1, tripbudget: 1, smartpack: 1, power: 1, jars: 1, ptime: 1, house: 1, people: 1, food: 1, papers: 1, hproj: 1, hdocs: 1, hclaim: 1, recur: 1, shared: 1, hreport: 1 };
   function render() {
-    var groups = [];
-    F.LIST.forEach(function (x) { if (groups.indexOf(x.group) < 0) groups.push(x.group); });
-    var simp = F.simple && F.simple();
-    box.innerHTML = '<label class="st-row ft-row ft-simple"><span class="st-ico" style="--c:#7a8794"><i class="bi bi-ui-checks-grid"></i></span><span class="st-label"><span data-t="ui.simple-mode">Simple mode</span><small>' +
-      (simp ? 'On – the extras are hidden. Your switches are kept for when you turn it off.' : 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, power prices, savings jars, recurring and shared payments, warranties)') +
-      '</small></span><input type="checkbox" class="switch" data-simple' + (simp ? ' checked' : '') + ' aria-label="Simple mode"></label>' + groups.map(function (g) {
-      return '<p class="st-cardgroup"><i class="bi bi-' + GROUP_ICON[g] + '"></i> ' + g + '</p>' +
-        F.LIST.filter(function (x) { return x.group === g; }).map(function (x) {
-          var adv = F.ADV && F.ADV.indexOf(x.id) > -1;
-          if (adv && simp) return '';
-          return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
-            '<span class="st-label">' + I18N.k('ui.ftn-' + x.id, x.name) + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new" data-t="ui.new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + I18N.k('ui.ftd-' + x.id, x.desc) + '</small></span>' +
-            '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + x.name + '"></label>';
-        }).join('') + (GROUP_NOTE[g] ? '<p class="st-note ft-note">' + GROUP_NOTE[g] + '</p>' : '');
+    var simp = F.simple && F.simple(), q = ftq.trim().toLowerCase(), hits = 0;
+    var rowOf = function (x) {
+      var nm = I18N.k('ui.ftn-' + x.id, x.name), ds = I18N.k('ui.ftd-' + x.id, x.desc);
+      if (q && (nm + ' ' + ds + ' ' + x.name).toLowerCase().indexOf(q) < 0) return '';
+      hits++;
+      return '<label class="st-row ft-row"><span class="st-ico" style="--c:' + x.c + '"><i class="bi bi-' + x.icon + '"></i></span>' +
+        '<span class="st-label">' + nm + (NEW[x.id] && !F.on(x.id) ? ' <span class="ft-new"><span data-t="ui.new">New</span></span>' : '') + '<small>' + ds + '</small></span>' +
+        '<input type="checkbox" class="switch" data-feat="' + x.id + '"' + (F.on(x.id) ? ' checked' : '') + ' aria-label="' + nm + '"></label>';
+    };
+    var known = GROUPS.map(function (g) { return g[0]; }), rest = [];
+    F.LIST.forEach(function (x) { if (known.indexOf(x.group) < 0 && rest.indexOf(x.group) < 0) rest.push(x.group); });
+    var html = GROUPS.concat(rest.map(function (g) { return [g, 'grid', g, '']; })).map(function (g) {
+      var all = F.LIST.filter(function (x) { return x.group === g[0] && !(simp && F.ADV && F.ADV.indexOf(x.id) > -1); });
+      if (!all.length) return '';
+      var rows = all.map(rowOf).join(''); if (!rows) return '';
+      var on = all.filter(function (x) { return F.on(x.id); }).length, nw = all.filter(function (x) { return NEW[x.id] && !F.on(x.id); }).length;
+      return '<details class="ft-grp" data-ftg="' + g[0] + '"' + (q || openG[g[0]] ? ' open' : '') + '><summary><span class="st-ico"><i class="bi bi-' + g[1] + '"></i></span><b>' + g[2] + '</b>' +
+        '<small class="ft-cnt tnum">' + I18N.k('ui.sum-n-of-m-on', '{n} of {m} on', { n: on, m: all.length }) + '</small>' + (nw ? '<span class="ft-new">' + I18N.k('ui.ftg-new', '{n} new', { n: nw }) + '</span>' : '') + '<i class="bi bi-chevron-down ft-chev"></i></summary>' +
+        rows + (g[3] ? '<p class="st-note ft-note">' + g[3] + '</p>' : '') + '</details>';
     }).join('');
+    box.innerHTML = '<label class="ft-search"><i class="bi bi-search"></i><input type="search" data-ftq placeholder="' + I18N.k('ui.ftg-find', 'Find a feature') + '" aria-label="' + I18N.k('ui.ftg-find', 'Find a feature') + '" value="' + ftq.replace(/"/g, '&quot;') + '"></label>' +
+      '<label class="st-row ft-row ft-simple"><span class="st-ico" style="--c:#7a8794"><i class="bi bi-ui-checks-grid"></i></span><span class="st-label"><span data-t="ui.simple-mode">Simple mode</span><small>' +
+      (simp ? 'On – the extras are hidden. Your switches are kept for when you turn it off.' : 'Hide the extras (talk to add, find time, shutdown ritual, holiday planner, rest-day advisor, health report, trip budget, smart packing, power prices, savings jars, recurring and shared payments, warranties)') +
+      '</small></span><input type="checkbox" class="switch" data-simple' + (simp ? ' checked' : '') + ' aria-label="Simple mode"></label>' +
+      html + (q && !hits ? '<p class="st-note ft-none">' + I18N.k('ui.ftg-none', 'No feature matches that.') + '</p>' : '');
     summary();
   }
   function summary() {
@@ -121,10 +136,16 @@
     var extra = F.LIST.filter(function (x) { return !x.def && F.on(x.id); }).length;
     s.textContent = I18N.k('ui.sum-n-of-m-on', '{n} of {m} on', { n: F.LIST.filter(function (x) { return F.on(x.id); }).length, m: F.LIST.length }) + (extra ? ' · ' + I18N.k('ui.sum-n-extra', '{n} extra', { n: extra }) : '');
   }
+  box.addEventListener('toggle', function (e) { var d = e.target; if (d.dataset && d.dataset.ftg && !ftq) openG[d.dataset.ftg] = d.open; }, true);
+  box.addEventListener('input', function (e) {
+    if (!e.target.hasAttribute || !e.target.hasAttribute('data-ftq')) return;
+    ftq = e.target.value; var at = e.target.selectionStart; render();
+    var n = box.querySelector('[data-ftq]'); if (n) { n.focus(); try { n.setSelectionRange(at, at); } catch (x) {} }
+  });
   box.addEventListener('change', function (e) {
     if (e.target.hasAttribute && e.target.hasAttribute('data-simple')) { F.setSimple(e.target.checked); render(); return; }
     var id = e.target.dataset && e.target.dataset.feat;
-    if (id) F.set(id, e.target.checked);
+    if (id) { F.set(id, e.target.checked); var d = e.target.closest('details'); if (d) { var on = d.querySelectorAll('[data-feat]:checked').length, all = d.querySelectorAll('[data-feat]').length, c = d.querySelector('.ft-cnt'); if (c) c.textContent = I18N.k('ui.sum-n-of-m-on', '{n} of {m} on', { n: on, m: all }); } }
   });
   /* ---------- Settings → Work (flex time preferences; shown when a Work part is on) ---------- */
   function wkCfg() { var c = F.tools().flexcfg || {}; return { norm: +c.norm || 7.5, brk: +c.brk || 0, vacation: +c.vacation || 25 }; }

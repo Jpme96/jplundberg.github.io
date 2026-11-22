@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-tl3lrO4oZwMu2iSp81CIp+OFvD3v1uu+H3agvbcU+/o=' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: https://api.entur.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://archive-api.open-meteo.com https://api.frankfurter.app https://nominatim.openstreetmap.org https://api.github.com https://raw.githubusercontent.com https://www.hvakosterstrommen.no https://data.norges-bank.no https://cdn.jsdelivr.net https://work.jplundberg.com; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-xjYrA+ay844zn4AariQVsax8LtxrlXV/vC8d4TH1R1g=' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://server.arcgisonline.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' blob: data: https://api.entur.io https://api.open-meteo.com https://geocoding-api.open-meteo.com https://archive-api.open-meteo.com https://api.frankfurter.app https://nominatim.openstreetmap.org https://api.github.com https://raw.githubusercontent.com https://www.hvakosterstrommen.no https://data.norges-bank.no https://cdn.jsdelivr.net https://work.jplundberg.com; worker-src 'self' blob:; frame-src 'self' blob:; media-src 'self' blob: data:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="theme-color" content="#0e0f11">
@@ -48,7 +48,7 @@
           finance: on('finance', true) || on('subs', false) || on('warranty', false),
           habits: on('habits', true) || on('training', false) || on('health', false) || on('journal', false) || on('ahealth', false) || on('gym', false) || on('rest', false),
           work: on('flex', false) || on('meetings', false) || on('learning', false) || on('fdv', false) || on('holiday', false) || on('ptime', false),
-          house: on('house', false), people: on('people', false), food: on('food', false), papers: on('papers', true), wish: on('wish', true), goals: on('goals', true), homelife: on('ready', false) || on('hood', false) || on('parties', false) || on('moments', false) || on('family', false) || on('pets', false) || on('clubs', false), lifeadmin: on('ladmin', false) || on('deals', false) || on('digital', false) || on('climate', false), me: on('sleep', false) || on('calm', false) || on('media', false) || on('later', false) || on('career', false) || on('outdoor', false), admin: (s.admin || {}).tab !== false };
+          house: on('house', false), people: on('people', false), food: on('food', false), papers: on('papers', true), wish: on('wish', true), goals: on('goals', true), homelife: on('ready', false) || on('hood', false) || on('parties', false) || on('moments', false) || on('family', false) || on('pets', false) || on('clubs', false), lifeadmin: on('ladmin', false) || on('deals', false) || on('digital', false) || on('climate', false), me: on('mood', false) || on('journal', false) || on('wins', false) || on('wheel', false) || on('sleep', false) || on('calm', false) || on('screen', false) || on('bodycare', false) || on('style', false) || on('media', false) || on('later', false) || on('outdoor', false) || on('hobbies', false) || on('career', false) || on('learning', false), admin: (s.admin || {}).tab !== false };
         var nvo = Array.isArray(s.navOff) ? s.navOff : []; Object.keys(tabs).forEach(function (k) { if (!tabs[k] || nvo.indexOf(k) > -1) r.classList.add('tab-off-' + k); });
         var mo = s.motion || (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'off' : 'full');
         r.classList.add('mo-' + mo);
@@ -71,7 +71,7 @@
       });
     })(document.documentElement);
   </script>
-  <link href="../styles.css?v=2baa48d02f" rel="stylesheet">
+  <link href="../styles.css?v=0d509a8945" rel="stylesheet">
   <link href="page.css?v=a1bde2b984" rel="stylesheet">
   <link href="../modern.css?v=0d4933abd3" rel="stylesheet">
   <link href="../sidenav.css?v=3f1593c639" rel="stylesheet">
@@ -706,9 +706,9 @@
   <!-- /settings -->
 
   <!-- scripts: built by cmd/build.py from cmd/scripts.json -->
-  <script src="../dist/head.js?v=d36cdafed0"></script>
+  <script src="../dist/head.js?v=70c6048fdf"></script>
   <script src="../dist/page-calendar.js?v=5c5057eaf4"></script>
-  <script src="../dist/tail.js?v=8534f1a627"></script>
+  <script src="../dist/tail.js?v=4daac8d76b"></script>
   <!-- /scripts -->
 </body>
 </html>

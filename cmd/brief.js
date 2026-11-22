@@ -284,7 +284,7 @@
 
     /* journal in the evening */
     if (Fe && Fe.on('journal') && now.getHours() >= 19 && !Fe.list('journal').some(function (j) { return j.date === today; }))
-      add(65, 'journal-bookmark', '#c9a227', 'How was today?', 'One line in your journal', 'habits/#journal', { key: 'journal:' + today, tip: true });
+      add(65, 'journal-bookmark', '#c9a227', 'How was today?', 'One line in your journal', 'me/#journal', { key: 'journal:' + today, tip: true });
   }
 
   /* charges that come back every month: a subscription you haven't added – or one whose price went up */

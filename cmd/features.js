@@ -12,22 +12,22 @@
   window.Tok = function (c) { var m = typeof c === 'string' && /^#([0-9a-f]{6})$/i.exec(c.trim()); return m && TOK[m[1].toLowerCase()] ? 'var(--' + TOK[m[1].toLowerCase()] + ')' : c; };
 
   var LIST = [
-    { id: 'calendar', group: 'Everyday', name: 'Calendar', icon: 'calendar3', c: '#3987e5', desc: 'Events, repeats and your phone calendar', def: true },
-    { id: 'travel', group: 'Everyday', name: 'Travel', icon: 'signpost-split', c: '#0891b2', desc: 'Departures, journey planner, trips and documents', def: true },
-    { id: 'finance', group: 'Everyday', name: 'Finances', icon: 'wallet2', c: '#11a597', desc: 'Budget, spending, savings and net worth', def: true },
-    { id: 'habits', group: 'Everyday', name: 'Habits', icon: 'activity', c: '#d55181', desc: 'Weekly habits with streaks, on the Health page', def: true },
+    { id: 'calendar', group: 'Main pages', name: 'Calendar', icon: 'calendar3', c: '#3987e5', desc: 'Events, repeats and your phone calendar', def: true },
+    { id: 'travel', group: 'Main pages', name: 'Travel', icon: 'signpost-split', c: '#0891b2', desc: 'Departures, journey planner, trips and documents', def: true },
+    { id: 'finance', group: 'Main pages', name: 'Finances', icon: 'wallet2', c: '#11a597', desc: 'Budget, spending, savings and net worth', def: true },
+    { id: 'habits', group: 'Main pages', name: 'Habits', icon: 'activity', c: '#d55181', desc: 'Weekly habits with streaks, on the Health page', def: true },
     { id: 'flex', group: 'Work', name: 'Flex time', icon: 'stopwatch', c: '#e8743b', desc: 'Clock in and out, flex balance and holiday days (fleksitid)', def: false },
     { id: 'meetings', group: 'Work', name: 'Meeting notes', icon: 'people', c: '#3987e5', desc: 'Notes with action points you can send to your to-do list', def: false },
-    { id: 'learning', group: 'Work', name: 'Courses & certificates', icon: 'mortarboard', c: '#8a6fdf', desc: 'What you learn, and certificates that need renewing', def: false },
+    { id: 'learning', group: 'Me', name: 'Courses & certificates', icon: 'mortarboard', c: '#8a6fdf', desc: 'What you learn, and certificates that need renewing', def: false },
     { id: 'training', group: 'Health', name: 'Training log', icon: 'heart-pulse', c: '#d55181', desc: 'Workouts with time, distance and how it felt', def: false },
     { id: 'health', group: 'Health', name: 'Check-ups & medicine', icon: 'clipboard2-pulse', c: '#e66767', desc: 'Doctor and dentist, vaccines and prescriptions – with reminders', def: false },
     { id: 'ahealth', group: 'Health', name: 'Apple Health', icon: 'apple', c: '#e66767', desc: 'Steps, sleep, heart rate and exercise from your iPhone', def: false },
-    { id: 'journal', group: 'Health', name: 'Journal', icon: 'journal-bookmark', c: '#c9a227', desc: 'One line a day and your mood', def: false },
+    { id: 'journal', group: 'Me', name: 'Journal', icon: 'journal-bookmark', c: '#c9a227', desc: 'One line a day and your mood', def: false },
     { id: 'bucket', group: 'Travel', name: 'Places to visit', icon: 'pin-map', c: '#0891b2', desc: 'Your bucket list, on the map – turn one into a trip', def: false },
-    { id: 'subs', group: 'Finance', name: 'Subscriptions', icon: 'arrow-repeat', c: '#11a597', desc: 'What you pay every month and when it renews', def: false },
-    { id: 'warranty', group: 'Finance', name: 'Warranties & receipts', icon: 'receipt-cutoff', c: '#c98500', desc: 'Know when the warranty (reklamasjon) runs out', def: false },
-    { id: 'voice', group: 'Everyday', name: 'Talk to add', icon: 'mic', c: '#8a6fdf', desc: 'Say it and it’s added – “149 Rema”, “gym tomorrow 7”', def: false },
-    { id: 'findtime', group: 'Everyday', name: 'Find time', icon: 'calendar2-range', c: '#3987e5', desc: 'Finds a free slot this week for anything, and books it', def: false },
+    { id: 'subs', group: 'Finances', name: 'Subscriptions', icon: 'arrow-repeat', c: '#11a597', desc: 'What you pay every month and when it renews', def: false },
+    { id: 'warranty', group: 'Finances', name: 'Warranties & receipts', icon: 'receipt-cutoff', c: '#c98500', desc: 'Know when the warranty (reklamasjon) runs out', def: false },
+    { id: 'voice', group: 'Everywhere', name: 'Talk to add', icon: 'mic', c: '#8a6fdf', desc: 'Say it and it’s added – “149 Rema”, “gym tomorrow 7”', def: false },
+    { id: 'findtime', group: 'Everywhere', name: 'Find time', icon: 'calendar2-range', c: '#3987e5', desc: 'Finds a free slot this week for anything, and books it', def: false },
     { id: 'shutdown', group: 'Work', name: 'Shutdown ritual', icon: 'moon-stars', c: '#6b4bc4', desc: 'End the workday in one go: clock out, move what’s left, pick tomorrow’s top 3', def: false },
     { id: 'prep', group: 'Work', name: 'Meeting prep', icon: 'clipboard-check', c: '#3987e5', desc: 'Before a meeting: notes and open action points from last time', def: false },
     { id: 'fdv', group: 'Work', name: 'FDV inspection notes', icon: 'building-check', c: '#0891b2', desc: 'Findings with TG per building part – and a tidy summary to send', def: false },
@@ -37,38 +37,45 @@
     { id: 'hreport', group: 'Health', name: 'Weekly health report', icon: 'clipboard2-heart', c: '#d55181', desc: 'Every Sunday: sleep, steps, training and mood compared with last week', def: true },
     { id: 'tripbudget', group: 'Travel', name: 'Trip budget mode', icon: 'cash-coin', c: '#0891b2', desc: 'While you’re away: what you can spend today', def: false },
     { id: 'smartpack', group: 'Travel', name: 'Smart packing', icon: 'bag-check', c: '#0891b2', desc: 'A packing list from the trip’s length and the weather there', def: false },
-    { id: 'power', group: 'Finance', name: 'Power prices', icon: 'lightning-charge', c: '#c98500', desc: 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours', def: false },
-    { id: 'recur', group: 'Finance', name: 'Recurring payments', icon: 'arrow-repeat', c: '#11a597', desc: 'Charges that come back every month – add them to the budget in one tap', def: true },
-    { id: 'shared', group: 'Finance', name: 'Shared expenses', icon: 'people', c: '#22b35e', desc: 'Split a payment with someone, see who owes what and settle up', def: false },
+    { id: 'power', group: 'Finances', name: 'Power prices', icon: 'lightning-charge', c: '#c98500', desc: 'Electricity price in Oslo (NO1) hour by hour – and the cheapest hours', def: false },
+    { id: 'recur', group: 'Finances', name: 'Recurring payments', icon: 'arrow-repeat', c: '#11a597', desc: 'Charges that come back every month – add them to the budget in one tap', def: true },
+    { id: 'shared', group: 'Finances', name: 'Shared expenses', icon: 'people', c: '#22b35e', desc: 'Split a payment with someone, see who owes what and settle up', def: false },
     /* life sections (2026-11-21, JP: "do everything" – off until switched on; cards from life-plus.page.js) */
     { id: 'ready', group: 'Home life', name: 'Emergency preparedness', icon: 'box2-heart', c: '#e57a3c', desc: 'The home kit for a week on your own – water, heat, light, medicine – with best-before dates', def: false },
     { id: 'hood', group: 'Home life', name: 'Neighbourhood', icon: 'houses', c: '#3a8a78', desc: 'Housing association meetings, dugnad days, local events and notes about the neighbours', def: false },
-    { id: 'ladmin', group: 'Finance', name: 'Yearly tasks', icon: 'clipboard-check', c: '#3d85dc', desc: 'The tax return, back-tax, renewals – the yearly paperwork, ticked off each year', def: false },
-    { id: 'deals', group: 'Finance', name: 'Deal checks', icon: 'arrow-left-right', c: '#3d85dc', desc: 'Power, mobile, internet, insurance, the loan rate – when it’s time to compare again', def: false },
-    { id: 'climate', group: 'Finance', name: 'Climate footprint', icon: 'globe-europe-africa', c: '#2f9d62', desc: 'A rough estimate of your footprint from what you spend, and where it weighs most', def: false },
+    { id: 'ladmin', group: 'Life admin', name: 'Yearly tasks', icon: 'clipboard-check', c: '#3d85dc', desc: 'The tax return, back-tax, renewals – the yearly paperwork, ticked off each year', def: false },
+    { id: 'deals', group: 'Life admin', name: 'Deal checks', icon: 'arrow-left-right', c: '#3d85dc', desc: 'Power, mobile, internet, insurance, the loan rate – when it’s time to compare again', def: false },
+    { id: 'climate', group: 'Life admin', name: 'Climate footprint', icon: 'globe-europe-africa', c: '#2f9d62', desc: 'A rough estimate of your footprint from what you spend, and where it weighs most', def: false },
     { id: 'parties', group: 'Home life', name: 'Celebrations', icon: 'balloon', c: '#e895b7', desc: 'Birthdays, Christmas and dinners – guests, menu, budget and what’s left to do', def: false },
     { id: 'moments', group: 'Home life', name: 'Big life moments', icon: 'signpost-2', c: '#8a6fdf', desc: 'Moving, a new job, renovating, a wedding – the steps into your to-do list with dates', def: false },
     { id: 'family', group: 'Home life', name: 'Family planning', icon: 'balloon-heart', c: '#e895b7', desc: 'Leave, NAV and kindergarten – the steps with dates from the due date', def: false },
     { id: 'pets', group: 'Home life', name: 'Pets', icon: 'heart', c: '#e57a3c', desc: 'Vet checks, vaccines, worming and food for each pet, with reminders', def: false },
     { id: 'clubs', group: 'Home life', name: 'Clubs and volunteering', icon: 'people', c: '#8a6fdf', desc: 'Teams, choirs, the board – when it meets, your duties and the fee', def: false },
-    { id: 'sleep', group: 'Health', name: 'Sleep coach', icon: 'moon-stars', c: '#5a6f8f', desc: 'A bedtime goal, your nights from Apple Health and a wind-down reminder', def: false },
-    { id: 'calm', group: 'Health', name: 'Mind and rest', icon: 'wind', c: '#88b5a8', desc: 'A minute of guided breathing, and a quick way to note how you feel', def: false },
-    { id: 'media', group: 'Everyday', name: 'Books, films and games', icon: 'collection-play', c: '#c8901e', desc: 'What you read, watch and play – now, next and what you thought', def: false },
-    { id: 'later', group: 'Everyday', name: 'Read and watch later', icon: 'bookmark', c: '#3d85dc', desc: 'Save links to get to later, with a Sunday reminder', def: false },
-    { id: 'digital', group: 'Everyday', name: 'Digital life', icon: 'shield-lock', c: '#555c66', desc: 'Backups, updates, passwords and old accounts – each with a reminder when due', def: false },
-    { id: 'career', group: 'Work', name: 'Career', icon: 'graph-up-arrow', c: '#c8901e', desc: 'What you achieve, your salary over time and applications – ready for the salary talk', def: false },
-    { id: 'outdoor', group: 'Travel', name: 'Outdoors', icon: 'tree', c: '#2f9d62', desc: 'Hikes, ski trips and cabin weekends – planned and done, with the distance', def: false },
-    { id: 'jars', group: 'Finance', name: 'Savings jars', icon: 'piggy-bank', c: '#11a597', desc: 'Your savings goals as jars that fill up, with weeks left', def: false },
+    { id: 'sleep', group: 'Me', name: 'Sleep coach', icon: 'moon-stars', c: '#5a6f8f', desc: 'A bedtime goal, your nights from Apple Health and a wind-down reminder', def: false },
+    { id: 'calm', group: 'Me', name: 'Mind and rest', icon: 'wind', c: '#88b5a8', desc: 'A minute of guided breathing, and a quick way to note how you feel', def: false },
+    { id: 'media', group: 'Me', name: 'Books, films and games', icon: 'collection-play', c: '#c8901e', desc: 'What you read, watch and play – now, next and what you thought', def: false },
+    { id: 'later', group: 'Me', name: 'Read and watch later', icon: 'bookmark', c: '#3d85dc', desc: 'Save links to get to later, with a Sunday reminder', def: false },
+    { id: 'digital', group: 'Life admin', name: 'Digital life', icon: 'shield-lock', c: '#555c66', desc: 'Backups, updates, passwords and old accounts – each with a reminder when due', def: false },
+    { id: 'career', group: 'Me', name: 'Career', icon: 'graph-up-arrow', c: '#c8901e', desc: 'What you achieve, your salary over time and applications – ready for the salary talk', def: false },
+    { id: 'outdoor', group: 'Me', name: 'Outdoors', icon: 'tree', c: '#2f9d62', desc: 'Hikes, ski trips and cabin weekends – planned and done, with the distance', def: false },
+    { id: 'mood', group: 'Me', name: 'Mood check-in', icon: 'emoji-smile', c: '#c9a227', desc: 'One tap a day for how you feel, next to your sleep (saved as your journal\'s mood)', def: false },
+    { id: 'wheel', group: 'Me', name: 'Life wheel', icon: 'bullseye', c: '#6c8cff', desc: 'Score health, money, love, work and more from 1 to 10 every few months', def: false },
+    { id: 'wins', group: 'Me', name: 'Wins & gratitude', icon: 'trophy', c: '#d4a017', desc: 'Three good things a week, and your year back in December', def: false },
+    { id: 'hobbies', group: 'Me', name: 'Hobbies & projects', icon: 'palette', c: '#8a6fdf', desc: 'What you build, practise or learn for fun – next step and time spent', def: false },
+    { id: 'bodycare', group: 'Me', name: 'Body upkeep', icon: 'scissors', c: '#3a8fd9', desc: 'Haircut, dentist, eye test and more – what\'s due, with a reminder', def: false },
+    { id: 'screen', group: 'Me', name: 'Screen time', icon: 'phone', c: '#5a6f8f', desc: 'A goal for phone-free evenings, ticked off each night', def: false },
+    { id: 'style', group: 'Me', name: 'Style', icon: 'bag-heart', c: '#d55181', desc: 'Your sizes, clothes to replace and things to buy on sale', def: false },
+    { id: 'jars', group: 'Finances', name: 'Savings jars', icon: 'piggy-bank', c: '#11a597', desc: 'Your savings goals as jars that fill up, with weeks left', def: false },
     { id: 'ptime', group: 'Work', name: 'Time per client', icon: 'hourglass-split', c: '#e8743b', desc: 'A timer per client or project, hours per week and a list to invoice from', def: false },
-    { id: 'house', group: 'Home life', name: 'House', icon: 'house-gear', c: '#22b35e', desc: 'A page for upkeep that comes round again, bin days, meter readings and home info', def: false },
-    { id: 'people', group: 'Home life', name: 'People', icon: 'people', c: '#d55181', desc: 'A page for birthdays, keeping in touch and gift ideas', def: false },
-    { id: 'food', group: 'Home life', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes', def: false },
-    { id: 'hproj', group: 'Home life', name: 'Home projects', icon: 'hammer', c: '#e8743b', desc: 'Painting, a new bathroom, the garden – tasks, budget and what you spent, on its own House tab', def: true },
-    { id: 'hdocs', group: 'Home life', name: 'FDV binder', icon: 'journal-bookmark', c: '#0891b2', desc: 'Manuals, drawings and warranties for your home, sorted by building part – import a whole download or .zip at once', def: true },
-    { id: 'hclaim', group: 'Home life', name: 'Fault claims', icon: 'exclamation-diamond', c: '#e66767', desc: 'Report a fault to the seller, builder, tradesman or shop – with photos, the deadlines and a ready letter', def: true },
-    { id: 'wish', group: 'Home life', name: 'Wishlist', icon: 'stars', c: '#8a6fdf', desc: 'A page for things you’d like to buy – whether they fit this month, small things to pick up, and what you bought (straight into Home inventory)', def: true },
-    { id: 'goals', group: 'Home life', name: 'Goals', icon: 'bullseye', c: '#3987e5', desc: 'A page for your goals with a date, steps and numbers that update themselves from your accounts, loans and the rest', def: true },
-    { id: 'papers', group: 'Home life', name: 'Papers', icon: 'folder2-open', c: '#6b4bc4', desc: 'A page for contracts, insurance, loan and work papers with the PDF – and a reminder before they expire or renew', def: true }
+    { id: 'house', group: 'Main pages', name: 'House', icon: 'house-gear', c: '#22b35e', desc: 'A page for upkeep that comes round again, bin days, meter readings and home info', def: false },
+    { id: 'people', group: 'Main pages', name: 'People', icon: 'people', c: '#d55181', desc: 'A page for birthdays, keeping in touch and gift ideas', def: false },
+    { id: 'food', group: 'Main pages', name: 'Food', icon: 'basket', c: '#c98500', desc: 'A page for the week’s dinners, the shopping list and your recipes', def: false },
+    { id: 'hproj', group: 'House', name: 'Home projects', icon: 'hammer', c: '#e8743b', desc: 'Painting, a new bathroom, the garden – tasks, budget and what you spent, on its own House tab', def: true },
+    { id: 'hdocs', group: 'House', name: 'FDV binder', icon: 'journal-bookmark', c: '#0891b2', desc: 'Manuals, drawings and warranties for your home, sorted by building part – import a whole download or .zip at once', def: true },
+    { id: 'hclaim', group: 'House', name: 'Fault claims', icon: 'exclamation-diamond', c: '#e66767', desc: 'Report a fault to the seller, builder, tradesman or shop – with photos, the deadlines and a ready letter', def: true },
+    { id: 'wish', group: 'Main pages', name: 'Wishlist', icon: 'stars', c: '#8a6fdf', desc: 'A page for things you’d like to buy – whether they fit this month, small things to pick up, and what you bought (straight into Home inventory)', def: true },
+    { id: 'goals', group: 'Main pages', name: 'Goals', icon: 'bullseye', c: '#3987e5', desc: 'A page for your goals with a date, steps and numbers that update themselves from your accounts, loans and the rest', def: true },
+    { id: 'papers', group: 'Main pages', name: 'Papers', icon: 'folder2-open', c: '#6b4bc4', desc: 'A page for contracts, insurance, loan and work papers with the PDF – and a reminder before they expire or renew', def: true }
   ];
   var WORK = ['flex', 'meetings', 'learning', 'fdv', 'holiday', 'ptime'];
   var HEALTH = ['habits', 'training', 'health', 'journal', 'ahealth', 'gym', 'rest'];       // the Health page shows if any is on
@@ -219,9 +226,9 @@
     }
     if (on('learning')) list('learning').forEach(function (c) {
       if (!isKey(c.expires)) return;
-      ev('learn:' + c.id, (c.title || 'Certificate') + ' expires', c.expires, c.provider ? 'From ' + c.provider : '', '/cmd/work/#learning');
+      ev('learn:' + c.id, (c.title || 'Certificate') + ' expires', c.expires, c.provider ? 'From ' + c.provider : '', '/cmd/me/#learning');
       var soon = addMonths(c.expires, -2);
-      ev('learn2:' + c.id, 'Renew: ' + (c.title || 'certificate'), soon, 'Expires ' + c.expires, '/cmd/work/#learning');
+      ev('learn2:' + c.id, 'Renew: ' + (c.title || 'certificate'), soon, 'Expires ' + c.expires, '/cmd/me/#learning');
     });
     /* workouts and courses show in the calendar, in the Training and Study categories */
     var SPORT = { strength: 'Strength', run: 'Running', walk: 'Walking', bike: 'Cycling', swim: 'Swimming', ball: 'Ball sports', yoga: 'Yoga / mobility', other: 'Workout' };
@@ -234,7 +241,7 @@
     if (on('learning')) list('learning').forEach(function (c) {
       if (!isKey(c.date)) return;
       out.push({ id: 'tool:co:' + c.id, title: (c.title || 'Course') + (c.status === 'done' ? ' ✓' : ''), allDay: true, start: fromKey(c.date), days: 1,
-        cat: 'study', readOnly: true, tool: 'Courses & certificates', link: '/cmd/work/#learning', location: c.provider || '', notes: c.notes || '', exDays: {} });
+        cat: 'study', readOnly: true, tool: 'Courses & certificates', link: '/cmd/me/#learning', location: c.provider || '', notes: c.notes || '', exDays: {} });
     });
     /* to-dos with a day (not done yet) */
     (readJSON('dash.todos') || []).forEach(function (t) {

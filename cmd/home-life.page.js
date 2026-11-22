@@ -722,7 +722,7 @@
     }
     if (on('learning') && out.length < 4) {
       var ex = Fe.list('learning').filter(function (c) { return isKey(c.expires) && c.expires >= tk; }).sort(function (a, b) { return a.expires < b.expires ? -1 : 1; })[0];
-      out.push(heroTile('mortarboard', I18N.k('ui.next-renewal', 'Next renewal'), ex ? esc(cap(inDays(daysTo(ex.expires)))) : '–', ex ? esc(ex.title) : 'No certificates expiring', '#learning'));
+      out.push(heroTile('mortarboard', I18N.k('ui.next-renewal', 'Next renewal'), ex ? esc(cap(inDays(daysTo(ex.expires)))) : '–', ex ? esc(ex.title) : 'No certificates expiring', '/cmd/me/#learning'));
     }
     if (on('holiday') && out.length < 4 && window.FlexTime) {
       var s2 = window.FlexTime.stats(), tot = +((Fe.tools().flexcfg || {}).vacation) || 25;

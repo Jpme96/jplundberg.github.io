@@ -294,8 +294,159 @@
   });
   function nf(n) { return new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 1 }).format(n); }
 
+  /* ================= Me: Mood check-in (one tap a day – it is the journal's mood, so nothing is kept twice) ================= */
+  var MOODV = [[1, K('ui.lp-md-1', 'Bad'), 'emoji-frown', 'var(--danger)'], [2, K('ui.lp-md-2', 'Meh'), 'emoji-neutral', 'var(--orange)'], [3, K('ui.lp-md-3', 'OK'), 'emoji-smile', 'var(--gold)'], [4, K('ui.lp-md-4', 'Good'), 'emoji-laughing', 'var(--ok)'], [5, K('ui.lp-md-5', 'Great'), 'emoji-heart-eyes', '#14b8a6']];
+  function moodOf(v) { return MOODV[(Math.round(+v) || 3) - 1] || MOODV[2]; }
+  function moodsBy() { var by = {}; (Fe.tools().journal || []).forEach(function (j) { if (+j.mood >= 1 && +j.mood <= 5) by[j.date] = +j.mood; }); return by; }
+  function drawMood() {
+    var el = $t('lp-mood'); if (!el) return;
+    if (!Fe.on('mood')) { el.hidden = true; el.innerHTML = ''; return; }
+    var by = moodsBy(), t = today(), D = window.AHealth && AHealth.days ? AHealth.days() || {} : {}, goal = LP.goalHours(LP.sleepCfg()), cells = '', good = [], short = [];
+    for (var i = 13; i >= 0; i--) {
+      var k = addDays(t, -i), m = by[k], sl = D[k] && +D[k].sleep;
+      cells += '<span title="' + esc(fmt(k) + (m ? ' · ' + moodOf(m)[1] : '') + (sl ? ' · ' + nf(sl) + ' h' : '')) + '"><i style="background:' + (m ? moodOf(m)[3] : 'rgba(var(--ink-rgb),.12)') + '"></i><small>' + (sl ? nf(Math.round(sl * 2) / 2) : '') + '</small></span>';
+    }
+    Object.keys(by).forEach(function (k) { var sl = D[k] && +D[k].sleep; if (sl > 0) (sl >= goal - .5 ? good : short).push(by[k]); });
+    var avg = function (a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; };
+    var tip = good.length >= 3 && short.length >= 3 ? K('ui.lp-md-tip', 'After enough sleep you feel {a} – after short nights {b}.', { a: moodOf(avg(good))[1].toLowerCase(), b: moodOf(avg(short))[1].toLowerCase() }) : K('ui.lp-md-tip0', 'With a few days of mood and sleep you’ll see how your nights affect your days.');
+    el.hidden = false;
+    el.innerHTML = '<section class="card kit-card" id="lp-mood"><div class="card-head"><h2><i class="bi bi-emoji-smile"></i> ' + esc(K('ui.lp-mood-t', 'Mood check-in')) + '</h2></div>' +
+      '<p class="lp-sum">' + esc(K('ui.lp-mood', 'How are you today?')) + '</p><div class="lp-moods">' + MOODV.map(function (m) { return '<button type="button" class="lp-mdb' + (by[t] === m[0] ? ' on' : '') + '" style="--c:' + m[3] + '" data-lpact="mood" data-lpid="' + m[0] + '" aria-pressed="' + (by[t] === m[0]) + '"><i class="bi bi-' + m[2] + '"></i><small>' + esc(m[1]) + '</small></button>'; }).join('') + '</div>' +
+      '<div class="lp-mdstrip" aria-label="' + esc(K('ui.lp-md-14', 'Last 14 days – mood, and hours of sleep under it')) + '">' + cells + '</div><p class="lp-sum">' + esc(tip) + '</p></section>';
+  }
+  ACT.mood = function (v) {
+    var t = Fe.tools(), l = Array.isArray(t.journal) ? t.journal : [], k = today(), j = l.filter(function (x) { return x.date === k; })[0];
+    if (j) j.mood = String(v); else l.push({ id: uid(), date: k, mood: String(v), line: '' });
+    t.journal = l; Fe.saveTools(t); drawMood();
+  };
+
+  /* ================= Me: Life wheel (score the parts of life every few months) ================= */
+  var AREAS = [['health', K('ui.lp-w-health', 'Health')], ['money', K('ui.lp-w-money', 'Money')], ['work', K('ui.lp-w-work', 'Work')], ['love', K('ui.lp-w-love', 'Love')], ['people', K('ui.lp-w-people', 'Family & friends')], ['fun', K('ui.lp-w-fun', 'Fun')], ['home', K('ui.lp-w-home', 'Home')], ['growth', K('ui.lp-w-growth', 'Growing')]];
+  var wheelForm = false;
+  function wheels() { return (Fe.tools().wheel || []).filter(function (w) { return w && isKey(w.date) && w.s; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); }
+  function wheelSvg(cur, prev) {
+    var R = 80, C = 110, n = AREAS.length, pt = function (i, v) { var a = -Math.PI / 2 + i * 2 * Math.PI / n; return [C + Math.cos(a) * R * v / 10, C + Math.sin(a) * R * v / 10]; };
+    var poly = function (w) { return AREAS.map(function (a, i) { return pt(i, +w.s[a[0]] || 0).map(function (x) { return x.toFixed(1); }).join(','); }).join(' '); };
+    var g = '';
+    [2.5, 5, 7.5, 10].forEach(function (r) { g += '<polygon points="' + AREAS.map(function (a, i) { return pt(i, r).join(','); }).join(' ') + '" fill="none" stroke="rgba(var(--ink-rgb),.12)"/>'; });
+    AREAS.forEach(function (a, i) { var p = pt(i, 10), q = pt(i, 12.4); g += '<line x1="' + C + '" y1="' + C + '" x2="' + p[0] + '" y2="' + p[1] + '" stroke="rgba(var(--ink-rgb),.12)"/><text x="' + q[0].toFixed(1) + '" y="' + (q[1] + 4).toFixed(1) + '" text-anchor="middle">' + esc(a[1]) + '</text>'; });
+    if (prev) g += '<polygon points="' + poly(prev) + '" fill="none" stroke="rgba(var(--ink-rgb),.45)" stroke-dasharray="4 3"/>';
+    g += '<polygon points="' + poly(cur) + '" fill="rgba(var(--accent-rgb),.22)" stroke="var(--accent)" stroke-width="2"/>';
+    return '<svg class="lp-wheel" viewBox="-30 0 280 220" role="img" aria-label="' + esc(K('ui.lp-wheel', 'Life wheel')) + '">' + g + '</svg>';
+  }
+  function drawWheel() {
+    var el = $t('lp-wheel'); if (!el) return;
+    if (!Fe.on('wheel')) { el.hidden = true; el.innerHTML = ''; return; }
+    var ws = wheels(), cur = ws[ws.length - 1], prev = ws[ws.length - 2], body;
+    if (wheelForm || !cur) {
+      var base = cur ? cur.s : {};
+      body = (cur ? '' : '<p class="muted">' + esc(K('ui.lp-wheel-intro', 'Give each part of your life a score from 1 to 10 – how it feels now, not how it should be. Do it again every few months and see what moves.')) + '</p>') +
+        (wheelForm ? '<div class="lp-wform">' + AREAS.map(function (a) { var v = +base[a[0]] || 5; return '<label><span>' + esc(a[1]) + '</span><input type="range" min="1" max="10" step="1" value="' + v + '" data-lpwheel="' + a[0] + '"><b>' + v + '</b></label>'; }).join('') + '</div><div class="lp-acts"><button type="button" class="pill-btn" data-lpact="wheelsave" data-lpid=""><i class="bi bi-check-lg"></i> ' + esc(K('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-lpact="wheelform" data-lpid="">' + esc(K('ui.cancel', 'Cancel')) + '</button></div>'
+          : '<div class="lp-acts"><button type="button" class="pill-btn" data-lpact="wheelform" data-lpid=""><i class="bi bi-bullseye"></i> ' + esc(K('ui.lp-wheel-go', 'Score now')) + '</button></div>');
+    } else {
+      var low = AREAS.slice().sort(function (a, b) { return (+cur.s[a[0]] || 0) - (+cur.s[b[0]] || 0); })[0];
+      body = wheelSvg(cur, prev) + '<p class="lp-sum">' + esc(K('ui.lp-wheel-last', 'Scored {d}', { d: fmt(cur.date) + ' ' + cur.date.slice(0, 4) })) + (prev ? ' · ' + esc(K('ui.lp-wheel-prev', 'dashed line: {d}', { d: fmt(prev.date) + ' ' + prev.date.slice(0, 4) })) : '') + '<br>' +
+        esc(K('ui.lp-wheel-low', 'Lowest now: {a} ({n}) – a good place to start.', { a: low[1], n: +cur.s[low[0]] || 0 })) + '</p><div class="lp-acts"><button type="button" class="text-btn" data-lpact="wheelform" data-lpid=""><i class="bi bi-arrow-repeat"></i> ' + esc(K('ui.lp-wheel-again', 'Score again')) + '</button></div>';
+    }
+    el.hidden = false;
+    el.innerHTML = '<section class="card kit-card" id="lp-wheel"><div class="card-head"><h2><i class="bi bi-bullseye"></i> ' + esc(K('ui.lp-wheel', 'Life wheel')) + '</h2></div>' + body + '</section>';
+  }
+  document.addEventListener('input', function (e) { var r = e.target; if (r.matches && r.matches('[data-lpwheel]') && r.nextElementSibling) r.nextElementSibling.textContent = r.value; });
+  ACT.wheelform = function () { wheelForm = !wheelForm; drawWheel(); };
+  ACT.wheelsave = function () {
+    var s = {}; document.querySelectorAll('[data-lpwheel]').forEach(function (r) { s[r.dataset.lpwheel] = Math.max(1, Math.min(10, +r.value || 5)); });
+    var t = Fe.tools(), l = (Array.isArray(t.wheel) ? t.wheel : []).filter(function (w) { return w.date !== today(); });
+    l.push({ id: uid(), date: today(), s: s }); t.wheel = l; wheelForm = false; Fe.saveTools(t); drawWheel();
+  };
+
+  /* ================= Me: Wins & gratitude (three good things a week, a look back in December) ================= */
+  var WINK = [['win', K('ui.lp-wn-win', 'A win')], ['thanks', K('ui.lp-wn-thanks', 'Grateful for')]];
+  var winYear = false;
+  function monKey() { return addDays(today(), -((Fe.fromKey(today()).getDay() + 6) % 7)); }   /* this week's Monday */
+  card('wins', { icon: 'trophy', title: K('ui.lp-wins', 'Wins & gratitude'), addTitle: K('ui.lp-wins-add', 'Something good'), editTitle: K('ui.lp-edit', 'Edit'), limit: 6,
+    fields: [{ k: 'title', type: 'title', label: K('ui.lp-wins-what', 'What was good'), req: true, ph: K('ui.lp-wins-ph', 'e.g. Finished the report, a walk with Mum') }, { k: 'kind', type: 'select', label: K('ui.lp-kind', 'Kind'), options: WINK, def: 'win' }, { k: 'date', type: 'date', label: K('ui.date', 'Date'), def: today }],
+    empty: K('ui.lp-wins-empty', 'Three good things a week – something you did well, or something you’re grateful for. In December you get your year back.'),
+    sort: function (a, b) { return (a.date || '') < (b.date || '') ? 1 : -1; },
+    summary: function (items) {
+      var mk = monKey(), wk = items.filter(function (x) { return (x.date || '') >= mk; }).length, y = today().slice(0, 4), yr = items.filter(function (x) { return String(x.date || '').slice(0, 4) === y; });
+      var h = items.length ? '<p class="lp-sum"><span class="lp-dots">' + [0, 1, 2].map(function (i) { return '<i class="' + (i < wk ? 'on' : '') + '"></i>'; }).join('') + '</span> ' + esc(K('ui.lp-wins-wk', '{n} of 3 this week', { n: Math.min(wk, 3) })) + (+today().slice(5, 7) === 12 && yr.length ? ' · <span role="button" tabindex="0" class="text-btn lp-act" data-lpact="winyear" data-lpid="">' + esc(winYear ? K('ui.lp-wins-hide', 'Hide your year') : K('ui.lp-wins-year', 'Your year: {n} good things', { n: yr.length })) + '</span>' : '') + '</p>' : '';
+      if (winYear && yr.length) {
+        var by = {}; yr.forEach(function (x) { var m = +x.date.slice(5, 7); (by[m] = by[m] || []).push(x); });
+        h += '<div class="lp-year">' + Object.keys(by).sort(function (a, b) { return a - b; }).map(function (m) { return '<p><b>' + esc(new Date(+y, m - 1, 1).toLocaleDateString(NB() ? 'nb-NO' : 'en-GB', { month: 'long' })) + '</b> ' + by[m].map(function (x) { return esc(x.title); }).join(' · ') + '</p>'; }).join('') + '</div>';
+      }
+      return h;
+    },
+    row: function (x) { return { icon: x.kind === 'thanks' ? 'heart' : 'trophy', color: x.kind === 'thanks' ? 'var(--pink)' : 'var(--gold)', title: x.title, sub: esc([(WINK.filter(function (q) { return q[0] === x.kind; })[0] || WINK[0])[1], fmt(x.date)].filter(Boolean).join(' · ')) }; }
+  });
+  ACT.winyear = function () { winYear = !winYear; window.dispatchEvent(new Event('tools:change')); };
+
+  /* ================= Me: Hobbies & projects ================= */
+  var HOBK = [['build', K('ui.lp-h-build', 'Building')], ['practice', K('ui.lp-h-practice', 'Practising')], ['learn', K('ui.lp-h-learn', 'Learning')], ['make', K('ui.lp-h-make', 'Making')], ['play', K('ui.lp-h-play', 'Playing')], ['other', K('ui.other', 'Other')]];
+  var HOBS = [['active', K('ui.lp-h-active', 'Going')], ['paused', K('ui.lp-h-paused', 'Paused')], ['done', K('ui.lp-h-done', 'Finished')]];
+  card('hobbies', { icon: 'palette', title: K('ui.lp-hobbies', 'Hobbies & projects'), addTitle: K('ui.lp-hob-add', 'A hobby or project'), editTitle: K('ui.lp-edit', 'Edit'),
+    fields: [{ k: 'title', type: 'title', label: K('ui.lp-what', 'What'), req: true, ph: K('ui.lp-hob-ph', 'e.g. Guitar, a bookshelf, Spanish') }, { k: 'kind', type: 'select', label: K('ui.lp-kind', 'Kind'), options: HOBK, def: 'practice' }, { k: 'status', type: 'select', label: K('ui.lp-status', 'Status'), options: HOBS, def: 'active' },
+      { k: 'next', label: K('ui.lp-hob-next', 'Next step'), ph: K('ui.lp-hob-next-ph', 'The very next thing to do') }, { k: 'hrs', type: 'number', label: K('ui.lp-hob-hrs', 'Time so far'), suffix: 'h' }, { k: 'notes', type: 'textarea', rows: 2, label: K('ui.notes', 'Notes') }],
+    empty: K('ui.lp-hob-empty', 'What you build, practise or learn for fun – the next step, and the time you’ve put in (+30 min on the row).'),
+    summary: function (items) { var a = items.filter(function (x) { return x.status === 'active'; }).length, h = items.reduce(function (s, x) { return s + (+x.hrs || 0); }, 0); return items.length ? '<p class="lp-sum">' + esc(K('ui.lp-hob-sum', '{n} going · {h} h in all', { n: a, h: nf(h) })) + '</p>' : ''; },
+    sort: function (a, b) { var o = { active: 0, paused: 1, done: 2 }; return (o[a.status] || 0) - (o[b.status] || 0) || ((b.last || '') > (a.last || '') ? 1 : -1); },
+    row: function (x) { return { icon: { build: 'hammer', practice: 'music-note-beamed', learn: 'translate', make: 'scissors', play: 'controller' }[x.kind] || 'palette', color: x.status === 'active' ? 'var(--violet)' : 'var(--slate)', cls: x.status === 'done' ? 'lp-done' : '', title: x.title,
+      sub: esc([x.next ? K('ui.lp-hob-nx', 'Next: {t}', { t: x.next }) : '', +x.hrs ? nf(+x.hrs) + ' h' : '', isKey(x.last) ? fmt(x.last) : ''].filter(Boolean).join(' · ')), right: x.status === 'done' ? chip((HOBS[2])[1], 'var(--slate)') : '<span role="button" tabindex="0" class="hl-chip lp-act lp-plus" style="--c:var(--violet)" data-lpact="hob30" data-lpid="' + esc(x.id) + '">+30 min</span>' }; }
+  });
+  ACT.hob30 = function (id) { setList('hobbies', function (x) { if (x.id === id) { x.hrs = Math.round(((+x.hrs || 0) + .5) * 10) / 10; x.last = today(); if (x.status === 'paused') x.status = 'active'; } }); toast(K('ui.lp-hob-30', '30 minutes added')); };
+
+  /* ================= Me: Body upkeep (haircut, dentist, eyes … when each is due) ================= */
+  function bodySeed() { return [
+    { title: S('Haircut', 'Frisør'), every: 6, unit: 'w' }, { title: S('Dentist', 'Tannlege'), every: 12, unit: 'm' }, { title: S('Eye test', 'Synstest'), every: 24, unit: 'm' },
+    { title: S('Check your moles', 'Sjekk føflekkene'), every: 3, unit: 'm' }, { title: S('New running shoes', 'Nye løpesko'), every: 12, unit: 'm' }, { title: S('GP check-up', 'Sjekk hos fastlegen'), every: 24, unit: 'm' }]; }
+  var bodyDue = LP.bodyDue;
+  card('bodycare', { icon: 'scissors', title: K('ui.lp-body', 'Body upkeep'), addTitle: K('ui.lp-body-add', 'Something to keep up'), editTitle: K('ui.lp-edit', 'Edit'), limit: 8,
+    fields: [{ k: 'title', type: 'title', label: K('ui.lp-what', 'What'), req: true, ph: K('ui.lp-body-ph', 'e.g. Haircut, Dentist') }, { k: 'every', type: 'number', label: K('ui.lp-every', 'Every'), def: 12 }, { k: 'unit', type: 'select', label: K('ui.lp-unit', 'Weeks or months'), options: [['m', K('ui.lp-months', 'months')], ['w', K('ui.lp-weeks', 'weeks')]], def: 'm' }, { k: 'last', type: 'date', label: K('ui.lp-last-time', 'Last time') }, { k: 'notes', type: 'textarea', rows: 2, label: K('ui.notes', 'Notes') }],
+    empty: K('ui.lp-body-empty', 'Haircut, dentist, eye test, moles, running shoes – each with how often, so you see what’s due. Tick when it’s done.'),
+    above: function (items) { return items.length ? '' : '<div class="lp-start"><button type="button" class="pill-btn" data-lpact="bodyseed" data-lpid=""><i class="bi bi-list-check"></i> ' + esc(K('ui.lp-body-seed', 'Add the usual list')) + '</button></div>'; },
+    sort: function (a, b) { return (bodyDue(a) || '0') < (bodyDue(b) || '0') ? -1 : 1; },
+    row: function (x) { var d = bodyDue(x); return { icon: 'scissors', color: d && d <= today() ? 'var(--warn)' : 'var(--blue)', title: x.title, sub: esc([K(x.unit === 'w' ? 'ui.lp-every-w' : 'ui.lp-every-m', x.unit === 'w' ? 'every {n} weeks' : 'every {n} months', { n: +x.every || (x.unit === 'w' ? 6 : 12) }), isKey(x.last) ? K('ui.lp-last-d', 'last {d}', { d: fmt(x.last) }) : K('ui.lp-last-none', 'tick the first time it’s done')].join(' · ')), right: (d ? when(d) : '') + tick('bodydone', x.id, K('ui.lp-done-now', 'Done now')) }; }
+  });
+  ACT.bodyseed = function () { seed('bodycare', bodySeed()); };
+  ACT.bodydone = function (id) { setList('bodycare', function (x) { if (x.id === id) x.last = today(); }); toast(K('ui.lp-body-ok', 'Done – the next one is counted from today')); };
+
+  /* ================= Me: Screen time (phone-free evenings) ================= */
+  function scr() { var s = Fe.tools().screen || {}; return { goal: Math.max(1, Math.min(7, +s.goal || 3)), days: Array.isArray(s.days) ? s.days.filter(isKey) : [] }; }
+  function drawScreen() {
+    var el = $t('lp-screen'); if (!el) return;
+    if (!Fe.on('screen')) { el.hidden = true; el.innerHTML = ''; return; }
+    var s = scr(), t = today(), mk = monKey(), wk = s.days.filter(function (k) { return k >= mk && k <= t; }).length, streak = 0;
+    for (var w = 1; w < 60; w++) { var a = addDays(mk, -7 * w), b = addDays(a, 6), n = s.days.filter(function (k) { return k >= a && k <= b; }).length; if (n >= s.goal) streak++; else break; }
+    var dots = ''; for (var i = 0; i < 7; i++) { var k = addDays(mk, i); dots += '<span class="' + (s.days.indexOf(k) > -1 ? 'on' : '') + (k === t ? ' now' : '') + '" title="' + esc(fmt(k)) + '"><i class="bi bi-moon"></i><small>' + esc(Fe.fromKey(k).toLocaleDateString(NB() ? 'nb-NO' : 'en-GB', { weekday: 'narrow' })) + '</small></span>'; }
+    var tonight = s.days.indexOf(t) > -1;
+    el.hidden = false;
+    el.innerHTML = '<section class="card kit-card" id="lp-screen"><div class="card-head"><h2><i class="bi bi-phone"></i> ' + esc(K('ui.lp-screen', 'Screen time')) + '</h2></div>' +
+      '<p class="lp-sum">' + esc(K('ui.lp-scr-goal', 'Phone-free evenings a week:')) + ' <select data-lpscreen aria-label="' + esc(K('ui.lp-scr-goal', 'Phone-free evenings a week:')) + '">' + [1, 2, 3, 4, 5, 6, 7].map(function (n) { return '<option' + (n === s.goal ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></p>' +
+      '<div class="lp-week">' + dots + '</div><p class="lp-sum"><b>' + esc(K('ui.lp-scr-wk', '{n} of {g} this week', { n: wk, g: s.goal })) + '</b>' + (streak ? ' · ' + esc(K('ui.lp-scr-streak', '{n} weeks in a row', { n: streak })) : '') + '</p>' +
+      '<div class="lp-acts"><button type="button" class="pill-btn" data-lpact="screentick" data-lpid="" aria-pressed="' + tonight + '"><i class="bi bi-' + (tonight ? 'check-lg' : 'moon') + '"></i> ' + esc(tonight ? K('ui.lp-scr-done', 'Phone-free tonight ✓') : K('ui.lp-scr-tick', 'Phone-free tonight')) + '</button></div></section>';
+  }
+  ACT.screentick = function () { var t = Fe.tools(), s = scr(), k = today(), i = s.days.indexOf(k); if (i > -1) s.days.splice(i, 1); else s.days.push(k); s.days = s.days.filter(function (d) { return d >= addDays(k, -400); }); t.screen = s; Fe.saveTools(t); drawScreen(); };
+  document.addEventListener('change', function (e) { var t = e.target; if (!t.matches || !t.matches('[data-lpscreen]')) return; var tl = Fe.tools(), s = scr(); s.goal = +t.value || 3; tl.screen = s; Fe.saveTools(tl); drawScreen(); });
+
+  /* ================= Me: Style (sizes, clothes to replace, things to buy on sale) ================= */
+  var STK = [['size', K('ui.lp-st-size', 'My size')], ['replace', K('ui.lp-st-replace', 'To replace')], ['sale', K('ui.lp-st-sale', 'Buy on sale')]];
+  function blackFriday(y) { var d = new Date(y, 10, 1); d.setDate(1 + (4 - d.getDay() + 7) % 7 + 21 + 1); return d; }
+  card('style', { icon: 'bag-heart', title: K('ui.lp-style', 'Style'), addTitle: K('ui.lp-st-add', 'Add'), editTitle: K('ui.lp-edit', 'Edit'), limit: 10,
+    fields: [{ k: 'kind', type: 'select', label: K('ui.lp-kind', 'Kind'), options: STK, def: 'size' }, { k: 'title', type: 'title', label: K('ui.lp-what', 'What'), req: true, ph: K('ui.lp-st-ph', 'e.g. Shoes, Jeans, Winter jacket') }, { k: 'val', label: K('ui.lp-st-val', 'Size or details'), ph: K('ui.lp-st-val-ph', 'e.g. 44, W32 L34, M') }, { k: 'price', type: 'number', label: K('ui.lp-st-price', 'Price'), suffix: 'kr' }, { k: 'done', type: 'check', label: K('ui.lp-st-done', 'Bought') }],
+    empty: K('ui.lp-st-empty', 'Your sizes (handy in a shop or when buying a gift for you), clothes that need replacing, and things to buy when there’s a sale.'),
+    summary: function (items) {
+      var sale = items.filter(function (x) { return x.kind !== 'size' && !x.done; }), sum = sale.reduce(function (a, x) { return a + (+x.price || 0); }, 0), y = new Date().getFullYear(), bf = blackFriday(y), now = new Date(), bfd = Math.round((bf - now) / 864e5);
+      var h = sale.length ? esc(K('ui.lp-st-sum', '{n} to buy', { n: sale.length })) + (sum ? ' · ' + esc(kr(sum)) : '') : '';
+      if (sale.length && bfd >= -3 && bfd <= 30) h += ' · ' + esc(K('ui.lp-st-bf', 'Black Friday {d}', { d: bf.toLocaleDateString(NB() ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short' }) }));
+      return h ? '<p class="lp-sum">' + h + '</p>' : '';
+    },
+    sort: function (a, b) { var o = { replace: 0, sale: 1, size: 2 }; return (a.done ? 1 : 0) - (b.done ? 1 : 0) || (o[a.kind] || 0) - (o[b.kind] || 0); },
+    row: function (x) { var k = STK.filter(function (q) { return q[0] === x.kind; })[0] || STK[0]; return { icon: { size: 'rulers', replace: 'arrow-repeat', sale: 'tag' }[x.kind] || 'bag', color: x.kind === 'size' ? 'var(--slate)' : x.kind === 'sale' ? 'var(--pink)' : 'var(--orange)', cls: x.done ? 'lp-done' : '', title: x.title,
+      sub: esc([k[1], x.kind !== 'size' ? x.val : '', +x.price ? kr(+x.price) : ''].filter(Boolean).join(' · ')), right: x.kind === 'size' && x.val ? '<b class="lp-size">' + esc(x.val) + '</b>' : '' }; }
+  });
+  window.LifePlusMe = { blackFriday: blackFriday, bodyDue: bodyDue, bodySeed: bodySeed };
+
   /* plain cards draw on the same changes as the Kit ones */
-  function drawPlain() { drawClimate(); drawSleep(); drawCalm(); }
+  function drawPlain() { drawClimate(); drawSleep(); drawCalm(); drawMood(); drawWheel(); drawScreen(); }
   ['tools:change', 'features:change', 'fin:change', 'health:change', 'vault:in'].forEach(function (ev) { window.addEventListener(ev, function () { setTimeout(drawPlain, 30); }); });
   if (window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(drawPlain, 60); });
   drawPlain();

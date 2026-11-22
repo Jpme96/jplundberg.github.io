@@ -20,8 +20,8 @@
       tabs: [['today', I18N.k('ui.today', 'Today'), 'sun'], ['training', I18N.k('ui.training', 'Training'), 'heart-pulse'], ['body', I18N.k('ui.tab-body', 'Body'), 'apple'], ['care', I18N.k('ui.tab-care', 'Care'), 'clipboard2-pulse']],
       map: [['#hpTiles', 'today'], ['#hsToday', 'today'], ['.hr-wrap', 'today'], ['#hpHabits', 'today'], ['#hpEmpty', 'today'],
         ['[data-tool="training"]', 'training'], ['[data-tool="gym"]', 'training'], ['[data-tool="rest"]', 'training'], ['[data-tool="hwater"]', 'today'],
-        ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care'], ['[data-tool="journal"]', 'care']],
-      feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth'], care: ['health', 'journal'] }
+        ['#ahCard', 'body'], ['[data-tool="health"]', 'care'], ['#meHealth', 'care']],
+      feats: { today: ['habits', 'hreport'], training: ['training', 'gym', 'rest'], body: ['ahealth'], care: ['health'] }
     },
     house: {
       /* a 4th value: the tab only shows while that feature (or one of a list) is on · Docs holds the FDV binder and Claims */
@@ -45,15 +45,17 @@
       feats: { yearly: ['ladmin', 'deals'], digital: ['digital'], climate: ['climate'] }
     },
     me: {
-      tabs: [['rest', I18N.k('ui.tab-rest', 'Rest'), 'moon-stars', ['sleep', 'calm']], ['free', I18N.k('ui.tab-free', 'Free time'), 'collection-play', ['media', 'later', 'outdoor']], ['career', I18N.k('ui.tab-career', 'Career'), 'graph-up-arrow', ['career']]],
-      map: [['[data-tool="lp-sleep"]', 'rest'], ['[data-tool="lp-calm"]', 'rest'], ['[data-tool="lp-media"]', 'free'], ['[data-tool="lp-later"]', 'free'], ['[data-tool="lp-outdoor"]', 'free'], ['[data-tool="lp-career"]', 'career']],
-      feats: { rest: ['sleep', 'calm'], free: ['media', 'later', 'outdoor'], career: ['career'] }
+      tabs: [['mind', I18N.k('ui.tab-mind', 'Mind'), 'emoji-smile', ['mood', 'journal', 'wins', 'wheel']], ['rest', I18N.k('ui.tab-rest', 'Rest'), 'moon-stars', ['sleep', 'calm', 'screen']], ['care', I18N.k('ui.tab-care-me', 'Care'), 'scissors', ['bodycare', 'style']], ['free', I18N.k('ui.tab-free', 'Free time'), 'collection-play', ['media', 'later', 'outdoor', 'hobbies']], ['career', I18N.k('ui.tab-career', 'Career'), 'graph-up-arrow', ['career', 'learning']]],
+      map: [['[data-tool="lp-mood"]', 'mind'], ['[data-tool="journal"]', 'mind'], ['[data-tool="lp-wins"]', 'mind'], ['[data-tool="lp-wheel"]', 'mind'], ['[data-tool="lp-sleep"]', 'rest'], ['[data-tool="lp-calm"]', 'rest'], ['[data-tool="lp-screen"]', 'rest'], ['[data-tool="lp-bodycare"]', 'care'], ['[data-tool="lp-style"]', 'care'],
+        ['[data-tool="lp-media"]', 'free'], ['[data-tool="lp-later"]', 'free'], ['[data-tool="lp-outdoor"]', 'free'], ['[data-tool="lp-hobbies"]', 'free'], ['[data-tool="lp-career"]', 'career'], ['[data-tool="learning"]', 'career']],
+      feats: { mind: ['mood', 'journal', 'wins', 'wheel'], rest: ['sleep', 'calm', 'screen'], care: ['bodycare', 'style'], free: ['media', 'later', 'outdoor', 'hobbies'], career: ['career', 'learning'] }
     },
+
     work: {
       tabs: [['today', I18N.k('ui.today', 'Today'), 'briefcase'], ['insp', I18N.k('ui.tab-insp', 'Inspection'), 'building-check', 'fdv'], ['doc', I18N.k('ui.tab-docu', 'Docs'), 'folder-check'], ['notes', I18N.k('ui.notes', 'Notes'), 'journal-text'], ['plan', I18N.k('ui.plan', 'Plan'), 'calendar-range']],   /* Inspections: Work → its own menu (JP 2026-11-14) */
       map: [['#hlTiles', 'today'], ['#wkToday', 'today'], ['[data-tool="flex"]', 'today'], ['[data-tool="wkday"]', 'today'], ['[data-tool="ptime"]', 'today'],
-        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocReq', 'doc'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['[data-tool="learning"]', 'plan'], ['#wkEmpty', 'today'], ['#wkTeam', 'today']],   /* the Team card only under Today (JP 20:38) */
-      feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday', 'learning'] }
+        ['[data-tool="meetings"]', 'notes'], ['[data-tool="fdv"]', 'insp'], ['#wkDocReq', 'doc'], ['#wkDocCtl', 'doc'], ['[data-tool="holiday"]', 'plan'], ['#wkEmpty', 'today'], ['#wkTeam', 'today']],   /* the Team card only under Today (JP 20:38) */
+      feats: { today: ['flex', 'ptime', 'shutdown'], insp: ['fdv'], notes: ['meetings', 'prep'], plan: ['holiday'] }
     }
   };
   /* tabs you switched off (Settings → Menu & pages): settings.tabOff = { work: ['insp', …] } – at least one tab always stays */
@@ -179,7 +181,7 @@
       }
       if (Fe.on('journal')) {
         var j = Fe.list('journal').filter(function (x) { return x && x.date === td; })[0];
-        rows.push(['journal-bookmark', '#c9a227', I18N.k('ui.pt-journal', 'Journal'), j ? I18N.k('ui.pt-written', 'Written') : I18N.k('ui.pt-not-yet', 'Not yet'), '<small>' + (j && j.line ? esc(String(j.line).slice(0, 60)) : I18N.k('ui.pt-one-line-about-today', 'one line about today')) + '</small>', '[data-tool="journal"]']);
+        rows.push(['journal-bookmark', '#c9a227', I18N.k('ui.pt-journal', 'Journal'), j && j.line ? I18N.k('ui.pt-written', 'Written') : I18N.k('ui.pt-not-yet', 'Not yet'), '<small>' + (j && j.line ? esc(String(j.line).slice(0, 60)) : I18N.k('ui.pt-one-line-about-today', 'one line about today')) + '</small>', '/cmd/me/#journal']);
       }
       if (Fe.on('health')) {
         var nx = Fe.list('health').filter(function (h) { return h && h.kind === 'checkup' && /^\d{4}-\d{2}-\d{2}$/.test(h.date || '') && h.date >= td; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
@@ -245,7 +247,7 @@
   }
   /* a row on Today: go to that card (switching tab if needed) */
   main.addEventListener('click', function (e) {
-    var r = e.target.closest('[data-ptjump]'); if (r) { var el = main.querySelector(r.dataset.ptjump); if (!el) return; var t = el.dataset.ptab || tabFor(el); if (t && t !== cur) show(t, true); setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); return; }
+    var r = e.target.closest('[data-ptjump]'); if (r) { if (r.dataset.ptjump.charAt(0) === '/') { location.href = r.dataset.ptjump; return; } var el = main.querySelector(r.dataset.ptjump); if (!el) return; var t = el.dataset.ptab || tabFor(el); if (t && t !== cur) show(t, true); setTimeout(function () { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); return; }
     if (e.target.closest('[data-ptcal]')) location.href = '/cmd/calendar/';
   });
 })();

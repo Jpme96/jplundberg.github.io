@@ -19,6 +19,7 @@
   /* the next date a yearly "MM-DD" falls on, from today */
   function yearDate(md, y) { return (y || new Date().getFullYear()) + '-' + md; }
   /* when something that repeats every n months is next due */
+  function bodyDue(x) { if (!isKey(x.last)) return ''; return x.unit === 'w' ? addDays(x.last, (+x.every || 6) * 7) : addMonths(x.last, +x.every || 12); }   /* Me → Body upkeep */
   function nextDue(last, months) { return isKey(last) ? addMonths(last, +months || 12) : today(); }
   /* the pets' next jobs, sorted */
   function petJobs(p) {
@@ -70,6 +71,18 @@
       var un = list('later').filter(function (x) { return !x.read; });
       if (un.length) add(70, 'bookmark', 'var(--blue)', K('ui.lp-later-n', '{n} saved to read or watch', { n: un.length }), un.slice(0, 2).map(function (x) { return x.title || x.url; }).join(', '), '/cmd/me/#lp-later', { key: 'later:' + t });
     }
+    if (on('bodycare')) list('bodycare').forEach(function (x) {
+      var d = bodyDue(x); if (!d) return; var n = days(t, d); if (n > 7 || n < -90) return;
+      add(n < 0 ? 58 : 64, 'scissors', 'var(--blue)', x.title, n < 0 ? K('ui.lp-overdue', 'Overdue') : n === 0 ? K('ui.lp-due-today', 'Due today') : K('ui.lp-due-in', 'Due in {n} days', { n: n }), '/cmd/me/#lp-bodycare', { key: 'body:' + x.id + ':' + d });
+    });
+    if (on('wins') && new Date().getDay() === 0) {
+      var mon = addDays(t, -6), wn = list('wins').filter(function (x) { return (x.date || '') >= mon; }).length;
+      if (wn < 3) add(72, 'trophy', 'var(--gold)', K('ui.lp-wins-q', 'Three good things this week?'), K('ui.lp-wins-qs', '{n} written so far', { n: wn }), '/cmd/me/#lp-wins', { key: 'wins:' + t });
+    }
+    if (on('wheel')) {
+      var wl = list('wheel').filter(function (w) { return w && isKey(w.date); }).map(function (w) { return w.date; }).sort().pop();
+      if (!wl || days(wl, t) > 90) add(78, 'bullseye', 'var(--accent)', K('ui.lp-wheel-due', 'Time to score your life wheel'), wl ? K('ui.lp-wheel-ago', 'Last time {n} days ago', { n: days(wl, t) }) : K('ui.lp-wheel-first', 'Takes a minute'), '/cmd/me/#lp-wheel', { key: 'wheel:' + t.slice(0, 7) });
+    }
     if (on('outdoor')) list('outdoor').forEach(function (x) {
       if (x.done || !isKey(x.date)) return; var n = days(t, x.date); if (n < 0 || n > 2) return;
       add(50, 'tree', 'var(--ok)', n === 0 ? K('ui.lp-trip-today', '{t} today – check the weather', { t: x.title }) : K('ui.lp-trip-in', '{t} in {n} days – check the weather', { t: x.title, n: n }), x.place || '', '/cmd/me/#lp-outdoor');
@@ -84,8 +97,8 @@
   });
 
   /* the cards (life-plus.page.js) load only when a section is on and this page has its slot – most pages never need them */
-  var LPP_V = 'e88500fa68';   /* stamped by cmd/build.py */
-  var IDS = ['ready', 'hood', 'ladmin', 'deals', 'climate', 'parties', 'moments', 'family', 'pets', 'clubs', 'sleep', 'calm', 'media', 'later', 'digital', 'career', 'outdoor'];
+  var LPP_V = '288ac7e01e';   /* stamped by cmd/build.py */
+  var IDS = ['ready', 'hood', 'ladmin', 'deals', 'climate', 'parties', 'moments', 'family', 'pets', 'clubs', 'sleep', 'calm', 'media', 'later', 'digital', 'career', 'outdoor', 'mood', 'wheel', 'wins', 'hobbies', 'bodycare', 'screen', 'style'];
   /* the life pages (Home life · Life admin · Me): a note when none of their sections is on */
   function pgEmpty() {
     document.querySelectorAll('[data-pgempty]').forEach(function (e) {
@@ -103,5 +116,5 @@
   window.addEventListener('features:change', function () { setTimeout(needCards, 30); });
   if (window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(needCards, 40); });
   setTimeout(needCards, 0);
-  window.LifePlus = { petJobs: petJobs, nextDue: nextDue, goalHours: goalHours, sleepCfg: sleepCfg, yearDate: yearDate, addDays: addDays, addMonths: addMonths, days: days, isKey: isKey, today: today, kr: kr };
+  window.LifePlus = { bodyDue: bodyDue, petJobs: petJobs, nextDue: nextDue, goalHours: goalHours, sleepCfg: sleepCfg, yearDate: yearDate, addDays: addDays, addMonths: addMonths, days: days, isKey: isKey, today: today, kr: kr };
 })();

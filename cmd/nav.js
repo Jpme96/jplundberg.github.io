@@ -9,7 +9,7 @@
   function esc(x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   /* The menu is written into every page (so it's there from the very first frame and the
      highlight can glide between pages). Here it only follows Settings → Features. */
-  var SHOWS = { calendar: ['calendar'], travel: ['travel', 'bucket'], finance: ['finance', 'subs', 'warranty'], habits: ['healthpage'], work: ['work'], house: ['house'], people: ['people'], food: ['food'], wish: ['wish'], goals: ['goals'], papers: ['papers'], homelife: ['ready', 'hood', 'parties', 'moments', 'family', 'pets', 'clubs'], lifeadmin: ['ladmin', 'deals', 'digital', 'climate'], me: ['sleep', 'calm', 'media', 'later', 'career', 'outdoor'] };
+  var SHOWS = { calendar: ['calendar'], travel: ['travel', 'bucket'], finance: ['finance', 'subs', 'warranty'], habits: ['healthpage'], work: ['work'], house: ['house'], people: ['people'], food: ['food'], wish: ['wish'], goals: ['goals'], papers: ['papers'], homelife: ['ready', 'hood', 'parties', 'moments', 'family', 'pets', 'clubs'], lifeadmin: ['ladmin', 'deals', 'digital', 'climate'], me: ['mood', 'journal', 'wins', 'wheel', 'sleep', 'calm', 'screen', 'bodycare', 'style', 'media', 'later', 'outdoor', 'hobbies', 'career', 'learning'] };
   var nav = document.getElementById('tabbar');
   /* a page you switched off in Settings → Menu & pages stays out of the menu, its features keep working elsewhere */
   function sets() { try { return JSON.parse(localStorage.getItem('dash.settings')) || {}; } catch (e) { return {}; } }
