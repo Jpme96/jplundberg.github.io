@@ -17,6 +17,7 @@ jobs:
     runs-on: macos-26
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         app: [cmd, home]
     steps:
@@ -36,6 +37,30 @@ jobs:
         if: steps.keys.outputs.ok
         working-directory: _app
         run: npm ci && cd ${{ matrix.app }} && npx cap sync ios
+      - name: Clear old build certificates
+        # every run signs the archive with a new development certificate ("Created via API" – its private key only
+        # lived on that runner); Apple allows only a few, so the ones earlier runs left are deleted first.
+        # JP's own certificates (made by Xcode on his Mac) are never touched.
+        if: steps.keys.outputs.ok
+        env:
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          pip3 install --quiet --break-system-packages pyjwt cryptography 2>/dev/null || pip3 install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import os, time, json, urllib.request, jwt
+          tok = jwt.encode({'iss': os.environ['ISSUER'], 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'},
+                           os.environ['P8'], algorithm='ES256', headers={'kid': os.environ['KEY_ID'], 'typ': 'JWT'})
+          def call(method, url):
+              r = urllib.request.Request(url, method=method, headers={'Authorization': 'Bearer ' + tok})
+              with urllib.request.urlopen(r) as x: return json.loads(x.read() or b'{}')
+          certs = call('GET', 'https://api.appstoreconnect.apple.com/v1/certificates?limit=200')['data']
+          for c in certs:
+              a = c['attributes']
+              if a.get('certificateType') in ('DEVELOPMENT', 'IOS_DEVELOPMENT') and 'Created via API' in (a.get('name') or ''):
+                  call('DELETE', 'https://api.appstoreconnect.apple.com/v1/certificates/' + c['id']); print('removed', c['id'])
+          PY
       - name: Build, sign and upload
         if: steps.keys.outputs.ok
         working-directory: _app/${{ matrix.app }}/ios/App
@@ -50,10 +75,8 @@ jobs:
           AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
           BUILD=$(date -u +%Y%m%d%H%M)
           xcodebuild -project App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION="$BUILD" \
-            CODE_SIGNING_ALLOWED=NO archive | tail -40
-          # built unsigned: signing for TestFlight happens once, in the export (Apple's cloud-managed distribution
-          # certificate). Signing the archive made a new development certificate on every run until Apple's limit.
+            -archivePath "$RUNNER_TEMP/App.xcarchive" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD" \
+            "${AUTH[@]}" archive | tail -40
           cat > "$RUNNER_TEMP/export.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict><key>method</key><string>app-store-connect</string><key>destination</key><string>upload</string>
