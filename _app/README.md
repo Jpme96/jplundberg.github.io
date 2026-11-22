@@ -43,3 +43,13 @@ to TestFlight – that's what the GitHub workflow `.github/workflows/ios.yml` do
 
 ## After changing something here
 `cd _app && npm run sync` (copies settings and plugins into both iOS projects), commit the result.
+
+## Learned on 22 Nov 2026 (first night)
+- The App Store Connect key must have the **Admin** role (App Manager can't use cloud signing). Builds run on `macos-26` with the
+  newest Xcode (Apple refuses old SDKs). Each run deletes the leftover "Created via API" development certificates first.
+- Release checks skip changes that only touch `_app/` – run the "iPhone apps" workflow by hand (`--ref next`) for those.
+- Inside the app the browser name has no "Safari": `softnav.js` checks for AppleWebKit instead. Capacitor Keyboard plugin:
+  `resize: native` (with `none` the chat box stayed under the keyboard); it hides the form toolbar by itself.
+- Instant page changes: the kept copy is used first and the menu's pages are fetched after unlocking (`softnav.js` `getHtml`),
+  so a tap doesn't wait for the network (every request in the app also passes the Cloudflare Access check).
+- In Xcode pick the device "iPhone" under Devices, not the "iPhone 18 Pro Max" simulator.
