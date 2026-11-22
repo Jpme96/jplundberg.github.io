@@ -444,14 +444,14 @@
   })();
   /* "Use with Siri": the steps for an iPhone Shortcut, with the link to copy */
   function siriHelp() {
-    var link = location.origin + '/cmd/?say=';
+    var app = window.Native && window.Native.on, link = app ? window.Native.scheme + '?say=' : location.origin + '/cmd/?say=';   /* in the iPhone app: its own link opens the app itself */
     $('qaBody').innerHTML = '<div class="qa-siri"><h3><i class="bi bi-mic"></i> ' + esc(K('ui.qa-siri', 'Add with Siri')) + '</h3><ol>' +
       '<li>' + esc(K('ui.qa-siri-1', 'Open the Shortcuts app and tap + for a new shortcut. Call it something easy to say, like “Add to the dashboard”.')) + '</li>' +
       '<li>' + esc(K('ui.qa-siri-2', 'Add the action “Dictate Text”.')) + '</li>' +
       '<li>' + esc(K('ui.qa-siri-3', 'Add “URL” and paste the link below, then tap at the end and add the variable “Dictated Text”.')) + '</li>' +
       '<li>' + esc(K('ui.qa-siri-4', 'Add “Open URLs”. Done – say “Hey Siri, add to the dashboard” and then “milk”, “149 Rema” or “dinner taco Friday”.')) + '</li></ol>' +
       '<div class="qa-row"><input readonly value="' + esc(link) + '" id="qaSiriLink" aria-label="Link"><button type="button" class="pill-btn" data-qasiricopy>' + esc(K('ui.copy', 'Copy')) + '</button></div>' +
-      '<p class="muted">' + esc(K('ui.qa-siri-note', 'On an iPhone the shortcut opens the dashboard in Safari, not in the home-screen app (Apple doesn’t allow that). The first time, unlock it there – what you said waits and is added right after. It syncs to the app as usual.')) + '</p>' +
+      (app ? '<p class="muted">' + esc(K('ui.qa-siri-app', 'This link opens the app straight away and adds what you said.')) + '</p>' : '<p class="muted">' + esc(K('ui.qa-siri-note', 'On an iPhone the shortcut opens the dashboard in Safari, not in the home-screen app (Apple doesn’t allow that). The first time, unlock it there – what you said waits and is added right after. It syncs to the app as usual.')) + '</p>') +
       '<div class="qa-acts"><button type="button" class="text-btn" data-close><span data-t="ui.close">Close</span></button></div></div>';
   }
   bg.addEventListener('click', function (e) {

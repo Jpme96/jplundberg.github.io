@@ -1,0 +1,18 @@
+{
+  "appId": "com.jplundberg.cmd",
+  "appName": "cmd",
+  "webDir": "www",
+  "server": {
+    "url": "https://jplundberg.com/cmd/",
+    "allowNavigation": [
+      "jplundberg.com"
+    ],
+    "errorPath": "error.html"
+  },
+  "ios": {
+    "appendUserAgent": "cmdapp/1",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": true
+  },
+  "backgroundColor": "#0e0f10"
+}

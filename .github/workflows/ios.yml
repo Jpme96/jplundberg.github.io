@@ -1,0 +1,59 @@
+# The iPhone apps (2026-11-22): builds cmd and Shared home on a Mac at GitHub and sends them to TestFlight.
+# Runs by hand (Actions → "iPhone apps" → Run) and when something in _app/ changes on main. Changes to cmd itself
+# need no new app version – the apps open the live pages.
+# Needs these repository secrets (Settings → Secrets and variables → Actions) – never in the repo or the chat:
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8  – an App Store Connect API key (Users and Access → Integrations, role App Manager)
+#   APPLE_TEAM_ID                          – the 10-character team id (developer.apple.com → Membership)
+# Without them the job says so and stops (green), so nothing breaks before the Apple account is ready.
+name: iPhone apps
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['_app/**']
+concurrency: { group: ios, cancel-in-progress: false }
+jobs:
+  build:
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [cmd, home]
+    steps:
+      - name: Apple key present?
+        id: keys
+        env: { K: '${{ secrets.ASC_KEY_P8 }}', T: '${{ secrets.APPLE_TEAM_ID }}' }
+        run: if [ -n "$K" ] && [ -n "$T" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "::notice::No App Store Connect key yet – skipping the build."; fi
+      - uses: actions/checkout@v4
+        if: steps.keys.outputs.ok
+      - uses: actions/setup-node@v4
+        if: steps.keys.outputs.ok
+        with: { node-version: 22 }
+      - name: Capacitor
+        if: steps.keys.outputs.ok
+        working-directory: _app
+        run: npm ci && cd ${{ matrix.app }} && npx cap sync ios
+      - name: Build, sign and upload
+        if: steps.keys.outputs.ok
+        working-directory: _app/${{ matrix.app }}/ios/App
+        env:
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          K="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"; printf '%s' "$P8" > "$K"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$K" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          BUILD=$(date -u +%Y%m%d%H%M)
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD" \
+            "${AUTH[@]}" archive | tail -40
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict><key>method</key><string>app-store-connect</string><key>destination</key><string>upload</string>
+          <key>teamID</key><string>$TEAM</string><key>signingStyle</key><string>automatic</string></dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/out" "${AUTH[@]}" | tail -20
+          rm -f "$K"

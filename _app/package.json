@@ -1,0 +1,17 @@
+{
+  "name": "cmd-apps",
+  "private": true,
+  "description": "The iPhone apps for cmd (JP) and the shared home (both of you). They open the live pages; the native parts add what a website can't do on an iPhone.",
+  "scripts": {
+    "sync": "cd cmd && cap sync ios && cd ../home && cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/local-notifications": "^8.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
+  }
+}

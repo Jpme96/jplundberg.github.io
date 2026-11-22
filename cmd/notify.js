@@ -208,8 +208,22 @@
   }
 
   /* ================= talking to the server ================= */
-  function supported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
-  function iosNotInstalled() { return /iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.standalone || matchMedia('(display-mode: standalone)').matches); }
+  /* in the iPhone app (2026-11-22): reminders are scheduled on the phone itself – nothing goes through the server, so they can show titles */
+  var NN = function () { return window.Native && window.Native.notes; };
+  function supported() { return !!NN() || ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window); }
+  function nid(s) { var h = 5381; s = String(s); for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) | 0; return Math.abs(h) % 2147483000 + 1; }
+  function nativeSync(force) {
+    var N = NN(), items = plan({ full: true }).slice(0, 60), sig = JSON.stringify(items);   /* iOS keeps 64 waiting at most */
+    if (!force && sig === lastSent) return Promise.resolve();
+    return N.getPending().then(function (r) {
+      var old = (r && r.notifications || []).map(function (n) { return { id: n.id }; });
+      return old.length ? N.cancel({ notifications: old }) : null;
+    }).then(function () {
+      return items.length ? N.schedule({ notifications: items.map(function (x) { return { id: nid(x.id), title: x.title, body: x.body || '', schedule: { at: new Date(x.at), allowWhileIdle: true }, extra: { url: x.url || '/cmd/' } }; }) }) : null;
+    }).then(function () { lastSent = sig; var q = prefs(); q.synced = Date.now(); q.count = items.length; save(q); fill(); })
+      .catch(function (e) { var s = $('ntState'); if (s) s.textContent = 'Couldn’t plan the reminders: ' + e.message; });
+  }
+  function iosNotInstalled() { return !NN() && /iP(hone|ad|od)/.test(navigator.userAgent) && !(navigator.standalone || matchMedia('(display-mode: standalone)').matches); }
   function u8(b64) { var s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b64.length + 3) % 4)), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
   function api(method, body) {
     return fetch(API, { method: method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' })
@@ -227,6 +241,7 @@
   function sync(force) {
     var p = prefs();
     if (!p.on || !supported() || !window.Vault || !window.Vault.get()) return Promise.resolve();
+    if (NN()) return nativeSync(force);
     return subscription(false).then(function (sub) {
       if (!sub) return;
       var items = plan(), sig = JSON.stringify([items, p.detail]);
@@ -243,7 +258,7 @@
     var p = prefs(), box = $('ntOn'); if (!box) return;
     box.checked = !!p.on;
     $('ntMore').hidden = !p.on;
-    var perm = 'Notification' in window ? Notification.permission : 'unsupported';
+    var perm = NN() ? 'granted' : 'Notification' in window ? Notification.permission : 'unsupported';
     var K = I18N.k;
     $('ntState').textContent = !supported() ? K('ui.nt-st-none', 'This browser can’t show notifications') : iosNotInstalled() ? K('ui.nt-st-ios', 'Open the dashboard from its Home Screen icon to use this') :
       !p.on ? K('ui.off', 'Off') : perm === 'denied' ? K('ui.nt-st-blocked', 'Blocked – allow notifications for the app in the phone’s settings') :
@@ -258,6 +273,10 @@
   function setP(patch) { var p = prefs(); Object.keys(patch).forEach(function (k) { p[k] = patch[k]; }); save(p); fill(); sync(true); }
   function turnOn() {
     if (!supported() || iosNotInstalled()) { $('ntOn').checked = false; fill(); return; }
+    if (NN()) { NN().requestPermissions().then(function (r) {
+      var p = prefs(); p.on = !!(r && r.display === 'granted'); save(p); fill();
+      if (!p.on) { $('ntState').textContent = I18N.k('ui.nt-app-denied', 'Not allowed – allow notifications for the app in the phone’s Settings'); return; }
+      return sync(true); }).catch(function (e) { $('ntOn').checked = false; $('ntState').textContent = 'Couldn’t switch on: ' + e.message; }); return; }
     Notification.requestPermission().then(function (perm) {
       if (perm !== 'granted') { $('ntOn').checked = false; var p = prefs(); p.on = false; save(p); fill(); $('ntState').textContent = 'Not allowed – you can allow it in the phone’s settings for the app'; return; }
       return subscription(true).then(function () { var p = prefs(); p.on = true; save(p); fill(); return sync(true); });
@@ -265,6 +284,7 @@
   }
   function turnOff() {
     var p = prefs(); p.on = false; save(p); fill();
+    if (NN()) { NN().getPending().then(function (r) { var l = (r && r.notifications || []).map(function (n) { return { id: n.id }; }); if (l.length) NN().cancel({ notifications: l }); }).catch(function () {}); lastSent = ''; return; }
     subscription(false).then(function (sub) {
       api('DELETE', { id: devId() }).catch(function () {});
       if (sub) sub.unsubscribe().catch(function () {});
@@ -277,6 +297,8 @@
     document.querySelectorAll('[data-ntdetail]').forEach(function (b) { b.addEventListener('click', function () { setP({ detail: b.dataset.ntdetail }); }); });
     $('ntTest').addEventListener('click', function () {
       var b = this; b.disabled = true;
+      if (NN()) { NN().schedule({ notifications: [{ id: 7, title: I18N.k('ui.nt-app-test', 'Test from cmd'), body: I18N.k('ui.nt-app-test-b', 'Reminders work in the app.'), schedule: { at: new Date(Date.now() + 4000) }, extra: { url: '/cmd/' } }] })
+        .then(function () { if (window.Quick) window.Quick.toast('<i class="bi bi-send"></i> ' + esc(I18N.k('ui.nt-app-test-sent', 'Test in 4 seconds'))); }).catch(function (e) { if (window.Quick) window.Quick.toast(esc(e.message)); }).then(function () { b.disabled = false; }); return; }
       sync(true).then(function () { return api('POST', { id: devId(), test: true }); })
         .then(function () { if (window.Quick) window.Quick.toast('<i class="bi bi-send"></i> Test sent – it should arrive in a few seconds'); })
         .catch(function (e) { if (window.Quick) window.Quick.toast('<i class="bi bi-exclamation-circle"></i> ' + esc(e.message)); })

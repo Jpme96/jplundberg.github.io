@@ -1,0 +1,11 @@
+{
+  "name": "cmd-app",
+  "private": true,
+  "description": "Uses the Capacitor packages installed in _app/node_modules (npm install in _app).",
+  "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/local-notifications": "^8.3.1"
+  }
+}
