@@ -828,3 +828,10 @@ html.dcn-modal { overflow: hidden; }
 .dc-fhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; justify-content: space-between; }
 .dc-empty > b { font-size: 15.5px; }
 .dc-flowsw { margin-top: 22px; }
+/* a row in the new flow opens its line (JP 2026-11-23) */
+.dc-fopen { flex: 1 1 260px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; border: 0; background: transparent; padding: 0; text-align: left; color: inherit; font: inherit; }
+.dc-fopen > .dc-lx { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dc-fopen > .dc-lx small { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.dc-fopen > .bi { color: var(--muted); }
+.dc-fedit { flex: 1 1 100%; padding: 6px 0 4px 56px; }
+@media (max-width: 560px) { .dc-fedit { padding-left: 0; } }

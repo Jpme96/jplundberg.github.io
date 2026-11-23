@@ -29,6 +29,12 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="end"]').click()); await sl(300);
   const end = await p.evaluate(() => ({ v: document.querySelector('.dc-verdict').textContent, rows: [...document.querySelectorAll('.dc-flow .dc-flist2 li')].map(li => li.textContent.replace(/\s+/g, ' ')).join(' | '), rep: !!document.querySelector('.dc-flow [data-dctab="report"]') }));
   check(/to fix/.test(end.v) && /234/.test(end.rows) && /Missing/.test(end.rows) && end.rep, 'Sluttkontroll: not complete, the missing 234 FDV listed, a report for the project manager ' + JSON.stringify(end));
+  /* a row opens its line, as in Dokumenter: statuses, deadline, responsible, comment (JP 2026-11-23 "Se på" did nothing) */
+  await p.evaluate(() => document.querySelector('.dc-flow .dc-flist2 [data-dcline]').click()); await sl(300);
+  const ed = await p.evaluate(() => ({ sts: document.querySelectorAll('.dc-fedit [data-dcst]').length, due: !!document.querySelector('.dc-fedit [data-dcdue]'), cmt: !!document.querySelector('.dc-fedit [data-dccmt]') }));
+  check(ed.sts >= 5 && ed.due && ed.cmt, 'a row in the final check opens its line with the statuses, deadline and comment ' + JSON.stringify(ed));
+  await p.evaluate(() => document.querySelector('.dc-fedit [data-dcst$=":na"]').click()); await sl(300);
+  check(await p.evaluate(() => Features.list('dctl')[0].lines.filter(l => l.st === 'na').length === 1), 'and a status set there is saved on the line');
   /* no plan: continue without, then make one from the delivery */
   await go(p, 'work/#dc=fp2', 2500);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
