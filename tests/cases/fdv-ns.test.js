@@ -18,7 +18,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(!over.length, 'the new-inspection form fits a phone: no field sticks out ' + over.join());
   await p.evaluate(() => { document.querySelector('[data-fdvopen="ins1"]').click(); }); await sl(300);
   const form = await p.evaluate(() => { const f = document.querySelector('form.fdv-add'); return !!f && { code: !!f.code, kg: !!f.kg, kt: !!f.kt, when: !!f.when, cost: !!f.cost, groups: f.code.querySelectorAll('optgroup').length, has23: !![...f.code.options].find(o => o.value === '23') }; });
-  check(form && form.code && form.kg && form.kt && form.when && form.cost && form.groups === 6 && form.has23, 'the finding form has the NS 3451 code (6 main groups), TG, KG, consequence type, when and cost ' + JSON.stringify(form));
+  check(form && form.code && form.kg && form.kt && form.when && form.cost && form.groups === 7 && form.has23, 'the finding form has the NS 3451 code (6 main groups + NS 3456 group 1), TG, KG, consequence type, when and cost ' + JSON.stringify(form));
   /* add a finding: 23 Outer walls, TG 3, KG 2 */
   await p.evaluate(() => { const f = document.querySelector('form.fdv-add'); f.code.value = '23'; f.tg.value = '3'; f.kg.value = '2'; f.kt.value = 'safety'; f.part.value = '2nd floor, south'; f.text.value = 'Rot in the cladding'; f.action.value = 'Replace boards'; f.cause.value = 'Too close to the ground'; f.when.value = 'y1'; f.cost.value = '25 000'; f.requestSubmit(); });
   await sl(400);
