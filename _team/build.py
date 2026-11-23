@@ -86,23 +86,27 @@ def rules(css):
 
 TOK = set(re.findall(r'[a-zA-Z][\w-]*', src + rd(os.path.join(CMD, 'fdv.page.js'))))   # + the inspection report's classes (inspections shared to Team)
 SKIP = re.compile(r':root|\bhtml\b|\.modern\b|\.glass\b|\.simple\b|\.unlocked\b|\.lock\b|\[data-theme|\.mo-|\.dens-|\.corners-')
-def wanted(sel):
-    if not sel or sel.startswith('@') or SKIP.search(sel): return False
+def keep(sel):
+    """the parts of a selector list that Document control uses – a list that also names a class it doesn't use still keeps its other parts
+       (the rule that centres an icon in a round button named .fold-btn too, so Team lost it – JP 2026-11-23 "the x was not in the middle")"""
+    if not sel or sel.startswith('@') or SKIP.search(sel): return ''
+    ok = []
     for part in sel.split(','):
         cls = re.findall(r'\.([a-zA-Z][\w-]*)', part)
-        if not cls or any(c not in TOK for c in cls): return False
-    return True
+        if cls and all(c in TOK for c in cls): ok.append(part.strip())
+    return ', '.join(ok)
+def wanted(sel): return bool(keep(sel))
 
 def pick(css):
     out = []
     for pre, body in rules(css):
         if pre.startswith('@media'):
-            inner = [p2 + ' {' + b2 + '}' for p2, b2 in rules(body) if wanted(p2)]
+            inner = [keep(p2) + ' {' + b2 + '}' for p2, b2 in rules(body) if wanted(p2)]
             if inner: out.append(pre + ' {\n  ' + '\n  '.join(inner) + '\n}')
         elif pre.startswith('@keyframes'):
             if pre.split()[-1] in TOK: out.append(pre + ' {' + body + '}')
         elif wanted(pre):
-            out.append(pre + ' {' + body + '}')
+            out.append(keep(pre) + ' {' + body + '}')
     return out
 
 styles = rd(os.path.join(CMD, 'styles.css'))

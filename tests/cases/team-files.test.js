@@ -111,6 +111,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   /* in the viewer from Documents, which zooms inside the PDF (JP 2026-11-23) – a frame only if that viewer can't load */
   check(await until(own, () => !!document.querySelector('.dx-fv') || !!document.querySelector('#prevBox iframe'), 10000), 'a PDF is shown in Team');
   check(await own.evaluate(() => !!document.querySelector('.dx-fv .dx-fvb')), 'in the zoomable viewer');
+  /* the icons sit in the middle of their round buttons (JP 2026-11-23: the close X was off-centre in Team) */
+  const off = await own.evaluate(() => [...document.querySelectorAll('.icon-btn')].filter(b => b.offsetParent && b.querySelector('i.bi')).map(b => { const r = b.getBoundingClientRect(), g = b.querySelector('i.bi').getBoundingClientRect(); return { dx: Math.abs((g.left + g.width / 2) - (r.left + r.width / 2)), dy: Math.abs((g.top + g.height / 2) - (r.top + r.height / 2)), c: b.className }; }).filter(x => x.dx > 1.5 || x.dy > 1.5).concat([...document.querySelectorAll('.icon-btn > i.bi')].filter(i => i.offsetParent && getComputedStyle(i, '::before').verticalAlign !== 'baseline' && getComputedStyle(i, '::before').display !== 'block').map(i => ({ glyph: 'lowered', c: i.className }))));
+  check(!off.length, 'every icon is centred in its round button ' + JSON.stringify(off));
   await own.evaluate(() => { const x = document.querySelector('.dx-fv [data-dxfvx]'); if (x) x.click(); });
   await own.evaluate(() => document.querySelector('[data-act=close]').click()); await sl(300);
   await con.reload(); 
