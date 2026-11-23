@@ -75,7 +75,7 @@
   function idleMs() {
     var m = 60;
     try { m = (JSON.parse(localStorage.getItem('dash.settings')) || {}).lockMins || 60; } catch (e) {}
-    return Math.max(5, Math.min(m, 1440)) * 60 * 1000;
+    return Math.max(1, Math.min(m, 1440)) * 60 * 1000;   /* 1 minute and up (2026-11-23, JP: less than 15 min) */
   }
 
   var enc = new TextEncoder();
