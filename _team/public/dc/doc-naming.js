@@ -506,6 +506,7 @@
   var EXF = { id: '_ex', name: 'x.pdf', p: { code: '442', abbr: 'DA', text: 'taklampe korridor C20', kind: 'doc' }, nv: { floor: 'H02', disc: 'E', dtype: 'P', room: '0204', free: 'kjøkken', rev: '01', contractor: 'Eksempel Elektro AS' } };
   function exName(p, r) { return nbuild(Object.assign({}, p, { files: [EXF], bid: p.bid || '11621', no: p.no || '23200', pid: p.pid || '2010' }), EXF, r); }
   function rulesHtml(p) {
+    if (HOST && HOST.can && !HOST.can('rules')) return '';   /* in Team only those allowed «Sjekklister og navneregler» (admins by default) see and set the rules (JP 2026-11-23 "except me") */
     var use = p.nuse || {}, R = nrules(p), own = R.filter(function (r) { return !r.b; }), sel = nsel ? nrule(p, nsel) : null;
     var opts = function (cur) { var o = function (r) { return '<option value="' + esc(r.id) + '"' + (r.id === cur ? ' selected' : '') + '>' + esc(rname(r)) + '</option>'; };
       return '<optgroup label="Boligbygg">' + R.filter(function (r) { return r.b; }).map(o).join('') + '</optgroup>' + (own.length ? '<optgroup label="' + esc(k('ui.dcn-own', 'Your rules')) + '">' + own.map(o).join('') + '</optgroup>' : ''); };
