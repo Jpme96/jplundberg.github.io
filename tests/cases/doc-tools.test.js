@@ -50,6 +50,17 @@ fs.writeFileSync(lone, '%PDF made up 4');
   const dk = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); return { type: !!li.querySelector('[data-dcntype]'), kind: !!li.querySelector('.dcn-g > .dcn-kind'), code: !!li.querySelector('[data-dcncode]') }; });
   check(!dk.type && dk.kind && dk.code, 'a drawing has its kind in the first row, keeps the NS code (it is in the drawing name) and has no document type (JP 22:02) ' + JSON.stringify(dk));
   check(dw && /^V – HVAC and plumbing/.test(dw.disc) && dw.dtype === 'P – Plan' && dw.floors[0] === 'K02 – 2nd basement' && /-V-332-P-\d\d – Rørplan sprinkler\.dwg$/.test(dw.sug), 'a drawing: the choices say what the letters mean, and the discipline (from 332) and type (from “rørplan”) are suggested ' + JSON.stringify(dw));
+  /* the boxes in the drawing row sit on one line, also with a two-line label and a hint under one of them (JP 2026-11-23) */
+  const vp0 = p.viewport(); await p.setViewport(Object.assign({}, vp0, { width: 1280, height: 900 })); await sl(400);
+  const al = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); const fl = [...li.querySelectorAll('.dcn-s .dcn-fl')].filter(l => l.querySelector('input, select'));
+    /* as on JP's screen: a label that takes two lines, and a hint under another box */
+    fl[0].querySelector('span').textContent = 'Bygningsnummer (for tegninger)'; if (fl[1] && !fl[1].querySelector('small')) fl[1].insertAdjacentHTML('beforeend', '<small>Forslag – sjekk det</small>');
+    const f = fl.map(l => ({ row: Math.round(l.getBoundingClientRect().top), box: Math.round(l.querySelector('input, select').getBoundingClientRect().top), lines: Math.round(l.querySelector('span').getBoundingClientRect().height) }));
+    const rows = {}; f.forEach(x => { (rows[x.row] = rows[x.row] || []).push(x.box); });
+    const spread = Math.max(0, ...Object.values(rows).map(b => Math.max(...b) - Math.min(...b)));
+    return { f, spread, together: Math.max(...Object.values(rows).map(b => b.length)) }; });
+  check(al.together >= 2 && al.spread <= 2, 'the boxes in a drawing row are on one line ' + JSON.stringify(al));
+  await p.setViewport(vp0); await sl(400);
   await p.evaluate(() => { const b = document.querySelector('[data-dcnbid]'); b.value = '11621'; b.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   check(await p.evaluate(async () => /^11621-/.test((await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
   await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); const c = li.querySelector('[data-dcncode]'); c.value = [...c.options].map(o => o.value).find(v => /^3[0-9]{2}$/.test(v) && v !== '325' && v !== '332') || ''; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
