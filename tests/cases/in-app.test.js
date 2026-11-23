@@ -1,7 +1,7 @@
 /* Inside the iPhone app (2026-11-22, JP: "maybe I should make a proper app for my phone"): with a stand-in Capacitor
    bridge, cmd knows it's in the app, schedules reminders on the phone with titles, opens jplcmd:// links and gives Siri
    the app link. On the web nothing changes. Made-up data only. */
-const { open, sl, go } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const { open, sl, go, until } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p } = await open(393);
   const web = await p.evaluate(() => ({ on: window.Native && Native.on, cls: document.documentElement.classList.contains('in-app') }));
@@ -17,6 +17,14 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
         schedule: o => { o.notifications.forEach(n => { pend.push(n); window.__sched.push(n); }); return Promise.resolve(); },
         addListener: (n, f) => { window.__L['ln:' + n] = f; return Promise.resolve({ remove() {} }); } },
       Keyboard: { setAccessoryBarVisible: o => { window.__bar = o.isVisible; return Promise.resolve(); } },
+      Haptics: { impact: o => { (window.__hap = window.__hap || []).push('impact:' + o.style); return Promise.resolve(); }, notification: o => { (window.__hap = window.__hap || []).push('note:' + o.type); return Promise.resolve(); } },
+      NativeBiometric: {
+        isAvailable: () => Promise.resolve({ isAvailable: true, biometryType: 2 }),
+        setCredentials: o => { localStorage.setItem('t.kc', JSON.stringify(o)); return Promise.resolve(); },
+        getSecureCredentials: o => { window.__faceid = (window.__faceid || 0) + 1; const c = JSON.parse(localStorage.getItem('t.kc') || 'null'); return c ? Promise.resolve({ username: c.username, password: c.password }) : Promise.reject(new Error('No protected credentials found')); },
+        deleteCredentials: () => { localStorage.removeItem('t.kc'); return Promise.resolve(); } },
+      DocumentScanner: { scanDocument: o => { window.__scanOpts = o; const c = document.createElement('canvas'); c.width = 60; c.height = 80; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 60, 80);
+        const b = c.toDataURL('image/jpeg').split(',')[1]; return Promise.resolve({ status: 'success', scannedImages: [b, b] }); } },
       App: { addListener: (n, f) => { window.__L[n] = f; return Promise.resolve({ remove() {} }); }, getLaunchUrl: () => Promise.resolve({}) } } };
   });
   await go(p, '', 2500);
@@ -45,6 +53,23 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => window.__L.appUrlOpen({ url: 'jplcmd://cmd/food/#shop' }));
   await sl(2500);
   check(/\/cmd\/food\/$/.test(await p.evaluate(() => location.pathname)), 'jplcmd://cmd/food/ opens Food');
+  /* vibrations: a tick, and "done" on a save */
+  await p.evaluate(() => { const c = document.createElement('input'); c.type = 'checkbox'; document.body.appendChild(c); c.click(); c.remove(); window.Quick && Quick.toast('<i class="bi bi-check2"></i> Made-up saved'); });
+  await sl(200);
+  const hap = await p.evaluate(() => window.__hap || []);
+  check(hap.some(x => /impact:LIGHT/.test(x)) && hap.some(x => /note:SUCCESS/.test(x)), 'a light tap on a tick and a "done" buzz on a save ' + hap.join(','));
+  /* Face ID through the Keychain: switched on with the passcode, then the lock screen unlocks by itself */
+  const fid = await p.evaluate(async () => { const r = await window.Passkey.enable('test-passcode-1'); const kc = JSON.parse(localStorage.getItem('t.kc') || '{}'); return { r, ac: kc.accessControl, has: !!kc.password, saved: JSON.parse(localStorage.getItem('dash.pk') || '{}').native }; });
+  check(fid.r === 'done' && fid.ac === 1 && fid.has && fid.saved === 1, 'Face ID is switched on: the passcode goes into the Keychain behind Face ID ' + JSON.stringify({ r: fid.r, ac: fid.ac, saved: fid.saved }));
+  await p.evaluate(() => window.Vault.lock()); await sl(1200);
+  await until(p, () => document.documentElement.classList.contains('unlocked'), 8000);
+  const un = await p.evaluate(() => ({ unlocked: document.documentElement.classList.contains('unlocked'), asked: window.__faceid || 0 }));
+  check(un.unlocked && un.asked >= 1, 'the lock screen asks Face ID by itself and unlocks ' + JSON.stringify(un));
+  /* Apple's scanner in Papers: two pages straight into the PDF view */
+  await go(p, 'papers/', 2500);
+  const sc = await p.evaluate(() => new Promise(res => { const i = document.querySelector('[data-pascan]'); if (!i) return res('no scan button'); i.closest('label').click();
+    setTimeout(() => res({ figs: document.querySelectorAll('.pa-scan figure').length, opts: window.__scanOpts && window.__scanOpts.responseType }), 900); }));
+  check(sc && sc.figs === 2 && sc.opts === 'base64', 'Scan with the camera opens Apple’s scanner and its pages go into the PDF ' + JSON.stringify(sc));
   /* the app's WebKit has no "Safari" in its name: page changes must still take Safari's plain path (JP: "very laggy") */
   await p.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 cmdapp/1');
   await go(p, '', 2500);

@@ -169,6 +169,8 @@
   /* toast(html, undo): a short note at the bottom; with undo, an Undo button for a few seconds */
   var K = function (k, e, o) { return window.I18N ? I18N.k(k, e, o) : String(e).replace(/\{(\w+)\}/g, function (m, x) { return o && o[x] != null ? o[x] : m; }); };
   function toast(html, undo) {
+    /* in the iPhone app: a short "done" vibration when something was added or saved (2026-11-23) */
+    if (window.Native && window.Native.on && /bi-(check|plus|cart|bookmark|journal|send)/.test(String(html))) window.Native.tap('done');
     var t = $('qaToast');
     if (!t) {
       t = document.createElement('div'); t.id = 'qaToast'; t.className = 'qa-toast'; t.setAttribute('role', 'status'); document.body.appendChild(t);

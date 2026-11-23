@@ -322,6 +322,14 @@
       }
     });
   }
+  /* in the iPhone app: Apple's own scanner – it finds the paper's edges, straightens it and takes several pages at once
+     (2026-11-23). Its pages are already clean, so they go straight into the PDF view. */
+  document.addEventListener('click', function (e) {
+    var l = e.target.closest('label'); if (!l || !l.querySelector('[data-pascan]') || !(window.Native && window.Native.scan) || l.__cam) return;
+    e.preventDefault();
+    window.Native.scan().then(function (pages) { if (!pages.length) return; pages.forEach(function (pg) { scanPages.push(pg); }); scanView(); })
+      .catch(function () { var i = l.querySelector('[data-pascan]'); if (i) { l.__cam = true; i.click(); setTimeout(function () { l.__cam = false; }, 1000); } });   /* no scanner: the camera as before */
+  }, true);
   document.addEventListener('change', function (e) {
     var i = e.target.closest('[data-pascan]'); if (!i || !i.files.length) return; var f = i.files[0]; i.value = '';
     cleanScan(f).then(function (pg) { scanPages.push(pg); scanView(); }).catch(function () { toast(I18N.k('ui.only-pdfs-and-photos-can-be-added', 'Only PDFs and photos can be added')); });

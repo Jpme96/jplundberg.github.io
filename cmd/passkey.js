@@ -15,13 +15,17 @@
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function rnd(n) { return crypto.getRandomValues(new Uint8Array(n)); }
   function saved() { try { var v = JSON.parse(localStorage.getItem(KEY)); return v && v.id && v.ct ? v : null; } catch (e) { return null; } }
-  function drop() { try { localStorage.removeItem(KEY); } catch (e) {} paint(); }
+  /* in the iPhone app (_app/, 2026-11-23): the passcode goes into the iPhone's Keychain, readable only after Face ID
+     (BIOMETRY_CURRENT_SET – a new face or finger added to the phone makes it unreadable). No passkey needed. */
+  var BIO = function () { return window.Native && window.Native.bio; }, SRV = 'jplundberg.com/cmd';
+  function drop() { var v = saved(); try { localStorage.removeItem(KEY); } catch (e) {} if (v && v.native && BIO()) BIO().deleteCredentials({ server: SRV }).catch(function () {}); paint(); }
   var IOS = /iPhone|iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
   var NAME = IOS ? 'Face ID' : /Mac/.test(navigator.platform || '') ? 'Touch ID' : L('fingerprint or face', 'fingeravtrykk eller ansikt');
 
   var supported = null;
   function support() {
     if (supported) return supported;
+    if (BIO()) return (supported = BIO().isAvailable({ useFallback: false }).then(function (r) { return !!(r && r.isAvailable); }, function () { return false; }));
     supported = window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable
       ? PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function () { return false; }) : Promise.resolve(false);
     return supported;
@@ -50,7 +54,14 @@
       });
     });
   }
+  function enableNative(pass) {
+    return window.Vault.tryPass(pass).then(function (ok) {
+      if (!ok) throw new Error('wrong');
+      return BIO().setCredentials({ username: 'cmd', password: pass, server: SRV, accessControl: 1 });
+    }).then(function () { localStorage.setItem(KEY, JSON.stringify({ id: 'native', ct: 'native', native: 1, at: Date.now() })); return 'done'; });
+  }
   function enable(pass) {
+    if (BIO()) return enableNative(pass);
     var salt = rnd(32), id, first = null;
     var made = navigator.credentials.create({ publicKey: {
       challenge: rnd(32), rp: { name: 'Dashboard', id: location.hostname },
@@ -77,10 +88,25 @@
   }
 
   /* ---------- unlock ---------- */
-  var busy = false;
+  var busy = false, asked = false;
   function unlock() {
     var v = saved(); if (!v || busy) return;
     busy = true; var m = $('lockMsg');
+    if (v.native) {
+      if (!BIO()) { busy = false; return; }
+      BIO().getSecureCredentials({ server: SRV, reason: L('Unlock your dashboard', 'Lås opp dashbordet') }).then(function (c) {
+        return window.Vault.tryPass(c.password).then(function (ok) {
+          busy = false;
+          if (ok) window.Vault.unlockWith(c.password);
+          else { drop(); if (m) m.textContent = L('The passcode has changed – use it once, then turn ' + NAME + ' on again in Security.', 'Koden er endret – bruk den én gang, og slå på ' + NAME + ' igjen under Sikkerhet.'); }
+        });
+      }).catch(function (e) {
+        busy = false;
+        /* the Keychain item is gone (e.g. a new face added to the phone): turn it off quietly, the passcode still works */
+        if (e && /not found|No protected|itemNotFound|-25300/i.test(String(e.message || e.code || e))) drop();
+      });
+      return;
+    }
     prfGet(unb64(v.id), unb64(v.salt)).then(aesFrom).then(function (k) {
       return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(v.iv) }, k, unb64(v.ct));
     }).then(function (pt) {
@@ -106,6 +132,8 @@
     }
     b.innerHTML = '<i class="bi bi-person-bounding-box"></i> ' + L('Unlock with ' + NAME, 'Lås opp med ' + NAME);
     b.hidden = !saved();
+    /* in the app, Face ID starts by itself when the lock screen shows (no tap needed there) – once per time it's shown */
+    var v0 = saved(); if (v0 && v0.native && BIO() && !asked && document.documentElement.classList.contains('locked')) { asked = true; setTimeout(unlock, 350); }
     /* with Face ID on, don't pop the keyboard on a phone – the button is the quick way in */
     if (saved() && matchMedia('(pointer: coarse)').matches) setTimeout(function () { var i = $('lockPass'); if (i && document.activeElement === i) i.blur(); }, 140);
   }
@@ -149,8 +177,8 @@
     if (!e.target || e.target.id !== 'pkForm') return;
     e.preventDefault();
     var m = $('pkMsg'), pass = $('pkPass').value;
-    m.textContent = L('Your phone asks where to save the passkey – choose Passwords (iCloud Keychain), then Face ID.', 'Telefonen spør hvor passkeyen skal lagres – velg Passord (iCloud-nøkkelring), deretter Face ID.');
-    var hint = setTimeout(function () { if (!saved()) m.textContent = L('If a password manager (1Password, Bitwarden …) opened: tap “Other options” and save in Passwords (iCloud Keychain) – other managers can’t give back the key this needs.', 'Hvis en passordbehandler (1Password, Bitwarden …) åpnet seg: trykk «Andre valg» og lagre i Passord (iCloud-nøkkelring) – andre passordbehandlere kan ikke gi tilbake nøkkelen dette trenger.'); }, 9000);
+    m.textContent = BIO() ? L('Confirm with ' + NAME + ' on your phone.', 'Bekreft med ' + NAME + ' på telefonen.') : L('Your phone asks where to save the passkey – choose Passwords (iCloud Keychain), then Face ID.', 'Telefonen spør hvor passkeyen skal lagres – velg Passord (iCloud-nøkkelring), deretter Face ID.');
+    var hint = BIO() ? 0 : setTimeout(function () { if (!saved()) m.textContent = L('If a password manager (1Password, Bitwarden …) opened: tap “Other options” and save in Passwords (iCloud Keychain) – other managers can’t give back the key this needs.', 'Hvis en passordbehandler (1Password, Bitwarden …) åpnet seg: trykk «Andre valg» og lagre i Passord (iCloud-nøkkelring) – andre passordbehandlere kan ikke gi tilbake nøkkelen dette trenger.'); }, 9000);
     enable(pass).then(function (st) { clearTimeout(hint);
       if (st === 'done') { paint(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock is on', NAME + '-opplåsing er på')); return; }
       m.innerHTML = esc(L('Almost there – one more Face ID to finish.', 'Nesten ferdig – én Face ID til for å fullføre.')) + ' <button type="button" class="pill-btn" data-pkfinish>' + esc(L('Finish with ' + NAME, 'Fullfør med ' + NAME)) + '</button>';
@@ -163,7 +191,7 @@
       .catch(function (err) { if (m) m.textContent = errText(err); });
   });
   window.addEventListener('passcode:change', function () { if (saved()) { drop(); if (window.Quick && window.Quick.toast) window.Quick.toast('<i class="bi bi-person-bounding-box"></i> ' + L(NAME + ' unlock was turned off – turn it on again in Security.', NAME + '-opplåsing ble slått av – slå den på igjen under Sikkerhet.')); } });
-  window.Vault.onLock(function () { setTimeout(lockBtn, 0); });
+  window.Vault.onLock(function () { asked = false; setTimeout(lockBtn, 0); });
   window.Vault.onUnlock(function () { setTimeout(paint, 200); });
   window.addEventListener('st:page', function (e) { if (e.detail === 'security') paint(); });
   paint();

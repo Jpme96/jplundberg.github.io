@@ -41,6 +41,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan receipts, papers and your passport, and take photos for your notes.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Unlock your dashboard with Face ID instead of typing the passcode.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Weather where you are and when to leave for appointments.</string>
 	<key>NSMicrophoneUsageDescription</key>
