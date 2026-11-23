@@ -1,0 +1,46 @@
+/* The new project flow (JP 2026-11-23, a test – switched on per device): Krav → Dokumentplan → Levering → Sammenligning →
+   Sluttkontroll, a view on the same project. With a plan: the plan is checked against the requirements, the delivery is compared
+   in three piles, and the final check says what to put right. Without a plan: a plan is made from the delivery. Off: as before.
+   Made-up data only. */
+const { open, go, sl } = require('../lib/browser'); const { check, done } = require('../lib/check');
+const fs = require('fs'), os = require('os'), path = require('path');
+(async () => {
+  const { b, p } = await open(1280);
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dfl-')), PDF = '%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF';
+  const mk = n => { const f = path.join(dir, n); fs.writeFileSync(f, PDF); return f; };
+  const F = ['234 DA Vindu madeup.pdf', '261 DA Takstein madeup.pdf', 'Tilbud madeup.pdf'].map(mk);
+  await p.evaluate(() => { Features.set('fdv', true); localStorage.removeItem('dash.dcFlow'); const t = Features.tools();
+    const L = [['234', 'E', '234 DA Vindu madeup'], ['234', 'BC', '234 DV Vindu madeup'], ['261', 'E', '261 DA Takstein madeup']].map((x, i) => ({ id: 'l' + i, code: x[0], t: x[1], planned: x[2], st: 'missing', files: [] }));
+    t.dctl = [{ id: 'fp1', name: 'Made-up flow', lines: L, files: [], planName: 'Made-up plan.xlsx' }, { id: 'fp2', name: 'Made-up no plan', lines: [], files: [] }]; Features.saveTools(t); });
+  await go(p, 'work/#dc=fp1', 2500);
+  check(await p.evaluate(() => !document.querySelector('.dc-fsteps') && !!document.querySelector('[data-dcflow]')), 'off by default: the project is as before, with the switch on its overview');
+  await p.evaluate(() => { const c = document.querySelector('[data-dcflow]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
+  const st = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.dataset.dctab).join());
+  check(st === 'krav,plan,lev,cmp,end', 'on: five steps in the order the work goes ' + st);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
+  check(await p.evaluate(() => /Made-up plan\.xlsx/.test(document.querySelector('.dc-flow').textContent) && !!document.querySelector('.dc-flow input[data-dcplan]')), 'Dokumentplan: the imported plan, checked, with Import a new version');
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
+  await (await p.$('.dc-flow input[data-dcfiles]')).uploadFile(...F); await sl(1800);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="cmp"]').click()); await sl(300);
+  const piles = await p.evaluate(() => [...document.querySelectorAll('.dc-pile b')].map(b => b.textContent).join());
+  check(piles === '2,1,1', 'Sammenligning: 2 in the plan and delivered, 1 missing, 1 not in the plan ' + piles);
+  await p.evaluate(() => document.querySelector('[data-dcokall]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="end"]').click()); await sl(300);
+  const end = await p.evaluate(() => ({ v: document.querySelector('.dc-verdict').textContent, rows: [...document.querySelectorAll('.dc-flow .dc-flist2 li')].map(li => li.textContent.replace(/\s+/g, ' ')).join(' | '), rep: !!document.querySelector('.dc-flow [data-dctab="report"]') }));
+  check(/to fix/.test(end.v) && /234/.test(end.rows) && /Missing/.test(end.rows) && end.rep, 'Sluttkontroll: not complete, the missing 234 FDV listed, a report for the project manager ' + JSON.stringify(end));
+  /* no plan: continue without, then make one from the delivery */
+  await go(p, 'work/#dc=fp2', 2500);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
+  await (await p.$('.dc-flow input[data-dcfiles]')).uploadFile(...F); await sl(1800);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('[data-dcnoplan]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('[data-dcmkplan]').click()); await sl(500);
+  const np = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), linked: r.files.filter(f => f.line).length, v7: !!document.querySelector('[data-dcvx7]') }; });
+  check(np.lines === '234 E recv,261 E recv' && np.linked === 2 && np.v7, 'no plan: a plan is made from the delivered files, linked, ready as Vedlegg 7 ' + JSON.stringify(np));
+  /* off again: as before */
+  await p.evaluate(() => { const c = document.querySelector('[data-dcflow]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
+  check(await p.evaluate(() => !document.querySelector('.dc-fsteps') && !!document.querySelector('.fdv-tabs')), 'switched off: back to the project as before');
+  check(!errs.length, 'no errors ' + errs.join(' | '));
+  await b.close(); done();
+})();

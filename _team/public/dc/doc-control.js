@@ -259,7 +259,7 @@
   function typeLabel(l) { return l.name ? l.name : l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
 
   /* ---------- the page ---------- */
-  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false;
+  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false, addOpen = false;
   try { quick = sessionStorage.getItem('dash.dcQuick') === '1'; } catch (e) {}
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
@@ -488,7 +488,105 @@
       : '<div class="dc-teamlink dr-move"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-move-h', 'Use Document requirements in Team')) + '</b><small>' + esc(k('ui.dr-move-s', 'Everyone works on the same lists, client checklists and project types. One file takes all of yours there.')) + '</small></span><button type="button" class="pill-btn" data-drmove>' + esc(k('ui.dr-move', 'Move to Team')) + '</button></div>';
     return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.docu', 'Documentation')) + '</h2>' + (adding || radding || !can('newp') ? '' : '<div class="head-actions"><button type="button" class="text-btn" ' + (moved ? 'data-dcnew' : 'data-drnew') + '><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-new', 'New project')) + '</button></div>') + '</div>' + body;
   }
+  /* ---------- the new project flow (JP 2026-11-23, a test – on only where switched on): five steps in the order the work goes:
+     Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll. It is a view on the same project: the plan reading, the
+     matching, the statuses and the report are the ones above. ---------- */
+  var FLOW = ['krav', 'plan', 'lev', 'cmp', 'end'], cmpPile = 'got';
+  function flowOn() { try { return localStorage.getItem('dash.dcFlow') === '1'; } catch (e) { return false; } }
+  function flowSwitch() { return '<label class="dcn-sw dc-flowsw"><input type="checkbox" data-dcflow' + (flowOn() ? ' checked' : '') + '> ' + esc(k('ui.dc-flow-switch', 'New project flow (test, only on this device)')) + '</label>'; }
+  /* the plan held up against the requirements: each line by the client's checklist (planIssues), and the project's own requirements
+     that the plan leaves out */
+  function planCheck(p) {
+    var R = req(), L = p.lines || [], have = { named: {} };
+    L.forEach(function (l) { var c3 = String(l.code).slice(0, 3); (have[c3] || (have[c3] = { t: '' })).t += l.t || ''; if (l.sys) have.named[c3] = 1; });
+    var rows = L.map(function (l) { return { l: l, is: planIssues(l, R, have) }; }), gaps = [], r = kravOf(p);
+    if (r) { var pt = {}; L.forEach(function (l) { var c = String(l.code).slice(0, 3); pt[c] = (pt[c] || '') + (l.t || ''); });
+      (r.lines || []).forEach(function (q) { var c = String(q.code).slice(0, 3), miss = String(q.t || '').split('').filter(function (x) { return (pt[c] || '').indexOf(x) < 0; }).join(''); if (miss) gaps.push({ code: q.code, sys: lineTitle(q), t: miss }); }); }
+    return { rows: rows, gaps: gaps, err: rows.filter(function (x) { return x.is.err.length; }).length, warn: rows.filter(function (x) { return !x.is.err.length && x.is.warn.length; }).length };
+  }
+  /* what the project manager needs at the end: everything that is not in order, and why */
+  function flowIssues(p) {
+    var L = p.lines || [], F = {}, out = [], r = kravOf(p); (p.files || []).forEach(function (f) { F[f.id] = f; });
+    var inKrav = function (l) { return r && (r.lines || []).some(function (q) { return String(q.code).slice(0, 3) === String(l.code).slice(0, 3) && String(q.t || '').indexOf((l.t || '').charAt(0)) >= 0; }); };
+    L.forEach(function (l) {
+      var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean);
+      if (l.st === 'missing' && !fs.length) out.push({ l: l, kind: 'no', what: stName('missing'), why: inKrav(l) ? k('ui.dc-fl-why-krav', 'Required by the project') : p.planName ? k('ui.dc-fl-why-plan', 'In the document plan') : k('ui.dc-fl-why-list', 'On the list') });
+      else if (l.st === 'rej') out.push({ l: l, kind: 'no', what: stName('rej'), why: l.cmt || '' });
+      else if (l.st === 'cmt') out.push({ l: l, kind: 'wa', what: stName('cmt'), why: l.cmt || '' });
+      fs.forEach(function (f) { var w = f.cc && f.cc.w || []; if (w.indexOf('notext') >= 0 || w.indexOf('little') >= 0) out.push({ l: l, kind: 'wa', what: k('ui.dc-fl-scan', 'Check it'), why: k('ui.dc-fl-scan-why', '{f}: scanned – little or no text to read', { f: f.name }) });
+        if ((f.iss || []).some(function (x) { return x[0] === 'err'; })) out.push({ l: l, kind: 'wa', what: k('ui.dc-fl-name', 'Wrong name'), why: f.name }); });
+    });
+    planCheck(p).gaps.forEach(function (g) { out.push({ l: { code: g.code, sys: g.sys, t: g.t }, kind: 'no', what: k('ui.dc-fl-notplan', 'Not in the plan'), why: k('ui.dc-fl-req-types', 'The project requires: {t}', { t: g.t.split('').map(typeName).join(', ') }) }); });
+    return out;
+  }
+  function flowFull(p) {
+    if (FLOW.indexOf(tab) < 0 && tab !== 'report') tab = (p.files || []).length ? 'cmp' : (p.lines || []).length ? 'plan' : 'krav';
+    var L = p.lines || [], c = counts(L), F = p.files || [], r = kravOf(p), pc = planCheck(p), iss = flowIssues(p), loose = looseFiles(p).length;
+    var got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }).length, miss = L.length - got;
+    var verdict = !F.length && !got ? ['ne', k('ui.dc-fl-wait', 'Waiting for the delivery')] : iss.length ? ['no', k('ui.dc-fl-not-done', 'Not complete · {n} to fix', { n: iss.length })] : c.recv ? ['wa', k('ui.dc-fl-waiting', '{n} waiting for approval', { n: c.recv })] : ['ok', k('ui.dc-fl-done', 'Complete')];
+    var subs = { krav: r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : req() ? req().name : k('ui.dc-fl-no-krav', 'No requirements yet'),
+      plan: p.planName ? (pc.err + pc.gaps.length ? k('ui.dc-fl-plan-dev', 'Checked · {n} deviations', { n: pc.err + pc.gaps.length }) : k('ui.dc-fl-plan-ok', 'Checked · OK')) : p.noPlan ? k('ui.dc-fl-no-plan', 'No plan') : L.length ? k('ui.dc-fl-from-krav', 'From the requirements') : k('ui.dc-fl-not-imported', 'Not imported'),
+      lev: F.length ? k('ui.dc-fl-n-files', '{n} delivered', { n: F.length }) : k('ui.dc-fl-none-yet', 'Nothing yet'),
+      cmp: L.length ? k('ui.dc-fl-cmp-sub', '{a} delivered · {m} missing', { a: got, m: miss }) : '–', end: verdict[1] };
+    var names = { krav: k('ui.dx-krav', 'Requirements'), plan: k('ui.dc-plan', 'Document plan'), lev: k('ui.dc-fl-lev', 'Delivery'), cmp: k('ui.dc-fl-cmp', 'Comparison'), end: k('ui.dc-fl-end', 'Final check') };
+    var cur = tab === 'report' ? 'end' : tab;
+    var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
+      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span></div>' +
+      '<nav class="dc-fsteps" role="tablist" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + FLOW.map(function (t, i) { return '<button type="button" role="tab" aria-selected="' + (t === cur) + '" data-dctab="' + t + '"><b><span class="dc-fn">' + (i + 1) + '</span>' + esc(names[t]) + '</b><small>' + esc(subs[t]) + '</small></button>'; }).join('') + '</nav>';
+    var body = tab === 'report' ? reportTab(p) : cur === 'krav' ? flowKrav(p, r) : cur === 'plan' ? flowPlan(p, pc) : cur === 'lev' ? files(p) : cur === 'cmp' ? flowCmp(p, loose) : flowEnd(p, iss, verdict, c);
+    return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + flowSwitch() + '</div></div>';
+  }
+  function fnext(t, label) { return '<div class="dc-fnext"><button type="button" class="pill-btn" data-dctab="' + t + '">' + esc(label) + ' <i class="bi bi-chevron-right"></i></button></div>'; }
+  function flowRow(code, title, sub, chipHtml, extra) { return '<li class="dc-frow2"><b class="dc-code">' + esc(code) + '</b><span class="dc-lx"><b data-noi18n>' + esc(title) + '</b>' + (sub ? '<small data-noi18n>' + esc(sub) + '</small>' : '') + '</span>' + (chipHtml || '') + (extra || '') + '</li>'; }
+  function flowKrav(p, r) {
+    var h = '<h3 class="fdv-h">' + esc(k('ui.dc-fl-krav-t', 'What the project requires')) + '</h3>';
+    if (r) h += '<p class="muted dc-help">' + esc(k('ui.dc-fl-krav-h', 'The yardstick everything is checked against: the document types per NS code.')) + '</p><ul class="dc-flist2">' + byCode(r.lines || []).map(function (q) { return flowRow(q[0], q[1], q[2].map(function (l) { return typeLabel(l); }).filter(Boolean).join(' · ')); }).join('') + '</ul><p><button type="button" class="text-btn" data-dxkrav="' + esc(r.id) + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-fl-krav-open', 'Open the requirements')) + '</button></p>';
+    else h += '<p class="muted dc-help">' + esc(req() ? k('ui.dc-fl-krav-req', 'No requirements made for this project – the plan is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none', 'No requirements made for this project. Make them under Documentation → New project, or import the client’s checklist.')) + '</p>';
+    return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan'));
+  }
+  function flowPlan(p, pc) {
+    var L = p.lines || [], imp = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden>';
+    if (!p.planName && !L.length && !p.noPlan) return '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-imp-t', 'Import the contractor’s document plan')) + '</b><p class="muted">' + esc(k('ui.dc-fl-imp-h', 'Choose the filled-in Vedlegg 7 (.xlsx). Every tab is read and the plan is checked against the requirements right away.')) + '</p>' +
+      '<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label><button type="button" class="text-btn" data-dcnoplan="' + esc(p.id) + '">' + esc(k('ui.dc-fl-noplan', 'Continue without a document plan')) + '</button></div>';
+    if (!p.planName && p.noPlan) {
+      var lf = looseFiles(p).length, h0 = '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-np-t', 'No document plan in this project')) + '</b><p class="muted">' + esc(k('ui.dc-fl-np-h', 'Team can fill one in from what is delivered – in the Vedlegg 7 layout, with what the requirements still miss as empty rows.')) + '</p>' +
+        (lf ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: lf })) + '</button>' : (L.length ? '' : '<button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-deliver-first', 'Deliver the documentation first')) + ' <i class="bi bi-chevron-right"></i></button>')) +
+        '<label class="text-btn dc-file">' + esc(k('ui.dc-fl-have-plan', 'We got a plan after all – import it')) + imp + '</label></div>';
+      if (L.length) h0 += '<p class="dc-note">' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: L.length })) + '</p><div class="dc-facts"><button type="button" class="pill-btn" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7', 'Download as Vedlegg 7 (.xlsx)')) + '</button></div>';
+      return h0 + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
+    }
+    if (!p.planName) return '<p class="muted dc-help">' + esc(k('ui.dc-fl-plan-krav', 'The list was made from the requirements – no document plan from the contractor yet.')) + '</p><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label>' + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
+    var bad = pc.rows.filter(function (x) { return x.is.err.length || x.is.warn.length; });
+    var h = '<div class="dc-fhead"><h3 class="fdv-h">' + esc(k('ui.dc-fl-plan-t', 'The contractor’s plan, checked against the requirements')) + '</h3><label class="text-btn dc-file">' + esc(k('ui.dc-fl-newver', 'Import a new version')) + imp + '</label></div>' +
+      '<p class="muted dc-help" data-noi18n>' + esc(p.planName) + ' · ' + esc(k('ui.dc-fl-plan-sum', '{n} lines · {e} with errors · {w} to look at · {g} required, not in the plan', { n: pc.rows.length, e: pc.err, w: pc.warn, g: pc.gaps.length })) + '</p><ul class="dc-flist2">' +
+      pc.gaps.map(function (g) { return flowRow(g.code, g.sys, k('ui.dc-fl-req-types', 'The project requires: {t}', { t: g.t.split('').map(typeName).join(', ') }), '<span class="dc-fpill dc-v-no">' + esc(k('ui.dc-fl-notplan', 'Not in the plan')) + '</span>'); }).join('') +
+      bad.map(function (x) { return flowRow(x.l.code, (typeLabel(x.l) || '') + (x.l.planned ? ' – ' + x.l.planned : ''), x.is.err.concat(x.is.warn).join(' · '), '<span class="dc-fpill dc-v-' + (x.is.err.length ? 'no' : 'wa') + '">' + esc(x.is.err.length ? k('ui.dc-fl-error', 'Error') : k('ui.dc-fl-look', 'Look at it')) + '</span>'); }).join('') + '</ul>' +
+      (!bad.length && !pc.gaps.length ? '<p class="dc-note"><i class="bi bi-check2-circle"></i> ' + esc(k('ui.dc-fl-plan-allok', 'The plan covers the requirements and the names follow the rules.')) + '</p>' : '');
+    return h + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
+  }
+  function flowCmp(p, loose) {
+    var L = p.lines || [], F = p.files || [];
+    if (!F.length && !L.some(function (l) { return l.st && l.st !== 'missing'; })) return '<div class="dc-empty"><p>' + esc(k('ui.dc-fl-cmp-none', 'Nothing delivered yet – nothing to compare.')) + '</p><button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-to-lev', 'Go to delivery')) + ' <i class="bi bi-chevron-right"></i></button></div>';
+    var plan = !!p.planName, got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }), miss = L.filter(function (l) { return !(l.files || []).length && (!l.st || l.st === 'missing'); }), lf = looseFiles(p);
+    var P = [['got', plan ? k('ui.dc-fl-p-got', 'In the plan and delivered') : k('ui.dc-fl-p-got2', 'On the list and delivered'), got.length, 'ok'], ['miss', plan ? k('ui.dc-fl-p-miss', 'In the plan, but missing') : k('ui.dc-fl-p-miss2', 'On the list, but missing'), miss.length, 'no'], ['loose', plan ? k('ui.dc-fl-p-loose', 'Delivered, not in the plan') : k('ui.dc-fl-p-loose2', 'Delivered, not on the list'), lf.length, 'wa']];
+    var h = '<div class="dc-piles">' + P.map(function (x) { return '<button type="button" class="dc-pile" aria-pressed="' + (cmpPile === x[0]) + '" data-dcpile="' + x[0] + '"><span class="dc-fpill dc-v-' + x[3] + '">' + esc(x[1]) + '</span><b>' + x[2] + '</b></button>'; }).join('') + '</div><ul class="dc-flist2">';
+    var F0 = {}; F.forEach(function (f) { F0[f.id] = f; });
+    if (cmpPile === 'got') h += got.sort(lineOrder).map(function (l) { var fs = (l.files || []).map(function (id) { return F0[id]; }).filter(Boolean);
+      return flowRow(l.code, typeLabel(l) + ' – ' + lineTitle(l), fs.map(function (f) { return f.name; }).join(', ') || l.planned || '', chip(l.st), l.st === 'recv' && can(stAct('ok'), gOf(p, 'dctl')) ? '<button type="button" class="dc-qb" style="--c:' + stc('ok') + '" data-dcst="' + esc(l.id) + ':ok"><i class="bi bi-check-lg"></i> ' + esc(k('ui.dc-q-ok', 'Approved')) + '</button>' : ''); }).join('');
+    if (cmpPile === 'miss') h += miss.sort(lineOrder).map(function (l) { return flowRow(l.code, typeLabel(l) + ' – ' + lineTitle(l), l.planned && !l.ex ? l.planned : '', chip('missing')); }).join('');
+    if (cmpPile === 'loose') h += lf.map(function (f) { return '<li class="dc-frow2"><b class="dc-code">–</b><span class="dc-lx"><b data-noi18n>' + esc(f.name) + '</b></span><select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select></li>'; }).join('');
+    h += '</ul>';
+    if (cmpPile === 'got' && got.some(function (l) { return l.st === 'recv'; }) && can(stAct('ok'), gOf(p, 'dctl'))) h += '<div class="dc-facts"><button type="button" class="pill-btn ghost" data-dcokall="' + esc(p.id) + '"><i class="bi bi-check2-all"></i> ' + esc(k('ui.dc-fl-okall', 'Approve all that are delivered')) + '</button></div>';
+    return h + fnext('end', k('ui.dc-fl-next-end', 'Next: final check'));
+  }
+  function flowEnd(p, iss, verdict, c) {
+    var h = '<div class="dc-fverd dc-v-' + verdict[0] + '"><b>' + esc(verdict[1]) + '</b><small>' + esc(k('ui.dc-fl-end-sub', '{a} of {n} approved · {m} missing · {r} waiting for approval', { a: c.done, n: c.all, m: c.missing, r: c.recv })) + '</small></div>';
+    if (iss.length) h += '<h3 class="fdv-h">' + esc(k('ui.dc-fl-end-fix', 'To put right before handover')) + '</h3><ul class="dc-flist2">' + iss.map(function (x) { return flowRow(x.l.code, (typeLabel(x.l) || '') + ' – ' + lineTitle(x.l), x.why, '<span class="dc-fpill dc-v-' + x.kind + '">' + esc(x.what) + '</span>'); }).join('') + '</ul>';
+    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-dctab="report"><i class="bi bi-file-earmark-text"></i> ' + esc(k('ui.dc-fl-report', 'Report for the project manager')) + '</button>' + ((p.lines || []).length ? '<button type="button" class="pill-btn ghost" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7b', 'Filled-in Vedlegg 7')) + '</button>' : '') + '</div>';
+    return h + '<p class="muted dc-help">' + esc(k('ui.dc-fl-end-note', 'Checked against the project’s requirements and the client’s checklist. Names are checked by the rules; whether the content is good enough is for a person to judge.')) + '</p>';
+  }
   function full(p) {
+    if (flowOn()) return flowFull(p);
     var T = [['over', k('ui.dc-tab-over', 'Overview'), 'speedometer2'], ['docs', k('ui.dc-tab-docs', 'Documents'), 'list-check'], ['files', k('ui.dc-tab-files', 'Files'), 'files']];
     if (tab !== 'report' && !T.some(function (t) { return t[0] === tab; })) tab = 'over';
     var c = counts(p.lines || []);
@@ -496,7 +594,7 @@
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div>' + (c.all ? '<b class="dc-pc">' + Math.round(c.done / c.all * 100) + ' %</b>' : '') + '</div>' +
       steps(tab === 'report' ? 'rap' : 'mot', kravOf(p), p) + (tab === 'report' ? '' : '<nav class="fdv-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (t[0] === tab) + '" data-dctab="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i> ' + esc(t[1]) + '</button>'; }).join('') + '</nav>');
     var body = tab === 'over' ? over(p) : tab === 'docs' ? docs(p) : tab === 'files' ? files(p) : reportTab(p);
-    return '<div class="fdv-page dc-page">' + head + '<div class="fdv-body">' + body + '</div></div>';
+    return '<div class="fdv-page dc-page">' + head + '<div class="fdv-body">' + body + (tab === 'over' ? flowSwitch() : '') + '</div></div>';
   }
   function bar(c) {
     var seg = [['ok', c.ok + c.na], ['cmt', c.cmt], ['recv', c.recv], ['rej', c.rej], ['missing', c.missing]].filter(function (s) { return s[1]; });
@@ -562,11 +660,14 @@
     var c = counts(L), chips = [['all', k('ui.all', 'All'), c.all], ['missing', stName('missing'), c.missing], ['recv', k('ui.dc-to-check', 'To check'), c.recv], ['cmt', k('ui.dc-comments', 'Comments'), c.cmt], ['rej', k('ui.dc-not-approved', 'Not approved'), c.rej], ['done', k('ui.dc-approved', 'Approved'), c.done]];
     if (L.some(function (l) { return l.fire; })) chips.push(['fire', k('ui.dc-fire', 'Fire book'), L.filter(function (l) { return l.fire; }).length]);
     if (/^g\d$/.test(filt)) chips.unshift([filt, filt.slice(1) + ' ' + (grpName(filt.slice(1)) || ''), L.filter(matchesFilt).length]);
+    /* nothing delivered yet: just the plan and one button – the filters, quick check and search come once there is something to check (JP 2026-11-23) */
+    var got = (p.files || []).length || L.some(function (l) { return l.st && l.st !== 'missing'; });
+    if (!got) { filt = 'all'; q = ''; }
     var ql = q.toLowerCase(), shown = L.filter(function (l) { return matchesFilt(l) && (!ql || (l.code + ' ' + l.sys + ' ' + l.type + ' ' + l.planned + ' ' + (l.cmt || '')).toLowerCase().indexOf(ql) >= 0); });
-    var h = '<div class="dc-chips" role="tablist">' + chips.map(function (x) { return '<button type="button" class="dc-chip" aria-pressed="' + (x[0] === filt) + '" data-dcfilt="' + x[0] + '">' + esc(x[1]) + ' <b>' + x[2] + '</b></button>'; }).join('') + '</div>' +
+    var h = !got ? '<div class="dc-empty"><p>' + esc(k('ui.dc-plan-nothing-yet', '{n} documents in the plan – nothing delivered yet', { n: L.length })) + '</p>' + (can('import', gOf(p, 'dctl')) ? '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-files-import', 'Import delivered files')) + '<input type="file" multiple data-dcfiles="' + esc(p.id) + '" hidden></label>' : '') + '</div>' : '<div class="dc-chips" role="tablist">' + chips.map(function (x) { return '<button type="button" class="dc-chip" aria-pressed="' + (x[0] === filt) + '" data-dcfilt="' + x[0] + '">' + esc(x[1]) + ' <b>' + x[2] + '</b></button>'; }).join('') + '</div>' +
       '<div class="dc-selrow"><label class="dc-quick"><input type="checkbox" data-dcquick' + (quick ? ' checked' : '') + '> ' + esc(k('ui.dc-quick', 'Quick check – buttons on every line')) + '</label>' + selBtn('d', p.id) + '</div>' +
       '<input type="search" class="dc-q" data-dcq placeholder="' + esc(k('ui.dc-search', 'Search code, system or name')) + '" value="' + esc(q) + '">';
-    if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLineForm(p);
+    if (!shown.length) return h + '<p class="muted dc-help">' + esc(k('ui.dc-none-here', 'Nothing here.')) + '</p>' + addLine(p);
     var big = shown.length > 40 && !ql;   /* a long plan opens folded per NS group; only open groups are drawn (JP 13:48 – 800+ lines were one long page) */
     if (big) h += foldBar('c:' + p.id, byGroup(shown).map(function (g) { return g[0]; }));
     h += byGroup(shown).map(function (g) {
@@ -599,8 +700,10 @@
         '<label class="dc-seldue"><span>' + esc(k('ui.dc-due', 'Deadline')) + '</span><input type="date" data-dcseldue></label>';
       h += selBar('d', p.id, shown.filter(function (l) { return !big || gopen['c:' + p.id + ':' + String(l.code).charAt(0)]; }).map(function (l) { return l.id; }), acts);
     }
-    return h + addLineForm(p);
+    return h + addLine(p);
   }
+  /* adding a line by hand is rare: a small link that opens the form (JP 2026-11-23) */
+  function addLine(p) { return addOpen ? addLineForm(p) : '<button type="button" class="text-btn dc-addlink" data-dcaddopen><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-add-line-link', 'Add a line')) + '</button>'; }
   function addLineForm(p, kind) {
     var o = [['', k('ui.dc-type-any', 'Document type …')]].concat(TYPES.map(function (t) { return [t[0], t[0] + ' ' + typeName(t[0])]; })).concat([['BC', 'B, C ' + typeName('B') + ', ' + typeName('C')]]);
     return '<form class="dc-addl" data-dcaddl="' + (kind === 'req' ? 'r:' : '') + esc(p.id) + '"><h3 class="fdv-h">' + esc(k('ui.dc-add-line', 'Add a line')) + '</h3><div class="dc-addr"><input name="code" inputmode="decimal" maxlength="7" placeholder="' + esc(k('ui.dc-code', 'Code')) + '" required><select name="t">' + o.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select></div>' +
@@ -609,12 +712,23 @@
   function looseFiles(p) { return (p.files || []).filter(function (f) { return !f.line; }); }
   function lineOf(p, id) { return (p.lines || []).filter(function (l) { return l.id === id; })[0]; }
   function files(p) {
-    var F = (p.files || []).slice(), h = planBtns(p).replace('<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i>', '<label class="pill-btn dc-file" hidden><i class="bi bi-file-earmark-spreadsheet"></i>');
-    h = h.replace('</div>', '<label class="pill-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import', 'Import a list of names')) + '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcnames="' + esc(p.id) + '" hidden></label>' +
-      '<button type="button" class="pill-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></div>');
+    /* one question instead of three equal buttons (JP 2026-11-23 "this part is the confusing part"): you have the files, or the
+       documentation is already in the FDV system and only the names are needed; once files are in, just small links to add more */
+    var F = (p.files || []).slice(), imp = can('import', gOf(p, 'dctl')), h = '';
+    var fileIn = '<input type="file" multiple data-dcfiles="' + esc(p.id) + '" hidden>', namesIn = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcnames="' + esc(p.id) + '" hidden>';
+    if (!F.length) {
+      h += imp ? '<p class="dc-ask">' + esc(k('ui.dc-how-have', 'How do you have the documentation?')) + '</p><div class="dc-ways">' +
+        '<div class="dc-way dc-way1"><b><i class="bi bi-folder-symlink"></i> ' + esc(k('ui.dc-way-files', 'I have the files')) + '</b><small>' + esc(k('ui.dc-way-files-s', 'PDFs, a folder or one .zip from the contractor')) + '</small>' +
+          '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + fileIn + '</label></div>' +
+        '<div class="dc-way"><b><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-way-fdv', 'It is already in the FDV system')) + '</b><small>' + esc(k('ui.dc-way-fdv-s', 'Only the names are needed – export the list from the FDV system or paste them')) + '</small>' +
+          '<span class="dc-facts"><label class="dc-chip dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="dc-chip" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></span></div>' +
+        /* the contractor still has them: an upload link for this project, made right here (Team only – JP 2026-11-23 "what if I don't have the file") */
+        (HOST && HOST.uplink ? '<div class="dc-way"><b><i class="bi bi-send"></i> ' + esc(k('ui.dc-way-link', 'The contractor has them')) + '</b><small>' + esc(k('ui.dc-way-link-s', 'Send an upload link – they see what is missing and deliver straight into the project, no account needed')) + '</small>' +
+          '<span class="dc-facts"><button type="button" class="dc-chip" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button></span></div>' : '') + '</div>'
+        : '<p class="muted dc-help">' + esc(k('ui.dc-no-files-yet', 'Nothing delivered yet.')) + '</p>';
+    } else if (imp) h += '<div class="dc-more"><label class="text-btn dc-file"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-add-more-files', 'Add more files')) + fileIn + '</label>' +
+      '<label class="text-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="text-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></div>';
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
-    h += '<p class="muted dc-help">' + esc(k('ui.dc-names-help', 'Is the documentation in the FDV system (e.g. Plania)? Export or copy the list of documents there – the names are matched and checked the same way.')) + '</p>';
-    h += '<p class="muted dc-help">' + esc(k('ui.dc-files-help', 'Pick the files, or one .zip with everything. Each file is matched to the plan by its name, and the name is checked: 3-digit NS 3451 code, a document code (DA, DV, SE …) and a describing text – drawings as building-floor-discipline-code-type-number.')) + '</p>';
     if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
@@ -1783,12 +1897,23 @@
     if ((b = t.closest('[data-dxmot]'))) { if (tab === 'report') setTab('docs'); if (open === b.dataset.dxmot) draw(); else go(b.dataset.dxmot); return; }
     if ((b = t.closest('[data-dxrap]'))) { setTab('report'); if (open === b.dataset.dxrap) draw(); else go(b.dataset.dxrap); return; }
     if (t.closest('[data-dcback]')) { back(); return; }
+    if ((b = t.closest('[data-dcpile]'))) { cmpPile = b.dataset.dcpile; draw(); return; }
+    if ((b = t.closest('[data-dcnoplan]'))) { saveP(b.dataset.dcnoplan, function (p) { p.noPlan = true; }); draw(); return; }
+    if ((b = t.closest('[data-dcmkplan]'))) { var mk = 0; saveP(b.dataset.dcmkplan, function (p) {   /* a plan from the delivery: a line per file with a code, plus the project's requirements still missing */
+        p.lines = p.lines || []; looseFiles(p).forEach(function (f) { var q = parseName(f.name); if (!/^\d{3}/.test(q.code || '')) return; var id = uid() + mk++;
+          p.lines.push({ id: id, code: q.code, sys: codeName(q.code) || '', type: '', t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '', planned: q.stem.slice(0, 160), st: 'recv', files: [f.id] }); f.line = id; });
+        var r0 = kravOf(p); if (r0) (r0.lines || []).forEach(function (q) { var c3 = String(q.code).slice(0, 3); if (!p.lines.some(function (l) { return String(l.code).slice(0, 3) === c3 && String(q.t || '').indexOf((l.t || ' ').charAt(0)) >= 0; })) { p.lines.push({ id: uid() + mk++, code: q.code, sys: q.sys || lineTitle(q), type: q.type || '', t: q.t || '', planned: '', st: 'missing', files: [] }); } });
+      }); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: mk }))); draw(); return; }
+    if ((b = t.closest('[data-dcvx7]'))) { var pv = proj(b.dataset.dcvx7); if (!pv) return; var fv = new File([kravXlsxBby(pv)], fileName(pv, 'Dokumentplan', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fv); return; }
+    if ((b = t.closest('[data-dcokall]'))) { if (!can(stAct('ok'), gOf(proj(b.dataset.dcokall), 'dctl'))) return; saveP(b.dataset.dcokall, function (p) { (p.lines || []).forEach(function (l) { if (l.st === 'recv') l.st = 'ok'; }); }); draw(); return; }
     if ((b = t.closest('[data-dctab]'))) { setTab(b.dataset.dctab); openLine = null; editing = false; draw(); return; }
     if (t.closest('[data-dcedit]')) { editing = true; draw(); return; }
     if ((b = t.closest('[data-dcfilt]'))) { filt = b.dataset.dcfilt; if (tab !== 'docs') setTab('docs'); openLine = null; draw(); return; }
     if ((b = t.closest('[data-dcgrp]'))) { filt = 'g' + b.dataset.dcgrp; setTab('docs'); openLine = null; draw(); return; }
     if ((b = t.closest('[data-dcline]'))) { openLine = openLine === b.dataset.dcline ? null : b.dataset.dcline; draw(); return; }
     if ((b = t.closest('[data-dcst]'))) { var s = b.dataset.dcst.split(':'), tg = b.hasAttribute('data-dctoggle'); if (!can(stAct(s[1]), gOf(proj(open), 'dctl'))) return; saveP(open, function (p) { var l = lineOf(p, s[0]); if (l) l.st = tg && l.st === s[1] ? ((l.files || []).length ? 'recv' : 'missing') : s[1]; }); draw(); return; }   /* a quick button tapped again undoes it */
+    if ((b = t.closest('[data-dcuplink]')) && HOST && HOST.uplink) { HOST.uplink(b.dataset.dcuplink); return; }
+    if (t.closest('[data-dcaddopen]')) { addOpen = true; draw(); var ai = document.querySelector('form.dc-addl input[name=code]'); if (ai) ai.focus(); return; }
     if (t.closest('[data-dcpastebtn]')) { pasting = !pasting; draw(); var ta = document.querySelector('.dc-paste textarea'); if (ta) ta.focus(); return; }
     if ((b = t.closest('[data-dcunlink]'))) { var u = b.dataset.dcunlink.split(':'); saveP(open, function (p) { unlink(p, u[0], u[1]); }); draw(); return; }
     if ((b = t.closest('[data-dcview]'))) { var fid = b.dataset.dcview, w = null, NV = window.DocNaming && window.DocNaming.view;
@@ -1866,6 +1991,7 @@
     if (t.dataset.dcfromkrav && t.value) { var kk = krav(t.value), pid = t.dataset.dcfromkrav; if (!kk) return; var addk = 0;
       saveP(pid, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = (kk.lines || []).filter(function (l) { return !have[l.code + '|' + l.t]; }).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }); addk = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.doc-req', 'Document requirements') + ': ' + kk.name; p.planAt = today(); } p.krav = kk.id; rematch(p); });
       toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: addk }))); draw(); return; }
+    if (t.matches && t.matches('[data-dcflow]')) { try { localStorage.setItem('dash.dcFlow', t.checked ? '1' : '0'); } catch (e) {} if (!t.checked && FLOW.indexOf(tab) >= 0) setTab('over'); draw(); return; }
     if (t.dataset.dcplan && t.files && t.files[0]) { importPlan(t.dataset.dcplan, t.files[0]); t.value = ''; return; }
     if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
     if (t.matches('[data-dcreq]') && t.files && t.files[0]) { importReq(t.files[0]); t.value = ''; return; }

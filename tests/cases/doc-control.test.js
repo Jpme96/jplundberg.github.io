@@ -80,6 +80,15 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const pl = await p.evaluate(() => { const r = Features.list('dctl')[0]; return { n: r.lines.length, lines: r.lines.map(l => [l.code, l.t, l.planned, l.fire ? 1 : 0, l.st].join('|')), name: r.planName }; });
   check(pl.n === 6 && pl.lines.join(';') === '332.101|A|332 SE Sprinkleranlegg|1|missing;332.101|BC|332 DV Sprinkleranlegg|1|missing;332.101|K||1|missing;336|E||1|missing;234|E|234 DA Vindu|0|missing;235|BC||0|missing' && pl.name === 'Made-up plan.xlsx',
     'the plan: lines with a type or a planned name (the next rows under a code belong to it), fire book, the template\'s naming note left out ' + JSON.stringify(pl));
+  /* before anything is delivered (JP 2026-11-23): Dokumenter shows the plan and one button – no filters, quick check or search;
+     Filer asks one question with two ways in, instead of three equal buttons and two help texts */
+  await tap('[data-dctab="docs"]'); await sl(300);
+  const e0 = await p.evaluate(() => ({ empty: !!document.querySelector('.dc-empty [data-dcfiles]'), chips: !!document.querySelector('.dc-chips'), quick: !!document.querySelector('[data-dcquick]'), search: !!document.querySelector('[data-dcq]') }));
+  check(e0.empty && !e0.chips && !e0.quick && !e0.search, 'Dokumenter before delivery: the plan and one import button, no filters ' + JSON.stringify(e0));
+  await tap('[data-dctab="files"]'); await sl(300);
+  const e1 = await p.evaluate(() => ({ ways: document.querySelectorAll('.dc-way').length, files: !!document.querySelector('.dc-way1 [data-dcfiles]'), names: !!document.querySelector('.dc-way [data-dcnames]'), paste: !!document.querySelector('.dc-way [data-dcpastebtn]'), help: document.querySelectorAll('.dc-help').length }));
+  check(e1.ways === 2 && e1.files && e1.names && e1.paste && e1.help === 0, 'Filer before delivery: one question, two ways in ' + JSON.stringify(e1));
+  await tap('[data-dctab="over"]'); await sl(300);
   /* the files */
   await (await p.$('input[data-dcfiles]')).uploadFile(f1, f2, zf); await sl(1500);
   const fl = await p.evaluate(() => { const r = Features.list('dctl')[0], L = {}; r.lines.forEach(l => L[l.id] = l); return { n: r.files.length, m: r.files.map(f => [f.name, f.line ? L[f.line].t : '-', (f.iss || []).map(i => i[1]).join('+')].join('|')).sort(), st: r.lines.map(l => l.st).join(), tab: document.querySelector('.fdv-tabs [aria-selected="true"]').dataset.dctab, loose: document.querySelectorAll('.dc-files li.loose').length }; });
@@ -295,6 +304,9 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(bk.dr && bk.tab === 'doc' && n2 === 1, 'Back returns to the requirements; starting again opens the same control project, not a second one (13:05) ' + JSON.stringify({ bk, n2 }));
   check(st0.lines === '330 G missing,330 H missing,332 A missing,332 BC missing' && st0.full && !st0.dr && /Documents/.test(st0.tab), 'Start document control copies the list into a control project and opens it ' + JSON.stringify(st0));
   /* a line by hand, and removing one */
+  /* adding a line by hand opens from a small link (JP 2026-11-23) */
+  check(await p.evaluate(() => !document.querySelector('form[data-dcaddl]') && !!document.querySelector('[data-dcaddopen]')), 'Add a line is a small link until you tap it');
+  await p.evaluate(() => document.querySelector('[data-dcaddopen]').click()); await sl(250);
   await p.evaluate(() => { const f = document.querySelector('form[data-dcaddl]'); f.code.value = '274'; f.t.value = 'A'; f.name.value = 'Made-up membrane declaration'; f.requestSubmit(); }); await sl(400);
   const id0 = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines[0].id);
   await tap('[data-dcline="' + id0 + '"]'); await sl(250);

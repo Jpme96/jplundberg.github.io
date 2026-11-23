@@ -893,7 +893,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
       window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: teamNs },
         /* NS code names for the whole team (JP 2026-11-17 09:37): one encrypted settings record (cfgnsnames), written by admins */
-        nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); } };
+        nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); },
+        uplink: function (pid) { if (rank() < 1) return; S.fproj = pid; uplinkSheet(); } };   /* Filer → "Entreprenøren har dem": the upload-link sheet with this project chosen */
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
         return loadJs('/dc/doc-control.js');
