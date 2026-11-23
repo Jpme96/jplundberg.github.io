@@ -347,7 +347,7 @@
   var drawBg = function () {};
   var nexp = {}, nflt = '', nfo = '';   /* nfo: the file open in the popup (nopen is the rules box) */
   function fstate(p, f) { var b = nbuild(p, f); if (b.miss.length || (!f.p.code && fkind(f) !== 'photo') || (f.p.code && !f.p.abbr && fkind(f) === 'doc')) return 'todo'; return b.plain + ext(f.orig || f.name) === f.name ? 'done' : 'ready'; }
-  var CGRP = { '0': ['Felles', 'Common'], '1': ['FDVU-dokumentasjon', 'FDVU documentation'], '2': ['Bygning', 'Building'], '3': ['VVS-installasjoner', 'HVAC and plumbing'], '4': ['Elkraftinstallasjoner', 'Electrical power'], '5': ['Ekom og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
+  var CGRP = { '0': ['Felles', 'Common'], '1': ['Øvrige dokumentasjoner', 'Other documentation'], '2': ['Bygning', 'Building'], '3': ['VVS-installasjoner', 'HVAC and plumbing'], '4': ['Elkraftinstallasjoner', 'Electrical power'], '5': ['Ekom og automatisering', 'Telecom and automation'], '6': ['Andre installasjoner', 'Other installations'], '7': ['Utendørs', 'Outdoor'], '8': ['Andre', 'Other'], '9': ['Andre', 'Other'] };
   /* every code as a dropdown, grouped by its two-digit part (JP 2026-11-17 07:22 "why free text?"). The three-digit names aren't in the
      public code (licence), so a code shows its own name when the plan or your own codes know it, else its group's name. */
   var NSK = 'dcn.nsnames';
