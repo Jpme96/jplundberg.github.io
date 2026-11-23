@@ -113,7 +113,8 @@ const BUDGET_KB = { total: 1731 };   /* 2026-11-23: page-change timing for Diagn
 /* 2026-11-23: softnav stack sample for the Safari check (<1 kB) */
 /* 2026-11-23: in-app Face ID (Keychain), Apple's scanner and vibrations (~3 kB) */
 /* 2026-11-23: page-change timing for Diagnostics (to find the stutter, ~1 kB) */
-const PAGE_KB = { 'index.html': 1456, 'admin/index.html': 1370, 'calendar/index.html': 1299, 'finance/index.html': 1731, 'food/index.html': 1390, 'goals/index.html': 1319, 'habits/index.html': 1365, 'house/index.html': 1663, 'papers/index.html': 1339, 'people/index.html': 1389, 'travel/index.html': 1445, 'wish/index.html': 1402, 'work/index.html': 1474 };
+/* 2026-11-23: Face ID asks once (passkey.js, <1 kB) */
+const PAGE_KB = { 'index.html': 1456, 'admin/index.html': 1370, 'calendar/index.html': 1299, 'finance/index.html': 1731, 'food/index.html': 1391, 'goals/index.html': 1319, 'habits/index.html': 1365, 'house/index.html': 1663, 'papers/index.html': 1339, 'people/index.html': 1389, 'travel/index.html': 1445, 'wish/index.html': 1403, 'work/index.html': 1474 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
