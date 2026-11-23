@@ -569,7 +569,13 @@
       '<p class="muted dc-help" data-noi18n>' + esc(p.planName) + ' · ' + esc(k('ui.dc-fl-plan-sum', '{n} lines · {e} with errors · {w} to look at · {g} required, not in the plan', { n: pc.rows.length, e: pc.err, w: pc.warn, g: pc.gaps.length })) + '</p><ul class="dc-flist2">' +
       pc.gaps.map(function (g) { return flowRow(g.code, g.sys, k('ui.dc-fl-req-types', 'The project requires: {t}', { t: g.t.split('').map(typeName).join(', ') }), '<span class="dc-fpill dc-v-no">' + esc(k('ui.dc-fl-notplan', 'Not in the plan')) + '</span>'); }).join('') +
       bad.map(function (x) { return flowRow(x.l.code, (typeLabel(x.l) || '') + (x.l.planned ? ' – ' + x.l.planned : ''), x.is.err.concat(x.is.warn).join(' · '), '<span class="dc-fpill dc-v-' + (x.is.err.length ? 'no' : 'wa') + '">' + esc(x.is.err.length ? k('ui.dc-fl-error', 'Error') : k('ui.dc-fl-look', 'Look at it')) + '</span>', '', p, x.l); }).join('') + '</ul>' +
-      (!bad.length && !pc.gaps.length ? '<p class="dc-note"><i class="bi bi-check2-circle"></i> ' + esc(k('ui.dc-fl-plan-allok', 'The plan covers the requirements and the names follow the rules.')) + '</p>' : '');
+      (!bad.length && !pc.gaps.length ? '<p class="dc-note"><i class="bi bi-check2-circle"></i> ' + esc(k('ui.dc-fl-plan-allok', 'The plan covers the requirements and the names follow the rules.')) + '</p>' : '') +
+      /* the whole plan as it was imported, per NS group, folded (JP 2026-11-23 "I should be able to see what I uploaded") */
+      '<h3 class="fdv-h">' + esc(k('ui.dc-fl-plan-all', 'The whole plan')) + '</h3>' + byGroup(L).map(function (g) {
+        var key = 'p:' + p.id + ':' + g[0], op = !!gopen[key];
+        return '<details class="dc-fold" data-dcg="' + esc(key) + '"' + (op ? ' open' : '') + '><summary class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + ' <small class="muted tnum">' + esc(k('ui.dc-n-docs', '{n} documents', { n: g[1].length })) + '</small></summary>' +
+          (op ? '<ul class="dc-flist2">' + g[1].slice().sort(lineOrder).map(function (l) { return flowRow(l.code, (typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + ' – ' + lineTitle(l), l.planned ? (l.ex ? k('ui.dc-example-name', 'Example name') + ': ' : '') + l.planned : '', '', '', p, l); }).join('') + '</ul>' : '') + '</details>';
+      }).join('');
     return h + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
   }
   function flowCmp(p, loose) {

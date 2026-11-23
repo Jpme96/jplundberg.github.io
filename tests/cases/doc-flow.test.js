@@ -16,6 +16,11 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await go(p, 'work/#dc=fp1', 2500);
   const st = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.dataset.dctab).join());
   check(st === 'krav,plan,lev,cmp,end', 'the standard: five steps in the order the work goes ' + st);
+  /* the whole plan as imported, per NS group (JP 2026-11-23 "I should be able to see what I uploaded") */
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
+  await p.evaluate(() => { const d = document.querySelector('.dc-flow details.dc-fold'); d.open = true; }); await sl(500);
+  const wp = await p.evaluate(() => ({ groups: document.querySelectorAll('.dc-flow details.dc-fold').length, rows: [...document.querySelectorAll('.dc-flow details.dc-fold[open] li')].map(li => li.textContent.replace(/\s+/g, ' ')).join(' | ') }));
+  check(wp.groups === 1 && /234 DA Vindu madeup/.test(wp.rows) && /234 DV Vindu madeup/.test(wp.rows), 'Dokumentplan shows the whole plan, per NS group ' + JSON.stringify(wp));
   /* a narrow window: the step names shorten, never run into the next step (JP 2026-11-23) */
   const vp = p.viewport(); await p.setViewport({ width: 760, height: 900 }); await sl(400);
   const ov = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps button')].filter(b => { const n = b.querySelector('.dc-fname'); return n && n.getBoundingClientRect().right > b.getBoundingClientRect().right - 2; }).map(b => b.dataset.dctab));

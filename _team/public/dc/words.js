@@ -108,6 +108,7 @@ window.DC_NB = {
 "ui.dc-fl-p-loose2": "Levert, ikke på listen",
 "ui.dc-fl-p-miss": "I planen, men mangler",
 "ui.dc-fl-p-miss2": "På listen, men mangler",
+"ui.dc-fl-plan-all": "Hele planen",
 "ui.dc-fl-plan-allok": "Planen dekker kravene, og navnene følger reglene.",
 "ui.dc-fl-plan-dev": "Sjekket · {n} avvik",
 "ui.dc-fl-plan-krav": "Listen er laget fra kravene – ingen dokumentplan fra entreprenøren ennå.",

@@ -926,6 +926,7 @@ I18N.add({
   "ui.dc-link-live": ["Link sent – works until {d}", "Lenke sendt – virker til {d}"],
   "ui.dc-link-off": ["Switch off", "Slå av"],
   "ui.dc-fl-proj-t": ["The project – edit or delete", "Prosjektet – endre eller slette"],
+  "ui.dc-fl-plan-all": ["The whole plan", "Hele planen"],
   "ui.dc-add-line": ["Add a line", "Legg til en linje"],
   "ui.dc-add-line-ph": ["What it is, e.g. Samsvarserklæring membran", "Hva det er, f.eks. Samsvarserklæring membran"],
   "ui.dc-approved": ["Approved", "Godkjent"],
