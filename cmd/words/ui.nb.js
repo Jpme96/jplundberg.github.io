@@ -3600,6 +3600,7 @@ I18N.add({
   "ui.nt-app-test-b": ["Reminders work in the app.", "Påminnelser virker i appen."],
   "ui.nt-app-test-sent": ["Test in 4 seconds", "Test om 4 sekunder"],
   "ui.qa-siri-app": ["This link opens the app straight away and adds what you said.", "Denne lenken åpner appen med en gang og legger til det du sa."],
+  "ui.sync-heal-note": ["Your dashboard on this device was incomplete. Unlock to get your synced copy back.", "Dashbordet på denne enheten var ufullstendig. Lås opp for å hente den synkroniserte kopien tilbake."],
   "ui.lp-ladmin": ["Yearly tasks", "Årlige oppgaver"],
   "ui.lp-ladmin-add": ["A yearly task", "En årlig oppgave"],
   "ui.lp-every-year": ["Every year by", "Hvert år innen"],

@@ -101,6 +101,7 @@
   var syncState = 'off';
   var available = false;
   var remoteCheck = Promise.resolve();
+  var HEAL_KEY = 'dash.heal';   /* set when this device's copy was found damaged: the next unlock takes the synced copy (2026-11-23) */
   var remoteSalt = null;  // salt of the synced vault, if known   // true once the sync worker has answered
   var pushTimer = null;
   var pushing = false;
@@ -404,7 +405,8 @@
       if (!v || ignoreRemote || key) return;
       var local = readJSON(VAULT_KEY);
       var foreign = isVault(local) && syncedRev() === -1 && v.salt !== local.salt;
-      if (!isVault(local) || foreign || (v.rev || 0) > (local.rev || 0)) {
+      /* a damaged copy here can carry a higher version number than the synced one (it kept saving): after damage was seen (healLock) the synced copy wins */
+      if (!isVault(local) || foreign || (v.rev || 0) > (local.rev || 0) || readJSON(HEAL_KEY)) {
         remote = v;
         if (mode === 'setup') { setMode('unlock'); msg(I18N.k('ui.found-your-synced-dashboard-enter-your-p', 'Found your synced dashboard. Enter your passcode.'), true); }
       }
@@ -497,7 +499,7 @@
       .then(function (kk) { k = kk; return open(vault, k); })
       .then(function (obj) {
         key = k; salt = s;
-        if (fromRemote) { memVault = null; writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; }
+        if (fromRemote) { memVault = null; writeJSON(VAULT_KEY, vault); writeJSON(SYNC_KEY, vault.rev || 0); remote = null; removeKey(HEAL_KEY); }
         srvW = weight(obj);
         data = unpackKeep(obj, !fromRemote);
         busy(false);
@@ -967,6 +969,14 @@
 
   var pushAgain = false;
   var missTry = 0;
+  /* this device's copy is damaged (much smaller than the synced one) or another dashboard: lock once, with a note, so one
+     unlock with the passcode fetches the synced copy (2026-11-23). Never merged: the missing parts would count as deleted. */
+  var healed = false;
+  function healLock() {
+    writeJSON(HEAL_KEY, Date.now());   /* the next unlock takes the synced copy, whatever its version number says */
+    if (healed || !data) return; healed = true;
+    setTimeout(function () { try { lock(I18N.k('ui.sync-heal-note', 'Your dashboard on this device was incomplete. Unlock to get your synced copy back.')); } catch (e) {} }, 1500);
+  }
   function push() {
     if (pushing) { pushAgain = true; return Promise.resolve(); }
     var pk = key;
@@ -985,6 +995,7 @@
         if (e && e.shrink) {   /* most of the dashboard would go: nothing is uploaded – the server's copy stays as it is */
           if (window.Diag && window.Diag.log) window.Diag.log('sync', 'refused: an upload with most of the data gone (' + e.w + ' of ' + e.s + ')', 'lock.js');
           setSync('off', I18N.k('ui.sync-shrink', 'Not saved to your other devices: most of your data is missing on this device. Your synced copy is kept – lock and unlock to get it back.'));
+          healLock();
           return null;
         }
         if (window.Diag && window.Diag.log) window.Diag.log('sync', 'pieces: ' + ((e && e.message) || e), 'lock.js'); return v.v === 2 ? Promise.reject(e) : raw; }) : Promise.resolve(v.v === 2 ? null : raw)).then(function (body) {
@@ -997,7 +1008,20 @@
         if (r.ok) { if (v.__w != null) srvW = v.__w; missTry = 0; remoteRev = v.rev; writeJSON(SYNC_KEY, v.rev); removeKey(REPLACE_KEY); setSync('ok'); saveBase(v); if (data) recordBase(data); return; }
         if (r.status === 412 && missTry < 2) { missTry++; return r.json().then(function (j) { (j.missing || []).forEach(function (id) { delete srvHas[id]; }); pushAgain = true; }); }
         if (r.status === 409) return r.json().then(withPieces).then(function (cur) { remoteRev = cur.rev || 0; return adopt(cur); });
-        if (r.status === 423) { available = false; setSync('off', I18N.k('ui.sync-other-dash', 'This device has a different dashboard than your synced one – it wasn’t saved over it. Lock and unlock with your passcode to get the synced one.')); if (window.Diag && window.Diag.log) window.Diag.log('sync', 'refused: another dashboard (423)', 'lock.js'); return; }
+        if (r.status === 423) return r.json().catch(function () { return {}; }).then(function (j) {
+          available = false;
+          /* the Worker refuses two things with 423: another dashboard (another salt) and a copy under half the size. They
+             were both called "a different dashboard" – on 23 Nov 2026 the app lost part of its copy when iOS closed it for an
+             update, and the message pointed the wrong way. Either way the synced copy is kept: one unlock brings it back. */
+          if (j && j.shrink) {
+            if (window.Diag && window.Diag.log) window.Diag.log('sync', 'refused: an upload much smaller than the synced copy (423)', 'lock.js');
+            setSync('off', I18N.k('ui.sync-shrink', 'Not saved to your other devices: most of your data is missing on this device. Your synced copy is kept – lock and unlock to get it back.'));
+          } else {
+            setSync('off', I18N.k('ui.sync-other-dash', 'This device has a different dashboard than your synced one – it wasn’t saved over it. Lock and unlock with your passcode to get the synced one.'));
+            if (window.Diag && window.Diag.log) window.Diag.log('sync', 'refused: another dashboard (423)', 'lock.js');
+          }
+          healLock();
+        });
         if (r.status === 401) { available = false; setSync('off', 'Sync refused the save (' + r.status + ')'); }
         else setSync('offline');
       });

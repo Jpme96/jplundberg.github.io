@@ -109,7 +109,8 @@ const BUDGET_KB = { total: 1727 };   /* 2026-11-23: splash.js – the opening in
 /* 2026-11-22: softnav keeps the fresh page in the cache before a version-change load (<1 kB) */
 /* 2026-11-22: softnav fetches pages ahead (~1 kB) */
 /* 2026-11-23: splash.js – the opening in the iPhone apps (~6 kB, stops at once on the web) */
-const PAGE_KB = { 'index.html': 1452, 'admin/index.html': 1365, 'calendar/index.html': 1294, 'finance/index.html': 1727, 'food/index.html': 1386, 'goals/index.html': 1315, 'habits/index.html': 1360, 'house/index.html': 1659, 'papers/index.html': 1334, 'people/index.html': 1385, 'travel/index.html': 1440, 'wish/index.html': 1398, 'work/index.html': 1470 };
+/* 2026-11-23: lock.js recovers a damaged copy (heal), right 423 message (~1 kB) */
+const PAGE_KB = { 'index.html': 1453, 'admin/index.html': 1366, 'calendar/index.html': 1295, 'finance/index.html': 1727, 'food/index.html': 1387, 'goals/index.html': 1316, 'habits/index.html': 1361, 'house/index.html': 1659, 'papers/index.html': 1335, 'people/index.html': 1385, 'travel/index.html': 1441, 'wish/index.html': 1399, 'work/index.html': 1470 };
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {
