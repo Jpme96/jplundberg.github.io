@@ -61,6 +61,12 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
         await sl(400);
       }
       check(moved === pages.length, W + ' px: page changes reach every page (' + moved + '/' + pages.length + ')');
+      /* the Calendar's own listeners and timers go when you leave it (23 Nov 2026: in the iPhone app its keyboard listener
+         and minute timer kept running on other pages – "null … clSheetBg" ×11). WebKit's call stacks look different from Chrome's. */
+      const stk = await p.evaluate(() => (window.SoftNav && SoftNav.stackSample) ? SoftNav.stackSample() : '');
+      if (stk) console.log('    WebKit stack: ' + stk.replace(/\n/g, ' | ').slice(0, 400));
+      await p.keyboard.press('n'); await sl(400);
+      check(!errs.some(e => /clSheetBg/.test(e)), W + ' px: the Calendar’s keyboard listener is gone after leaving it');
       if (x0 != null) check(barMove <= 2, W + ' px: the side menu stays put during page changes (moved ' + barMove + ' px)');
       if (ENGINE === 'webkit') { const gl = await p.evaluate(g0 => ((window.SoftNav && SoftNav.glides) || 0) - g0, gl0); check(gl >= 3, W + ' px: pages glide in (' + gl + ' of ' + pages.length + ')'); }
       const clickable = await p.evaluate(() => { const e = document.elementFromPoint(innerWidth / 2, 200); return !!e && getComputedStyle(document.body).pointerEvents !== 'none'; });

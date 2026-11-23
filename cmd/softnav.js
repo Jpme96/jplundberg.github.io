@@ -51,11 +51,12 @@
   /* ---------- who made it: the head, or the page? ---------- */
   function byPage() {
     var lim = Error.stackTraceLimit; Error.stackTraceLimit = 6;   /* only the first frames are needed – a full stack is slow, and this runs for every listener */
-    var st = (new Error()).stack || ''; Error.stackTraceLimit = lim;
+    var st = (new Error()).stack || ''; Error.stackTraceLimit = lim; lastStack = st;
     var fr = st.split('\n').filter(function (l) { return /(https?:|\/cmd\/)/.test(l); });
     var caller = fr[2] || '';               /* 0: byPage, 1: the wrapper, 2: whoever called it */
     return !/\/dist\/(head|nb)\.js/.test(caller);   /* nb.js = the Norwegian words, loaded once right after the head */
   }
+  var lastStack = '';   /* the last stack read (the Safari check prints one: WebKit writes them differently) */
   var rec = { ls: [], iv: [], obs: [], ws: [], cls: [] };
   function stays(t) {
     return t === window || t === document || t === root || t === document.body || t === window.visualViewport || t === screen.orientation ||
@@ -167,7 +168,7 @@
   var base = location.href, busy = false, next = null, HEAD = '', stage = '', vtOn = false;
   /* Apple's WebKit: Safari, the home-screen app and the iPhone apps (_app/ – their WebKit has no "Safari" in its name,
      so until 2026-11-22 they got the view-transition glide that stutters there; JP: "very laggy") */
-  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI; window.SoftNav.keepFresh = keepFresh; window.SoftNav.ready = function (k) { return !!htmlCache[k]; };
+  var SAFARI = /AppleWebKit/i.test(navigator.userAgent) && !/chrome|chromium|crios|edg|android|fxios/i.test(navigator.userAgent); window.SoftNav.webkit = SAFARI; window.SoftNav.stackSample = function () { var st = ''; window.setTimeout(function () {}, 0); return lastStack; }; window.SoftNav.keepFresh = keepFresh; window.SoftNav.ready = function (k) { return !!htmlCache[k]; };
   sT.call(window, function () { HEAD = srcOf(document, /dist\/head\.js/); }, 0);   /* the head that is running (its tag goes with the first page swap) */
   function go(u, pop) {
     /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
