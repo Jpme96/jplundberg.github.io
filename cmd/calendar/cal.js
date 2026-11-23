@@ -451,6 +451,7 @@
 
   document.addEventListener('keydown', function (e) {
     if (!unlocked) return;
+    if (!$('clSheetBg')) return;   /* not on the Calendar any more (23 Nov 2026: left running in the iPhone app → errors on other pages) */
     if (e.key === 'Escape' && !$('clSheetBg').hidden) return closeEditor();
     if (!$('clSheetBg').hidden || /INPUT|TEXTAREA|SELECT/.test((e.target.tagName || '')) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'ArrowLeft') step(-1);
@@ -747,7 +748,7 @@
     lastW = innerWidth;
   });
   /* keep "today" and the now-line current */
-  setInterval(function () { if (unlocked && $('clSheetBg').hidden) render(); }, 60000);
+  var calTick = setInterval(function () { var bg = $('clSheetBg'); if (!bg) return clearInterval(calTick); if (unlocked && bg.hidden) render(); }, 60000);
 
   function fromHash() {
     var h = location.hash;
