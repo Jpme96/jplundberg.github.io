@@ -491,6 +491,7 @@ window.DC_NB = {
 "ui.dx-dup-t": "Samme innhold – gruppe {i} av {n}",
 "ui.dx-empty": "Ett prosjekt per bygg: velg hva det skal levere (Krav), ta imot det som leveres (Mottak) og se hva som mangler (Rapport).",
 "ui.dx-fdv-check": "Sjekk navnene",
+"ui.dx-fdv-clear": "Start på nytt",
 "ui.dx-fdv-copy": "Kopier de som må rettes",
 "ui.dx-fdv-import": "Eller importer en liste (.xlsx, .csv)",
 "ui.dx-fdv-ph": "Lim inn dokumentnavnene, ett per linje (f.eks. fra Plania)",

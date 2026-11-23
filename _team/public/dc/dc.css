@@ -834,6 +834,8 @@ body.dr-full #wkDocReq { display: block !important; }
 .dcn-sug code { font-size: 13px; color: var(--ink); background: rgba(var(--ink-rgb), .05); border-radius: 6px; padding: 5px 8px; overflow-wrap: anywhere; }
 .dcn-sug code { font-family: inherit; font-size: 15.5px; font-weight: 600; line-height: 1.35; padding: 8px 11px; border: 1px solid var(--line); background: var(--card, #fff); box-shadow: inset 3px 0 0 var(--accent); }
 .dcn-sug > span { font-size: 12.5px; }
+.dcn-sug code { min-height: 44px; box-sizing: border-box; display: flex; align-items: center; }
+.dcn-sug + .dcn-b { align-self: flex-end; min-height: 44px; }
 .dx-dllist li.dx-dloff > span { opacity: .45; }
 .dx-dllist .dcn-pkc { flex: none; }
 .dcn-gap { color: var(--warn); font-style: normal; }

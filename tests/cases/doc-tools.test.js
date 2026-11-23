@@ -60,6 +60,9 @@ fs.writeFileSync(lone, '%PDF made up 4');
     const spread = Math.max(0, ...Object.values(rows).map(b => Math.max(...b) - Math.min(...b)));
     return { f, spread, together: Math.max(...Object.values(rows).map(b => b.length)) }; });
   check(al.together >= 2 && al.spread <= 2, 'the boxes in a drawing row are on one line ' + JSON.stringify(al));
+  /* the new name and Use this name sit level (JP 2026-11-23 "not properly lined") */
+  const lv = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), c = li.querySelector('.dcn-sug code'), bt = li.querySelector('[data-dcnuse]'); if (!c || !bt) return null; const a = c.getBoundingClientRect(), b = bt.getBoundingClientRect(); return { dBottom: Math.round(Math.abs(a.bottom - b.bottom)), sameRow: b.top < a.bottom, ha: Math.round(a.height), hb: Math.round(b.height) }; });
+  check(lv && lv.sameRow && lv.dBottom <= 2, 'the new name and Use this name are level ' + JSON.stringify(lv));
   await p.setViewport(vp0); await sl(400);
   await p.evaluate(() => { const b = document.querySelector('[data-dcnbid]'); b.value = '11621'; b.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   check(await p.evaluate(async () => /^11621-/.test((await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
@@ -211,6 +214,9 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(() => { const f = document.querySelector('form[data-dxfdv]'); f.t.value = '332 SE Sprinkleranlegg\n442 XX Lys\nRørplan\n'; f.requestSubmit(); }); await sl(300);
   const f1 = await p.evaluate(() => ({ sum: document.querySelector('.dx-sum b').textContent, bad: [...document.querySelectorAll('.dx-flist li.dx-bad')].map(li => li.textContent), ok: document.querySelectorAll('.dx-flist li:not(.dx-bad)').length }));
   check(/1 of 3 names follow the rules/.test(f1.sum) && f1.bad.length === 2 && f1.bad.some(x => /442 XX Lys.*Unknown document code/.test(x)) && f1.ok === 1, 'pasted names are checked: OK, or what is wrong ' + JSON.stringify(f1));
+  /* Start over clears the list and the box for a new import (JP 2026-11-23) */
+  await p.evaluate(() => document.querySelector('[data-dxfdvclr]').click()); await sl(250);
+  check(await p.evaluate(() => !document.querySelector('.dx-flist') && !document.querySelector('.dx-sum') && document.querySelector('form[data-dxfdv] textarea').value === ''), 'Start over clears the checked names');
   check(await p.evaluate(b => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; delete t.fdvlearn; return JSON.stringify(t).length === b; }, before), 'the tools saved nothing (but the NS code names you imported)');
   /* duplicates: only the same content is grouped, nothing goes by itself, a person picks (JP 2026-11-19) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);

@@ -3922,6 +3922,7 @@ I18N.add({
   "ui.dx-fdv-check": ["Check the names", "Sjekk navnene"],
   "ui.dx-fdv-import": ["Or import a list (.xlsx, .csv)", "Eller importer en liste (.xlsx, .csv)"],
   "ui.dx-fdv-sum": ["{a} of {b} names follow the rules", "{a} av {b} navn følger reglene"],
+  "ui.dx-fdv-clear": ["Start over", "Start på nytt"],
   "ui.dx-fdv-copy": ["Copy the ones to fix", "Kopier de som må rettes"],
   "ui.dx-ren-fail": ["The files could not be packed – try fewer at a time.", "Klarte ikke å pakke filene – prøv færre om gangen."],
   "ui.dx-ren-help2": ["Pick the files or one .zip. Each file gets a suggested NS 3451 code and document type from its name and – for PDFs – its text; the naming rules (documents, photos, drawings) build the new name. Check, fix, then download them renamed. Nothing is saved or sent.", "Velg filene eller én .zip. Hver fil får foreslått NS 3451-kode og dokumenttype ut fra navnet og – for PDF – teksten; navnereglene (dokumenter, bilder, tegninger) lager det nye navnet. Sjekk, rett, og last dem ned med nye navn. Ingenting lagres eller sendes."],
