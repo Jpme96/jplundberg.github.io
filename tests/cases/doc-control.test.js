@@ -60,7 +60,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   const tap = async sel => { await p.waitForSelector(sel, { timeout: 8000 }); await p.evaluate(q => document.querySelector(q).click(), sel); };
   const until = async (fn, ms = 10000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await p.evaluate(fn).catch(() => false)) return true; await sl(120); } return false; };
-  await p.evaluate(() => { localStorage.setItem('dash.dcFlow', '0');   /* these test the old project view */ const t = Features.tools(); t.dctl = []; Features.saveTools(t); });
+  await p.evaluate(() => { localStorage.setItem('dash.dcOldView', '1');   /* these test the old project view */ const t = Features.tools(); t.dctl = []; Features.saveTools(t); });
   await go(p, 'work/', 2500);
   /* names on their own */
   const nm = await p.evaluate(() => ['442 DA taklampe korridor C20 Glamox.pdf', '11621-H02-V-332-P-01 – Rørplan.dwg', '11621-H02-V-332-P-01 – Rørplan rev B.pdf', 'Rørplan.pdf', '332 XX Sprinkler.pdf', '332.101 SE Sprinkler.pdf', 'IMG_0001.jpg'].map(n => { const r = DocCtl.parseName(n); return [r.code, r.abbr, r.kind, r.issues.map(i => i[1]).join('+')]; }));

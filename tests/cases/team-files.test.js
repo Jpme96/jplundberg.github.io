@@ -20,7 +20,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.setViewport({ width: 420, height: 860, isMobile: true, hasTouch: true });
   await own.setCookie({ name: 'who', value: 'owner%40x.no', domain: 'localhost', path: '/' });
   own.on('pageerror', e => errs.push(e.message));
-  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); localStorage.setItem('dash.dcFlow', '0'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); window.__blobs = []; const o = URL.createObjectURL; URL.createObjectURL = function (x) { window.__blobs.push(x); return o.call(URL, x); }; HTMLAnchorElement.prototype.click = function () {}; });
+  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); localStorage.setItem('dash.dcOldView', '1'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); window.__blobs = []; const o = URL.createObjectURL; URL.createObjectURL = function (x) { window.__blobs.push(x); return o.call(URL, x); }; HTMLAnchorElement.prototype.click = function () {}; });
   const text = () => own.evaluate(() => document.body.innerText);
 
   /* set up a team and import a project */

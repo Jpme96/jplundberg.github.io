@@ -26,7 +26,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   const { b, p } = await open(1280);
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   const until = async (fn, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await p.evaluate(fn).catch(() => false)) return true; await sl(150); } return false; };
-  await p.evaluate(() => { localStorage.setItem('dash.dcFlow', '0');   /* these test the old project view */ const t = Features.tools(); t.dctl = [{ id: 'nproj', name: 'Made-up block', no: 'P-9', bid: '10001', pid: '77', who: 'Made-up Bygg AS', made: new Date().toISOString(), files: [],
+  await p.evaluate(() => { localStorage.setItem('dash.dcOldView', '1');   /* these test the old project view */ const t = Features.tools(); t.dctl = [{ id: 'nproj', name: 'Made-up block', no: 'P-9', bid: '10001', pid: '77', who: 'Made-up Bygg AS', made: new Date().toISOString(), files: [],
     lines: [{ id: 'l1', code: '365', sys: 'Made-up air handling', t: 'E', type: 'Produktinformasjon', planned: '', st: 'missing', files: [] }, { id: 'l2', code: '542', sys: 'Made-up fire alarm', t: 'A', type: 'Kravoppnåelse', planned: '', st: 'missing', files: [] }, { id: 'l3', code: '442', sys: 'Made-up light', t: 'E', type: 'Produktinformasjon', planned: '442 DA Taklampe', st: 'missing', files: [] }] }]; Features.saveTools(t); try { localStorage.removeItem('dash.dcNaming'); } catch (e) {} });
   await go(p, 'work/#dc=nproj', 2500);
   await p.evaluate(() => { PageTabs.show('doc'); }); await sl(300);

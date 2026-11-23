@@ -10,7 +10,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dfl-')), PDF = '%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF';
   const mk = n => { const f = path.join(dir, n); fs.writeFileSync(f, PDF); return f; };
   const F = ['234 DA Vindu madeup.pdf', '261 DA Takstein madeup.pdf', 'Tilbud madeup.pdf'].map(mk);
-  await p.evaluate(() => { Features.set('fdv', true); localStorage.removeItem('dash.dcFlow'); const t = Features.tools();
+  await p.evaluate(() => { Features.set('fdv', true); localStorage.setItem('dash.dcFlow', '0');   /* an old saved choice from the first test switch is ignored */ const t = Features.tools();
     const L = [['234', 'E', '234 DA Vindu madeup'], ['234', 'BC', '234 DV Vindu madeup'], ['261', 'E', '261 DA Takstein madeup']].map((x, i) => ({ id: 'l' + i, code: x[0], t: x[1], planned: x[2], st: 'missing', files: [] }));
     t.dctl = [{ id: 'fp1', name: 'Made-up flow', lines: L, files: [], planName: 'Made-up plan.xlsx' }, { id: 'fp2', name: 'Made-up no plan', lines: [], files: [] }]; Features.saveTools(t); });
   await go(p, 'work/#dc=fp1', 2500);

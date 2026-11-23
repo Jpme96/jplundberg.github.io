@@ -5,7 +5,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
 (async () => {
   const { b, p } = await open(393);
   const errs = []; p.on('pageerror', e => errs.push(e.message));
-  await p.evaluate(() => { localStorage.setItem('dash.dcFlow', '0');   /* these test the old project view */ const t = Features.tools(); t.dckrav = []; t.dctl = []; delete t.dcTeamAt; Features.saveTools(t); });
+  await p.evaluate(() => { localStorage.setItem('dash.dcOldView', '1');   /* these test the old project view */ const t = Features.tools(); t.dckrav = []; t.dctl = []; delete t.dcTeamAt; Features.saveTools(t); });
   await go(p, 'work/', 2500);
   const tabs = await p.evaluate(() => PageTabs.list('work').map(t => t.id).join());
   check(/doc/.test(tabs) && !/req/.test(tabs), 'Work has one Documentation tab, no separate Requirements tab ' + tabs);

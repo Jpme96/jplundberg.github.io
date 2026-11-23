@@ -494,8 +494,8 @@
      Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll. It is a view on the same project: the plan reading, the
      matching, the statuses and the report are the ones above. ---------- */
   var FLOW = ['krav', 'plan', 'lev', 'cmp', 'end'], cmpPile = 'got';
-  function flowOn() { try { if (localStorage.getItem('dash.dcFlow') === '0') return false; } catch (e) {}   /* the old view, kept for the tests of it */
-    if (HOST && HOST.flowOn) return HOST.flowOn(); try { return localStorage.getItem('dash.dcFlow') !== '0'; } catch (e) { return true; } }   /* the standard from 2026-11-23 (JP "implement the new flow"); in Team an admin turns it on or off for the whole team (Settings) */
+  function flowOn() { try { if (localStorage.getItem('dash.dcOldView') === '1') return false; } catch (e) {}   /* the old view, only for the tests of it (dash.dcFlow from the first test switch no longer counts – JP 2026-11-23) */
+    if (HOST && HOST.flowOn) return HOST.flowOn(); return true; }   /* the standard from 2026-11-23 (JP "implement the new flow"); in Team an admin turns it on or off for the whole team (Settings) */
   /* the plan held up against the requirements: each line by the client's checklist (planIssues), and the project's own requirements
      that the plan leaves out */
   function planCheck(p) {

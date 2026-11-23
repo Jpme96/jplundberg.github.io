@@ -22,7 +22,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     await p.setCookie({ name: 'who', value: encodeURIComponent(email), domain: 'localhost', path: '/' });
     p.on('pageerror', e => errs.push(email + ': ' + e.message));
     p.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push(email + ' console: ' + m.text().slice(0, 200)); });
-    await p.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); localStorage.setItem('dash.dcFlow', '0'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); });
+    await p.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); localStorage.setItem('dash.dcOldView', '1'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); });
     p.ctx = ctx; return p;
   }
   const text = p => p.evaluate(() => document.body.innerText);

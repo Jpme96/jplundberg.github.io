@@ -5,7 +5,7 @@
 const { open, go, sl } = require('../lib/browser'); const { check, done } = require('../lib/check');
 (async () => {
   const { b, p } = await open(1280);
-  await p.evaluate(() => { localStorage.setItem('dash.dcFlow', '0');   /* these test the old project view */ ['work', 'fdv'].forEach(f => { try { Features.set(f, true); } catch (e) {} });
+  await p.evaluate(() => { localStorage.setItem('dash.dcOldView', '1');   /* these test the old project view */ ['work', 'fdv'].forEach(f => { try { Features.set(f, true); } catch (e) {} });
     const t = Features.tools(); t.dctl = [{ id: 'dcp1', name: 'Made-up school', no: 'P-1', made: '2026-11-01', lines: [{ id: 'l1', code: '320', t: 'A', st: 'missing' }, { id: 'l2', code: '360', t: 'D', st: 'missing' }], files: [] }]; Features.saveTools(t); });
   await go(p, 'work/#dc=dcp1', 3500);
   const toDocs = () => p.evaluate(() => { const t = document.querySelector('[data-dctab="docs"]'); if (t) t.click(); }).then(() => sl(500));
