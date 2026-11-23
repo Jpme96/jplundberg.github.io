@@ -3950,6 +3950,8 @@ I18N.add({
   "ui.dx-st-krav": ["Requirements · {n} documents", "Krav · {n} dokumenter"],
   "ui.dx-st-krav1": ["Requirements · 1 document", "Krav · 1 dokument"],
   "ui.dx-st-done": ["Report · all approved", "Rapport · alt godkjent"],
+  "ui.dx-st-lev": ["Delivered · {a} of {b}", "Levert · {a} av {b}"],
+  "ui.dx-part-lev": ["(delivery)", "(levering)"],
   "ui.dx-st-mot": ["Received · {a} of {b}", "Mottak · {a} av {b}"],
   "ui.dx-empty": ["One project per building: pick what it should deliver (Requirements), take in what is delivered (Received) and see what is missing (Report).", "Ett prosjekt per bygg: velg hva det skal levere (Krav), ta imot det som leveres (Mottak) og se hva som mangler (Rapport)."],
   "ui.dx-new": ["New project", "Nytt prosjekt"],

@@ -12,7 +12,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   const F = ['234 DA Vindu madeup.pdf', '261 DA Takstein madeup.pdf', 'Tilbud madeup.pdf'].map(mk);
   await p.evaluate(() => { Features.set('fdv', true); localStorage.setItem('dash.dcFlow', '0');   /* an old saved choice from the first test switch is ignored */ const t = Features.tools();
     const L = [['234', 'E', '234 DA Vindu madeup'], ['234', 'BC', '234 DV Vindu madeup'], ['261', 'E', '261 DA Takstein madeup']].map((x, i) => ({ id: 'l' + i, code: x[0], t: x[1], planned: x[2], st: 'missing', files: [] }));
-    t.dctl = [{ id: 'fp1', name: 'Made-up flow', lines: L, files: [], planName: 'Made-up plan.xlsx' }, { id: 'fp2', name: 'Made-up no plan', lines: [], files: [] }]; Features.saveTools(t); });
+    t.dctl = [{ id: 'fp1', name: 'Made-up flow', lines: L, files: [], planName: 'Made-up plan.xlsx' }, { id: 'fp2', name: 'Made-up no plan', lines: [], files: [] }, { id: 'fp3', name: 'Made-up from requirements', lines: [{ id: 'k1', code: '234', t: 'E', st: 'missing', files: [] }], files: [], planName: 'Dokumentkrav: Made-up' }]; Features.saveTools(t); });
   await go(p, 'work/#dc=fp1', 2500);
   const st = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.dataset.dctab).join());
   check(st === 'krav,plan,lev,cmp,end', 'the standard: five steps in the order the work goes ' + st);
@@ -50,6 +50,11 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('.dc-fproj [data-dcedit]').click()); await sl(300);
   check(await p.evaluate(() => !!document.querySelector('.dc-flow form')), 'Edit opens the project form');
   await p.evaluate(() => { const c = [...document.querySelectorAll('.dc-flow form button')].find(b => /Cancel/.test(b.textContent)); if (c) c.click(); }); await sl(300);
+  /* a list made from the project's requirements is not the contractor's plan (JP 2026-11-23) */
+  await go(p, 'work/#dc=fp3', 2500);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
+  const kp = await p.evaluate(() => ({ t: document.querySelector('.dc-flow .fdv-body').textContent, imp: !!document.querySelector('.dc-flow input[data-dcplan]') }));
+  check(/made from the requirements/.test(kp.t) && !/contractor’s plan, checked/.test(kp.t) && kp.imp, 'a project made from requirements says so in Dokumentplan, with import of the contractor’s plan ' + kp.t.slice(0, 120));
   /* no plan: continue without, then make one from the delivery */
   await go(p, 'work/#dc=fp2', 2500);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);

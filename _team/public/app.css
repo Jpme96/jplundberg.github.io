@@ -279,7 +279,7 @@ html.t-modal { overflow: hidden; }
 .dc-host .icon-btn:has(> i.bi-x-lg) > i { font-size: 20px; }
 
 /* the way to /cmd: a small link on the right, not a back arrow (JP 2026-11-23) */
-.t-tocmd { display: inline-flex; align-items: center; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--muted); text-decoration: none; }
+.t-tocmd { display: inline-flex; align-items: center; height: 40px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--muted); text-decoration: none; }
 .t-tocmd:hover { color: var(--acc); border-color: var(--acc); }
 
 /* the team's colours (admins, Settings) */

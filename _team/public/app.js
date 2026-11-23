@@ -903,7 +903,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function viewDocs() {
     if (/^#d[rc]=/.test(location.hash)) S.dtab = 'doc'; else if (/^#files/.test(location.hash)) S.dtab = 'files';
     var DT = dtabsOn(); if (DT.length && !DT.some(function (t) { return t[0] === S.dtab; })) S.dtab = DT[0][0];
-    var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Documentation for each project – requirements, what is received and the report. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, mottak og rapport. De samme verktøyene som i /cmd.'));
+    var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Documentation for each project – requirements, document plan, delivery, comparison and final check. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, dokumentplan, levering, sammenligning og sluttkontroll. De samme verktøyene som i /cmd.'));
     out += '<div class="t-pick t-noprint" role="group">' + DT.map(function (t) { return [t[0], L(t[1], t[2])]; }).map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
     /* Import from /cmd: always one small fold (JP 13:48 – the page was heavy; 2026-11-17 20:11 – less scrolling) */
     var dHas = DFe.list('dctl').length + DFe.list('dckrav').length > 0;

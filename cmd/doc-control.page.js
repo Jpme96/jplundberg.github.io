@@ -476,9 +476,9 @@
       var p = x.p, r = x.r, c = p ? counts(p.lines || []) : null, o = p || r, tag;
       if (!p) tag = ['plan', (r.lines || []).length === 1 ? k('ui.dx-st-krav1', 'Requirements · 1 document') : k('ui.dx-st-krav', 'Requirements · {n} documents', { n: (r.lines || []).length })];
       else if (c.all && c.done === c.all) tag = ['ok', k('ui.dx-st-done', 'Report · all approved')];
-      else tag = ['recv', c.all ? k('ui.dx-st-mot', 'Received · {a} of {b}', { a: c.all - c.missing, b: c.all }) : k('ui.dc-no-plan', 'No plan yet')];
+      else tag = ['recv', c.all ? (flowOn() ? k('ui.dx-st-lev', 'Delivered · {a} of {b}', { a: c.all - c.missing, b: c.all }) : k('ui.dx-st-mot', 'Received · {a} of {b}', { a: c.all - c.missing, b: c.all })) : k('ui.dc-no-plan', 'No plan yet')];   /* the new flow's words (JP 2026-11-23) */
       return '<li class="kit-item"><button type="button" class="kit-main" ' + (p ? 'data-dcopen="' + esc(p.id) + '"' : 'data-dropen="' + esc(r.id) + '"') + '><span class="kit-ic" style="--c:' + (p ? '#3b6fb6' : '#2f8a57') + '"><i class="bi bi-' + (p ? 'folder-check' : 'clipboard2-check') + '"></i></span>' +
-        '<span class="kit-x"><b data-noi18n>' + esc(o.name) + '</b>' + (nmN[String(o.name || '').trim().toLowerCase()] > 1 ? ' <span class="dx-part">' + esc(p ? k('ui.dx-part-mot', '(received)') : k('ui.dx-part-krav', '(requirements)')) + '</span>' : '') + '<small data-noi18n>' + esc([o.no, siteLine(o), p ? p.trade || (r && r.type) : r.type, p && p.who].filter(Boolean).join(' · ')) + '</small>' +
+        '<span class="kit-x"><b data-noi18n>' + esc(o.name) + '</b>' + (nmN[String(o.name || '').trim().toLowerCase()] > 1 ? ' <span class="dx-part">' + esc(p ? (flowOn() ? k('ui.dx-part-lev', '(delivery)') : k('ui.dx-part-mot', '(received)')) : k('ui.dx-part-krav', '(requirements)')) + '</span>' : '') + '<small data-noi18n>' + esc([o.no, siteLine(o), p ? p.trade || (r && r.type) : r.type, p && p.who].filter(Boolean).join(' · ')) + '</small>' +
         '<span class="dc-st" style="--c:' + (tag[0] === 'plan' ? 'var(--violet, #8a63d2)' : stc(tag[0])) + '">' + esc(tag[1]) + '</span></span><i class="bi bi-chevron-right fdv-go"></i></button></li>';
     }).join('') + '</ul>' : (adding || radding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dx-empty', 'One project per building: pick what it should deliver (Requirements), take in what is delivered (Received) and see what is missing (Report).')) + '</p>');
     if (!adding && !radding && reqs().length > 1) body += '<p class="muted dc-help">' + esc(k('ui.dc-chk-with', 'Check a plan against:')) + ' ' + reqPick('data-dcreqpick', (req() || {}).id) + '</p>';
@@ -492,6 +492,9 @@
   /* ---------- the new project flow (JP 2026-11-23, a test – on only where switched on): five steps in the order the work goes:
      Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll. It is a view on the same project: the plan reading, the
      matching, the statuses and the report are the ones above. ---------- */
+  /* a contractor's plan that was imported – not the list made from the project's requirements (which is also called a plan in the
+     data: planName "Dokumentkrav: …") (JP 2026-11-23: a project made from requirements said "the contractor's plan") */
+  function hasPlan(p) { return !!(p && p.planName && (p.planFile || !/^(Dokumentkrav|Document requirements):/i.test(p.planName))); }
   var FLOW = ['krav', 'plan', 'lev', 'cmp', 'end'], cmpPile = 'got';
   function flowOn() { try { if (localStorage.getItem('dash.dcOldView') === '1') return false; } catch (e) {}   /* the old view, only for the tests of it (dash.dcFlow from the first test switch no longer counts – JP 2026-11-23) */
     if (HOST && HOST.flowOn) return HOST.flowOn(); return true; }   /* the standard from 2026-11-23 (JP "implement the new flow"); in Team an admin turns it on or off for the whole team (Settings) */
@@ -511,7 +514,7 @@
     var inKrav = function (l) { return r && (r.lines || []).some(function (q) { return String(q.code).slice(0, 3) === String(l.code).slice(0, 3) && String(q.t || '').indexOf((l.t || '').charAt(0)) >= 0; }); };
     L.forEach(function (l) {
       var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean);
-      if (l.st === 'missing' && !fs.length) out.push({ l: l, kind: 'no', what: stName('missing'), why: inKrav(l) ? k('ui.dc-fl-why-krav', 'Required by the project') : p.planName ? k('ui.dc-fl-why-plan', 'In the document plan') : k('ui.dc-fl-why-list', 'On the list') });
+      if (l.st === 'missing' && !fs.length) out.push({ l: l, kind: 'no', what: stName('missing'), why: inKrav(l) ? k('ui.dc-fl-why-krav', 'Required by the project') : hasPlan(p) ? k('ui.dc-fl-why-plan', 'In the document plan') : k('ui.dc-fl-why-list', 'On the list') });
       else if (l.st === 'rej') out.push({ l: l, kind: 'no', what: stName('rej'), why: l.cmt || '' });
       else if (l.st === 'cmt') out.push({ l: l, kind: 'wa', what: stName('cmt'), why: l.cmt || '' });
       fs.forEach(function (f) { var w = f.cc && f.cc.w || []; if (w.indexOf('notext') >= 0 || w.indexOf('little') >= 0) out.push({ l: l, kind: 'wa', what: k('ui.dc-fl-scan', 'Check it'), why: k('ui.dc-fl-scan-why', '{f}: scanned – little or no text to read', { f: f.name }) });
@@ -527,7 +530,7 @@
     var got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }).length, miss = L.length - got;
     var verdict = !F.length && !got ? ['ne', k('ui.dc-fl-wait', 'Waiting for the delivery')] : iss.length ? ['no', k('ui.dc-fl-not-done', 'Not complete · {n} to fix', { n: iss.length })] : c.recv ? ['wa', k('ui.dc-fl-waiting', '{n} waiting for approval', { n: c.recv })] : ['ok', k('ui.dc-fl-done', 'Complete')];
     var subs = { krav: r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : req() ? req().name : k('ui.dc-fl-no-krav', 'No requirements yet'),
-      plan: p.planName ? (pc.err + pc.gaps.length ? k('ui.dc-fl-plan-dev', 'Checked · {n} deviations', { n: pc.err + pc.gaps.length }) : k('ui.dc-fl-plan-ok', 'Checked · OK')) : p.noPlan ? k('ui.dc-fl-no-plan', 'No plan') : L.length ? k('ui.dc-fl-from-krav', 'From the requirements') : k('ui.dc-fl-not-imported', 'Not imported'),
+      plan: hasPlan(p) ? (pc.err + pc.gaps.length ? k('ui.dc-fl-plan-dev', 'Checked · {n} deviations', { n: pc.err + pc.gaps.length }) : k('ui.dc-fl-plan-ok', 'Checked · OK')) : p.noPlan ? k('ui.dc-fl-no-plan', 'No plan') : L.length ? k('ui.dc-fl-from-krav', 'From the requirements') : k('ui.dc-fl-not-imported', 'Not imported'),
       lev: F.length ? k('ui.dc-fl-n-files', '{n} delivered', { n: F.length }) : k('ui.dc-fl-none-yet', 'Nothing yet'),
       cmp: L.length ? k('ui.dc-fl-cmp-sub', '{a} delivered · {m} missing', { a: got, m: miss }) : '–', end: verdict[1] };
     var names = { krav: k('ui.dx-krav', 'Requirements'), plan: k('ui.dc-plan', 'Document plan'), lev: k('ui.dc-fl-lev', 'Delivery'), cmp: k('ui.dc-fl-cmp', 'Comparison'), end: k('ui.dc-fl-end', 'Final check') };
@@ -554,16 +557,16 @@
   }
   function flowPlan(p, pc) {
     var L = p.lines || [], imp = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden>';
-    if (!p.planName && !L.length && !p.noPlan) return '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-imp-t', 'Import the contractor’s document plan')) + '</b><p class="muted">' + esc(k('ui.dc-fl-imp-h', 'Choose the filled-in Vedlegg 7 (.xlsx). Every tab is read and the plan is checked against the requirements right away.')) + '</p>' +
+    if (!hasPlan(p) && !L.length && !p.noPlan) return '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-imp-t', 'Import the contractor’s document plan')) + '</b><p class="muted">' + esc(k('ui.dc-fl-imp-h', 'Choose the filled-in Vedlegg 7 (.xlsx). Every tab is read and the plan is checked against the requirements right away.')) + '</p>' +
       '<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label><button type="button" class="text-btn" data-dcnoplan="' + esc(p.id) + '">' + esc(k('ui.dc-fl-noplan', 'Continue without a document plan')) + '</button></div>';
-    if (!p.planName && p.noPlan) {
+    if (!hasPlan(p) && p.noPlan) {
       var lf = looseFiles(p).length, h0 = '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-np-t', 'No document plan in this project')) + '</b><p class="muted">' + esc(k('ui.dc-fl-np-h', 'Team can fill one in from what is delivered – in the Vedlegg 7 layout, with what the requirements still miss as empty rows.')) + '</p>' +
         (lf ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: lf })) + '</button>' : (L.length ? '' : '<button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-deliver-first', 'Deliver the documentation first')) + ' <i class="bi bi-chevron-right"></i></button>')) +
         '<label class="text-btn dc-file">' + esc(k('ui.dc-fl-have-plan', 'We got a plan after all – import it')) + imp + '</label></div>';
       if (L.length) h0 += '<p class="dc-note">' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: L.length })) + '</p><div class="dc-facts"><button type="button" class="pill-btn" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7', 'Download as Vedlegg 7 (.xlsx)')) + '</button></div>';
       return h0 + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
     }
-    if (!p.planName) return '<p class="muted dc-help">' + esc(k('ui.dc-fl-plan-krav', 'The list was made from the requirements – no document plan from the contractor yet.')) + '</p><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label>' + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
+    if (!hasPlan(p)) return '<p class="muted dc-help">' + esc(k('ui.dc-fl-plan-krav', 'The list was made from the requirements – no document plan from the contractor yet.')) + '</p><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label>' + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
     var bad = pc.rows.filter(function (x) { return x.is.err.length || x.is.warn.length; });
     var h = '<div class="dc-fhead"><h3 class="fdv-h">' + esc(k('ui.dc-fl-plan-t', 'The contractor’s plan, checked against the requirements')) + '</h3><label class="text-btn dc-file">' + esc(k('ui.dc-fl-newver', 'Import a new version')) + imp + '</label></div>' +
       '<p class="muted dc-help" data-noi18n>' + esc(p.planName) + ' · ' + esc(k('ui.dc-fl-plan-sum', '{n} lines · {e} with errors · {w} to look at · {g} required, not in the plan', { n: pc.rows.length, e: pc.err, w: pc.warn, g: pc.gaps.length })) + '</p><ul class="dc-flist2">' +
@@ -581,7 +584,7 @@
   function flowCmp(p, loose) {
     var L = p.lines || [], F = p.files || [];
     if (!F.length && !L.some(function (l) { return l.st && l.st !== 'missing'; })) return '<div class="dc-empty"><p>' + esc(k('ui.dc-fl-cmp-none', 'Nothing delivered yet – nothing to compare.')) + '</p><button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-to-lev', 'Go to delivery')) + ' <i class="bi bi-chevron-right"></i></button></div>';
-    var plan = !!p.planName, got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }), miss = L.filter(function (l) { return !(l.files || []).length && (!l.st || l.st === 'missing'); }), lf = looseFiles(p);
+    var plan = !!hasPlan(p), got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }), miss = L.filter(function (l) { return !(l.files || []).length && (!l.st || l.st === 'missing'); }), lf = looseFiles(p);
     var P = [['got', plan ? k('ui.dc-fl-p-got', 'In the plan and delivered') : k('ui.dc-fl-p-got2', 'On the list and delivered'), got.length, 'ok'], ['miss', plan ? k('ui.dc-fl-p-miss', 'In the plan, but missing') : k('ui.dc-fl-p-miss2', 'On the list, but missing'), miss.length, 'no'], ['loose', plan ? k('ui.dc-fl-p-loose', 'Delivered, not in the plan') : k('ui.dc-fl-p-loose2', 'Delivered, not on the list'), lf.length, 'wa']];
     var h = '<div class="dc-piles">' + P.map(function (x) { return '<button type="button" class="dc-pile" aria-pressed="' + (cmpPile === x[0]) + '" data-dcpile="' + x[0] + '"><span class="dc-fpill dc-v-' + x[3] + '">' + esc(x[1]) + '</span><b>' + x[2] + '</b></button>'; }).join('') + '</div><ul class="dc-flist2">';
     var F0 = {}; F.forEach(function (f) { F0[f.id] = f; });
@@ -1703,7 +1706,7 @@
         res.lines.forEach(function (l) { var o = old[l.code + '|' + l.t + '|' + l.planned + '|' + l.type]; if (o) { kept++; l.id = o.id; l.st = o.st; l.cmt = o.cmt; l.files = o.files || []; } });
         var ids = {}; res.lines.forEach(function (l) { ids[l.id] = 1; });
         (p.files || []).forEach(function (f) { if (f.line && !ids[f.line]) f.line = ''; });
-        p.lines = res.lines; p.planName = file.name.slice(0, 120); p.planAt = today();
+        p.lines = res.lines; p.planName = file.name.slice(0, 120); p.planAt = today(); p.planFile = true;
         p.planSheets = isX && res.heads.every(function (h) { return h.path; }) ? res.heads : undefined;   /* the original stays on this device, for "Excel with colours" */
         rematch(p);
       });
