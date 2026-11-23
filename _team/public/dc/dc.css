@@ -233,6 +233,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .note a { color: var(--accent); }
 .foot { text-align: center; margin: 22px 0 0; }
 .fin { max-width: 1120px; margin: 34px auto 0; }
+.pill-btn.wide { width: auto; padding: 0 18px; border-radius: 20px; font-family: "Poppins", sans-serif; font-size: 14px; font-weight: 500; }
 #nwSub .up { color: #3ddc97; }
 #nwSub .down { color: #ef8a6a; }
 .line { width: 100%; display: block; margin: 14px 0 4px; overflow: visible; }
@@ -317,6 +318,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .icon-btn.sm { width: 36px; height: 36px; font-size: 15px; }
 .head-actions .text-btn i { font-size: 11px; }
 .pill-btn { height: var(--field-h); min-height: var(--field-h); font-size: 14px; border-radius: 10px; }
+.pill-btn.wide { border-radius: 22px; }
 .icon-btn { width: 40px; height: 40px; font-size: 16px; }
 .icon-btn i { font-size: 16px; }
 .text-btn { font-size: 13px; }
@@ -402,6 +404,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 :where(.pill-btn:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; text-decoration: none; box-sizing: border-box; }
 .pill-btn { height: auto; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; }
+.pill-btn.wide { border-radius: 12px; }
 .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
 .pill-btn:disabled, .pill-btn[disabled] { opacity: .42; cursor: not-allowed; filter: saturate(.6); }
 .fdv-list li > .icon-btn + .icon-btn { margin-left: -6px; }
@@ -1003,6 +1006,13 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-fvs .dcn-shead b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dx-fvb { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 4px 0 12px; }
 .dx-fvb canvas, .dx-fvb img { max-width: 100%; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 4px 18px rgba(0, 0, 0, .3); }
+.dx-fvb:has(.dx-fvz) { display: block; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
+.dx-fvz { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 100%; width: max-content; margin: 0 auto; }
+.dx-fvz canvas { max-width: none; flex: none; }
+.dx-fvb:not(.dx-zin) .dx-fvz canvas { max-width: 100%; }
+.dx-fvzb { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 0 6px; }
+.dx-fvzb[hidden] { display: none; }
+.dx-fvzb .dc-chip { min-width: 58px; justify-content: center; font-variant-numeric: tabular-nums; }
 .dx-fvb pre { align-self: stretch; white-space: pre-wrap; font: 12.5px/1.45 ui-monospace, monospace; margin: 0; }
 @media (max-width: 560px) {
   .dx-fvs { height: 92dvh; }

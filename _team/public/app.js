@@ -1128,6 +1128,11 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   /* open a file in Team: pictures, PDFs and text are shown right here; everything can be downloaded or shared */
   var prevUrl = '';
   function fileKind(t, n) { t = String(t || ''); n = String(n || '').toLowerCase(); return /^image\/(png|jpe?g|gif|webp|avif|bmp|svg)/.test(t) || /\.(png|jpe?g|gif|webp|avif)$/.test(n) ? 'img' : /pdf/.test(t) || /\.pdf$/.test(n) ? 'pdf' : /^text\/|json|csv/.test(t) || /\.(txt|csv|md|json|log)$/.test(n) ? 'text' : /^video\//.test(t) ? 'video' : 'other'; }
+  function pdfView(f, name) {
+    docsReady();
+    return docsP.then(function () { return window.DocNaming && window.DocNaming.view ? 0 : loadJs('/dc/doc-naming.js'); }).then(function () {
+      if (!window.DocNaming || !window.DocNaming.view) throw new Error('no viewer'); window.DocNaming.view(f, name); });
+  }
   function openFile(d) {
     if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = ''; }
     var kind = fileKind(d.type, d.name), meta = [fsize(d.size), d.who ? L('from ', 'fra ') + d.who : '', d.at ? fmtTime(d.at) : ''].filter(Boolean).join(' · ');
@@ -1138,7 +1143,11 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       S.prevFile = f; prevUrl = URL.createObjectURL(f);
       document.querySelectorAll('[data-act=fdl],[data-act=fshare]').forEach(function (b) { b.disabled = false; });
       if (kind === 'img') box.innerHTML = '<img src="' + prevUrl + '" alt="' + esc(d.name) + '">';
-      else if (kind === 'pdf') box.innerHTML = '<iframe src="' + prevUrl + '#view=FitH" title="' + esc(d.name) + '"></iframe><p class="t-small t-noprint">' + L('Not showing? ', 'Vises ikke? ') + '<a href="' + prevUrl + '" target="_blank" rel="noopener">' + L('Open in a new tab', 'Åpne i ny fane') + '</a></p>';
+      else if (kind === 'pdf') {   /* the viewer from Documents: pinch and double-tap zoom the PDF itself, not the whole page (JP 2026-11-23 – a PDF in a frame can't be zoomed on its own on iPhone/iPad) */
+        box.innerHTML = '<p class="t-small">' + esc(L('Opening …', 'Åpner …')) + '</p>';
+        pdfView(f, d.name).then(function () { box.innerHTML = '<button class="t-btn ghost" type="button" data-act="fpview">' + esc(L('Show the PDF again', 'Vis PDF-en igjen')) + '</button>'; },
+          function () { box.innerHTML = '<iframe src="' + prevUrl + '#view=FitH" title="' + esc(d.name) + '"></iframe>'; });
+      }
       else if (kind === 'video') box.innerHTML = '<video src="' + prevUrl + '" controls playsinline></video>';
       else if (kind === 'text' && f.size < 6e6) f.text().then(function (t) { box.innerHTML = '<pre>' + esc(t.slice(0, 200000)) + '</pre>'; });
       else box.innerHTML = '<p class="t-empty">' + esc(L('This kind of file can’t be shown here – download it to open it.', 'Denne filtypen kan ikke vises her – last den ned for å åpne den.')) + '</p>';
@@ -1445,6 +1454,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'logreset') { if (!(await sure(L('Empty the whole change log for this team? One line will say that you did it.', 'Tømme hele endringsloggen for dette teamet? Én linje sier at du gjorde det.')))) return; try { await api('log', { method: 'DELETE' }); await loadLog(); closeSheet(); draw(); toast(L('The log is empty', 'Loggen er tømt')); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'upkeepall') { t.disabled = true; await keepUploads(t.dataset.fids.split(',')); return; }
     if (a === 'fdl') { if (S.prevFile) saveFile(S.prevFile); return; }
+    if (a === 'fpview') { if (S.prevFile) pdfView(S.prevFile, S.prevFile.name).catch(function () {}); return; }
     if (a === 'fshare') { if (S.prevFile && navigator.canShare && navigator.canShare({ files: [S.prevFile] })) navigator.share({ files: [S.prevFile] }).catch(function () {}); else if (S.prevFile) saveFile(S.prevFile); return; }
     if (a === 'upremind') { var rr = S.recs[t.dataset.id]; if (!rr || !rr.d) return; var txt = remindText(rr.d);
       if (navigator.share) navigator.share({ text: txt }).catch(function () {}); else (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Message copied – paste it in an e-mail or SMS', 'Meldingen er kopiert – lim den inn i en e-post eller SMS')); }, function () { showText(L('The message', 'Meldingen'), txt); });

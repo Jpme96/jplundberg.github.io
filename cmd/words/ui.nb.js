@@ -3604,6 +3604,8 @@ I18N.add({
   "ui.1-minute": ["1 minute", "1 minutt"],
   "ui.2-minutes": ["2 minutes", "2 minutter"],
   "ui.10-minutes": ["10 minutes", "10 minutter"],
+  "ui.zoom-in": ["Zoom in", "Zoom inn"],
+  "ui.zoom-out": ["Zoom out", "Zoom ut"],
   "ui.lp-ladmin": ["Yearly tasks", "Årlige oppgaver"],
   "ui.lp-ladmin-add": ["A yearly task", "En årlig oppgave"],
   "ui.lp-every-year": ["Every year by", "Hvert år innen"],

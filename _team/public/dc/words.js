@@ -667,5 +667,7 @@ window.DC_NB = {
 "ui.xv-zoom": "Zoom",
 "ui.xv-zoom-100": "Tilbake til 100 %",
 "ui.xv-zoom-in": "Zoom inn",
-"ui.xv-zoom-out": "Zoom ut"
+"ui.xv-zoom-out": "Zoom ut",
+"ui.zoom-in": "Zoom inn",
+"ui.zoom-out": "Zoom ut"
 };

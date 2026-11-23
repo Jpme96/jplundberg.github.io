@@ -594,6 +594,14 @@ html.dcn-modal { overflow: hidden; }
 .dx-fvs .dcn-shead b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dx-fvb { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 4px 0 12px; }
 .dx-fvb canvas, .dx-fvb img { max-width: 100%; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 4px 18px rgba(0, 0, 0, .3); }
+/* zoom inside the PDF (2026-11-23): the pages scroll both ways, the page around them doesn't zoom */
+.dx-fvb:has(.dx-fvz) { display: block; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
+.dx-fvz { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 100%; width: max-content; margin: 0 auto; }
+.dx-fvz canvas { max-width: none; flex: none; }
+.dx-fvb:not(.dx-zin) .dx-fvz canvas { max-width: 100%; }
+.dx-fvzb { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 0 6px; }
+.dx-fvzb[hidden] { display: none; }
+.dx-fvzb .dc-chip { min-width: 58px; justify-content: center; font-variant-numeric: tabular-nums; }
 .dx-fvb pre { align-self: stretch; white-space: pre-wrap; font: 12.5px/1.45 ui-monospace, monospace; margin: 0; }
 @media (max-width: 560px) { .dx-fvs { height: 92dvh; } }
 /* one file at a time in a popup (JP 2026-11-17 08:07) */

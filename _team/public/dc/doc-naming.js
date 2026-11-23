@@ -9,6 +9,9 @@
 (function () {
   "use strict";
   var I, esc, k, toast, uid, saveP, proj, draw, getBlob, lineOf, unlink, bestLine, parseName, pairs, issueText, linkOpts, codeName, lineTitle, ABBR, TEG, FAG, PAIR, today, pad, LP, HOST;
+  /* defaults until a host sets them up, so the PDF viewer also works on its own (Team's Files tab, 2026-11-23) */
+  esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  k = function (key, en, o) { return window.I18N && window.I18N.k ? window.I18N.k(key, en, o) : String(en).replace(/\{(\w+)\}/g, function (m, x) { return o && o[x] != null ? o[x] : m; }); };
   var ON = [];
   function on(t, f, c) { document.addEventListener(t, f, c); ON.push([t, f, c]); }
   function cur() { return I.cur(); }
@@ -195,19 +198,65 @@
   /* ---------- the content check: the PDF's text read here with pdf.js (main thread; the first 40 pages) ---------- */
   var PDFJS = null, ccText = {}, ccBusy = {};
   function pdfLib() {
-    var base = HOST ? '/dc/vendor/' : '/cmd/vendor/';
+    var base = HOST || window.PAGED_PDF_VENDOR === '/dc/vendor/' ? '/dc/vendor/' : '/cmd/vendor/';
     var load = function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('load')); }; document.head.appendChild(s); }); };
     if (!PDFJS) PDFJS = (window.pdfjsLib ? Promise.resolve() : load(base + 'pdf.min.js?v=3.11.174')).then(function () { return window.pdfjsWorker ? 1 : load(base + 'pdf.worker.min.js?v=3.11.174'); }).then(function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js?v=3.11.174'; return window.pdfjsLib; });   /* the worker script loaded first = pdf.js runs it here (Team's strict CSP allows only its own scripts) */
     PDFJS.catch(function () { PDFJS = null; });
     return PDFJS;
   }
   /* see a file in a popup over the page instead of a new tab (JP 2026-11-17 07:53): PDF pages drawn with pdf.js (first 40), pictures, text; others offer Download */
+  /* zoom inside the PDF, not the whole page (2026-11-23, JP: "in Team when I'm opening a PDF, I have to zoom the entire
+     page"): pinch on the pages, double-tap to go in or back to the width of the screen, − / + on a computer. The browser's own
+     page zoom is off over the pages (touch-action), the pages scroll both ways, and when the zoom settles they are drawn
+     again sharp for it (up to 4096 px wide each – phones run out of canvas room beyond that). */
+  function zoomer(box, wrap, pages) {
+    var z = 1, MIN = 1, MAX = 4, again = null;
+    function set(nz, cx, cy) {
+      nz = Math.max(MIN, Math.min(MAX, nz)); if (Math.abs(nz - z) < .001) return;
+      var r = box.getBoundingClientRect(), px = (cx == null ? r.width / 2 : cx - r.left), py = (cy == null ? r.height / 2 : cy - r.top);
+      var ax = (box.scrollLeft + px) / z, ay = (box.scrollTop + py) / z;
+      z = nz; wrap.__z = z; box.classList.toggle('dx-zin', z > 1.01);
+      pages.forEach(function (p) { p.c.style.width = Math.round(p.w * z) + 'px'; });
+      box.scrollLeft = ax * z - px; box.scrollTop = ay * z - py;
+      clearTimeout(again); again = setTimeout(sharp, 260);
+      var lb = box.parentNode.querySelector('[data-dxzl]'); if (lb) lb.textContent = Math.round(z * 100) + '%';
+    }
+    function sharp() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      pages.forEach(function (p) {
+        var want = Math.min(p.sc * z * dpr, 4096 / (p.w / p.sc));
+        if (want <= p.done * 1.15 || p.busy) return;
+        p.busy = true; var vp = p.pg.getViewport({ scale: want }), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+        p.pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () {
+          p.busy = false; if (!p.c.isConnected) return; c.style.width = p.c.style.width; p.c.replaceWith(c); p.c = c; p.done = want;
+        }, function () { p.busy = false; });
+      });
+    }
+    var t0 = null, lastTap = 0;
+    function dist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy); }
+    box.addEventListener('touchstart', function (e) { if (e.touches.length === 2) t0 = { d: dist(e.touches), z: z }; }, { passive: true });
+    box.addEventListener('touchmove', function (e) {
+      if (!t0 || e.touches.length !== 2) return; e.preventDefault();
+      set(t0.z * dist(e.touches) / t0.d, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
+    }, { passive: false });
+    box.addEventListener('touchend', function (e) {
+      if (t0 && e.touches.length < 2) { t0 = null; return; }
+      if (e.touches.length || e.changedTouches.length !== 1) return;
+      var now = Date.now(), t = e.changedTouches[0];
+      if (now - lastTap < 300) { lastTap = 0; e.preventDefault(); set(z > 1.2 ? 1 : 2.5, t.clientX, t.clientY); } else lastTap = now;
+    });
+    box.addEventListener('wheel', function (e) { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); set(z * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX, e.clientY); }, { passive: false });
+    var bar = box.parentNode.querySelector('.dx-fvzb'); if (bar) { bar.hidden = false; bar.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-dxz]'); if (!b) return; var k2 = b.dataset.dxz; set(k2 === 'in' ? z * 1.4 : k2 === 'out' ? z / 1.4 : 1); }); }
+    return { set: set, get: function () { return z; } };
+  }
   function view(blob, name) {
     var old = document.querySelector('.dx-fv'); if (old) old.remove();
     var url = URL.createObjectURL(blob), e0 = ext(name), pdf = e0 === '.pdf' || blob.type === 'application/pdf', img = /^\.(jpe?g|png|gif|webp|heic|heif|bmp|svg)$/.test(e0) || /^image\//.test(blob.type), txt = /^\.(txt|csv|tsv|xml|json|md)$/.test(e0);
     var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dx-fv';
     ov.innerHTML = '<div class="dcn-sheet dx-fvs" role="dialog" aria-modal="true" aria-label="' + esc(name) + '"><div class="dcn-shead"><b data-noi18n>' + esc(name) + '</b><span class="dcn-b"><a class="dc-chip" href="' + url + '" download="' + esc(name) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</a>' +
-      '<button type="button" class="icon-btn" data-dxfvx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></span></div><div class="dx-fvb">' +
+      '<button type="button" class="icon-btn" data-dxfvx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></span></div>' +
+      '<div class="dx-fvzb" hidden><button type="button" class="icon-btn" data-dxz="out" aria-label="' + esc(k('ui.zoom-out', 'Zoom out')) + '"><i class="bi bi-dash-lg"></i></button><button type="button" class="dc-chip" data-dxz="fit" data-dxzl>100%</button><button type="button" class="icon-btn" data-dxz="in" aria-label="' + esc(k('ui.zoom-in', 'Zoom in')) + '"><i class="bi bi-plus-lg"></i></button></div><div class="dx-fvb">' +
       (img ? '<img src="' + url + '" alt="">' : pdf || txt ? '<p class="muted">' + esc(k('ui.dx-fv-loading', 'Opening …')) + '</p>' : '<p class="muted">' + esc(k('ui.dx-fv-none', 'No preview for this kind of file – download it to open it.')) + '</p>') + '</div></div>';
     var close = function () { ov.remove(); URL.revokeObjectURL(url); document.removeEventListener('keydown', ek, true); document.documentElement.classList.remove('dcn-modal'); };
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
@@ -217,10 +266,12 @@
     var body = ov.querySelector('.dx-fvb'), bt = ov.querySelector('[data-dxfvx]'); if (bt) bt.focus();
     if (txt) blob.text().then(function (t) { var pre = document.createElement('pre'); pre.textContent = t.slice(0, 200000); body.innerHTML = ''; body.appendChild(pre); });
     if (pdf) blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (doc) {
-      body.innerHTML = ''; var W = Math.min(body.clientWidth || 800, 900), n = Math.min(doc.numPages, 40), chain = Promise.resolve();
+      body.innerHTML = ''; var W = Math.min(body.clientWidth || 800, 900), n = Math.min(doc.numPages, 40), chain = Promise.resolve(), pages = [];
+      var wrap = document.createElement('div'); wrap.className = 'dx-fvz'; body.appendChild(wrap); zoomer(body, wrap, pages);
       for (var i = 1; i <= n; i++) (function (i) { chain = chain.then(function () { if (!ov.isConnected) return; return doc.getPage(i).then(function (pg) {
         var v1 = pg.getViewport({ scale: 1 }), dpr = Math.min(window.devicePixelRatio || 1, 2), sc = W / v1.width, vp = pg.getViewport({ scale: sc * dpr }), c = document.createElement('canvas');
-        c.width = vp.width; c.height = vp.height; c.style.width = Math.round(vp.width / dpr) + 'px'; body.appendChild(c); return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; }); }); })(i);
+        c.width = vp.width; c.height = vp.height; c.style.width = Math.round(vp.width / dpr * (wrap.__z || 1)) + 'px'; wrap.appendChild(c);
+        pages.push({ pg: pg, c: c, w: vp.width / dpr, sc: sc, done: sc * dpr }); return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; }); }); })(i);
       chain.then(function () { if (doc.numPages > n && ov.isConnected) { var m = document.createElement('p'); m.className = 'muted'; m.textContent = k('ui.dx-fv-more', 'Showing the first {n} of {t} pages – download for the rest.', { n: n, t: doc.numPages }); body.appendChild(m); } });
     }).catch(function () { body.innerHTML = '<p class="muted">' + esc(k('ui.dx-fv-bad', 'Could not show this PDF – download it to open it.')) + '</p>'; });
     return ov;
@@ -416,7 +467,8 @@
       '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div></div>';
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
     h += '<div class="dcn-s">';
-    r.parts.forEach(function (q) { if (PV[q.k] && !p[PV[q.k][0]]) h += pvField(p, q.k, true, false); });
+    /* shown also once it's filled in, so it can be changed (2026-11-23, JP: "my building locked itself, I cannot change it") – it's one value for the project, used in every name */
+    r.parts.forEach(function (q) { if (PV[q.k]) h += pvField(p, q.k, !p[PV[q.k][0]], false); });
     r.parts.forEach(function (q) { if (NPART[q.k] && NPART[q.k][2] && !seen[q.k]) { seen[q.k] = 1; h += nfield(p, f, q.k); } });
     var cur0 = '<div class="dcn-n"><span>' + esc(k('ui.dcn-current', 'Current file name')) + '</span><span class="dcn-nrow"><b data-noi18n>' + esc(f.name) + '</b>' + (f.nf ? '' : '<button type="button" class="dc-chip dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</span>' + (f.orig && f.orig !== f.name ? '<small class="muted" data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</small>' : '') + '</div>';
     h += cur0 + '<div class="dcn-sug"><span>' + esc(k('ui.dcn-name-from', 'Name from “{r}”', { r: rname(r) })) + '</span><code data-noi18n>' + b.html + esc(e) + '</code></div>' +

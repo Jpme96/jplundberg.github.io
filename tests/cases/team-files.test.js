@@ -108,7 +108,10 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(own, () => window.__blobs.some(x => x && /A-101/.test(x.name || '')), 15000), 'and it opens');
   const got = await own.evaluate(() => window.__blobs.find(x => /A-101/.test(x.name || '')).text().then(t => t.slice(0, 25)));
   check(got === '%PDF-1.4 made-up drawing ', 'the uploaded file comes back as sent');
-  check(await own.evaluate(() => !!document.querySelector('#prevBox iframe')), 'a PDF is shown in Team');
+  /* in the viewer from Documents, which zooms inside the PDF (JP 2026-11-23) – a frame only if that viewer can't load */
+  check(await until(own, () => !!document.querySelector('.dx-fv') || !!document.querySelector('#prevBox iframe'), 10000), 'a PDF is shown in Team');
+  check(await own.evaluate(() => !!document.querySelector('.dx-fv .dx-fvb')), 'in the zoomable viewer');
+  await own.evaluate(() => { const x = document.querySelector('.dx-fv [data-dxfvx]'); if (x) x.click(); });
   await own.evaluate(() => document.querySelector('[data-act=close]').click()); await sl(300);
   await con.reload(); 
   check(await until(con, () => /Received/.test((document.getElementById('log') || {}).innerText || ''), 10000), 'the sender sees "Received" once the team has kept it');

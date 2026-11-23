@@ -63,6 +63,26 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.setViewport(vp0); await sl(400);
   await p.evaluate(() => { const b = document.querySelector('[data-dcnbid]'); b.value = '11621'; b.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   check(await p.evaluate(async () => /^11621-/.test((await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
+  /* and it can be changed again afterwards (JP 2026-11-23: "my building locked itself, I cannot change it") */
+  const bn = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), b = li.querySelector('[data-dcnbid]'); if (!b) return { box: false };
+    const was = b.value; b.value = '22222'; b.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 250));
+    const now = (await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent;
+    const b2 = (await R(/Rørplan sprinkler/)).querySelector('[data-dcnbid]'); b2.value = '11621'; b2.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 250));
+    return { box: true, was, now }; });
+  check(bn.box && bn.was === '11621' && /^22222-/.test(bn.now), 'the building number stays in the row and can be changed ' + JSON.stringify(bn));
+  /* the PDF viewer zooms inside the PDF, not the whole page (JP 2026-11-23) */
+  const zv = await p.evaluate(async () => {
+    await new Promise((ok, no) => { if (window.jspdf) return ok(); const sc = document.createElement('script'); sc.src = '/cmd/vendor/jspdf.umd.min.js?v=2.5.2'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+    const d = new window.jspdf.jsPDF(); d.text('Made-up drawing', 20, 20); d.addPage(); d.text('Page two', 20, 20);
+    const ov = window.DocNaming.view(new Blob([d.output('arraybuffer')], { type: 'application/pdf' }), 'Made-up.pdf');
+    for (let i = 0; i < 40 && ov.querySelectorAll('.dx-fvz canvas').length < 2; i++) await new Promise(r => setTimeout(r, 150));
+    const c = ov.querySelector('.dx-fvz canvas'), w0 = c.getBoundingClientRect().width, body = ov.querySelector('.dx-fvb');
+    ov.querySelector('[data-dxz="in"]').click(); await new Promise(r => setTimeout(r, 400));
+    const c2 = ov.querySelector('.dx-fvz canvas'), w1 = c2.getBoundingClientRect().width, lbl = ov.querySelector('[data-dxzl]').textContent;
+    const out = { pages: ov.querySelectorAll('.dx-fvz canvas').length, w0: Math.round(w0), w1: Math.round(w1), lbl, touch: getComputedStyle(body).touchAction, bar: !ov.querySelector('.dx-fvzb').hidden };
+    ov.querySelector('[data-dxfvx]').click(); return out; });
+  check(zv.pages === 2 && zv.bar && zv.w1 > zv.w0 * 1.3 && zv.lbl === '140%', 'the PDF zooms inside its own window with − / + ' + JSON.stringify(zv));
+  check(/pan-x/.test(zv.touch) && /pan-y/.test(zv.touch), 'and pinching there zooms the PDF, not the page (' + zv.touch + ')');
   await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); const c = li.querySelector('[data-dcncode]'); c.value = [...c.options].map(o => o.value).find(v => /^3[0-9]{2}$/.test(v) && v !== '325' && v !== '332') || ''; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
   await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); const a = li.querySelector('[data-dcntype]'); a.value = 'DA'; a.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
   const r2 = await p.evaluate(async () => { const li = (await R(/Datablad radiator/)); return { sug: li.querySelector('.dcn-sug code').textContent, btn: (document.querySelector('[data-dxrenuse]') || {}).textContent || '' }; });
