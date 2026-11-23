@@ -193,7 +193,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   /* deleting a project in Team */
   await own.goto(T + '#docs'); await sl(1200);
   const pid = await own.evaluate(() => { const a = [...document.querySelectorAll('a[href^="#dc="], [data-dcopen]')][0]; return a ? (a.getAttribute('href') || '').replace('#dc=', '') || a.dataset.dcopen : ''; });
-  if (pid) { await own.goto(T + '#dc=' + pid); await sl(1500); await own.evaluate(() => { const b = document.querySelector('[data-dcdel]'); b && b.click(); }); await sl(2500); await own.goto(T + '#overview'); await own.reload(); await sl(2500); }
+  if (pid) { await own.goto(T + '#dc=' + pid); await sl(1500); await own.evaluate(() => { const b = document.querySelector('[data-dcdel]'); b && b.click(); }); await sl(500); await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); }); await sl(2500); await own.goto(T + '#overview'); await own.reload(); await sl(2500); }
   check(pid && !/Testveien 9/.test(await own.evaluate(() => (document.querySelector('.t-projs') || {}).textContent || '')), 'a project can be deleted in Team (' + pid + ')');
   check(!errs.length, 'no errors ' + errs.join(' | ').slice(0, 400));
   await b.close(); srv.kill(); fs.rmSync(tmp, { recursive: true, force: true });

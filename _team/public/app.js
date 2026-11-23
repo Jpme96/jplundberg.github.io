@@ -830,7 +830,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2>' +
       '<div class="t-settabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" class="t-settab' + (x[0] === tab ? ' on' : '') + '" aria-selected="' + (x[0] === tab) + '" data-act="settab" data-settab="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<div class="t-setbody">' + body + '</div>' +
-      '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
+      '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>', 'set');
   }
   /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
   function renameSheet() {

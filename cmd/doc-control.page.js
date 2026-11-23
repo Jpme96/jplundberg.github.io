@@ -465,6 +465,15 @@
   function fdvCheck(names) { fdvRes = names.map(function (n) { var q = parseName(n); return { n: n, iss: q.issues.map(function (x) { return issueText(x, { p: q }); }) }; }); draw(); }
   /* the one-off tools open in a popup over the list instead of pushing it down – less scrolling (JP 2026-11-17 20:11) */
   function toolPop(h) { return h ? '<div class="dx-tov" data-dxtov><div class="dx-tsheet" role="dialog" aria-modal="true">' + h + '</div></div>' : ''; }
+  function sure(msg) { return window.Ask ? window.Ask.confirm(msg, { danger: true, ok: k('ui.delete', 'Delete') }) : Promise.resolve(true); }   /* the app's own popup (filedrop.js), never the browser's */
+  function delProj(pid, inside) {
+    var t0 = Fe.tools(), all = JSON.parse(JSON.stringify(t0.dctl || [])), allK = JSON.parse(JSON.stringify(t0.dckrav || [])), gone = proj(pid);
+    /* the project is one thing to you: its requirements list goes with it, unless another project uses it (JP 2026-11-23 "the project does not get deleted" – the requirements part stayed in the list) */
+    var kid = gone && gone.krav && !(t0.dctl || []).some(function (x) { return x.id !== pid && x.krav === gone.krav; }) ? gone.krav : null;
+    var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); if (kid) t3.dckrav = (t3.dckrav || []).filter(function (x) { return x.id !== kid; }); Fe.saveTools(t3); if (inside) back(); else draw();
+    toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; if (kid) t4.dckrav = allK; Fe.saveTools(t4); draw(); });
+    setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000);
+  }
   function home() {
     var moved = !HOST && !!Fe.tools().dcTeamAt, L = rowsAll();
     var body = adding ? projForm(null) : radding ? kravForm() : '';
@@ -477,9 +486,10 @@
       if (!p) tag = ['plan', (r.lines || []).length === 1 ? k('ui.dx-st-krav1', 'Requirements · 1 document') : k('ui.dx-st-krav', 'Requirements · {n} documents', { n: (r.lines || []).length })];
       else if (c.all && c.done === c.all) tag = ['ok', k('ui.dx-st-done', 'Report · all approved')];
       else tag = ['recv', c.all ? (flowOn() ? k('ui.dx-st-lev', 'Delivered · {a} of {b}', { a: c.all - c.missing, b: c.all }) : k('ui.dx-st-mot', 'Received · {a} of {b}', { a: c.all - c.missing, b: c.all })) : k('ui.dc-no-plan', 'No plan yet')];   /* the new flow's words (JP 2026-11-23) */
-      return '<li class="kit-item"><button type="button" class="kit-main" ' + (p ? 'data-dcopen="' + esc(p.id) + '"' : 'data-dropen="' + esc(r.id) + '"') + '><span class="kit-ic" style="--c:' + (p ? '#3b6fb6' : '#2f8a57') + '"><i class="bi bi-' + (p ? 'folder-check' : 'clipboard2-check') + '"></i></span>' +
+      return '<li class="kit-item dx-row"><button type="button" class="kit-main" ' + (p ? 'data-dcopen="' + esc(p.id) + '"' : 'data-dropen="' + esc(r.id) + '"') + '><span class="kit-ic" style="--c:' + (p ? '#3b6fb6' : '#2f8a57') + '"><i class="bi bi-' + (p ? 'folder-check' : 'clipboard2-check') + '"></i></span>' +
         '<span class="kit-x"><b data-noi18n>' + esc(o.name) + '</b>' + (nmN[String(o.name || '').trim().toLowerCase()] > 1 ? ' <span class="dx-part">' + esc(p ? (flowOn() ? k('ui.dx-part-lev', '(delivery)') : k('ui.dx-part-mot', '(received)')) : k('ui.dx-part-krav', '(requirements)')) + '</span>' : '') + '<small data-noi18n>' + esc([o.no, siteLine(o), p ? p.trade || (r && r.type) : r.type, p && p.who].filter(Boolean).join(' · ')) + '</small>' +
-        '<span class="dc-st" style="--c:' + (tag[0] === 'plan' ? 'var(--violet, #8a63d2)' : stc(tag[0])) + '">' + esc(tag[1]) + '</span></span><i class="bi bi-chevron-right fdv-go"></i></button></li>';
+        '<span class="dc-st" style="--c:' + (tag[0] === 'plan' ? 'var(--violet, #8a63d2)' : stc(tag[0])) + '">' + esc(tag[1]) + '</span></span><i class="bi bi-chevron-right fdv-go"></i></button>' +
+        (can('delp', p ? gOf(p, 'dctl') : gOf(r, 'dckrav')) ? '<button type="button" class="dx-del" ' + (p ? 'data-dxdel="' + esc(p.id) + '"' : 'data-dxdelr="' + esc(r.id) + '"') + ' aria-label="' + esc(k('ui.dc-del-row', 'Delete {n}', { n: o.name || '' })) + '" title="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button>' : '') + '</li>';
     }).join('') + '</ul>' : (adding || radding ? '' : '<p class="empty kit-empty">' + esc(k('ui.dx-empty', 'One project per building: pick what it should deliver (Requirements), take in what is delivered (Received) and see what is missing (Report).')) + '</p>');
     if (!adding && !radding && reqs().length > 1) body += '<p class="muted dc-help">' + esc(k('ui.dc-chk-with', 'Check a plan against:')) + ' ' + reqPick('data-dcreqpick', (req() || {}).id) + '</p>';
     /* cmd only: Team is the home for team projects and requirements (JP 08:06 / 23:46) – the same cards as before */
@@ -759,6 +769,10 @@
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
     if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
+    /* files just uploaded (by you or someone in the team): named like in "Give files the right names" – suggestions, then Use (JP 2026-11-24) */
+    var NW = F.filter(function (f) { return f.nw; });
+    if (NW.length) { var N0 = naming(); h += '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small></span>' +
+      '<button type="button" class="pill-btn" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>'; }
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
     F.sort(function (a, b) { return rank(a) - rank(b) || (a.name < b.name ? -1 : 1); });
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
@@ -786,7 +800,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = 'ab595a7a90';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '1f71beeee4';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
@@ -1753,12 +1767,14 @@
       return add.reduce(function (pr, f) { return pr.then(function () { if (f.blob) return putBlob(f.id, f.blob); }); }, Promise.resolve()).then(function () {
         var matched = 0;
         saveP(id, function (p) {
-          p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; return o; }));
+          p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; if (o.size && !names) o.nw = 1; return o; }));   /* nw: just uploaded – shown in "Give the new files the right names" until someone presses Done (JP 2026-11-24) */
           add.forEach(function (f) { var x = p.files.filter(function (y) { return y.id === f.id; })[0]; if (namingOn() && naming()) naming().guess(x); var l = (p.lines || []).length && bestLine(p, x.p); if (l) { x.line = l.id; l.files = (l.files || []).concat([x.id]); if (l.st === 'missing') l.st = 'recv'; matched++; } });
           pairs(p);
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
         setTab('files'); draw();
+        var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
+        if (naming()) sg(); else if (dcnLoading) dcnLoading.then(sg);
       });
     }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-files-bad', 'Some files could not be read.'))); try { console.warn('[dc] files', e); } catch (e2) {} });
   }
@@ -1962,13 +1978,17 @@
       draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-file-removed', 'File removed')), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep.id ? keep : x; }); Fe.saveTools(t2); draw(); });
       setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }, 9000); return;
     }
-    if ((b = t.closest('[data-dcdel]'))) {
-      var pid = b.dataset.dcdel, t0 = Fe.tools(), all = JSON.parse(JSON.stringify(t0.dctl || [])), allK = JSON.parse(JSON.stringify(t0.dckrav || [])), gone = proj(pid);
-      /* the project is one thing to you: its requirements list goes with it, unless another project uses it (JP 2026-11-23 "the project does not get deleted" – the requirements part stayed in the list) */
-      var kid = gone && gone.krav && !(t0.dctl || []).some(function (x) { return x.id !== pid && x.krav === gone.krav; }) ? gone.krav : null;
-      var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); if (kid) t3.dckrav = (t3.dckrav || []).filter(function (x) { return x.id !== kid; }); Fe.saveTools(t3); back();
-      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; if (kid) t4.dckrav = allK; Fe.saveTools(t4); draw(); });
-      setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000); return;
+    /* delete a project – from the project or straight from the list, always asked first, with Undo after (JP 2026-11-24) */
+    if ((b = t.closest('[data-dcdel], [data-dxdel]'))) {
+      var pid = b.dataset.dcdel || b.dataset.dxdel, gp = proj(pid); if (!gp) return;
+      sure(k('ui.dc-del-sure', 'Delete the project «{n}»? Its plan and files go too. You can undo it right after.', { n: gp.name || '' })).then(function (ok) { if (ok) delProj(pid, !!b.dataset.dcdel); }); return;
+    }
+    if ((b = t.closest('[data-dcfreshok]'))) { saveP(b.dataset.dcfreshok, function (p) { (p.files || []).forEach(function (f) { delete f.nw; }); }); draw(); return; }
+    if ((b = t.closest('[data-dxdelr]'))) {
+      var rid = b.dataset.dxdelr, gr = (Fe.tools().dckrav || []).filter(function (x) { return x.id === rid; })[0]; if (!gr) return;
+      sure(k('ui.dr-del-sure', 'Delete the requirements «{n}»? You can undo it right after.', { n: gr.name || '' })).then(function (ok) { if (!ok) return;
+        var allK = JSON.parse(JSON.stringify(Fe.tools().dckrav || [])), t9 = Fe.tools(); t9.dckrav = (t9.dckrav || []).filter(function (x) { return x.id !== rid; }); Fe.saveTools(t9); draw();
+        toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dr-deleted', 'Requirements deleted')), function () { var t10 = Fe.tools(); t10.dckrav = allK; Fe.saveTools(t10); draw(); }); }); return;
     }
     if ((b = t.closest('[data-dchand]'))) { handover(b); return; }
     if ((b = t.closest('[data-dcxcol]'))) {   /* Excel with colours: see it, change any cell, download (JP 21:47) */

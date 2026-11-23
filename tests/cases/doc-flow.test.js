@@ -30,6 +30,12 @@ const fs = require('fs'), os = require('os'), path = require('path');
   check(await p.evaluate(() => /Made-up plan\.xlsx/.test(document.querySelector('.dc-flow').textContent) && !!document.querySelector('.dc-flow input[data-dcplan]')), 'Dokumentplan: the imported plan, checked, with Import a new version');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
   await (await p.$('.dc-flow input[data-dcfiles]')).uploadFile(...F); await sl(1800);
+  /* the files just uploaded: a box to give them the right names, like the rename tool; Done closes it (JP 2026-11-24) */
+  await sl(1500);
+  const fr = await p.evaluate(() => { const b = document.querySelector('.dc-fresh'); return b ? { n: b.querySelectorAll('[data-dcnf], .dcn-f, .dcn-row, li').length, t: b.textContent.slice(0, 120) } : null; });
+  check(fr && /Give the new files the right names|Gi de nye filene/.test(fr.t), 'Levering: the just-uploaded files get a "Give the new files the right names" box ' + JSON.stringify(fr));
+  await p.evaluate(() => document.querySelector('[data-dcfreshok]').click()); await sl(400);
+  check(await p.evaluate(() => !document.querySelector('.dc-fresh') && !Features.tools().dctl.find(x => x.id === 'fp1').files.some(f => f.nw)), 'and Done closes it for everyone (saved)');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="cmp"]').click()); await sl(300);
   const piles = await p.evaluate(() => [...document.querySelectorAll('.dc-pile b')].map(b => b.textContent).join());
   check(piles === '2,1,1', 'Sammenligning: 2 in the plan and delivered, 1 missing, 1 not in the plan ' + piles);
@@ -59,8 +65,22 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => { const t = Features.tools(); t.dckrav = [{ id: 'kr9', name: 'Made-up both parts', lines: [{ id: 'q1', code: '234', t: 'E' }] }]; t.dctl.push({ id: 'fp9', name: 'Made-up both parts', krav: 'kr9', lines: [], files: [] }); Features.saveTools(t); });
   await go(p, 'work/#dc=fp9', 2500);
   await p.evaluate(() => document.querySelector('[data-dcprojinfo]').click()); await sl(400);
-  await p.evaluate(() => document.querySelector('.dc-fproj [data-dcdel]').click()); await sl(500);
+  await p.evaluate(() => document.querySelector('.dc-fproj [data-dcdel]').click()); await sl(400);
+  check(await p.evaluate(() => !!document.querySelector('.ask-ov') && Features.tools().dctl.some(x => x.id === 'fp9')), 'deleting asks first (the app\'s own popup), nothing gone yet');
+  await p.evaluate(() => document.querySelector('.ask-ov .ask-ok').click()); await sl(600);
   check(await p.evaluate(() => { const t = Features.tools(); return !t.dctl.some(x => x.id === 'fp9') && !(t.dckrav || []).some(x => x.id === 'kr9'); }), 'deleting the project removes its requirements list too');
+  /* delete straight from the list: asked first, Cancel keeps it, Undo brings it back (JP 2026-11-24) */
+  await p.evaluate(() => { const t = Features.tools(); t.dctl.push({ id: 'fp8', name: 'Made-up list delete', lines: [], files: [] }); Features.saveTools(t); });
+  await go(p, 'work/#docs', 2000);
+  check(await p.evaluate(() => !!document.querySelector('.dx-list [data-dxdel="fp8"]')), 'the project list has a delete button on each project');
+  await p.evaluate(() => document.querySelector('[data-dxdel="fp8"]').click()); await sl(400);
+  await p.evaluate(() => document.querySelector('.ask-ov .ask-no').click()); await sl(400);
+  check(await p.evaluate(() => Features.tools().dctl.some(x => x.id === 'fp8')), 'Cancel keeps the project');
+  await p.evaluate(() => document.querySelector('[data-dxdel="fp8"]').click()); await sl(400);
+  await p.evaluate(() => document.querySelector('.ask-ov .ask-ok').click()); await sl(600);
+  check(await p.evaluate(() => !Features.tools().dctl.some(x => x.id === 'fp8') && !document.querySelector('[data-dxdel="fp8"]')), 'Delete removes it from the list');
+  const und = await p.evaluate(() => { const b = [...document.querySelectorAll('.toast button, [class*=toast] button')].find(x => /Undo|Angre/.test(x.textContent)); if (b) b.click(); return !!b; }); await sl(600);
+  check(und && await p.evaluate(() => Features.tools().dctl.some(x => x.id === 'fp8')), 'and Undo brings it back');
   /* no plan: continue without, then make one from the delivery */
   await go(p, 'work/#dc=fp2', 2500);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);

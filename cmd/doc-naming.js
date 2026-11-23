@@ -697,8 +697,8 @@
     return h;
   }
   /* suggest a code and type from the name for every file, then read every PDF that hasn't been read (one at a time) */
-  function suggestAll(pid) {
-    var pdfs = []; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf) return; if (!f.p.code || !f.p.abbr) { guessName(f); relink(p, f); } if (ext(f.name) === '.pdf' && !f.cc) pdfs.push(f.id); }); }); draw();
+  function suggestAll(pid, only) {   /* only: just these file ids (the files just uploaded to a project – JP 2026-11-24) */
+    var pdfs = []; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf || (only && only.indexOf(f.id) < 0)) return; if (!f.p.code || !f.p.abbr) { guessName(f); relink(p, f); } if (ext(f.name) === '.pdf' && !f.cc) pdfs.push(f.id); }); }); draw();
     return pdfs.reduce(function (pr, id5) { return pr.then(function () { return new Promise(function (res) { ccRun(pid, id5); var w = setInterval(function () { if (!ccBusy[id5]) { clearInterval(w); res(); } }, 200); }); }); }, Promise.resolve());
   }
   /* "Use this name" for every file whose rule has nothing missing – returns how many got a new name */

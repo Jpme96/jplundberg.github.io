@@ -301,7 +301,9 @@ select[multiple] { background-image: none; padding-right: 14px; }
 .t-settabs { display: flex; gap: 4px; padding: 4px; margin: 4px 0 6px; background: var(--card2); border-radius: 12px; }
 .t-settab { flex: 1; min-height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
 .t-settab.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-.t-setbody { min-height: 260px; padding-bottom: 8px; }
+.t-sheet-set { height: min(760px, 92vh); overflow: hidden; }   /* same size on every tab, so it does not jump (JP 2026-11-24) */
+.t-sheet-set > h2, .t-sheet-set > .t-settabs, .t-sheet-set > .t-btn { flex: none; }
+.t-setbody { flex: 1 1 auto; min-height: 0; overflow: auto; padding-bottom: 8px; margin: 0 -4px; padding-left: 4px; padding-right: 4px; }
 .t-setbody > .t-set2 { margin-top: 14px; }
 .t-setbody .t-switch, .t-setbody .t-setrow { margin: 0; border-top: 0; border-bottom: 1px solid var(--line); padding: 12px 0; }
 .t-setbody .t-h { margin: 22px 0 4px; }

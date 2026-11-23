@@ -1303,3 +1303,11 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
   .dc-fsteps button[aria-selected="true"] { flex: 1 1 auto; min-width: 0; }
   .dc-fsteps button:not([aria-selected="true"]) .dc-fname, .dc-fsteps button small { display: none; }
 }
+.dx-list .dx-row { display: flex; align-items: center; }
+.dx-list .dx-row > .kit-main { flex: 1; min-width: 0; }
+.dx-del { flex: none; width: 40px; height: 40px; margin-right: 6px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+.dx-del:hover, .dx-del:focus-visible { color: rgb(var(--danger-rgb)); background: rgba(var(--danger-rgb), .1); }
+.dc-fresh { margin: 12px 0 16px; padding: 14px 16px; border: 1px solid rgba(var(--warn-rgb), .45); background: rgba(var(--warn-rgb), .07); border-radius: 14px; }
+.dc-freshh { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.dc-freshh > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dc-freshh small { color: var(--muted); }

@@ -4223,5 +4223,11 @@ I18N.add({
   "ui.dx-dl-go": ["Download {n} files (.zip)", "Last ned {n} filer (.zip)"],
   "ui.dx-ren-dl4": ["Download …", "Last ned …"],
   "ui.dcn-pk-all-n": ["Select all ({n})", "Velg alle ({n})"],
-  "ui.dcn-pk-nocode2": ["Only those without a code ({n})", "Bare de uten kode ({n})"]
+  "ui.dcn-pk-nocode2": ["Only those without a code ({n})", "Bare de uten kode ({n})"],
+  "ui.dc-del-sure": ["Delete the project «{n}»? Its plan and files go too. You can undo it right after.", "Slette prosjektet «{n}»? Planen og filene forsvinner også. Du kan angre rett etterpå."],
+  "ui.dr-del-sure": ["Delete the requirements «{n}»? You can undo it right after.", "Slette kravene «{n}»? Du kan angre rett etterpå."],
+  "ui.dc-del-row": ["Delete {n}", "Slett {n}"],
+  "ui.dc-fresh-h": ["Give the new files the right names", "Gi de nye filene riktig navn"],
+  "ui.dc-fresh-s1": ["1 file just uploaded – check the suggested name and use it", "1 fil er nettopp lastet opp – sjekk navneforslaget og bruk det"],
+  "ui.dc-fresh-s": ["{n} files just uploaded – check the suggested names and use them", "{n} filer er nettopp lastet opp – sjekk navneforslagene og bruk dem"]
 });
