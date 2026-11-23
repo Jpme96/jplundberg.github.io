@@ -804,7 +804,7 @@ html.dcn-modal { overflow: hidden; }
 .dc-fsteps small { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dc-fn { display: inline-flex; flex: none; width: 21px; height: 21px; border-radius: 50%; align-items: center; justify-content: center; font-size: 11.5px; background: rgba(var(--ink-rgb), .1); }
 .dc-fsteps button[aria-selected="true"] .dc-fn { background: var(--accent); color: var(--on-accent, #fff); }
-@media (max-width: 700px) { .dc-fsteps { grid-template-columns: repeat(5, minmax(112px, 1fr)); overflow-x: auto; } }
+/* 561–700 px: the five steps share the width, names shorten (no sideways scrolling) */
 .dc-verdict, .dc-fpill { font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 4px 9px; white-space: nowrap; }
 .dc-verdict { font-size: 13.5px; padding: 6px 12px; align-self: center; }
 .dc-v-ok { background: rgba(var(--ok-rgb, 30,122,70), .14); color: var(--ok); }
@@ -847,3 +847,10 @@ html.dcn-modal { overflow: hidden; }
 .dc-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .dc-fproj { margin-top: 26px; padding-top: 6px; border-top: 1px solid var(--line); }
 .dc-flow .fdv-top .icon-btn { align-self: center; }
+/* the steps on a phone: numbers, and the name of the step you're on – no sideways scrolling (JP 2026-11-23 check) */
+@media (max-width: 560px) {
+  .dc-fsteps { display: flex; overflow: visible; }
+  .dc-fsteps button { flex: 0 0 auto; padding: 8px; }
+  .dc-fsteps button[aria-selected="true"] { flex: 1 1 auto; min-width: 0; }
+  .dc-fsteps button:not([aria-selected="true"]) .dc-fname, .dc-fsteps button small { display: none; }
+}
