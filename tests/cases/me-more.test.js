@@ -56,8 +56,13 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
   check(await p.evaluate(() => /Made-up win/.test(document.querySelector('[data-tool="lp-wins"]').textContent) && /44/.test(document.querySelector('[data-tool="lp-style"]').textContent)), 'Wins and Style draw their rows');
   /* At a glance and search point at Me */
   await go(p, '', 2500);
-  const br = await p.evaluate(() => (window.BriefItems || []).filter(x => /\/me\//.test(x.href || '')).map(x => x.title).join(' | '));
-  check(/life wheel|Dentist|Eye test|Check your moles/.test(br) || br.length > 0, 'At a glance: Me lines link to the Me page (' + br.slice(0, 120) + ')');
+  /* an overdue made-up item, so a Me line is due whatever the date (2026-11-23: it depended on Black Friday being near) */
+  await p.evaluate(() => { const t = Features.tools(), d = new Date(Date.now() - 50 * 864e5); t.bodycare = (t.bodycare || []).concat([{ id: 'bc-made-up-trim', title: 'Made-up trim', every: 6, unit: 'w', last: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') }]); Features.saveTools(t); });
+  /* ask the sections themselves – At a glance keeps only the top few, and which those are depends on the day (2026-11-23) */
+  const br = await p.evaluate(() => { const out = [], d = new Date(), t = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    (window.BriefExtra || []).forEach(fn => { try { fn((pri, ic, col, title, sub, href) => out.push({ title, href }), d, t); } catch (e) {} });
+    return out.filter(x => /\/me\//.test(x.href || '')).map(x => x.title).join(' | '); });
+  check(/Made-up trim/.test(br), 'At a glance: Me lines link to the Me page (' + br.slice(0, 120) + ')');
   check(!p.errs.length, 'no script errors ' + p.errs.slice(0, 2).join(' | '));
   await b.close(); done();
 })();
