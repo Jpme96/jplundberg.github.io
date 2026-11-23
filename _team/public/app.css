@@ -272,3 +272,8 @@ html.t-modal { overflow: hidden; }
 .t-wsteps span { display: flex; flex-direction: column; }
 .t-wsteps small { color: var(--muted, #8a94a3); }
 .t-late { color: var(--bad); font-weight: 600; margin: 4px 0 0; }
+/* close buttons in Documentation: just the X, no circle, tucked into the top corner (JP 2026-11-23 "remove the circle … put the x in the proper position") */
+.dc-host .icon-btn:has(> i.bi-x-lg), .dc-host .icon-btn:has(> i.bi-x-lg):hover { border-color: transparent; background: transparent; box-shadow: none; }
+.dc-host .icon-btn:has(> i.bi-x-lg) { width: 40px; height: 40px; margin: -6px -10px -6px 0; color: var(--muted, currentColor); }
+.dc-host .icon-btn:has(> i.bi-x-lg):hover { color: var(--text); }
+.dc-host .icon-btn:has(> i.bi-x-lg) > i { font-size: 20px; }
