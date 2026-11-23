@@ -29,15 +29,20 @@
     });
   }
   function isPdf(f) { return f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''); }
+  function isImg(f) { return /^image\/(jpeg|png|webp|heic|heif|gif)/.test(f.type || '') || /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(f.name || ''); }
+  /* the icon for a file by its type or name */
+  function ficon(f) { var n = String(f.name || '').toLowerCase(); if (f.type === 'pdf' || isPdf(f)) return 'file-earmark-pdf'; if (f.type === 'img' || isImg(f)) return 'image'; if (/\.(docx?|odt|rtf|pages)$/.test(n)) return 'file-earmark-word'; if (/\.(xlsx?|xlsm|ods|csv|numbers)$/.test(n)) return 'file-earmark-excel'; if (/\.(pptx?|odp|key)$/.test(n)) return 'file-earmark-ppt'; if (/\.(zip|rar|7z)$/.test(n)) return 'file-earmark-zip'; if (/\.(eml|msg)$/.test(n)) return 'envelope'; if (/\.(txt|md)$/.test(n)) return 'file-earmark-text'; return 'file-earmark'; }
   function storeFiles(list) {
     var out = [], bad = [];
     return Array.prototype.reduce.call(list, function (p, f) {
       return p.then(function () {
         var pdf = isPdf(f);
         if (pdf && f.size > 15e6) { bad.push(f.name + ' (over 15 MB)'); return; }
-        if (!pdf && !/^image\//.test(f.type || '') && !/\.(heic|heif|jpe?g|png|webp)$/i.test(f.name || '')) { bad.push(f.name + ' (not a PDF or photo)'); return; }
+        /* any kind of file (JP 2026-11-23 "save other file formats in papers too"): photos are made smaller, everything else is kept as it is, up to 15 MB */
+        var img = !pdf && isImg(f);
+        if (!pdf && !img && f.size > 15e6) { bad.push(f.name + ' (over 15 MB)'); return; }
         var id = 'pp-' + uid();
-        return (pdf ? Promise.resolve(f) : shrink(f)).then(function (b) { return putF(id, b).then(function () { if (window.FileSync) window.FileSync.up(id, b); out.push({ id: id, name: f.name || (pdf ? 'Document.pdf' : 'Photo.jpg'), type: pdf ? 'pdf' : 'img', size: b.size, at: today() }); }); })
+        return (img ? shrink(f) : Promise.resolve(f)).then(function (b) { return putF(id, b).then(function () { if (window.FileSync) window.FileSync.up(id, b); out.push({ id: id, name: f.name || (pdf ? 'Document.pdf' : img ? 'Photo.jpg' : 'File'), type: pdf ? 'pdf' : img ? 'img' : 'file', size: b.size, at: today() }); }); })
           .catch(function () { bad.push(f.name + ' (couldn’t read it)'); });
       });
     }, Promise.resolve()).then(function () { askKeep(); return { files: out, bad: bad }; });
@@ -151,8 +156,8 @@
     if (preset) { t.value = preset[0]; if (preset[2] && !(FORMS[kk0] || {}).dk) { var dk = document.getElementById('kf-dateKind'); if (dk) dk.value = preset[2]; } var ev = document.getElementById('kf-every'); if (ev && preset[2] === 'renews' && !ev.value) ev.value = '1'; }
     var box = document.createElement('div'); box.className = 'cl-group pa-pick';
     var n = item && item.files ? item.files.length : 0;
-    box.innerHTML = '<label class="st-row kit-row"><span>' + (n ? 'Add more files' : 'File') + '</span><span class="pa-pickbtn"><i class="bi bi-paperclip"></i> <span data-papickt>' + (n ? n + ' saved · add' : 'PDF or photos') + '</span></span>' +
-      '<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-papick></label><small class="kit-help">' + (syncs() ? 'Encrypted and synced to your other devices' : 'Kept on this device') + ' – PDF up to 15 MB, photos are made smaller.</small>';
+    box.innerHTML = '<label class="st-row kit-row"><span>' + (n ? 'Add more files' : 'File') + '</span><span class="pa-pickbtn"><i class="bi bi-paperclip"></i> <span data-papickt>' + (n ? n + ' saved · add' : I18N.k('ui.pa-any-file', 'PDF, photo or any file')) + '</span></span>' +
+      '<input type="file" multiple hidden data-papick></label><small class="kit-help">' + (syncs() ? 'Encrypted and synced to your other devices' : 'Kept on this device') + ' – ' + esc(I18N.k('ui.pa-file-help', 'any file up to 15 MB; photos are made smaller.')) + '</small>';
     var anchor = document.getElementById('kf-kind'); anchor = anchor && (anchor.closest('.kit-gwrap') || anchor.closest('.cl-group'));
     if (anchor && anchor.nextSibling) anchor.parentNode.insertBefore(box, anchor.nextSibling); else t.parentNode.appendChild(box);
     box.querySelector('[data-papick]').addEventListener('change', function (e) {
@@ -188,7 +193,7 @@
         var sug = COMMON.filter(function (c) { var w = c[0].toLowerCase().split(' (')[0]; return !have.some(function (t) { return t.indexOf(w) > -1; }); }).slice(0, 6);
         if (sug.length) h += '<div class="pa-sug"><span>' + esc(l.length ? I18N.k('ui.pa-also-keep', 'Also worth keeping') : I18N.k('ui.pa-start-with', 'Start with')) + '</span>' + sug.map(function (c) { return '<button type="button" class="pa-sugb" data-pasug="' + esc(c[0]) + '"><i class="bi bi-plus"></i> ' + esc(c[0]) + '</button>'; }).join('') + '</div>';
       }
-      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> <span data-t="ui.add-several-files">Add several files</span><input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-pabulk></label><label class="pill-btn pa-scanb"><i class="bi bi-camera"></i> <span>' + esc(I18N.k('ui.pa-scan', 'Scan with the camera')) + '</span><input type="file" accept="image/*" capture="environment" hidden data-pascan></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
+      h += '<div class="pa-bulk"><label class="pill-btn"><i class="bi bi-files"></i> <span data-t="ui.add-several-files">Add several files</span><input type="file" multiple hidden data-pabulk></label><label class="pill-btn pa-scanb"><i class="bi bi-camera"></i> <span>' + esc(I18N.k('ui.pa-scan', 'Scan with the camera')) + '</span><input type="file" accept="image/*" capture="environment" hidden data-pascan></label><small data-t="ui.each-file-becomes-a-paper-check-the-name">Each file becomes a paper – check the names and kinds, then add the dates later</small></div>';
       var files = 0, miss = 0, onSrv = 0, wait = 0, fs = window.FileSync ? window.FileSync.state() : null;
       l.forEach(function (x) { (x.files || []).forEach(function (f) { files++; var h0 = !here || here[f.id], sv = fs && fs.server && f.id in fs.server; if (!h0) miss++; if (sv) onSrv++; else if (h0) wait++; }); });
       var msg;
@@ -219,12 +224,12 @@
         '<ul class="pa-files">' + files.map(function (f) {
           var hereNow = !here || here[f.id];
           return '<li data-paf="' + esc(f.id) + '"' + (hereNow ? '' : ' class="gone"') + '>' +
-            (f.type === 'img' && hereNow ? '<img data-paimg="' + esc(f.id) + '" alt="">' : '<i class="bi bi-' + (f.type === 'pdf' ? 'file-earmark-pdf' : 'image') + '"></i>') +
+            (f.type === 'img' && hereNow ? '<img data-paimg="' + esc(f.id) + '" alt="">' : '<i class="bi bi-' + ficon(f) + '"></i>') +
             '<a class="pa-fn" target="_blank" rel="noopener" data-paopen="' + esc(f.id) + '"><b>' + esc(f.name) + '</b><small>' + (hereNow ? esc(size(f.size || 0)) + ' · added ' + esc(fmt(f.at)) : onServer(f.id) ? 'Downloading …' : 'Only on the device it was added on – open Papers there once to sync it') + '</small></a>' +
             (hereNow ? '<a class="icon-btn" data-padl="' + esc(f.id) + '" download="' + esc(f.name) + '" aria-label="Save a copy" title="Save a copy"><i class="bi bi-download"></i></a>' : '') +
             '<button type="button" class="icon-btn" data-pafdel="' + esc(x.id + '|' + f.id) + '" aria-label="Remove file" title="Remove file"><i class="bi bi-x-lg"></i></button></li>';
         }).join('') + '</ul>' +
-        '<label class="text-btn pa-addf"><i class="bi bi-paperclip"></i> ' + (files.length ? 'Add another file' : 'Add the PDF or a photo') + '<input type="file" accept="application/pdf,.pdf,image/*" multiple hidden data-paadd="' + esc(x.id) + '"></label>' +
+        '<label class="text-btn pa-addf"><i class="bi bi-paperclip"></i> ' + (files.length ? 'Add another file' : I18N.k('ui.pa-add-file', 'Add a file')) + '<input type="file" multiple hidden data-paadd="' + esc(x.id) + '"></label>' +
         (x.notes ? '<p class="kit-notes">' + esc(x.notes) + '</p>' : '');
     },
     afterRender: function (el) {
@@ -256,12 +261,12 @@
   function guessKind(n) { for (var i = 0; i < GUESS.length; i++) if (GUESS[i][0].test(n)) return GUESS[i][1]; return 'other'; }
   function cleanName(n) { var t = String(n || '').replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim(); if (/^(img|image|scan|dok|doc|document|pxl|photo)\s?\d*/i.test(t) || !t) t = ''; return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
   function bulk(list) {
-    var H = window.HomeLife, fl = Array.prototype.slice.call(list || []).filter(function (f) { return isPdf(f) || /^image\//.test(f.type || '') || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name || ''); });
+    var H = window.HomeLife, fl = Array.prototype.slice.call(list || []);
     if (!fl.length) { toast(I18N.k('ui.only-pdfs-and-photos-can-be-added', 'Only PDFs and photos can be added')); return; }
     if (!H || !H.dialog) return;
     var opts = KINDS.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('');
     var rows = fl.map(function (f, i) { var nm = cleanName(f.name), k = guessKind(f.name);
-      return '<li class="pa-brow"><span class="pa-bico"><i class="bi bi-' + (isPdf(f) ? 'file-earmark-pdf' : 'image') + '"></i></span><input data-pbn="' + i + '" maxlength="120" value="' + esc(nm) + '" placeholder="' + esc(f.name) + '"><select data-pbk="' + i + '">' + opts.replace('value="' + k + '"', 'value="' + k + '" selected') + '</select><button type="button" class="icon-btn sm" data-pbx="' + i + '" aria-label="Leave this one out"><i class="bi bi-x-lg"></i></button></li>'; }).join('');
+      return '<li class="pa-brow"><span class="pa-bico"><i class="bi bi-' + ficon(f) + '"></i></span><input data-pbn="' + i + '" maxlength="120" value="' + esc(nm) + '" placeholder="' + esc(f.name) + '"><select data-pbk="' + i + '">' + opts.replace('value="' + k + '"', 'value="' + k + '" selected') + '</select><button type="button" class="icon-btn sm" data-pbx="' + i + '" aria-label="Leave this one out"><i class="bi bi-x-lg"></i></button></li>'; }).join('');
     var d = H.dialog(H.dhead('files', fl.length + (fl.length === 1 ? ' file' : ' files'), I18N.k('ui.each-becomes-its-own-paper-the-kind-is-g', 'Each becomes its own paper. The kind is guessed from the file name – change what’s wrong.')) +
       '<ul class="pa-blist">' + rows + '</ul><div class="pa-bacts"><button type="button" class="pill-btn" data-pbgo><i class="bi bi-check2"></i> <span data-t="ui.add"><span data-t="ui.add">Add</span></span> <span data-pbn2>' + fl.length + '</span> papers</button></div>', function (e, close) {
       var x = e.target.closest('[data-pbx]');
