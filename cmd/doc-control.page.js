@@ -264,7 +264,8 @@
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
   open = hashId();
-  function go(id) { open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
+  function go(id) { if (flowOn() && id !== open) setTab('');   /* the new flow picks the step that fits the project */
+    open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
   /* "‹ Documentation" always goes to the list (one tab: the step before may be the project's Requirements) – a step back in the
      browser's history only when that is where it leads */
   function home0() { open = null; ropen = null; openLine = null; rpicking = false; editing = false; redit = false; }
@@ -520,7 +521,7 @@
     return out;
   }
   function flowFull(p) {
-    if (FLOW.indexOf(tab) < 0 && tab !== 'report') tab = (p.files || []).length ? 'cmp' : (p.lines || []).length ? 'plan' : 'krav';
+    if (FLOW.indexOf(tab) < 0 && tab !== 'report') tab = (p.files || []).length ? 'cmp' : (p.lines || []).length || !kravOf(p) ? 'plan' : 'krav';   /* a project opens on the step that fits it, not the one you had open in another (JP 2026-11-23) */
     var L = p.lines || [], c = counts(L), F = p.files || [], r = kravOf(p), pc = planCheck(p), iss = flowIssues(p), loose = looseFiles(p).length;
     var got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }).length, miss = L.length - got;
     var verdict = !F.length && !got ? ['ne', k('ui.dc-fl-wait', 'Waiting for the delivery')] : iss.length ? ['no', k('ui.dc-fl-not-done', 'Not complete · {n} to fix', { n: iss.length })] : c.recv ? ['wa', k('ui.dc-fl-waiting', '{n} waiting for approval', { n: c.recv })] : ['ok', k('ui.dc-fl-done', 'Complete')];
@@ -532,7 +533,7 @@
     var cur = tab === 'report' ? 'end' : tab;
     var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span></div>' +
-      '<nav class="dc-fsteps" role="tablist" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + FLOW.map(function (t, i) { return '<button type="button" role="tab" aria-selected="' + (t === cur) + '" data-dctab="' + t + '"><b><span class="dc-fn">' + (i + 1) + '</span>' + esc(names[t]) + '</b><small>' + esc(subs[t]) + '</small></button>'; }).join('') + '</nav>';
+      '<nav class="dc-fsteps" role="tablist" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + FLOW.map(function (t, i) { return '<button type="button" role="tab" aria-selected="' + (t === cur) + '" data-dctab="' + t + '"><b><span class="dc-fn">' + (i + 1) + '</span><span class="dc-fname">' + esc(names[t]) + '</span></b><small>' + esc(subs[t]) + '</small></button>'; }).join('') + '</nav>';
     var body = tab === 'report' ? reportTab(p) : cur === 'krav' ? flowKrav(p, r) : cur === 'plan' ? flowPlan(p, pc) : cur === 'lev' ? files(p) : cur === 'cmp' ? flowCmp(p, loose) : flowEnd(p, iss, verdict, c);
     return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + flowSwitch() + '</div></div>';
   }

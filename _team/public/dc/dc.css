@@ -1290,3 +1290,5 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 @media (max-width: 560px) {
   .dc-fedit { padding-left: 0; }
 }
+.dc-fsteps b { min-width: 0; }
+.dc-fname { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

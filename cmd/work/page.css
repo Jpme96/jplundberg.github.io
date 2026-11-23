@@ -835,3 +835,5 @@ html.dcn-modal { overflow: hidden; }
 .dc-fopen > .bi { color: var(--muted); }
 .dc-fedit { flex: 1 1 100%; padding: 6px 0 4px 56px; }
 @media (max-width: 560px) { .dc-fedit { padding-left: 0; } }
+.dc-fsteps b { min-width: 0; }
+.dc-fname { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }   /* narrow windows: names shorten, never run into the next step (JP 2026-11-23) */

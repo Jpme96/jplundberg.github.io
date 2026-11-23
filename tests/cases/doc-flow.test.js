@@ -18,6 +18,11 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => { const c = document.querySelector('[data-dcflow]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   const st = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.dataset.dctab).join());
   check(st === 'krav,plan,lev,cmp,end', 'on: five steps in the order the work goes ' + st);
+  /* a narrow window: the step names shorten, never run into the next step (JP 2026-11-23) */
+  const vp = p.viewport(); await p.setViewport({ width: 760, height: 900 }); await sl(400);
+  const ov = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps button')].filter(b => { const n = b.querySelector('.dc-fname'); return n && n.getBoundingClientRect().right > b.getBoundingClientRect().right - 2; }).map(b => b.dataset.dctab));
+  check(!ov.length, 'at 760 px no step name runs past its step ' + ov.join());
+  await p.setViewport(vp); await sl(300);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
   check(await p.evaluate(() => /Made-up plan\.xlsx/.test(document.querySelector('.dc-flow').textContent) && !!document.querySelector('.dc-flow input[data-dcplan]')), 'Dokumentplan: the imported plan, checked, with Import a new version');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
