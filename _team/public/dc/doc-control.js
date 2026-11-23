@@ -494,8 +494,8 @@
      Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll. It is a view on the same project: the plan reading, the
      matching, the statuses and the report are the ones above. ---------- */
   var FLOW = ['krav', 'plan', 'lev', 'cmp', 'end'], cmpPile = 'got';
-  function flowOn() { try { return localStorage.getItem('dash.dcFlow') === '1'; } catch (e) { return false; } }
-  function flowSwitch() { return '<label class="dcn-sw dc-flowsw"><input type="checkbox" data-dcflow' + (flowOn() ? ' checked' : '') + '> ' + esc(k('ui.dc-flow-switch', 'New project flow (test, only on this device)')) + '</label>'; }
+  function flowOn() { try { if (localStorage.getItem('dash.dcFlow') === '0') return false; } catch (e) {}   /* the old view, kept for the tests of it */
+    if (HOST && HOST.flowOn) return HOST.flowOn(); try { return localStorage.getItem('dash.dcFlow') !== '0'; } catch (e) { return true; } }   /* the standard from 2026-11-23 (JP "implement the new flow"); in Team an admin turns it on or off for the whole team (Settings) */
   /* the plan held up against the requirements: each line by the client's checklist (planIssues), and the project's own requirements
      that the plan leaves out */
   function planCheck(p) {
@@ -536,7 +536,7 @@
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span></div>' +
       '<nav class="dc-fsteps" role="tablist" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + FLOW.map(function (t, i) { return '<button type="button" role="tab" aria-selected="' + (t === cur) + '" data-dctab="' + t + '"><b><span class="dc-fn">' + (i + 1) + '</span><span class="dc-fname">' + esc(names[t]) + '</span></b><small>' + esc(subs[t]) + '</small></button>'; }).join('') + '</nav>';
     var body = tab === 'report' ? reportTab(p) : cur === 'krav' ? flowKrav(p, r) : cur === 'plan' ? flowPlan(p, pc) : cur === 'lev' ? files(p) : cur === 'cmp' ? flowCmp(p, loose) : flowEnd(p, iss, verdict, c);
-    return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + flowSwitch() + '</div></div>';
+    return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + '</div></div>';
   }
   function fnext(t, label) { return '<div class="dc-fnext"><button type="button" class="pill-btn" data-dctab="' + t + '">' + esc(label) + ' <i class="bi bi-chevron-right"></i></button></div>'; }
   function flowRow(code, title, sub, chipHtml, extra, p, l) {
@@ -602,7 +602,7 @@
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div>' + (c.all ? '<b class="dc-pc">' + Math.round(c.done / c.all * 100) + ' %</b>' : '') + '</div>' +
       steps(tab === 'report' ? 'rap' : 'mot', kravOf(p), p) + (tab === 'report' ? '' : '<nav class="fdv-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (t[0] === tab) + '" data-dctab="' + t[0] + '"><i class="bi bi-' + t[2] + '"></i> ' + esc(t[1]) + '</button>'; }).join('') + '</nav>');
     var body = tab === 'over' ? over(p) : tab === 'docs' ? docs(p) : tab === 'files' ? files(p) : reportTab(p);
-    return '<div class="fdv-page dc-page">' + head + '<div class="fdv-body">' + body + (tab === 'over' ? flowSwitch() : '') + '</div></div>';
+    return '<div class="fdv-page dc-page">' + head + '<div class="fdv-body">' + body + '</div></div>';
   }
   function bar(c) {
     var seg = [['ok', c.ok + c.na], ['cmt', c.cmt], ['recv', c.recv], ['rej', c.rej], ['missing', c.missing]].filter(function (s) { return s[1]; });
@@ -2001,7 +2001,6 @@
     if (t.dataset.dcfromkrav && t.value) { var kk = krav(t.value), pid = t.dataset.dcfromkrav; if (!kk) return; var addk = 0;
       saveP(pid, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = (kk.lines || []).filter(function (l) { return !have[l.code + '|' + l.t]; }).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }); addk = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.doc-req', 'Document requirements') + ': ' + kk.name; p.planAt = today(); } p.krav = kk.id; rematch(p); });
       toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: addk }))); draw(); return; }
-    if (t.matches && t.matches('[data-dcflow]')) { try { localStorage.setItem('dash.dcFlow', t.checked ? '1' : '0'); } catch (e) {} if (!t.checked && FLOW.indexOf(tab) >= 0) setTab('over'); draw(); return; }
     if (t.dataset.dcplan && t.files && t.files[0]) { importPlan(t.dataset.dcplan, t.files[0]); t.value = ''; return; }
     if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
     if (t.matches('[data-dcreq]') && t.files && t.files[0]) { importReq(t.files[0]); t.value = ''; return; }

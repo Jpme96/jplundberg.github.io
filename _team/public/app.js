@@ -786,7 +786,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<button class="t-btn ghost wide sm" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
       (adm ? '<div class="t-setsec">' + sec(L('The team', 'Teamet')) +
         '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
-        dtabsAdmin() + clockAdmin() +
+        dtabsAdmin() + flowAdmin() + clockAdmin() +
         '<div class="t-setrow"><span><b>' + L('Backup', 'Sikkerhetskopi') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div></div>' : '') +
       '<div class="t-setsec">' + sec(L('Account', 'Konto')) +
         '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
@@ -893,7 +893,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
       window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: teamNs },
         /* NS code names for the whole team (JP 2026-11-17 09:37): one encrypted settings record (cfgnsnames), written by admins */
-        nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); },
+        nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); }, flowOn: function () { return flowCfgOn(); },
         uplink: function (pid) { if (rank() < 1) return; S.fproj = pid; uplinkSheet(); } };   /* Filer → "Entreprenøren har dem": the upload-link sheet with this project chosen */
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
@@ -1385,6 +1385,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   async function clockIn() { if (clockRun(S.me.email)) return; var id = 'clk' + rid(); if (await putRec('clk', id, { who: S.me.email, start: Date.now(), end: 0 })) { draw(); toast(L('Clocked in', 'Stemplet inn')); } }
   async function clockOut() { var r = clockRun(S.me.email); if (!r) return; if (await putRec('clk', r.id, Object.assign({}, r.d, { end: Date.now() }))) { draw(); toast(L('Clocked out · ', 'Stemplet ut · ') + dur(Date.now() - r.d.start)); } }
   /* admins: the switch for the whole team and one per person */
+  /* the new project flow in Documentation (JP 2026-11-23): on for the whole team unless an admin turns it off (record cfgflow, kind cfg) */
+  function flowCfgOn() { var r = S.recs.cfgflow; return !(r && !r.del && r.d && r.d.on === false); }
+  function flowAdmin() {
+    if (rank() < 3) return '';
+    var on = flowCfgOn();
+    return '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p><label class="t-switch"><span><b>' + L('New project flow', 'Ny prosjektflyt') + '</b><small>' + (on ? L('On – projects go Requirements → Document plan → Delivery → Comparison → Final check.', 'På – prosjektene går Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll.') : L('Off – projects show the old view (Requirements, Received, Report).', 'Av – prosjektene viser den gamle visningen (Krav, Mottak, Rapport).')) + '</small></span><input type="checkbox" data-flowteam' + (on ? ' checked' : '') + '></label>';
+  }
+  async function flowSet(on) { if (await putRec('cfg', 'cfgflow', { on: !!on }, L('Project flow', 'Prosjektflyt'))) { if (S.sheet) settingsSheet(); draw(); } }
   function clockAdmin() {
     if (rank() < 3) return '';
     var c = clockCfg();
@@ -1500,6 +1508,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (t.dataset.accpp && S.accEdit) { var ap = t.dataset.accpp.split('|'), o = S.accEdit.pp[ap[0]] || (S.accEdit.pp[ap[0]] = {}); if (t.value) o[ap[1]] = t.value; else delete o[ap[1]]; if (!Object.keys(o).length) delete S.accEdit.pp[ap[0]]; S.accOpen = true; draw(); return; }
     if (t.hasAttribute('data-dtoff')) return dtabsSet(t.dataset.dtoff, t.checked);
     if (t.hasAttribute('data-clockteam')) return clockSet({ on: t.checked });
+    if (t.hasAttribute('data-flowteam')) return flowSet(t.checked);
     if (t.dataset.clockm) return clockSet({ who: t.dataset.clockm, allow: t.checked });
     if (t.hasAttribute('data-push')) { setPush(t.checked).then(function () { t.checked = pushOn(); }); return; }
     if (t.name === 'fproj') { S.fproj = t.value; return; }

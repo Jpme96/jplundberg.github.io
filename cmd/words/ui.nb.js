@@ -920,7 +920,6 @@ I18N.add({
   "ui.dc-fl-why-krav": ["Required by the project", "Kreves av prosjektet"],
   "ui.dc-fl-why-list": ["On the list", "Står på listen"],
   "ui.dc-fl-why-plan": ["In the document plan", "Står i dokumentplanen"],
-  "ui.dc-flow-switch": ["New project flow (test, only on this device)", "Ny prosjektflyt (test, bare på denne enheten)"],
   "ui.dc-add-line": ["Add a line", "Legg til en linje"],
   "ui.dc-add-line-ph": ["What it is, e.g. Samsvarserklæring membran", "Hva det er, f.eks. Samsvarserklæring membran"],
   "ui.dc-approved": ["Approved", "Godkjent"],

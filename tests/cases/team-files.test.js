@@ -20,7 +20,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.setViewport({ width: 420, height: 860, isMobile: true, hasTouch: true });
   await own.setCookie({ name: 'who', value: 'owner%40x.no', domain: 'localhost', path: '/' });
   own.on('pageerror', e => errs.push(e.message));
-  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); window.__blobs = []; const o = URL.createObjectURL; URL.createObjectURL = function (x) { window.__blobs.push(x); return o.call(URL, x); }; HTMLAnchorElement.prototype.click = function () {}; });
+  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); localStorage.setItem('dash.dcFlow', '0'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); window.__blobs = []; const o = URL.createObjectURL; URL.createObjectURL = function (x) { window.__blobs.push(x); return o.call(URL, x); }; HTMLAnchorElement.prototype.click = function () {}; });
   const text = () => own.evaluate(() => document.body.innerText);
 
   /* set up a team and import a project */
@@ -36,6 +36,14 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(own, () => /Imported/.test(document.body.innerText) || location.hash.startsWith('#dc='), 15000), 'a made-up project is imported');
   await sl(800);
 
+  /* the new project flow: on for the team unless an admin turns it off in Settings (JP 2026-11-23 "only admin can turn on and off") */
+  await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(500);
+  const fl0 = await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c ? c.checked : null; });
+  check(fl0 === true, 'Settings (admin): New project flow, on by default ' + fl0);
+  await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(800);
+  check(await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c && !c.checked; }), 'an admin can turn it off for the team');
+  await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(800);
+  await own.evaluate(() => { const x = document.querySelector('[data-act=close]'); if (x) x.click(); }); await sl(300);
   /* overview: all projects at a glance, and the week */
   await own.goto(T + '#overview'); await sl(1200);
   const ov = await text();

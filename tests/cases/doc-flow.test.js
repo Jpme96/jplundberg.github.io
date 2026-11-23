@@ -1,5 +1,5 @@
 /* The new project flow (JP 2026-11-23, a test – switched on per device): Krav → Dokumentplan → Levering → Sammenligning →
-   Sluttkontroll, a view on the same project. With a plan: the plan is checked against the requirements, the delivery is compared
+   Sluttkontroll – the standard since 2026-11-23 (in Team an admin can turn it off) – a view on the same project. With a plan: the plan is checked against the requirements, the delivery is compared
    in three piles, and the final check says what to put right. Without a plan: a plan is made from the delivery. Off: as before.
    Made-up data only. */
 const { open, go, sl } = require('../lib/browser'); const { check, done } = require('../lib/check');
@@ -14,10 +14,8 @@ const fs = require('fs'), os = require('os'), path = require('path');
     const L = [['234', 'E', '234 DA Vindu madeup'], ['234', 'BC', '234 DV Vindu madeup'], ['261', 'E', '261 DA Takstein madeup']].map((x, i) => ({ id: 'l' + i, code: x[0], t: x[1], planned: x[2], st: 'missing', files: [] }));
     t.dctl = [{ id: 'fp1', name: 'Made-up flow', lines: L, files: [], planName: 'Made-up plan.xlsx' }, { id: 'fp2', name: 'Made-up no plan', lines: [], files: [] }]; Features.saveTools(t); });
   await go(p, 'work/#dc=fp1', 2500);
-  check(await p.evaluate(() => !document.querySelector('.dc-fsteps') && !!document.querySelector('[data-dcflow]')), 'off by default: the project is as before, with the switch on its overview');
-  await p.evaluate(() => { const c = document.querySelector('[data-dcflow]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   const st = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.dataset.dctab).join());
-  check(st === 'krav,plan,lev,cmp,end', 'on: five steps in the order the work goes ' + st);
+  check(st === 'krav,plan,lev,cmp,end', 'the standard: five steps in the order the work goes ' + st);
   /* a narrow window: the step names shorten, never run into the next step (JP 2026-11-23) */
   const vp = p.viewport(); await p.setViewport({ width: 760, height: 900 }); await sl(400);
   const ov = await p.evaluate(() => [...document.querySelectorAll('.dc-fsteps button')].filter(b => { const n = b.querySelector('.dc-fname'); return n && n.getBoundingClientRect().right > b.getBoundingClientRect().right - 2; }).map(b => b.dataset.dctab));
@@ -49,9 +47,6 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('[data-dcmkplan]').click()); await sl(500);
   const np = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), linked: r.files.filter(f => f.line).length, v7: !!document.querySelector('[data-dcvx7]') }; });
   check(np.lines === '234 E recv,261 E recv' && np.linked === 2 && np.v7, 'no plan: a plan is made from the delivered files, linked, ready as Vedlegg 7 ' + JSON.stringify(np));
-  /* off again: as before */
-  await p.evaluate(() => { const c = document.querySelector('[data-dcflow]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
-  check(await p.evaluate(() => !document.querySelector('.dc-fsteps') && !!document.querySelector('.fdv-tabs')), 'switched off: back to the project as before');
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();

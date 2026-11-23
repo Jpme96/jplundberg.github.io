@@ -126,7 +126,6 @@ window.DC_NB = {
 "ui.dc-fl-why-krav": "Kreves av prosjektet",
 "ui.dc-fl-why-list": "Står på listen",
 "ui.dc-fl-why-plan": "Står i dokumentplanen",
-"ui.dc-flow-switch": "Ny prosjektflyt (test, bare på denne enheten)",
 "ui.dc-for-team": "til Team",
 "ui.dc-from-checklist": "Fra sjekklisten",
 "ui.dc-from-krav": "Bruk dokumentkrav …",
