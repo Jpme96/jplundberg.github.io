@@ -41,8 +41,15 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   const fl0 = await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c ? c.checked : null; });
   check(fl0 === true, 'Settings (admin): New project flow, on by default ' + fl0);
   await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(800);
-  check(await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c && !c.checked; }), 'an admin can turn it off for the team');
+  await own.evaluate(() => { const x = document.querySelector('[data-act=close]'); if (x) x.click(); }); await sl(300); await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(500);
+  check(await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c && !c.checked && window.DocHost && DocHost.flowOn && DocHost.flowOn() === false; }), 'an admin can turn it off for the team (saved: still off when Settings opens again)');
   await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(800);
+  /* the team's colours (JP 2026-11-23): an admin picks a palette, everyone in the team gets it */
+  await own.evaluate(() => document.querySelector('[data-act=pal][data-pal=dgreen]').click()); await sl(900);
+  const pal = await own.evaluate(() => ({ attr: document.documentElement.getAttribute('data-pal'), acc: getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(), on: (document.querySelector('.t-pal[aria-checked=true]') || { getAttribute: () => '' }).getAttribute('data-pal') }));
+  check(pal.attr === 'dgreen' && pal.acc === '#034b45' && pal.on === 'dgreen', 'an admin picks the team colours (dark green) ' + JSON.stringify(pal));
+  await own.evaluate(() => document.querySelector('[data-act=pal][data-pal=std]').click()); await sl(900);
+  check(await own.evaluate(() => !document.documentElement.getAttribute('data-pal')), 'and back to the standard colours');
   await own.evaluate(() => { const x = document.querySelector('[data-act=close]'); if (x) x.click(); }); await sl(300);
   /* overview: all projects at a glance, and the week */
   await own.goto(T + '#overview'); await sl(1200);

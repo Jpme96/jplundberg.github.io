@@ -29,7 +29,30 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 12000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
 (function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
-  theme(); window.__teamTheme = theme; if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme); } catch (e) {} })();
+  theme(); window.__teamTheme = theme;
+  /* each team's colours (JP 2026-11-23): an admin picks a palette; built from Oslo kommune's public colours (Punkt) – dark blue
+     #2a2859, warm blue #1f42aa, dark green #034b45, green #43f8b6, yellow #f9c66b, red #ff8274, purple #e0adff, beige #d0bfae, blue #6fe9ff.
+     Light accents carry text in dark blue (the design manual's rule); in dark mode the bright colour is the accent. */
+  var PAL = {
+    std: null,
+    mblue: { n: ['Dark blue', 'Mørkeblå'], sw: '#2a2859', l: ['#2a2859', '42, 40, 89', '#ffffff', 'rgba(111, 233, 255, .22)', '#f3fbfd'], d: ['#6fe9ff', '111, 233, 255', '#2a2859', 'rgba(111, 233, 255, .14)'] },
+    wblue: { n: ['Warm blue', 'Varm blå'], sw: '#1f42aa', l: ['#1f42aa', '31, 66, 170', '#ffffff', 'rgba(31, 66, 170, .09)', '#f4f7fd'], d: ['#9db4ff', '157, 180, 255', '#0d1a40', 'rgba(157, 180, 255, .15)'] },
+    dgreen: { n: ['Dark green', 'Mørkegrønn'], sw: '#034b45', l: ['#034b45', '3, 75, 69', '#ffffff', 'rgba(67, 248, 182, .2)', '#f2faf6'], d: ['#43f8b6', '67, 248, 182', '#034b45', 'rgba(67, 248, 182, .14)'] },
+    yellow: { n: ['Yellow', 'Gul'], sw: '#f9c66b', l: ['#2a2859', '42, 40, 89', '#ffffff', 'rgba(249, 198, 107, .38)', '#fdf8ee'], d: ['#f9c66b', '249, 198, 107', '#2a2859', 'rgba(249, 198, 107, .16)'] },
+    red: { n: ['Red', 'Rød'], sw: '#ff8274', l: ['#2a2859', '42, 40, 89', '#ffffff', 'rgba(255, 130, 116, .26)', '#fff6f5'], d: ['#ff8274', '255, 130, 116', '#2a2859', 'rgba(255, 130, 116, .16)'] },
+    purple: { n: ['Purple', 'Lilla'], sw: '#e0adff', l: ['#2a2859', '42, 40, 89', '#ffffff', 'rgba(224, 173, 255, .35)', '#faf6fd'], d: ['#e0adff', '224, 173, 255', '#2a2859', 'rgba(224, 173, 255, .16)'] },
+    beige: { n: ['Beige', 'Beige'], sw: '#d0bfae', l: ['#2a2859', '42, 40, 89', '#ffffff', 'rgba(208, 191, 174, .42)', '#f8f0dd'], d: ['#d0bfae', '208, 191, 174', '#2a2859', 'rgba(208, 191, 174, .16)'] }
+  };
+  window.__teamPals = PAL;
+  window.__teamPal = function (id) {
+    var p = PAL[id] || null, st = document.getElementById('tPal');
+    if (!p) { if (st) st.remove(); document.documentElement.removeAttribute('data-pal'); return; }
+    if (!st) { st = document.createElement('style'); st.id = 'tPal'; document.head.appendChild(st); }
+    st.textContent = ':root { --acc: ' + p.l[0] + '; --acc-rgb: ' + p.l[1] + '; --acc-ink: ' + p.l[2] + '; --acc-soft: ' + p.l[3] + '; --bg: ' + p.l[4] + '; }\n' +
+      ':root[data-theme="dark"] { --acc: ' + p.d[0] + '; --acc-rgb: ' + p.d[1] + '; --acc-ink: ' + p.d[2] + '; --acc-soft: ' + p.d[3] + '; }';
+    document.documentElement.setAttribute('data-pal', id);
+  };
+  try { var t0 = localStorage.getItem('team.cur') || 'team'; window.__teamPal(localStorage.getItem('team.pal.' + t0) || ''); } catch (e) {} if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme); } catch (e) {} })();
 
 /* errors into cmd's error list (2026-11-20, JP): Team's own script errors, masked here (no numbers, no emails, never
    who it was), are sent to Team's server every few seconds and when the page closes; cmd's error list shows them as "Team". */
@@ -452,7 +475,18 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   S.tab = function () { var h = location.hash.slice(1); if (/^(docs|files|d[cr]=|in=)/.test(h) && !dtabsOn().length) return 'overview'; if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
   window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
 
+  function palCfg() { var r = S.recs.cfgpalette; return r && !r.del && r.d && window.__teamPals && window.__teamPals[r.d.p] ? r.d.p : 'std'; }
+  function palSync() { var id = palCfg(), cur = document.documentElement.getAttribute('data-pal') || 'std'; if (id !== cur) window.__teamPal(id === 'std' ? '' : id); try { localStorage.setItem('team.pal.' + S.tid, id === 'std' ? '' : id); } catch (e) {} }
+  function palAdmin() {
+    if (rank() < 3 || !window.__teamPals) return '';
+    var P = window.__teamPals, cur = palCfg(), ids = ['std'].concat(Object.keys(P).filter(function (k) { return P[k]; }));
+    return '<p class="t-h">' + L('Colours', 'Farger') + '</p><div class="t-pals" role="radiogroup" aria-label="' + L('The team\'s colours', 'Teamets farger') + '">' + ids.map(function (id) {
+      var p = P[id], name = id === 'std' ? L('Berry (standard)', 'Bær (standard)') : L(p.n[0], p.n[1]), sw = id === 'std' ? '#9d174d' : p.sw;
+      return '<button type="button" class="t-pal" role="radio" aria-checked="' + (id === cur) + '" data-act="pal" data-pal="' + id + '"><span class="t-palsw" style="background:' + sw + '"></span>' + esc(name) + '</button>'; }).join('') +
+      '</div><p class="t-small">' + L('Everyone in the team sees these colours. Built from Oslo kommune\'s colour palette.', 'Alle i teamet ser disse fargene. Laget ut fra Oslo kommunes fargepalett.') + '</p>';
+  }
   function draw() {
+    palSync();
     if (!S.me || !S.me.member) return;
     S.stale = false;
     clearTimeout(S.needsT); S.needsT = setTimeout(pushNeeds, 2500);   /* the contractors' lists follow the project */
@@ -786,7 +820,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<button class="t-btn ghost wide sm" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
       (adm ? '<div class="t-setsec">' + sec(L('The team', 'Teamet')) +
         '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
-        dtabsAdmin() + flowAdmin() + clockAdmin() +
+        dtabsAdmin() + palAdmin() + flowAdmin() + clockAdmin() +
         '<div class="t-setrow"><span><b>' + L('Backup', 'Sikkerhetskopi') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div></div>' : '') +
       '<div class="t-setsec">' + sec(L('Account', 'Konto')) +
         '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
@@ -1389,14 +1423,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   async function clockIn() { if (clockRun(S.me.email)) return; var id = 'clk' + rid(); if (await putRec('clk', id, { who: S.me.email, start: Date.now(), end: 0 })) { draw(); toast(L('Clocked in', 'Stemplet inn')); } }
   async function clockOut() { var r = clockRun(S.me.email); if (!r) return; if (await putRec('clk', r.id, Object.assign({}, r.d, { end: Date.now() }))) { draw(); toast(L('Clocked out · ', 'Stemplet ut · ') + dur(Date.now() - r.d.start)); } }
   /* admins: the switch for the whole team and one per person */
-  /* the new project flow in Documentation (JP 2026-11-23): on for the whole team unless an admin turns it off (record cfgflow, kind cfg) */
-  function flowCfgOn() { var r = S.recs.cfgflow; return !(r && !r.del && r.d && r.d.on === false); }
+  /* the new project flow in Documentation (JP 2026-11-23): on for the whole team unless an admin turns it off (record cfgprojflow, kind cfg) */
+  function flowCfgOn() { var r = S.recs.cfgprojflow; return !(r && !r.del && r.d && r.d.on === false); }
   function flowAdmin() {
     if (rank() < 3) return '';
     var on = flowCfgOn();
     return '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p><label class="t-switch"><span><b>' + L('New project flow', 'Ny prosjektflyt') + '</b><small>' + (on ? L('On – projects go Requirements → Document plan → Delivery → Comparison → Final check.', 'På – prosjektene går Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll.') : L('Off – projects show the old view (Requirements, Received, Report).', 'Av – prosjektene viser den gamle visningen (Krav, Mottak, Rapport).')) + '</small></span><input type="checkbox" data-flowteam' + (on ? ' checked' : '') + '></label>';
   }
-  async function flowSet(on) { if (await putRec('cfg', 'cfgflow', { on: !!on }, L('Project flow', 'Prosjektflyt'))) { if (S.sheet) settingsSheet(); draw(); } }
+  async function flowSet(on) { if (await putRec('cfg', 'cfgprojflow', { on: !!on }, L('Project flow', 'Prosjektflyt'))) { if (S.sheet) settingsSheet(); draw(); } }
   function clockAdmin() {
     if (rank() < 3) return '';
     var c = clockCfg();
@@ -1450,6 +1484,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
+    if (a === 'pal') { if (rank() < 3) return; var pid = t.dataset.pal; if (await putRec('cfg', 'cfgpalette', { p: pid }, L('Team colours', 'Teamets farger'))) { palSync(); if (S.sheet) settingsSheet(); draw(); } return; }
     if (a === 'clockIn') return clockIn();
     if (a === 'clockOut') return clockOut();
     if (a === 'teams') return teamsSheet();
