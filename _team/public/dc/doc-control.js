@@ -124,6 +124,7 @@
         if (/^navngivning ref|^dokumentnavnet skal/i.test(planned)) { note = note || ''; planned = ''; }   /* the general naming instruction in the template */
         var L = letters(type);
         if (!type && !planned) continue;
+        if (!planned && !L && /^1/.test(last.code)) { last.n++; continue; }   /* (not counted as a system with no type either) tab 1 (Øvrig dokumentasjon) of Boligbygg's Vedlegg 7 already holds the document's name in the type column: without a planned name the contractor hasn't chosen it (JP 2026-11-23: 111–197 came in as empty lines) */
         last.n++;
         lines.push({ id: uid() + lines.length, code: last.code, sys: (code ? sys : last.sys).slice(0, 160), type: type.slice(0, 80), t: L, planned: planned.replace(/^eksempel:\s*/i, '').slice(0, 160), ex: /^eksempel:/i.test(planned) || undefined,
           note: note.slice(0, 400), fire: last.fire || undefined, resp: (g('resp') || last.resp || '').slice(0, 80), due: g('due').slice(0, 10), st: stMap(g('status')) || 'missing', files: [], src: [si, i] });

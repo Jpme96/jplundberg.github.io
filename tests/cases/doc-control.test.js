@@ -29,7 +29,7 @@ const S3 = [['3 - VVS'], H,
   ['', '', '', '', '', 'Drift, Vedlikehold', '332 DV Sprinkleranlegg', ''],
   ['', '', '', '', '', 'Tegning', '', ''],
   ['3', '336.000', 'Brannslokking med skum', '330 Brannslokking', 'Ja', 'Produktinformasjon', '', '']];
-const S2 = [['2 - Bygning'], H, ['2', '234.000', 'Vinduer, dører, porter', '2 Bygg', 'Nei', 'Produktinformasjon', 'Eksempel: 234 DA Vindu', ''], ['2', '235.000', 'Utvendig kledning', '2 Bygg', 'Nei', 'Drift, Vedlikehold', '', '']];
+const S2 = [['2 - Bygning'], H, ['1', '111.000', 'Kjøpskontrakter', '1 Øvrig dokumentasjon', 'Nei', 'Kjøpskontrakter', '', ''], ['2', '234.000', 'Vinduer, dører, porter', '2 Bygg', 'Nei', 'Produktinformasjon', 'Eksempel: 234 DA Vindu', ''], ['2', '235.000', 'Utvendig kledning', '2 Bygg', 'Nei', 'Drift, Vedlikehold', '', '']];
 const book = zip([
   ['[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>'],
   ['xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Generelt" sheetId="1" r:id="rId1"/><sheet name="3 - VVS" sheetId="2" r:id="rId2"/><sheet name="2 - Bygning" sheetId="3" r:id="rId3"/></sheets></workbook>'],
