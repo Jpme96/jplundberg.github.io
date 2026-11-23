@@ -296,3 +296,14 @@ select { -webkit-appearance: none; appearance: none; padding-right: 42px; backgr
 :root[data-theme="dark"] select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23b3b3bd' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M3.5 6l4.5 4.5L12.5 6'/%3E%3C/svg%3E"); }
 select[multiple] { background-image: none; padding-right: 14px; }
 .t-mxp select { padding-right: 28px; background-position: right 8px center; }
+
+/* settings in tabs, one divider per row (JP 2026-11-23 "clean the settings") */
+.t-settabs { display: flex; gap: 4px; padding: 4px; margin: 4px 0 6px; background: var(--card2); border-radius: 12px; }
+.t-settab { flex: 1; min-height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+.t-settab.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.t-setbody { min-height: 260px; padding-bottom: 8px; }
+.t-setbody > .t-set2 { margin-top: 14px; }
+.t-setbody .t-switch, .t-setbody .t-setrow { margin: 0; border-top: 0; border-bottom: 1px solid var(--line); padding: 12px 0; }
+.t-setbody .t-h { margin: 22px 0 4px; }
+.t-setbody .t-clockppl .t-switch { border-bottom: 0; padding: 8px 0; }
+.t-setbody .t-setbtns { margin-top: 12px; }

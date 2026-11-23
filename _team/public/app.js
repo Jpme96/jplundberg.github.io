@@ -809,23 +809,27 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     } catch (e) { btn.disabled = false; setErr(e.status === 409 ? L('The owner cannot be removed, and the team needs an admin.', 'Eieren kan ikke fjernes, og teamet trenger en admin.') : failMsg(e)); }
   }
 
-  /* Settings in three groups – you, the team (admins), your account – so it is calmer (JP 2026-11-19 22:55) */
+  /* Settings: three tabs – You, The team (admins), Account – one thing per row, so it is calm (JP 2026-11-23 "clean the settings") */
   function settingsSheet() {
-    var adm = rank() >= 3, sec = function (t) { return '<p class="t-h t-seth">' + t + '</p>'; };
-    openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2><p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
-      sec(L('You', 'Deg')) + '<div class="t-set2">' +
+    var adm = rank() >= 3, tabs = [['you', L('You', 'Deg')]].concat(adm ? [['team', L('The team', 'Teamet')]] : []).concat([['acct', L('Account', 'Konto')]]);
+    var tab = tabs.some(function (x) { return x[0] === S.setTab; }) ? S.setTab : 'you', nOn = ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })());
+    var body = tab === 'you' ?
+      '<div class="t-set2">' +
       '<label class="t-lbl">' + L('Appearance', 'Utseende') + '<select data-themepick>' + [['light', L('Light', 'Lys')], ['dark', L('Dark', 'Mørk')], ['auto', L('Like the device', 'Som enheten')]].map(function (o) { var cur = 'light'; try { cur = localStorage.getItem('team.theme') || 'light'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' + '</div>' +
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
-      '<button class="t-btn ghost wide sm" type="button" data-act="notify">' + ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })() ? L('Turn notifications off', 'Slå av varsler') : L('Notify me on this device', 'Varsle meg på denne enheten')) + '</button>' +
-      (adm ? '<div class="t-setsec">' + sec(L('The team', 'Teamet')) +
+      '<div class="t-setrow"><span><b>' + L('Notifications while Team is open', 'Varsler mens Team er åpent') + '</b><small>' + (nOn ? L('On on this device', 'På på denne enheten') : L('Off on this device', 'Av på denne enheten')) + '</small></span><button class="t-btn ghost sm" type="button" data-act="notify">' + (nOn ? L('Turn off', 'Slå av') : L('Turn on', 'Slå på')) + '</button></div>'
+      : tab === 'team' ?
         '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
-        dtabsAdmin() + palAdmin() + flowAdmin() + clockAdmin() +
-        '<div class="t-setrow"><span><b>' + L('Backup', 'Sikkerhetskopi') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div></div>' : '') +
-      '<div class="t-setsec">' + sec(L('Account', 'Konto')) +
+        palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() +
+        '<p class="t-h">' + L('Backup', 'Sikkerhetskopi') + '</p><div class="t-setrow"><span><b>' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div>'
+      : '<p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
         '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
         (S.me.isOwner ? '<button class="t-btn ghost sm t-danger t-setdel" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') + '</div>' +
-      '<p class="t-small t-setfoot">' + L('What you write here is encrypted on your device before it is saved. The server only sees names, emails, roles and times.', 'Det du skriver her, krypteres på enheten din før det lagres. Serveren ser bare navn, e-post, roller og tidspunkter.') + '</p>' +
+      '<p class="t-small t-setfoot">' + L('What you write here is encrypted on your device before it is saved. The server only sees names, emails, roles and times.', 'Det du skriver her, krypteres på enheten din før det lagres. Serveren ser bare navn, e-post, roller og tidspunkter.') + '</p>';
+    openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2>' +
+      '<div class="t-settabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" class="t-settab' + (x[0] === tab ? ' on' : '') + '" aria-selected="' + (x[0] === tab) + '" data-act="settab" data-settab="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="t-setbody">' + body + '</div>' +
       '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
   }
   /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
@@ -1381,7 +1385,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function dtabsAdmin() {
     if (rank() < 3) return '';
     var off = dtabsOff();
-    return '<p class="t-h">' + L('Documents for the team', 'Dokumenter for teamet') + '</p>' + DTABS.map(function (t) { var on = off.indexOf(t[0]) < 0; return '<label class="t-switch"><span><b>' + L(t[1], t[2]) + '</b><small>' + (on ? L('On for everyone in the team', 'På for alle i teamet') : L('Off – nobody sees this tab', 'Av – ingen ser denne fanen')) + '</small></span><input type="checkbox" data-dtoff="' + t[0] + '"' + (on ? ' checked' : '') + '></label>'; }).join('') +
+    return '<p class="t-h">' + L('Documents', 'Dokumenter') + '</p>' + DTABS.map(function (t) { var on = off.indexOf(t[0]) < 0; return '<label class="t-switch"><span><b>' + L(t[1], t[2]) + '</b><small>' + (on ? L('On for everyone in the team', 'På for alle i teamet') : L('Off – nobody sees this tab', 'Av – ingen ser denne fanen')) + '</small></span><input type="checkbox" data-dtoff="' + t[0] + '"' + (on ? ' checked' : '') + '></label>'; }).join('') +
       (off.length === 3 ? '<p class="t-small">' + L('All three are off, so Documents is gone from the menu.', 'Alle tre er av, så Dokumenter er borte fra menyen.') + '</p>' : '');
   }
   function clockCfg() { var r = S.recs.cfgclock; var d = r && !r.del && r.d ? r.d : {}; return { on: !!d.on, off: Array.isArray(d.off) ? d.off : [] }; }
@@ -1428,7 +1432,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function flowAdmin() {
     if (rank() < 3) return '';
     var on = flowCfgOn();
-    return '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p><label class="t-switch"><span><b>' + L('New project flow', 'Ny prosjektflyt') + '</b><small>' + (on ? L('On – projects go Requirements → Document plan → Delivery → Comparison → Final check.', 'På – prosjektene går Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll.') : L('Off – projects show the old view (Requirements, Received, Report).', 'Av – prosjektene viser den gamle visningen (Krav, Mottak, Rapport).')) + '</small></span><input type="checkbox" data-flowteam' + (on ? ' checked' : '') + '></label>';
+    return '<label class="t-switch"><span><b>' + L('New project flow', 'Ny prosjektflyt') + '</b><small>' + (on ? L('On – projects go Requirements → Document plan → Delivery → Comparison → Final check.', 'På – prosjektene går Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll.') : L('Off – projects show the old view (Requirements, Received, Report).', 'Av – prosjektene viser den gamle visningen (Krav, Mottak, Rapport).')) + '</small></span><input type="checkbox" data-flowteam' + (on ? ' checked' : '') + '></label>';
   }
   async function flowSet(on) { if (await putRec('cfg', 'cfgprojflow', { on: !!on }, L('Project flow', 'Prosjektflyt'))) { if (S.sheet) settingsSheet(); draw(); } }
   function clockAdmin() {
@@ -1484,6 +1488,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
+    if (a === 'settab') { S.setTab = t.dataset.settab; settingsSheet(); return; }
     if (a === 'pal') { if (rank() < 3) return; var pid = t.dataset.pal; if (await putRec('cfg', 'cfgpalette', { p: pid }, L('Team colours', 'Teamets farger'))) { palSync(); if (S.sheet) settingsSheet(); draw(); } return; }
     if (a === 'clockIn') return clockIn();
     if (a === 'clockOut') return clockOut();

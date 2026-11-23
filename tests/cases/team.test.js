@@ -292,12 +292,13 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.click('[data-act=seen]'); await sl(300);
   check(!(await kari.$('.t-news')), '"Seen" clears it');
   await kari.click('[data-act=settings]'); await kari.waitForSelector('[data-act=notify]');
-  check(/Notify me on this device/.test(await kari.$eval('[data-act=notify]', e => e.textContent)), 'Settings offer notifications on this device');
+  check(/Turn on/.test(await kari.$eval('[data-act=notify]', e => e.textContent)), 'Settings offer notifications on this device');
+  check(!!(await kari.$('[data-settab=team]')), 'a second admin sees the Team tab in Settings');
   await kari.click('[data-act=close]');
   /* --- a backup of the team (admins), locked with its own passcode; restoring brings back what was deleted --- */
   await own.goto(U + '#overview'); await own.reload(); await until(own, () => !!document.querySelector('.t-tabs'));
   const bk = await own.evaluate(async () => { let got = null, blob = null; const oc = HTMLAnchorElement.prototype.click, cu = URL.createObjectURL; URL.createObjectURL = b => { blob = b; return cu.call(URL, b); }; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
-    document.querySelector('[data-act=settings]').click(); await new Promise(r => setTimeout(r, 200)); document.querySelector('[data-act=backup]').click(); await new Promise(r => setTimeout(r, 200));
+    document.querySelector('[data-act=settings]').click(); document.querySelector('[data-settab=team]') && document.querySelector('[data-settab=team]').click(); await new Promise(r => setTimeout(r, 200)); document.querySelector('[data-act=backup]').click(); await new Promise(r => setTimeout(r, 200));
     const f = document.querySelector('form[data-form=backup]'); f.pass.value = 'backup-pass-1'; f.pass2.value = 'backup-pass-1'; f.requestSubmit();
     for (let i = 0; i < 60 && !got; i++) await new Promise(r => setTimeout(r, 100)); HTMLAnchorElement.prototype.click = oc; URL.createObjectURL = cu;
     return got ? { name: got.download, text: await blob.text() } : null; });
@@ -306,7 +307,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const victim = await own.evaluate(() => Object.values(window.__team.recs).find(r => r.k === 'meeting' && !r.del && r.d && /MARK-SECRET-1/.test(r.d.title)).id);
   await own.evaluate(async id => { const r = window.__team.recs[id]; await fetch('/api/rec', { method: 'PUT', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ id, k: r.k, del: true, v: r.v }) }); }, victim);
   await own.reload(); await until(own, () => !!document.querySelector('.t-tabs'));
-  const rs = await own.evaluate(async (txt) => { document.querySelector('[data-act=settings]').click(); await new Promise(r => setTimeout(r, 200)); document.querySelector('[data-act=backup]').click(); await new Promise(r => setTimeout(r, 200));
+  const rs = await own.evaluate(async (txt) => { document.querySelector('[data-act=settings]').click(); document.querySelector('[data-settab=team]') && document.querySelector('[data-settab=team]').click(); await new Promise(r => setTimeout(r, 200)); document.querySelector('[data-act=backup]').click(); await new Promise(r => setTimeout(r, 200));
     const f = document.querySelector('form[data-form=restore]'), dt = new DataTransfer(); dt.items.add(new File([txt], 'x.teambackup')); f.file.files = dt.files; f.pass.value = 'backup-pass-1'; f.requestSubmit();
     for (let i = 0; i < 80 && document.querySelector('form[data-form=restore]'); i++) await new Promise(r => setTimeout(r, 100)); await new Promise(r => setTimeout(r, 400));
     return document.getElementById('toast').textContent; }, bk.text);
@@ -467,14 +468,14 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const cmdJs = fs.readdirSync(path.join(__dirname, '..', '..', 'cmd')).filter(f => f.endsWith('.js')).map(f => fs.readFileSync(path.join(__dirname, '..', '..', 'cmd', f), 'utf8')).join('\n');
   check(!/team-keys|\/api\/recs|TeamStore/.test(cmdJs), '/cmd has no Team data or keys');
 
-  await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(400);
-  const st = await own.evaluate(() => ({ heads: [...document.querySelectorAll('.t-seth')].map(x => x.textContent), name: !!document.querySelector('.t-setrow [data-act=renameTeam]') }));
-  check(st.heads.length === 3 && st.name, 'Settings in three groups, the team name with Change for admins (JP 2026-11-19 22:55) ' + JSON.stringify(st));
+  await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); document.querySelector('[data-settab=team]') && document.querySelector('[data-settab=team]').click(); }); await sl(400);
+  const st = await own.evaluate(() => ({ heads: [...document.querySelectorAll('.t-settab')].map(x => x.textContent), name: !!document.querySelector('.t-setrow [data-act=renameTeam]') }));
+  check(st.heads.length === 3 && st.name, 'Settings in three tabs, the team name with Change for admins (JP 2026-11-23) ' + JSON.stringify(st));
   await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); if (c) c.click(); }); await sl(300);
   /* an admin can switch the three Documents tabs off for the whole team (JP 2026-11-19 21:42) */
   await own.goto(U + '#docs'); await sl(800);
   const dt0 = await own.evaluate(() => [...document.querySelectorAll('[data-dtab]')].map(x => x.dataset.dtab).join(','));
-  await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(400);
+  await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); document.querySelector('[data-settab=team]') && document.querySelector('[data-settab=team]').click(); }); await sl(400);
   await own.evaluate(() => { const i = document.querySelector('input[data-dtoff="insp"]'); i.click(); }); 
   const dt1 = await until(own, () => [...document.querySelectorAll('[data-dtab]')].map(x => x.dataset.dtab).join(',') === 'doc,files');
   check(dt0 === 'doc,insp,files' && dt1, 'switching Inspections off takes the tab away for the team ' + dt0);

@@ -37,11 +37,11 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await sl(800);
 
   /* the new project flow: on for the team unless an admin turns it off in Settings (JP 2026-11-23 "only admin can turn on and off") */
-  await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(500);
+  await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); document.querySelector('[data-settab=team]') && document.querySelector('[data-settab=team]').click(); }); await sl(500);
   const fl0 = await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c ? c.checked : null; });
   check(fl0 === true, 'Settings (admin): New project flow, on by default ' + fl0);
   await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(800);
-  await own.evaluate(() => { const x = document.querySelector('[data-act=close]'); if (x) x.click(); }); await sl(300); await own.evaluate(() => document.querySelector('[data-act=settings]').click()); await sl(500);
+  await own.evaluate(() => { const x = document.querySelector('[data-act=close]'); if (x) x.click(); }); await sl(300); await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); document.querySelector('[data-settab=team]') && document.querySelector('[data-settab=team]').click(); }); await sl(500);
   check(await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); return c && !c.checked && window.DocHost && DocHost.flowOn && DocHost.flowOn() === false; }), 'an admin can turn it off for the team (saved: still off when Settings opens again)');
   await own.evaluate(() => { const c = document.querySelector('[data-flowteam]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(800);
   /* the team's colours (JP 2026-11-23): an admin picks a palette, everyone in the team gets it */
@@ -159,7 +159,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(on.on === true && /"p:owner@x\.no:/.test((await raw('/__mem')).body), 'switching push on keeps the subscription for this team');
   await own.evaluate(s => fetch('/api/push', { method: 'POST', headers: { 'x-team': '1', 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: s.endpoint, on: false }) }), fake);
   check(!/"p:owner@x\.no:/.test((await raw('/__mem')).body), 'and switching it off removes it');
-  await own.evaluate(() => { document.querySelector('[data-act=settings]') && document.querySelector('[data-act=settings]').click(); });
+  await own.evaluate(() => { document.querySelector('[data-act=settings]') && document.querySelector('[data-act=settings]').click(); const y = document.querySelector('[data-settab=you]'); if (y) y.click(); });
   check(await until(own, () => !!document.querySelector('input[data-push]'), 5000), 'Settings has the "Push when Team is closed" switch');
   await own.keyboard.press('Escape');
 

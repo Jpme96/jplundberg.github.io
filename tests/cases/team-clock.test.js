@@ -40,7 +40,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   /* off until an admin turns it on */
   await own.goto(T + '#overview'); await sl(1000);
   check(!(await own.$('.t-clock')), 'no clock card before an admin turns it on');
-  await click('[data-act=settings]'); await sl(400);
+  await click('[data-act=settings]'); await click('[data-settab=team]'); await sl(400);
   check(await own.evaluate(() => !!document.querySelector('[data-clockteam]') && !document.querySelector('[data-clockteam]').checked), 'Settings has the team switch, off');
   await own.evaluate(() => { const c = document.querySelector('[data-clockteam]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
   check(await until(own, () => !!document.querySelector('[data-clockm="owner@x.no"]'), 8000), 'turned on: a switch per person appears');
@@ -76,7 +76,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
 
   /* switched off for one person: their card goes */
   await own.goto(T + '#overview'); await sl(600);
-  await click('[data-act=settings]'); await sl(400);
+  await click('[data-act=settings]'); await click('[data-settab=team]'); await sl(400);
   await own.evaluate(() => { const c = document.querySelector('[data-clockm="owner@x.no"]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); });
   await sl(800); await click('[data-act=close]'); await sl(500);
   check(await until(own, () => !document.querySelector('.t-clock'), 6000), 'switched off for you: the card is gone');
@@ -87,7 +87,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   await own.evaluate(() => localStorage.setItem('team.lang', 'nb')); await own.evaluateOnNewDocument(() => localStorage.setItem('team.lang', 'nb')); await own.reload(); await until(own, () => !!document.querySelector('.t-tabs') || !!document.querySelector('form[data-form=unlock]'), 15000);
   if (await own.$('form[data-form=unlock]')) { await own.type('form[data-form=unlock] input[type=password]', 'owner-pass-1'); await own.click('form[data-form=unlock] button[type=submit]'); await until(own, () => !!document.querySelector('.t-tabs'), 15000); }
   await sl(500);
-  await click('[data-act=settings]'); await sl(400);
+  await click('[data-act=settings]'); await click('[data-settab=team]'); await sl(400);
   const nt = await text();
   check(/Stemple inn og ut for teamet/.test(nt), 'Norwegian: "Stemple inn og ut for teamet" ' + (/Stemple inn og ut/.test(nt) ? '' : nt.slice(0, 300).replace(/\n/g, ' | ')));
   check(!errs.length, 'no errors ' + errs.join(' | ').slice(0, 300));
