@@ -121,6 +121,10 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(m2.n >= 1 && m2.n < 9 && m2.all, '"Needs you" shows only the files still missing something ' + JSON.stringify(m2));
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnexp]').click()); await sl(200);
   check(await p.evaluate(() => !!document.querySelector('.dcn-fpop [data-dcncode]')), 'a tap opens the row with its fields');
+  /* Ready and Done have no pick boxes and no "Select all" – just the files, which still open (JP 2026-11-23) */
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt="ready"]').click()); await sl(200);
+  const rd = await p.evaluate(() => ({ boxes: document.querySelectorAll('.dx-ren .dcn-files [data-dcnpk]').length, all: !!document.querySelector('.dx-ren [data-dcnpkall]'), rows: document.querySelectorAll('.dx-ren .dcn-files .dcn-row').length, open: !!document.querySelector('.dx-ren .dcn-files [data-dcnexp]') }));
+  check(rd.boxes === 0 && !rd.all && (rd.rows === 0 || rd.open), 'Ready shows the files without pick boxes or Select all ' + JSON.stringify(rd));
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt=""]').click()); await sl(200);
   /* the add button opens a popup to drop files on (JP 07:50); a drop there adds them and closes it */
   await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200);

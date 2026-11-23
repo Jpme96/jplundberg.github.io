@@ -38,6 +38,9 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => document.querySelector('[data-dxrendl]').click()); await sl(200);
   await p.evaluate(() => { const r = document.querySelector('.dx-dlpop input[value=all]'); r.click(); }); await sl(150);
   check(await p.evaluate(() => /Download 4 files \(\.zip\)/.test(document.querySelector('.dx-dlpop [data-dlgo]').textContent) && document.querySelectorAll('.dx-dlpop .dx-dllist li').length === 4), 'All: 4 files in the .zip, every name listed');
+  /* choose right in the download list (JP 2026-11-23): untick one file and the count and the button follow */
+  await p.evaluate(() => { const c = document.querySelector('.dx-dlpop [data-dlpk]'); c.click(); }); await sl(150);
+  check(await p.evaluate(() => /Download 3 files \(\.zip\)/.test(document.querySelector('.dx-dlpop [data-dlgo]').textContent) && document.querySelectorAll('.dx-dlpop .dx-dllist li').length === 4 && document.querySelectorAll('.dx-dlpop li.dx-dloff').length === 1), 'unticking a file in the download list leaves it out (3 of 4)');
   await p.evaluate(() => document.querySelector('.dx-dlpop [data-dlx]').click()); await sl(150);
   /* remove from the list (the tool only) */
   await p.evaluate(() => document.querySelector('[data-dcnpka="rm"]').click()); await sl(200);

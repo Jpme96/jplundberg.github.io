@@ -424,25 +424,27 @@
     var nn = function (f) { return N ? N.newName(p, f) : f.name; }, isNew = function (f) { return nn(f) !== (f.orig || f.name); };
     var fin = F.filter(function (f) { return N && (N.ready(p, f) || (f.orig && f.orig !== f.name)); });
     var list = function () { return mode === 'sel' ? F.filter(function (f) { return sel.indexOf(f.id) >= 0; }) : mode === 'ready' ? fin : F; };
+    /* each file has its own tick here – choose what to download right in the list (JP 2026-11-23 "selecting should be in the download option") */
+    var skip = {}, chosen = function () { return list().filter(function (f) { return !skip[f.id]; }); };
     var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dx-dlpop';
     var opt = function (m, label, n) { return n ? '<label class="dx-dlopt' + (mode === m ? ' on' : '') + '"><input type="radio" name="dxdl" value="' + m + '"' + (mode === m ? ' checked' : '') + '> ' + esc(label) + ' (' + n + ')</label>' : ''; };
     var render = function () {
-      var L = list(), nw = L.filter(isNew).length, mb = L.reduce(function (a, f) { return a + (f.size || 0); }, 0) / 1048576;
+      var A = list(), L = chosen(), nw = L.filter(isNew).length, mb = L.reduce(function (a, f) { return a + (f.size || 0); }, 0) / 1048576;
       ov.innerHTML = '<div class="dcn-sheet dx-dlsheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dx-dl-t', 'Download with the new names')) + '"><div class="dcn-shead"><span class="dx-dlh"><b>' + esc(k('ui.dx-dl-t', 'Download with the new names')) + '</b><small class="muted">' + esc(k('ui.dx-dl-one', 'One file comes as the file itself – not a .zip')) + '</small></span><button type="button" class="icon-btn" data-dlx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
         '<div class="dx-dlopts" role="radiogroup" aria-label="' + esc(k('ui.dx-dl-which', 'Which files')) + '">' + opt('all', k('ui.dx-dl-all', 'All'), F.length) + opt('sel', k('ui.dx-dl-sel', 'Only the selected'), sel.length) + opt('ready', k('ui.dx-dl-ready', 'Only the finished'), fin.length) + '</div>' +
         '<div class="dx-dlsum"><b>' + esc(L.length === 1 ? k('ui.dx-dl-sum1', '1 file') : k('ui.dx-dl-sum', '{n} files in the .zip', { n: L.length })) + '</b>' + (nw ? '<span class="stt stt-ok">' + esc(k('ui.dx-dl-new', '{n} get a new name', { n: nw })) + '</span>' : '') + (L.length - nw ? '<span class="stt stt-soon">' + esc(k('ui.dx-dl-keep', '{n} keep the name they came with', { n: L.length - nw })) + '</span>' : '') + '<span class="spacer"></span><span class="muted">' + esc((mb >= 1 ? mb.toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(mb * 1024)) + ' kB')) + '</span></div>' +
-        '<p class="muted dx-dlcap">' + esc(k('ui.dx-dl-what', 'This is downloaded:')) + '</p><ul class="dx-dllist">' + L.slice(0, 400).map(function (f) { var n2 = nn(f), nwf = isNew(f); return '<li><span><b data-noi18n>' + esc(n2) + '</b>' + (nwf ? '<small class="muted" data-noi18n>' + esc(k('ui.dx-dl-was', 'was: {f}', { f: f.orig || f.name })) + '</small>' : '') + '</span><span class="stt ' + (nwf ? 'stt-ok' : 'stt-soon') + '">' + esc(nwf ? k('ui.dx-dl-tnew', 'New name') : k('ui.dx-dl-tkeep', 'Keeps the name')) + '</span></li>'; }).join('') + (L.length > 400 ? '<li class="muted">' + esc(k('ui.dcn-bk-more', 'and {n} more', { n: L.length - 400 })) + '</li>' : '') + '</ul>' +
+        '<p class="muted dx-dlcap">' + esc(k('ui.dx-dl-what', 'This is downloaded:')) + '</p><ul class="dx-dllist">' + A.slice(0, 400).map(function (f) { var n2 = nn(f), nwf = isNew(f); return '<li' + (skip[f.id] ? ' class="dx-dloff"' : '') + '><label class="dcn-pkc"><input type="checkbox" data-dlpk="' + esc(f.id) + '"' + (skip[f.id] ? '' : ' checked') + ' aria-label="' + esc(k('ui.dcn-pk-one', 'Select {f}', { f: n2 })) + '"></label><span><b data-noi18n>' + esc(n2) + '</b>' + (nwf ? '<small class="muted" data-noi18n>' + esc(k('ui.dx-dl-was', 'was: {f}', { f: f.orig || f.name })) + '</small>' : '') + '</span><span class="stt ' + (nwf ? 'stt-ok' : 'stt-soon') + '">' + esc(nwf ? k('ui.dx-dl-tnew', 'New name') : k('ui.dx-dl-tkeep', 'Keeps the name')) + '</span></li>'; }).join('') + (A.length > 400 ? '<li class="muted">' + esc(k('ui.dcn-bk-more', 'and {n} more', { n: A.length - 400 })) + '</li>' : '') + '</ul>' +
         '<div class="dcn-b dx-dlbtns"><button type="button" class="dc-chip" data-dlx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-dlgo' + (L.length ? '' : ' disabled') + '><i class="bi bi-download"></i> ' + esc(L.length === 1 ? k('ui.dx-dl-go1', 'Download the file') : k('ui.dx-dl-go', 'Download {n} files (.zip)', { n: L.length })) + '</button></div></div>';
     };
     render();
     var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
-    ov.addEventListener('change', function (e) { if (e.target.name === 'dxdl') { mode = e.target.value; render(); } });
+    ov.addEventListener('change', function (e) { if (e.target.name === 'dxdl') { mode = e.target.value; skip = {}; render(); } else if (e.target.dataset.dlpk) { if (e.target.checked) delete skip[e.target.dataset.dlpk]; else skip[e.target.dataset.dlpk] = 1; var y = ov.querySelector('.dx-dllist').scrollTop; render(); ov.querySelector('.dx-dllist').scrollTop = y; } });
     ov.addEventListener('click', function (e) {
       var t = e.target; if ((t === ov && dn === ov) || t.closest('[data-dlx]')) { close(); return; }
       var b = t.closest('[data-dlgo]'); if (!b || b.disabled) return; b.disabled = true;
-      renDownload(list().map(function (f) { return f.id; })).then(close, function () { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-ren-fail', 'The files could not be packed – try fewer at a time.'))); });
+      renDownload(chosen().map(function (f) { return f.id; })).then(close, function () { b.disabled = false; toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-ren-fail', 'The files could not be packed – try fewer at a time.'))); });
     });
     document.addEventListener('keydown', ek, true);
     document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
@@ -641,7 +643,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = 'f5e037f172';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = 'ab595a7a90';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };

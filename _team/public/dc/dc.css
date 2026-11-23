@@ -786,6 +786,10 @@ body.dr-full #wkDocReq { display: block !important; }
 .dcn-s .dcn-bno { margin: 0; }
 .dcn-s .dcn-fl > span:first-child { min-height: 2.6em; display: flex; align-items: flex-end; line-height: 1.3; }
 .dcn-sug { flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0; }
+.dcn-sug code { font-family: inherit; font-size: 15.5px; font-weight: 600; line-height: 1.35; padding: 8px 11px; border: 1px solid var(--line); background: var(--card, #fff); box-shadow: inset 3px 0 0 var(--accent); }
+.dcn-sug > span { font-size: 12.5px; }
+.dx-dllist li.dx-dloff > span { opacity: .45; }
+.dx-dllist .dcn-pkc { flex: none; }
 .dcn-gap { color: var(--warn); font-style: normal; }
 .dcn-b { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .dcn-cc { font-size: 13px; background: rgba(var(--ink-rgb), .04); border-radius: 8px; padding: 8px 10px; }
