@@ -193,7 +193,17 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   /* deleting a project in Team */
   await own.goto(T + '#docs'); await sl(1200);
   const pid = await own.evaluate(() => { const a = [...document.querySelectorAll('a[href^="#dc="], [data-dcopen]')][0]; return a ? (a.getAttribute('href') || '').replace('#dc=', '') || a.dataset.dcopen : ''; });
-  if (pid) { await own.goto(T + '#dc=' + pid); await sl(1500); await own.evaluate(() => { const b = document.querySelector('[data-dcdel]'); b && b.click(); }); await sl(500); await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); }); await sl(2500); await own.goto(T + '#overview'); await own.reload(); await sl(2500); }
+  /* files uploaded to a project: a box to give them the right names, like "Give files the right names"; Done closes it (JP 2026-11-24) */
+  if (pid) {
+    await own.goto(T + '#dc=' + pid); await sl(1500);
+    await own.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="lev"]'); s && s.click(); }); await sl(500);
+    const up = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'tfr-')), 'Tegning madeup 15.pdf'); fs.writeFileSync(up, '%PDF-1.1\n%%EOF\n');
+    const inp = await own.$('input[data-dcfiles]'); if (inp) await inp.uploadFile(up);
+    check(await until(own, () => { const b = document.querySelector('.dc-fresh'); return !!b && /Gi de nye filene riktig navn|Give the new files/.test(b.textContent) && /Tegning madeup 15/.test(b.textContent); }, 10000), 'an uploaded file gets the "Give the new files the right names" box');
+    await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); });
+    check(await until(own, () => !document.querySelector('.dc-fresh'), 4000), 'and Done closes it');
+  }
+  if (pid) { await own.goto(T + '#docs'); await sl(800); await own.goto(T + '#dc=' + pid); await until(own, () => !!document.querySelector('[data-dcprojinfo], [data-dcdel]'), 8000); await own.evaluate(() => { let b = document.querySelector('[data-dcdel]'); if (!b) { const i = document.querySelector('[data-dcprojinfo], [data-dctab="over"]'); i && i.click(); b = document.querySelector('[data-dcdel]'); } b && b.click(); }); await sl(500); await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); }); await sl(2500); await own.goto(T + '#overview'); await own.reload(); await sl(2500); }
   check(pid && !/Testveien 9/.test(await own.evaluate(() => (document.querySelector('.t-projs') || {}).textContent || '')), 'a project can be deleted in Team (' + pid + ')');
   check(!errs.length, 'no errors ' + errs.join(' | ').slice(0, 400));
   await b.close(); srv.kill(); fs.rmSync(tmp, { recursive: true, force: true });

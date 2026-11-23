@@ -30,12 +30,6 @@ const fs = require('fs'), os = require('os'), path = require('path');
   check(await p.evaluate(() => /Made-up plan\.xlsx/.test(document.querySelector('.dc-flow').textContent) && !!document.querySelector('.dc-flow input[data-dcplan]')), 'Dokumentplan: the imported plan, checked, with Import a new version');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
   await (await p.$('.dc-flow input[data-dcfiles]')).uploadFile(...F); await sl(1800);
-  /* the files just uploaded: a box to give them the right names, like the rename tool; Done closes it (JP 2026-11-24) */
-  await sl(1500);
-  const fr = await p.evaluate(() => { const b = document.querySelector('.dc-fresh'); return b ? { n: b.querySelectorAll('[data-dcnf], .dcn-f, .dcn-row, li').length, t: b.textContent.slice(0, 120) } : null; });
-  check(fr && /Give the new files the right names|Gi de nye filene/.test(fr.t), 'Levering: the just-uploaded files get a "Give the new files the right names" box ' + JSON.stringify(fr));
-  await p.evaluate(() => document.querySelector('[data-dcfreshok]').click()); await sl(400);
-  check(await p.evaluate(() => !document.querySelector('.dc-fresh') && !Features.tools().dctl.find(x => x.id === 'fp1').files.some(f => f.nw)), 'and Done closes it for everyone (saved)');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="cmp"]').click()); await sl(300);
   const piles = await p.evaluate(() => [...document.querySelectorAll('.dc-pile b')].map(b => b.textContent).join());
   check(piles === '2,1,1', 'Sammenligning: 2 in the plan and delivered, 1 missing, 1 not in the plan ' + piles);

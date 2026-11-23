@@ -770,7 +770,7 @@
     if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
     /* files just uploaded (by you or someone in the team): named like in "Give files the right names" – suggestions, then Use (JP 2026-11-24) */
-    var NW = F.filter(function (f) { return f.nw; });
+    var NW = HOST && !namingOn() ? F.filter(function (f) { return f.nw; }) : [];   /* Team; in /cmd with the new naming the whole list is already this view */
     if (NW.length) { var N0 = naming(); h += '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small></span>' +
       '<button type="button" class="pill-btn" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>'; }
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
@@ -1774,7 +1774,7 @@
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
         setTab('files'); draw();
         var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
-        if (naming()) sg(); else if (dcnLoading) dcnLoading.then(sg);
+        if (HOST && !namingOn()) { if (naming()) sg(); else if (dcnLoading) dcnLoading.then(sg); }
       });
     }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-files-bad', 'Some files could not be read.'))); try { console.warn('[dc] files', e); } catch (e2) {} });
   }
