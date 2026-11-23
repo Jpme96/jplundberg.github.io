@@ -58,6 +58,7 @@ const { open, sl, go, until } = require('../lib/browser'); const { check, done }
   await sl(200);
   const hap = await p.evaluate(() => window.__hap || []);
   check(hap.some(x => /impact:LIGHT/.test(x)) && hap.some(x => /note:SUCCESS/.test(x)), 'a light tap on a tick and a "done" buzz on a save ' + hap.join(','));
+  check(await p.evaluate(() => { const r = document.getElementById('stPasskey'); return !!r && !r.hidden; }), 'Settings → Security shows “Unlock with Face ID” in the app');
   /* Face ID through the Keychain: switched on with the passcode, then the lock screen unlocks by itself */
   const fid = await p.evaluate(async () => { const r = await window.Passkey.enable('test-passcode-1'); const kc = JSON.parse(localStorage.getItem('t.kc') || '{}'); return { r, ac: kc.accessControl, has: !!kc.password, saved: JSON.parse(localStorage.getItem('dash.pk') || '{}').native }; });
   check(fid.r === 'done' && fid.ac === 1 && fid.has && fid.saved === 1, 'Face ID is switched on: the passcode goes into the Keychain behind Face ID ' + JSON.stringify({ r: fid.r, ac: fid.ac, saved: fid.saved }));
