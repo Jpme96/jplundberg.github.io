@@ -52,9 +52,16 @@
   var fdvEdit = null;   /* 'inspection:finding' while a finding is being changed in the form */
   var idb = null;
   function db() { return idb || (idb = new Promise(function (res, rej) { var r = indexedDB.open('dash-fdv', 1); r.onupgradeneeded = function () { r.result.createObjectStore('photos'); }; r.onsuccess = function () { res(r.result); }; r.onerror = rej; })); }
-  function putPhoto(id, blob) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(blob, id); t.oncomplete = res; }); }); }
-  function getPhoto(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('photos').objectStore('photos').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
-  function delPhoto(id) { return db().then(function (d) { d.transaction('photos', 'readwrite').objectStore('photos').delete(id); }).catch(function () {}); }
+  /* inspection photos go to your other devices too (JP 2026-11-23 "the picture does not go through from app to website"): sealed and sent
+     with FileSync like Papers and House; the device keeps its own copy, a missing one is fetched the first time it's shown */
+  function keepPhoto(id, blob) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put(blob, id); t.oncomplete = res; t.onerror = res; }); }); }
+  function putPhoto(id, blob) { return keepPhoto(id, blob).then(function () { if (window.FileSync) window.FileSync.up(id, blob); }); }
+  function localPhoto(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('photos').objectStore('photos').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
+  function getPhoto(id) { return localPhoto(id).then(function (b) { if (b || !window.FileSync) return b; return window.FileSync.down(id).then(function (nb) { if (nb) keepPhoto(id, nb); return nb; }).catch(function () { return null; }); }); }
+  function delPhoto(id) { if (window.FileSync) window.FileSync.del(id); return db().then(function (d) { d.transaction('photos', 'readwrite').objectStore('photos').delete(id); }).catch(function () {}); }
+  function photoIds() { var o = []; (Fe.tools().fdv || []).forEach(function (r) { (r.findings || []).forEach(function (x) { if (x.photo) o.push(x.photo); }); }); return o; }
+  /* photos taken before this (or while offline) go up once the page opens */
+  if (window.Vault && window.Vault.onUnlock) window.Vault.onUnlock(function () { setTimeout(function () { var ids = photoIds(); if (window.FileSync && ids.length) window.FileSync.sync({ ids: ids, getLocal: localPhoto, putLocal: keepPhoto, download: false }); }, 2500); });
   function shrink(file) {
     return new Promise(function (res, rej) {
       var img = new Image(); img.onload = function () { var s = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); c.toBlob(function (b) { b ? res(b) : rej(); }, 'image/jpeg', .82); URL.revokeObjectURL(img.src); };

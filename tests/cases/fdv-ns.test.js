@@ -83,6 +83,25 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   });
   check(up.r.indexOf(4) > -1 && up.f[0].code === '26' && up.f[0].part === '' && up.f[1].code === '' && up.f[1].part === 'Våtrom' && up.f[2].code === '23' && up.f[2].part === 'Windows and doors' && up.f[3].code === '231' && up.f[3].part === 'Own wall' && up.f[0].oldPart === 'Roof', 'step 4 moves old parts to NS 3451 codes and keeps the name as the place where there is no clear code ' + JSON.stringify(up.f));
   check(up.ph.code === '36' && !('part' in up.ph) && up.parts.join() === 'Garage' && (up.codes || []).some(c => c.c === '264'), 'and your phrases get codes; your own parts that start with a code become your own codes ' + JSON.stringify({ ph: up.ph, parts: up.parts, codes: up.codes }));
+  /* photos go to your other devices (JP 2026-11-23 "the picture … does not go through from app to website"): a new photo is sent up with FileSync,
+     and a photo this device doesn't have is fetched when it's shown */
+  await p.evaluate(() => { window.__fsUp = []; window.__fsDown = [];
+    window.FileSync.up = (id, bl) => { __fsUp.push(id); return Promise.resolve(true); };
+    window.FileSync.down = id => { __fsDown.push(id); return fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==').then(r => r.blob()); }; });
+  await go(p, 'work/', 2500);
+  await p.evaluate(() => { const o = document.querySelector('[data-fdvopen="ins1"]'); if (o) o.click(); }); await sl(400);
+  await p.evaluate(() => { const t = document.querySelector('[data-fdvtab="findings"]'); if (t) t.click(); }); await sl(400);
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await p.evaluate(() => { window.FileSync.up = (id) => { (window.__fsUp = window.__fsUp || []).push(id); return Promise.resolve(true); }; });
+  const pf = require('path').join(require('os').tmpdir(), 'fdv-photo-test.png'); require('fs').writeFileSync(pf, png);
+  await (await p.$('form.fdv-add input[name="photo"]')).uploadFile(pf);
+  await p.evaluate(() => { const f = document.querySelector('form.fdv-add'); f.code.value = '23'; f.tg.value = '2'; f.kg.value = '1'; f.text.value = 'Photo finding'; f.requestSubmit(); }); await sl(1200);
+  const ph = await p.evaluate(() => { const r = Features.list('fdv')[0], x = r.findings.filter(y => y.text === 'Photo finding')[0]; return { photo: x && x.photo, up: window.__fsUp || [] }; });
+  check(ph.photo && ph.up.indexOf(ph.photo) > -1, 'a new inspection photo is sent to your other devices ' + JSON.stringify(ph));
+  const dn = await p.evaluate(async () => { const t = Features.tools(); t.fdv[0].findings.push({ id: 'far1', code: '23', tg: '1', kg: '1', text: 'From the phone', photo: 'ph-only-on-the-phone' }); Features.saveTools(t);
+    window.FileSync.down = id => { (window.__fsDown = window.__fsDown || []).push(id); return fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==').then(r => r.blob()); };
+    LifePages.redraw(); await new Promise(r => setTimeout(r, 1200)); const im = document.querySelector('img[data-ph="ph-only-on-the-phone"]'); return { asked: window.__fsDown || [], src: im ? im.src.slice(0, 5) : null }; });
+  check(dn.asked.indexOf('ph-only-on-the-phone') > -1 && dn.src === 'blob:', 'a photo taken on another device is fetched and shown ' + JSON.stringify(dn));
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();
