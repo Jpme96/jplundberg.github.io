@@ -34,6 +34,23 @@
   window.SoftNav.busy = function () { return busy; };
 
   var root = document.documentElement, epoch = 0, running = false;
+  /* where a page change spends its time (2026-11-23, JP: "the menus are still very stuttery, and loading each page is long"):
+     getting the page · swapping it in · its scripts · the rest, and the longest the screen stood still (a frame gap), for the
+     last 12 changes in dash.sntime – Settings → Diagnostics shows them and puts them in the copy. Numbers only. */
+  var T = null, frameStop = 0;
+  function watchFrames() {
+    var last = performance.now(), my = ++frameStop; if (T) T.freeze = 0;
+    (function f(now) { if (my !== frameStop || !T) return; var g = now - last; last = now; if (g > T.freeze) T.freeze = g; requestAnimationFrame(f); })(last);
+  }
+  function keepTime() {
+    var t = T; if (!t) return; T = null;
+    setTimeout(function () {   /* the first frames after the change count too */
+      frameStop++;
+      var end = performance.now(), r = function (x) { return Math.round(x); };
+      var e = { p: t.p, src: t.src, all: r(end - t.t0), page: r((t.html || t.t0) - t.t0), swap: r((t.swap || t.html || t.t0) - (t.html || t.t0)), scripts: r((t.run || t.swap || t.t0) - (t.swap || t.t0)), freeze: r(t.freeze || 0), at: Date.now() };
+      try { var l = JSON.parse(localStorage.getItem('dash.sntime') || '[]'); l.unshift(e); localStorage.setItem('dash.sntime', JSON.stringify(l.slice(0, 12))); } catch (er) {}
+    }, 400);
+  }
   function mark(n) { try { performance.mark(n); } catch (e) {} }   /* how long each step took (Settings → Data & sync → problems, and the tests) */
   var PAGES = ['/cmd/', '/cmd/calendar/', '/cmd/finance/', '/cmd/habits/', '/cmd/travel/', '/cmd/work/', '/cmd/house/', '/cmd/people/', '/cmd/food/', '/cmd/papers/', '/cmd/wish/', '/cmd/goals/', '/cmd/homelife/', '/cmd/lifeadmin/', '/cmd/me/', '/cmd/admin/'];
   var KEEP = ['lock', 'dgNote'];        /* parts of the page that belong to the head (the lock screen, the problem note) */
@@ -173,7 +190,7 @@
   function go(u, pop) {
     /* a tap while a page is on its way: remembered (the last one wins) and opened right after – never lost, never stuck */
     if (busy) { next = { u: u, pop: pop }; return; }
-    busy = true; mark('sn:start');
+    busy = true; mark('sn:start'); T = { p: u.pathname.replace(/^\/cmd\/?|\/$/g, '') || 'home', t0: performance.now(), src: htmlCache[u.pathname] ? 'ahead' : 'fetched' }; watchFrames();
     var full = function () { location.href = u.href; };
     /* never stuck: a page change that hasn't finished after 6 s is done as a normal load instead (and noted in Diagnostics) */
     var arrived = false; stage = 'getting the page'; vtOn = false;
@@ -184,7 +201,7 @@
       if (HEAD && text && srcOf(new DOMParser().parseFromString(text, 'text/html'), /dist\/head\.js/) !== HEAD) return netHtml(u.pathname).catch(function () { return text; });
       return text;
     }).then(function (text) {
-      mark('sn:html'); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');
+      mark('sn:html'); if (T) T.html = performance.now(); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');
       base = u.href;
       /* a new version of the dashboard: load it properly */
       /* (the normal load that follows is not a failed page change: the watchdog stops here – 14 Nov 2026, a new version took
@@ -223,8 +240,8 @@
       /* smooth: the old page stays on screen while the new one is put together and drawn, then the new one glides in
          (the menu stays where it is). Motion off or reduced: it just switches. */
       var still = root.classList.contains('mo-off') || root.classList.contains('mo-reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var built = function () { stage = 'putting the page in'; swap(); stage = 'starting its scripts'; return run(scripts).then(function () { arrived = true; clearTimeout(dog); return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
-      var finish = function () { mark('sn:done'); window.SoftNav.count++; window.dispatchEvent(new Event('softnav:done')); };
+      var built = function () { stage = 'putting the page in'; swap(); if (T) T.swap = performance.now(); stage = 'starting its scripts'; return run(scripts).then(function () { if (T) T.run = performance.now(); arrived = true; clearTimeout(dog); return new Promise(function (ok) { sT.call(window, ok, 60); }); }); };
+      var finish = function () { mark('sn:done'); keepTime(); window.SoftNav.count++; window.dispatchEvent(new Event('softnav:done')); };
       /* Safari (Mac, Nov 2026): page changes with the view-transition glide never finished – there the page swaps
          plainly and then its content glides in with an ordinary animation (nothing waits on it, so it can't hang) */
       if (!document.startViewTransition || still || SAFARI) return built().then(function () {
