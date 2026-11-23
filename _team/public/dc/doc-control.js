@@ -1964,9 +1964,11 @@
       setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }, 9000); return;
     }
     if ((b = t.closest('[data-dcdel]'))) {
-      var pid = b.dataset.dcdel, all = JSON.parse(JSON.stringify(Fe.tools().dctl || [])), gone = proj(pid);
-      var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); Fe.saveTools(t3); back();
-      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; Fe.saveTools(t4); draw(); });
+      var pid = b.dataset.dcdel, t0 = Fe.tools(), all = JSON.parse(JSON.stringify(t0.dctl || [])), allK = JSON.parse(JSON.stringify(t0.dckrav || [])), gone = proj(pid);
+      /* the project is one thing to you: its requirements list goes with it, unless another project uses it (JP 2026-11-23 "the project does not get deleted" – the requirements part stayed in the list) */
+      var kid = gone && gone.krav && !(t0.dctl || []).some(function (x) { return x.id !== pid && x.krav === gone.krav; }) ? gone.krav : null;
+      var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); if (kid) t3.dckrav = (t3.dckrav || []).filter(function (x) { return x.id !== kid; }); Fe.saveTools(t3); back();
+      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; if (kid) t4.dckrav = allK; Fe.saveTools(t4); draw(); });
       setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000); return;
     }
     if ((b = t.closest('[data-dchand]'))) { handover(b); return; }

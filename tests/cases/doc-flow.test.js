@@ -55,6 +55,12 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
   const kp = await p.evaluate(() => ({ t: document.querySelector('.dc-flow .fdv-body').textContent, imp: !!document.querySelector('.dc-flow input[data-dcplan]') }));
   check(/made from the requirements/.test(kp.t) && !/contractor’s plan, checked/.test(kp.t) && kp.imp, 'a project made from requirements says so in Dokumentplan, with import of the contractor’s plan ' + kp.t.slice(0, 120));
+  /* deleting a project made from requirements removes its requirements list too – it is one project (JP 2026-11-23) */
+  await p.evaluate(() => { const t = Features.tools(); t.dckrav = [{ id: 'kr9', name: 'Made-up both parts', lines: [{ id: 'q1', code: '234', t: 'E' }] }]; t.dctl.push({ id: 'fp9', name: 'Made-up both parts', krav: 'kr9', lines: [], files: [] }); Features.saveTools(t); });
+  await go(p, 'work/#dc=fp9', 2500);
+  await p.evaluate(() => document.querySelector('[data-dcprojinfo]').click()); await sl(400);
+  await p.evaluate(() => document.querySelector('.dc-fproj [data-dcdel]').click()); await sl(500);
+  check(await p.evaluate(() => { const t = Features.tools(); return !t.dctl.some(x => x.id === 'fp9') && !(t.dckrav || []).some(x => x.id === 'kr9'); }), 'deleting the project removes its requirements list too');
   /* no plan: continue without, then make one from the delivery */
   await go(p, 'work/#dc=fp2', 2500);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
