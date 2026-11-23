@@ -51,7 +51,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.click('button[type=submit]');
   check(await until(own, () => !!document.querySelector('.t-tabs'), 20000), 'the owner is in the app after set-up');
   /* the way to /cmd is a small link on the right – not a back arrow at the top left (JP 2026-11-23 "I think it's the back button") */
-  check(await own.evaluate(() => { const a = document.querySelector('.t-tocmd'), b = document.querySelector('.t-top .t-back'); return !!a && /cmd/.test(a.textContent) && !(b && /cmd/.test(b.textContent)); }), 'the owner reaches /cmd from a small link on the right, not a back arrow');
+  check(await own.evaluate(() => { const a = document.querySelector('.t-tocmd'), b = document.querySelector('.t-top .t-back'); return !!a && a.target === '_blank' && /cmd/.test(a.textContent) && !(b && /cmd/.test(b.textContent)); }), 'the owner reaches /cmd from a small link on the right, not a back arrow');
   check(/Site team/.test(await text(own)) && /your role: Admin/.test(await text(own)), 'overview shows the team and the role');
   check(await api(own, 'setup', { method: 'POST', body: JSON.stringify({ name: 'x', me: {} }) }) === 409, 'set-up works only once');
   await word(own, 'overview');
