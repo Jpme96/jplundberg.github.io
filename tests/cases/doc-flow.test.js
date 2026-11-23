@@ -38,15 +38,30 @@ const fs = require('fs'), os = require('os'), path = require('path');
   check(ed.sts >= 5 && ed.due && ed.cmt, 'a row in the final check opens its line with the statuses, deadline and comment ' + JSON.stringify(ed));
   await p.evaluate(() => document.querySelector('.dc-fedit [data-dcst$=":na"]').click()); await sl(300);
   check(await p.evaluate(() => Features.list('dctl')[0].lines.filter(l => l.st === 'na').length === 1), 'and a status set there is saved on the line');
+  /* the project can still be edited and deleted: ⋯ in the header leads to it (JP 2026-11-23 "I cannot delete the projects") */
+  await p.evaluate(() => document.querySelector('[data-dcprojinfo]').click()); await sl(400);
+  const pj = await p.evaluate(() => ({ step: (document.querySelector('.dc-fsteps [aria-selected=true]') || {}).dataset.dctab, del: !!document.querySelector('.dc-fproj [data-dcdel]'), edit: !!document.querySelector('.dc-fproj [data-dcedit]') }));
+  check(pj.step === 'krav' && pj.del && pj.edit, 'the project has Edit and Delete in the new flow ' + JSON.stringify(pj));
+  await p.evaluate(() => document.querySelector('.dc-fproj [data-dcedit]').click()); await sl(300);
+  check(await p.evaluate(() => !!document.querySelector('.dc-flow form')), 'Edit opens the project form');
+  await p.evaluate(() => { const c = [...document.querySelectorAll('.dc-flow form button')].find(b => /Cancel/.test(b.textContent)); if (c) c.click(); }); await sl(300);
   /* no plan: continue without, then make one from the delivery */
   await go(p, 'work/#dc=fp2', 2500);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(300);
   await (await p.$('.dc-flow input[data-dcfiles]')).uploadFile(...F); await sl(1800);
+  /* a file can be given the right name in Filer, and it opens in a popup (JP 2026-11-23) */
+  await p.evaluate(() => { const r = [...document.querySelectorAll('.dc-fh')].find(x => /Tilbud madeup/.test(x.textContent)); r.querySelector('[data-dcren]').click(); }); await sl(300);
+  await p.evaluate(() => { const f = document.querySelector('form[data-dcren1]'); f.n.value = '234 SE Vindu madeup'; f.requestSubmit(); }); await sl(400);
+  const rn = await p.evaluate(() => { const ff = Features.list('dctl').filter(x => x.id === 'fp2')[0].files.filter(x => /madeup/.test(x.name) && x.orig)[0]; return ff ? ff.name + '|' + ff.orig + '|' + ff.p.code + ff.p.abbr : null; });
+  check(rn === '234 SE Vindu madeup.pdf|Tilbud madeup.pdf|234SE', 'Filer: a file gets a new name (the type stays), the old one is kept, and the code is read from it ' + rn);
+  await p.evaluate(() => document.querySelector('.dc-fh [data-dcview]').click()); await sl(1500);
+  check(await p.evaluate(() => !!document.querySelector('.dx-fv')), 'a file opens in the popup viewer');
+  await p.evaluate(() => { const x = document.querySelector('[data-dxfvx]'); if (x) x.click(); }); await sl(300);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dcnoplan]').click()); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dcmkplan]').click()); await sl(500);
   const np = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), linked: r.files.filter(f => f.line).length, v7: !!document.querySelector('[data-dcvx7]') }; });
-  check(np.lines === '234 E recv,261 E recv' && np.linked === 2 && np.v7, 'no plan: a plan is made from the delivered files, linked, ready as Vedlegg 7 ' + JSON.stringify(np));
+  check(np.lines === '234 A recv,234 E recv,261 E recv' && np.linked === 3 && np.v7, 'no plan: a plan is made from the delivered files, linked, ready as Vedlegg 7 ' + JSON.stringify(np));
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();

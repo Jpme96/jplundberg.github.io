@@ -837,3 +837,13 @@ html.dcn-modal { overflow: hidden; }
 @media (max-width: 560px) { .dc-fedit { padding-left: 0; } }
 .dc-fsteps b { min-width: 0; }
 .dc-fname { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }   /* narrow windows: names shorten, never run into the next step (JP 2026-11-23) */
+/* rename a file in Filer; the project's upload links (JP 2026-11-23) */
+.dc-fh .dc-fn { justify-content: flex-start; text-align: left; background: none; min-width: 0; overflow-wrap: anywhere; }
+.dc-ren1 { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dc-ren1 input { flex: 1 1 240px; font-size: 16px; }
+.dc-uplinks { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dc-uplinks li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: var(--muted); }
+.dc-uplinks li > span { flex: 1 1 200px; }
+.dc-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dc-fproj { margin-top: 26px; padding-top: 6px; border-top: 1px solid var(--line); }
+.dc-flow .fdv-top .icon-btn { align-self: center; }

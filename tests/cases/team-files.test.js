@@ -73,6 +73,8 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.waitForSelector('#invLink');
   const link = await own.$eval('#invLink', e => e.value);
   check(/^https:\/\/jplundberg\.com\/upload\/#team\.[a-f0-9]{16}\.[A-Za-z0-9_-]{40,}\.Testveien%209$/.test(link), 'the link holds the team, the link id, its key and the project name after #');
+  /* the project's Filer lists the live link with Switch off (JP 2026-11-23 "cancel a link when I send it") */
+  check(await own.evaluate(() => !!(window.DocHost && DocHost.uplinks && (DocHost.Fe.list('dctl') || []).some(p => DocHost.uplinks(p.id).length === 1))), 'the project knows its live upload link, so Filer can switch it off');
   const memL = (await raw('/__mem')).body, keyPart = link.split('#')[1].split('.')[2];
   check(!memL.includes(keyPart), 'the link key is not on the server in readable form');
   const con = await (await b.createBrowserContext()).newPage();

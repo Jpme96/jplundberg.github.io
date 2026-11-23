@@ -259,7 +259,7 @@
   function typeLabel(l) { return l.name ? l.name : l.t ? l.t.split('').map(typeName).join(', ') : l.type; }
 
   /* ---------- the page ---------- */
-  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false, addOpen = false;
+  var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false, addOpen = false, renaming = null;
   try { quick = sessionStorage.getItem('dash.dcQuick') === '1'; } catch (e) {}
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
@@ -521,6 +521,7 @@
     return out;
   }
   function flowFull(p) {
+    if (tab === 'files') tab = 'lev'; else if (tab === 'docs') tab = 'cmp';   /* the old tabs' names (an import still asks for 'files'): stay where the work is */
     if (FLOW.indexOf(tab) < 0 && tab !== 'report') tab = (p.files || []).length ? 'cmp' : (p.lines || []).length || !kravOf(p) ? 'plan' : 'krav';   /* a project opens on the step that fits it, not the one you had open in another (JP 2026-11-23) */
     var L = p.lines || [], c = counts(L), F = p.files || [], r = kravOf(p), pc = planCheck(p), iss = flowIssues(p), loose = looseFiles(p).length;
     var got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }).length, miss = L.length - got;
@@ -532,9 +533,9 @@
     var names = { krav: k('ui.dx-krav', 'Requirements'), plan: k('ui.dc-plan', 'Document plan'), lev: k('ui.dc-fl-lev', 'Delivery'), cmp: k('ui.dc-fl-cmp', 'Comparison'), end: k('ui.dc-fl-end', 'Final check') };
     var cur = tab === 'report' ? 'end' : tab;
     var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
-      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span></div>' +
+      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span><button type="button" class="icon-btn sm" data-dcprojinfo aria-label="' + esc(k('ui.dc-the-project', 'The project')) + '" title="' + esc(k('ui.dc-fl-proj-t', 'The project – edit or delete')) + '"><i class="bi bi-three-dots"></i></button></div>' +
       '<nav class="dc-fsteps" role="tablist" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + FLOW.map(function (t, i) { return '<button type="button" role="tab" aria-selected="' + (t === cur) + '" data-dctab="' + t + '"><b><span class="dc-fn">' + (i + 1) + '</span><span class="dc-fname">' + esc(names[t]) + '</span></b><small>' + esc(subs[t]) + '</small></button>'; }).join('') + '</nav>';
-    var body = tab === 'report' ? reportTab(p) : cur === 'krav' ? flowKrav(p, r) : cur === 'plan' ? flowPlan(p, pc) : cur === 'lev' ? files(p) : cur === 'cmp' ? flowCmp(p, loose) : flowEnd(p, iss, verdict, c);
+    var body = editing ? projForm(p) : tab === 'report' ? reportTab(p) : cur === 'krav' ? flowKrav(p, r) : cur === 'plan' ? flowPlan(p, pc) : cur === 'lev' ? files(p) : cur === 'cmp' ? flowCmp(p, loose) : flowEnd(p, iss, verdict, c);
     return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + '</div></div>';
   }
   function fnext(t, label) { return '<div class="dc-fnext"><button type="button" class="pill-btn" data-dctab="' + t + '">' + esc(label) + ' <i class="bi bi-chevron-right"></i></button></div>'; }
@@ -549,7 +550,7 @@
     var h = '<h3 class="fdv-h">' + esc(k('ui.dc-fl-krav-t', 'What the project requires')) + '</h3>';
     if (r) h += '<p class="muted dc-help">' + esc(k('ui.dc-fl-krav-h', 'The yardstick everything is checked against: the document types per NS code.')) + '</p><ul class="dc-flist2">' + byCode(r.lines || []).map(function (q) { return flowRow(q[0], q[1], q[2].map(function (l) { return typeLabel(l); }).filter(Boolean).join(' · ')); }).join('') + '</ul><p><button type="button" class="text-btn" data-dxkrav="' + esc(r.id) + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-fl-krav-open', 'Open the requirements')) + '</button></p>';
     else h += '<p class="muted dc-help">' + esc(req() ? k('ui.dc-fl-krav-req', 'No requirements made for this project – the plan is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none', 'No requirements made for this project. Make them under Documentation → New project, or import the client’s checklist.')) + '</p>';
-    return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan'));
+    return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan')) + '<div class="dc-fproj">' + projBox(p) + '</div>';
   }
   function flowPlan(p, pc) {
     var L = p.lines || [], imp = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden>';
@@ -624,6 +625,11 @@
       '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden></label>' +
       (can('import', gOf(p, 'dctl')) ? '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-files-import', 'Import delivered files')) + '<input type="file" multiple data-dcfiles="' + esc(p.id) + '" hidden></label>' : '') + '</div>';
   }
+  /* the project's details with Edit and Delete – on the overview, and in the new flow under Krav (JP 2026-11-23 "I cannot delete the projects") */
+  function projBox(p) {
+    return '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3><table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-trade', 'Trade / delivery'), p.trade], [k('ui.dc-due', 'Deadline'), fmt(p.due)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<div class="fdv-acts"><button type="button" class="pill-btn" data-dcedit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + (can('delp', gOf(p, 'dctl')) ? '<button type="button" class="text-btn dc-del" data-dcdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-delete', 'Delete project')) + '</button>' : '') + '</div>';
+  }
   function over(p) {
     if (editing) return projForm(p);
     var L = p.lines || [], c = counts(L), F = p.files || [], bad = F.filter(function (f) { return (f.iss || []).length; }).length, loose = F.filter(function (f) { return !f.line; }).length;
@@ -644,8 +650,7 @@
     }
     if (L.length) h += '<div class="fdv-acts dc-xrow"><button type="button" class="pill-btn" data-dcxcol="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> <span>' + esc(k('ui.dc-x-btn', 'Excel with colours')) + '</span></button></div>';   /* the main way to work with the plan – also here, not only under Report (JP 23:46) */
     h += planBtns(p);
-    h += '<h3 class="fdv-h">' + esc(k('ui.dc-the-project', 'The project')) + '</h3><table class="fdv-kv">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-trade', 'Trade / delivery'), p.trade], [k('ui.dc-due', 'Deadline'), fmt(p.due)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td data-noi18n>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
-      '<div class="fdv-acts"><button type="button" class="pill-btn" data-dcedit><i class="bi bi-pencil"></i> ' + esc(k('ui.edit', 'Edit')) + '</button>' + (HOST ? '' : '<button type="button" class="pill-btn" data-dcteam="' + esc(p.id) + '"><i class="bi bi-people"></i> ' + esc(k('ui.dc-send-team', 'Send to Team')) + '</button>') + (can('delp', gOf(p, 'dctl')) ? '<button type="button" class="text-btn dc-del" data-dcdel="' + esc(p.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-delete', 'Delete project')) + '</button>' : '') + '</div>';
+    h += projBox(p);
     return h;
   }
   function matchesFilt(l) {
@@ -720,6 +725,11 @@
   }
   function looseFiles(p) { return (p.files || []).filter(function (f) { return !f.line; }); }
   function lineOf(p, id) { return (p.lines || []).filter(function (l) { return l.id === id; })[0]; }
+  /* the project's live upload links, each with Switch off (JP 2026-11-23 "cancel a link when I send it") – Team only */
+  function upLinks(p) {
+    var L0 = HOST && HOST.uplinks ? HOST.uplinks(p.id) : []; if (!L0.length) return '';
+    return '<ul class="dc-uplinks">' + L0.map(function (x) { return '<li><i class="bi bi-link-45deg"></i><span>' + esc(k('ui.dc-link-live', 'Link sent – works until {d}', { d: fmt(x.exp) })) + '</span><button type="button" class="text-btn" data-dcupoff="' + esc(x.id) + '">' + esc(k('ui.dc-link-off', 'Switch off')) + '</button></li>'; }).join('') + '</ul>';
+  }
   function files(p) {
     /* one question instead of three equal buttons (JP 2026-11-23 "this part is the confusing part"): you have the files, or the
        documentation is already in the FDV system and only the names are needed; once files are in, just small links to add more */
@@ -733,10 +743,10 @@
           '<span class="dc-facts"><label class="dc-chip dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="dc-chip" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></span></div>' +
         /* the contractor still has them: an upload link for this project, made right here (Team only – JP 2026-11-23 "what if I don't have the file") */
         (HOST && HOST.uplink ? '<div class="dc-way"><b><i class="bi bi-send"></i> ' + esc(k('ui.dc-way-link', 'The contractor has them')) + '</b><small>' + esc(k('ui.dc-way-link-s', 'Send an upload link – they see what is missing and deliver straight into the project, no account needed')) + '</small>' +
-          '<span class="dc-facts"><button type="button" class="dc-chip" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button></span></div>' : '') + '</div>'
+          '<span class="dc-facts"><button type="button" class="dc-chip" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button></span>' + upLinks(p) + '</div>' : '') + '</div>'
         : '<p class="muted dc-help">' + esc(k('ui.dc-no-files-yet', 'Nothing delivered yet.')) + '</p>';
     } else if (imp) h += '<div class="dc-more"><label class="text-btn dc-file"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-add-more-files', 'Add more files')) + fileIn + '</label>' +
-      '<label class="text-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="text-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></div>';
+      '<label class="text-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="text-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button>' + (HOST && HOST.uplink ? '<button type="button" class="text-btn" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button>' : '') + '</div>' + upLinks(p);
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
     if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
@@ -749,7 +759,8 @@
     h += '<div class="dc-selrow">' + selBtn('f', p.id) + '</div>';
     h += '<ul class="dc-files">' + F.map(function (f) {
       var l = f.line && lineOf(p, f.line);
-      return '<li class="dc-frow' + (!f.line ? ' loose' : '') + (fsel && SEL.ids[f.id] ? ' picked' : '') + '"' + (fsel ? ' data-dcpick="' + esc(f.id) + '"' : '') + '><div class="dc-fh">' + (fsel ? selBox(f.id) : '') + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><small class="muted">' + esc(size(f.size || 0)) + '</small>') +
+      return '<li class="dc-frow' + (!f.line ? ' loose' : '') + (fsel && SEL.ids[f.id] ? ' picked' : '') + '"' + (fsel ? ' data-dcpick="' + esc(f.id) + '"' : '') + '><div class="dc-fh">' + (fsel ? selBox(f.id) : '') + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : (renaming === f.id ? '<form class="dc-ren1" data-dcren1="' + esc(p.id) + ':' + esc(f.id) + '"><label class="dc-vh" for="dcr-' + esc(f.id) + '">' + esc(k('ui.dc-ren-label', 'New file name')) + '</label><input id="dcr-' + esc(f.id) + '" name="n" maxlength="160" value="' + esc(String(f.name).replace(/\.[a-z0-9]{2,5}$/i, '')) + '" placeholder="' + esc(k('ui.dc-ren-ph', 'e.g. 234 DA Vindu Skaara')) + '"><button type="submit" class="pill-btn sm">' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-dcren0>' + esc(k('ui.cancel', 'Cancel')) + '</button></form>' :
+          '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><button type="button" class="icon-btn sm" data-dcren="' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-ren-btn', 'Give the file the right name')) + '" title="' + esc(k('ui.dc-ren-btn', 'Give the file the right name')) + '"><i class="bi bi-pencil"></i></button><small class="muted">' + esc(size(f.size || 0)) + '</small>')) +
         '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div>' +
         ((f.iss || []).length ? '<ul class="dc-iss">' + f.iss.map(function (x) { return '<li class="' + x[0] + '"><i class="bi bi-' + (x[0] === 'err' ? 'x-octagon' : 'exclamation-triangle') + '"></i> ' + esc(issueText(x, f)) + '</li>'; }).join('') + '</ul>' : '') +
         (l ? '<p class="dc-to"><i class="bi bi-arrow-return-right"></i> <b>' + esc(l.code) + '</b> <span data-noi18n>' + esc(lineTitle(l)) + '</span> · ' + esc(typeLabel(l)) + '</p>' :
@@ -1906,6 +1917,10 @@
     if ((b = t.closest('[data-dxmot]'))) { if (tab === 'report') setTab('docs'); if (open === b.dataset.dxmot) draw(); else go(b.dataset.dxmot); return; }
     if ((b = t.closest('[data-dxrap]'))) { setTab('report'); if (open === b.dataset.dxrap) draw(); else go(b.dataset.dxrap); return; }
     if (t.closest('[data-dcback]')) { back(); return; }
+    if (t.closest('[data-dcprojinfo]')) { setTab('krav'); openLine = null; draw(); var pb = document.querySelector('.dc-fproj'); if (pb) pb.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if ((b = t.closest('[data-dcren]'))) { renaming = b.dataset.dcren; draw(); var ri = document.getElementById('dcr-' + renaming); if (ri) { ri.focus(); ri.select(); } return; }
+    if (t.closest('[data-dcren0]')) { renaming = null; draw(); return; }
+    if ((b = t.closest('[data-dcupoff]')) && HOST && HOST.uplinkOff) { HOST.uplinkOff(b.dataset.dcupoff); return; }
     if ((b = t.closest('[data-dcpile]'))) { cmpPile = b.dataset.dcpile; draw(); return; }
     if ((b = t.closest('[data-dcnoplan]'))) { saveP(b.dataset.dcnoplan, function (p) { p.noPlan = true; }); draw(); return; }
     if ((b = t.closest('[data-dcmkplan]'))) { var mk = 0; saveP(b.dataset.dcmkplan, function (p) {   /* a plan from the delivery: a line per file with a code, plus the project's requirements still missing */
@@ -1928,8 +1943,9 @@
     if ((b = t.closest('[data-dcview]'))) { var fid = b.dataset.dcview, w = null, NV = window.DocNaming && window.DocNaming.view;
       /* opens in a popup over the page (JP 2026-11-17 07:53); a new tab only if the viewer isn't loaded */
       var fnm = (function () { var pp = renOn() ? toolP() : proj(open), ff = pp && (pp.files || []).filter(function (x) { return x.id === fid; })[0]; return ff ? ff.name : 'file'; })();
-      if (!NV) { try { w = window.open('', '_blank'); } catch (e2) {} }
-      (renOn() && TOOL.blobs[fid] ? Promise.resolve(TOOL.blobs[fid]) : getBlob(fid)).then(function (bl) { if (bl && NV) { NV(bl, fnm); return; } if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
+      /* always the popup – the viewer is loaded first when it isn't yet (JP 2026-11-23 "make the files open in a pop-up") */
+      var vw = NV ? Promise.resolve() : (naming(), dcnLoading || Promise.resolve());
+      Promise.all([renOn() && TOOL.blobs[fid] ? Promise.resolve(TOOL.blobs[fid]) : getBlob(fid), vw.catch(function () {})]).then(function (z) { var bl = z[0]; NV = window.DocNaming && window.DocNaming.view; if (bl && NV) { NV(bl, fnm); return; } if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
     if ((b = t.closest('[data-dcfdel]')) && renOn()) { var rid = b.dataset.dcfdel; toolP().files = toolP().files.filter(function (x) { return x.id !== rid; }); delete TOOL.blobs[rid]; draw(); return; }
     if ((b = t.closest('[data-dcfdel]'))) {
       var id = b.dataset.dcfdel, pr = proj(open), keep = JSON.parse(JSON.stringify(pr));
@@ -2037,6 +2053,12 @@
     if (f.matches('form[data-dctform]')) { e.preventDefault(); if (!tform || !canAdmin()) return; var nm = f.n.value.trim().slice(0, 60), cs2 = Object.keys(tform.codes).sort(); if (!nm) return; if (!cs2.length && !tform.x.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dx-type-need', 'Tick at least one system'))); return; }
       var tt9 = Fe.tools(), rec = { name: nm, codes: cs2, x: tform.x }; if (tform.id) tt9.dctypes = (tt9.dctypes || []).map(function (x) { return x.id === tform.id ? Object.assign({}, x, rec) : x; }); else tt9.dctypes = (tt9.dctypes || []).concat([Object.assign({ id: uid() }, rec)]);
       Fe.saveTools(tt9); blurIn(); tform = null; tpen = false; draw(); toast('<i class="bi bi-bookmark-check"></i> ' + esc(k('ui.dx-type-saved', '“{n}” is under your own types', { n: nm }))); return; }
+    if (f.matches('form[data-dcren1]')) { e.preventDefault(); var rr = f.dataset.dcren1.split(':'), nv = String(f.n.value || '').trim().replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').slice(0, 150); renaming = null;
+      if (nv) saveP(rr[0], function (p) { var ff = (p.files || []).filter(function (x) { return x.id === rr[1]; })[0]; if (!ff) return; var ex = (String(ff.name).match(/\.[a-z0-9]{2,5}$/i) || [''])[0], nn = nv.replace(/\.[a-z0-9]{2,5}$/i, '') + ex; if (nn === ff.name) return;
+        ff.orig = ff.orig || ff.name; ff.name = nn; var pn = parseName(nn); ff.p = { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }; ff.iss = pn.issues;
+        if (ff.line && !ff.hand) { var ol = lineOf(p, ff.line); if (ol) { ol.files = (ol.files || []).filter(function (x) { return x !== ff.id; }); if (!ol.files.length && ol.st === 'recv') ol.st = 'missing'; } ff.line = null; }
+        rematch(p); });   /* the new name is checked and matched to the plan again (JP 2026-11-23 "I should be able to rename the file") */
+      draw(); return; }
     if (f.matches('form[data-dcpaste]')) { e.preventDefault(); var nn = namesText(f.t.value); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } pasting = false; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); importFiles(f.dataset.dcpaste, [], nn); return; }
     if (f.matches('form[data-dredit]')) { e.preventDefault(); var ev = siteRead(f, { name: f.name.value.trim().slice(0, 120) || 'Project', no: f.no.value.trim().slice(0, 40) }); saveP(ropen, function (p) { Object.assign(p, ev); }, 'dckrav'); redit = false; document.activeElement && document.activeElement.blur && document.activeElement.blur(); draw(); return; }
     if (f.matches('form[data-drform]')) { e.preventDefault(); var rn = f.name.value.trim().slice(0, 120); if (!rn) return; var rid = uid(), t11 = Fe.tools(); xsel = {}; xoff = {}; t11.dckrav = (t11.dckrav || []).concat([siteRead(f, { id: rid, name: rn, no: f.no.value.trim().slice(0, 40), made: new Date().toISOString(), lines: [] })]); Fe.saveTools(t11); radding = false; f.name.blur(); ticks = {}; lastType = ''; rgo(rid); return; }
