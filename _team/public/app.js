@@ -475,8 +475,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
   }
   function head(title, sub, back) {
-    return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : (S.me.isOwner ? '<a class="t-back" href="https://jplundberg.com/cmd/work/">' + ic('back') + '/cmd</a>' : '<small>work.jplundberg.com</small>')) +
-      '<span class="t-topr"><a class="t-icon" href="#search=" aria-label="' + L('Search', 'Søk') + '">' + ic('search') + '</a>' + (S.teams.length > 1 || S.me.isOwner ? '<button class="t-icon" type="button" data-act="teams" aria-label="' + L('Your teams', 'Teamene dine') + '">' + ic('swap') + '</button>' : '') + '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></span></div>' +
+    return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : '<small>work.jplundberg.com</small>') +
+      '<span class="t-topr">' + (S.me.isOwner && !back ? '<a class="t-tocmd" href="https://jplundberg.com/cmd/work/" title="' + L('Open /cmd', 'Åpne /cmd') + '">cmd ↗</a>' : '') + '<a class="t-icon" href="#search=" aria-label="' + L('Search', 'Søk') + '">' + ic('search') + '</a>' + (S.teams.length > 1 || S.me.isOwner ? '<button class="t-icon" type="button" data-act="teams" aria-label="' + L('Your teams', 'Teamene dine') + '">' + ic('swap') + '</button>' : '') + '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></span></div>' +
       '<div class="t-title"><h1>' + esc(title) + '</h1>' + (sub ? '<p>' + esc(sub) + '</p>' : '') + '</div>';
   }
 
