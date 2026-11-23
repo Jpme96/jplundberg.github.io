@@ -21,7 +21,7 @@ const { open, sl, go, until } = require('../lib/browser'); const { check, done }
       NativeBiometric: {
         isAvailable: () => Promise.resolve({ isAvailable: true, biometryType: 2 }),
         setCredentials: o => { localStorage.setItem('t.kc', JSON.stringify(o)); return Promise.resolve(); },
-        getSecureCredentials: o => { window.__faceid = (window.__faceid || 0) + 1; const c = JSON.parse(localStorage.getItem('t.kc') || 'null'); return c ? Promise.resolve({ username: c.username, password: c.password }) : Promise.reject(new Error('No protected credentials found')); },
+        getSecureCredentials: o => { window.__faceid = (window.__faceid || 0) + 1; localStorage.setItem('t.fid', String(+(localStorage.getItem('t.fid') || 0) + 1)); const c = JSON.parse(localStorage.getItem('t.kc') || 'null'); return c ? Promise.resolve({ username: c.username, password: c.password }) : Promise.reject(new Error('No protected credentials found')); },
         deleteCredentials: () => { localStorage.removeItem('t.kc'); return Promise.resolve(); } },
       DocumentScanner: { scanDocument: o => { window.__scanOpts = o; const c = document.createElement('canvas'); c.width = 60; c.height = 80; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 60, 80);
         const b = c.toDataURL('image/jpeg').split(',')[1]; return Promise.resolve({ status: 'success', scannedImages: [b, b] }); } },
@@ -66,6 +66,11 @@ const { open, sl, go, until } = require('../lib/browser'); const { check, done }
   await until(p, () => document.documentElement.classList.contains('unlocked'), 8000);
   const un = await p.evaluate(() => ({ unlocked: document.documentElement.classList.contains('unlocked'), asked: window.__faceid || 0 }));
   check(un.unlocked && un.asked >= 1, 'the lock screen asks Face ID by itself and unlocks ' + JSON.stringify(un));
+  /* a page loaded again while you're still in (e.g. after an update) must not ask Face ID a second time (JP 2026-11-23) */
+  const before = await p.evaluate(() => +localStorage.getItem('t.fid'));
+  await p.reload({ waitUntil: 'domcontentloaded' }); await sl(3000);
+  const after = await p.evaluate(() => ({ n: +localStorage.getItem('t.fid'), unlocked: document.documentElement.classList.contains('unlocked') }));
+  check(after.n === before && after.unlocked, 'no second Face ID when the page loads again while unlocked ' + JSON.stringify({ before, after }));
   /* Apple's scanner in Papers: two pages straight into the PDF view */
   await go(p, 'papers/', 2500);
   const sc = await p.evaluate(() => new Promise(res => { const i = document.querySelector('[data-pascan]'); if (!i) return res('no scan button'); i.closest('label').click();

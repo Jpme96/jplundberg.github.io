@@ -89,8 +89,10 @@
 
   /* ---------- unlock ---------- */
   var busy = false, asked = false;
+  function stillIn() { try { return +localStorage.getItem('dash.until') > Date.now(); } catch (e) { return false; } }
   function unlock() {
     var v = saved(); if (!v || busy) return;
+    if (v.native && !document.documentElement.classList.contains('locked')) return;   /* already in: no second Face ID */
     busy = true; var m = $('lockMsg');
     if (v.native) {
       if (!BIO()) { busy = false; return; }
@@ -133,7 +135,10 @@
     b.innerHTML = '<i class="bi bi-person-bounding-box"></i> ' + L('Unlock with ' + NAME, 'Lås opp med ' + NAME);
     b.hidden = !saved();
     /* in the app, Face ID starts by itself when the lock screen shows (no tap needed there) – once per time it's shown */
-    var v0 = saved(); if (v0 && v0.native && BIO() && !asked && document.documentElement.classList.contains('locked')) { asked = true; setTimeout(unlock, 350); }
+    var v0 = saved(); if (v0 && v0.native && BIO() && !asked && document.documentElement.classList.contains('locked') && !stillIn()) { asked = true;
+      /* asked only when the lock screen is really meant: a page that is still unlocked shows it for a moment while it
+         checks (dash.until) – that asked Face ID a second time once you were already in (JP 2026-11-23) */
+      setTimeout(function () { if (document.documentElement.classList.contains('locked') && !stillIn()) unlock(); else asked = false; }, 600); }
     /* with Face ID on, don't pop the keyboard on a phone – the button is the quick way in */
     if (saved() && matchMedia('(pointer: coarse)').matches) setTimeout(function () { var i = $('lockPass'); if (i && document.activeElement === i) i.blur(); }, 140);
   }
