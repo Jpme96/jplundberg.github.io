@@ -18,7 +18,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => { const c = document.querySelector('#wkDocReq [data-dctick]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   await p.evaluate(() => document.querySelector('#wkDocReq [data-dcmake="req"]').click()); await sl(1200);
   const s1 = await p.evaluate(() => ({ steps: [...document.querySelectorAll('#wkDocReq .dx-step')].map(s => (s.getAttribute('aria-current') ? '*' : '') + (s.disabled ? '-' : '') + s.querySelector('b').textContent.trim()).join('|'), ctlGone: document.getElementById('wkDocCtl').classList.contains('dc-gone'), back: (document.querySelector('#wkDocReq [data-drback]') || {}).textContent }));
-  check(/^\*1Requirements\|2Received\|-3Report$/.test(s1.steps) && s1.ctlGone && /Documentation/.test(s1.back), 'the project opens on step 1 Requirements; Received is next, Report waits ' + JSON.stringify(s1));
+  check(/^\*1Requirements\|2Project\|-3Report$/.test(s1.steps) && s1.ctlGone && /Documentation/.test(s1.back), 'requirements without a project open on step 1; “Project” (start it) is next – not “Received” (JP 2026-11-24) – Report waits ' + JSON.stringify(s1));
   /* back to the list: one row with its status */
   await p.evaluate(() => document.querySelector('#wkDocReq [data-drback]').click()); await sl(500);
   const l1 = await p.evaluate(() => ({ rows: [...document.querySelectorAll('#wkDocCtl .dx-list .kit-main')].map(r => r.textContent.replace(/\s+/g, ' ').trim()), full: document.body.classList.contains('dr-full'), hash: location.hash }));

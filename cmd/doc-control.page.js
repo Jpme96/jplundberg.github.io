@@ -298,14 +298,14 @@
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
   open = hashId();
-  function go(id) { if (flowOn() && id !== open) setTab('');   /* the new flow picks the step that fits the project */
+  function go(id) { if (id !== open) kin = false; if (flowOn() && id !== open) setTab('');   /* the new flow picks the step that fits the project */
     open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
   /* "‹ Documentation" always goes to the list (one tab: the step before may be the project's Requirements) – a step back in the
      browser's history only when that is where it leads */
-  function home0() { open = null; ropen = null; openLine = null; rpicking = false; editing = false; redit = false; }
+  function home0() { kin = false; open = null; ropen = null; openLine = null; rpicking = false; editing = false; redit = false; }
   function back() { var prev = history.state && history.state.from; if (hashId() && history.state && history.state.dc && prev === 'list') { history.back(); return; } home0(); history.pushState({ list: 1 }, '', location.pathname + location.search); draw(); window.scrollTo(0, 0); }
   window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r || id) PageTabs.show('doc', true); } draw(); } });
-  function setTab(t) { tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
+  function setTab(t) { if (t !== 'krav') kin = false; tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
 
   /* the building and the property (JP 10:42): building ID and name, property name and ID – on the project, the requirements and the reports */
   var SITE = [['bid', 'ui.dc-bid', 'Building ID', 40], ['bname', 'ui.dc-bname', 'Building name', 120], ['pid', 'ui.dc-pid', 'Property ID', 60], ['pname', 'ui.dc-pname', 'Property name', 120]];   /* numbers on the left, names on the right (JP 2026-11-24 09:11) */
@@ -343,11 +343,13 @@
   function isDrawFile(f) { var stem = String(f.name).replace(/\.[a-z0-9]{2,5}$/i, ''); return TEG.test(stem) || /^\d{4,6}-/.test(stem) || (f.p && f.p.kind === 'drawing') || f.nk === 'drawing'; }
   function dwStats(p) { var by = {}; (p.files || []).forEach(function (f) { if (f.nf) return; var m = String(f.name).match(/^(.*)\.(pdf|dwg)$/i); if (!m || !isDrawFile(f)) return; var s0 = m[1].toLowerCase(); (by[s0] = by[s0] || { n: m[1], f: [] })[m[2].toLowerCase()] = 1; by[s0].f.push(f); });
     var o = { both: [], pdf: [], dwg: [] }; Object.keys(by).forEach(function (s0) { var x = by[s0]; o[x.pdf && x.dwg ? 'both' : x.pdf ? 'pdf' : 'dwg'].push(x); }); o.n = o.both.length + o.pdf.length + o.dwg.length; return o; }
+  /* the requirements' new lines (and building/property values) go into their project – used by Start and by the requirements made inside a project */
+  function syncKrav(pid, ps) { var add0 = 0; saveP(pid, function (p) { var hv = {}; (p.lines || []).forEach(function (l) { hv[l.code + '|' + l.t + '|' + (l.name || '')] = 1; }); p.lines = p.lines || []; (ps.lines || []).forEach(function (l, i) { if (!hv[l.code + '|' + l.t + '|' + (l.name || '')]) { add0++; p.lines.push(Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' })); } }); ['bid', 'bname', 'pname', 'pid', 'no'].forEach(function (f) { if (ps[f]) p[f] = ps[f]; }); rematch(p); }); return add0; }
   function ctlOf(r) { return r ? projects().filter(function (x) { return x && x.krav === r.id; })[0] || null : null; }
   function steps(cur, r, p) {
     var c = p ? counts(p.lines || []) : null, S = [
       ['krav', 1, k('ui.dx-krav', 'Requirements'), r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : k('ui.dx-no-krav', 'Started from a plan'), r ? 'data-dxkrav="' + esc(r.id) + '"' : ''],
-      ['mot', 2, k('ui.dx-mot', 'Received'), p ? k('ui.dx-recv', '{a} of {b} received', { a: c.all - c.missing, b: c.all }) : k('ui.dx-mot-next', 'When the list is ready'), p ? 'data-dxmot="' + esc(p.id) + '"' : r ? 'data-drstart' : ''],
+      ['mot', 2, p ? k('ui.dx-mot', 'Received') : k('ui.dx-proj-step', 'Project'), p ? k('ui.dx-recv', '{a} of {b} received', { a: c.all - c.missing, b: c.all }) : k('ui.dx-start-proj', 'Start the project'), p ? 'data-dxmot="' + esc(p.id) + '"' : r ? 'data-drstart' : ''],
       ['rap', 3, k('ui.fdv-tab-report', 'Report'), p ? k('ui.dx-appr', '{a} of {b} approved', { a: c.done, b: c.all }) : k('ui.dx-last', 'At the end'), p ? 'data-dxrap="' + esc(p.id) + '"' : '']];
     var at = ['krav', 'mot', 'rap'].indexOf(cur);
     return '<nav class="dx-steps" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + S.map(function (q, i) {
@@ -618,11 +620,21 @@
     return '<li class="dc-frow2' + (op ? ' open' : '') + '"><b class="dc-code">' + esc(code) + '</b>' + (l && l.id ? '<button type="button" class="dc-fopen" data-dcline="' + esc(l.id) + '" aria-expanded="' + !!op + '">' + main + '<i class="bi bi-chevron-' + (op ? 'up' : 'down') + '"></i></button>' : main) + (extra || '') +
       (op ? '<div class="dc-fedit">' + lineEdit(p, l, (l.files || []).map(function (id) { return F0[id]; }).filter(Boolean)) + '</div>' : '') + '</li>';
   }
+  /* Step 1 Krav (JP 2026-11-24 16:57–16:59): the requirements are made and changed right here, with the project's five steps on top –
+     no separate page to find the way out of. Without requirements: two choices, make them or go on without (checked against the plan or checklist). */
+  var kin = false;   /* the requirements open for changes inside the project (the picker or the list with its pen) */
   function flowKrav(p, r) {
-    var h = '<h3 class="fdv-h">' + esc(k('ui.dc-fl-krav-t', 'What the project requires')) + '</h3>';
-    if (r) h += '<p class="muted dc-help">' + esc(k('ui.dc-fl-krav-h', 'The yardstick everything is checked against: the document types per NS code.')) + '</p><ul class="dc-flist2">' + byCode(r.lines || []).map(function (q) { return flowRow(q[0], q[1], q[2].map(function (l) { return typeLabel(l); }).filter(Boolean).join(' · ')); }).join('') + '</ul><p><button type="button" class="text-btn" data-dxkrav="' + esc(r.id) + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-fl-krav-open', 'Open the requirements')) + '</button></p>';
-    else h += '<p class="muted dc-help">' + esc(req() ? k('ui.dc-fl-krav-req', 'No requirements made for this project – the plan is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none', 'No requirements made for this project. Make them under Documentation → New project, or import the client’s checklist.')) + '</p>';
-    h += dwPick(r || p, r ? 'dckrav' : 'dctl');
+    var h = '<h3 class="fdv-h">' + esc(k('ui.dc-fl-krav-t', 'What the project requires')) + '</h3>', ed = r ? can('edit', gOf(r, 'dckrav')) : can('edit', gOf(p, 'dctl'));
+    if (r && kin) { ropen = r.id; return h + kravFull(r, true) + dwPick(r, 'dckrav') + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan')); }
+    if (r && (r.lines || []).length) h += '<p class="muted dc-help">' + esc(k('ui.dc-fl-krav-h', 'The yardstick everything is checked against: the document types per NS code.')) + '</p><ul class="dc-flist2">' + byCode(r.lines || []).map(function (q) { return flowRow(q[0], q[1], q[2].map(function (l) { return typeLabel(l); }).filter(Boolean).join(' · ')); }).join('') + '</ul>' +
+      (ed ? '<p><button type="button" class="text-btn" data-dckin><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-fl-krav-edit', 'Change the requirements')) + '</button></p>' : '');
+    else {
+      h += '<div class="dc-nokrav"><p class="dc-help">' + esc(req() ? k('ui.dc-fl-krav-req2', 'No requirements yet – the delivery is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none2', 'No requirements yet – the delivery is checked against the document plan.')) + '</p>' +
+        '<div class="dc-facts">' + (ed ? '<button type="button" class="pill-btn" data-dckin><i class="bi bi-list-check"></i> ' + esc(k('ui.dc-fl-krav-make', 'Make requirements')) + '</button>' : '') +
+        '<button type="button" class="pill-btn ghost" data-dctab="' + (hasPlan(p) || !p.noPlan ? 'plan' : 'lev') + '">' + esc(k('ui.dc-fl-krav-skip', 'Go on without requirements')) + ' <i class="bi bi-chevron-right"></i></button></div></div>';
+      return h + dwPick(p, 'dctl') + '<div class="dc-fproj">' + projBox(p) + '</div>';
+    }
+    h += dwPick(r, 'dckrav');
     return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan')) + '<div class="dc-fproj">' + projBox(p) + '</div>';
   }
   function flowPlan(p, pc) {
@@ -942,6 +954,7 @@
     if (drawT) { clearTimeout(drawT); drawT = 0; }
     lastDraw = now;
     var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
+    if (!open && ropen && flowOn()) { var rq0 = krav(ropen), cq0 = rq0 && ctlOf(rq0); if (cq0) { open = cq0.id; setTab('krav'); try { history.replaceState({ dc: cq0.id, from: 'list' }, '', location.pathname + location.search + '#dc=' + cq0.id); } catch (e) {} } }   /* a project's requirements live in its step 1 (JP 2026-11-24) */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
     if (p && p.req !== undefined && reqs().some(function (r) { return r.id === p.req; })) curReq = p.req; else if (p) curReq = ''; else { try { curReq = sessionStorage.getItem('dash.dcReq') || ''; } catch (e) {} }   /* an open project is checked against its own checklist */
@@ -1323,15 +1336,15 @@
       '<label><span>' + esc(k('ui.dc-project-no', 'Project no.')) + '</span><input name="no" maxlength="40"></label>' + siteFields(null) +
       '<div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dr-next', 'Next: pick the systems')) + '</button><button type="button" class="text-btn" data-drcancel>' + esc(k('ui.cancel', 'Cancel')) + '</button></div><p class="muted dc-help">' + esc(k('ui.dx-have-plan', 'Already have the contractor\u2019s document plan?')) + ' <button type="button" class="text-btn" data-dcnew>' + esc(k('ui.dx-start-plan', 'Start at Received')) + '</button></p></form>';
   }
-  function kravFull(p) {
+  function kravFull(p, inside) {
     var L = p.lines || [], sys = {}; L.forEach(function (l) { sys[l.code] = 1; });
-    var h = '<div class="fdv-page dc-page"><div class="fdv-top"><button type="button" class="fdv-back" data-drback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
+    var h = inside ? '<div class="dr-inside"><div class="fdv-body">' : '<div class="fdv-page dc-page"><div class="fdv-top"><button type="button" class="fdv-back" data-drback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.type, L.length ? k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: L.length }) : ''].filter(Boolean).join(' · ')) + '</small></div></div>' + steps('krav', p, ctlOf(p)) + '<div class="fdv-body">';
     if (rpicking || !L.length) return h + picker(p, 'req') + '</div></div>';
     if (L.some(function (l) { return !l.t && defTypes(l.code) && !/^1/.test(l.code); })) h += '<p class="dc-note dr-fillnote"><i class="bi bi-info-circle"></i> ' + esc(k('ui.dr-fill-help', 'Some systems have no document types yet.')) + ' <button type="button" class="text-btn" data-drfill>' + esc(k('ui.dr-fill', 'Fill in the document types')) + '</button></p>';
-    h += dwPick(p, 'dckrav');
+    if (!inside) h += dwPick(p, 'dckrav');
     h += '<div class="dc-facts">' + (can('send', gOf(p, 'dckrav')) ? '<button type="button" class="pill-btn dx-pri" data-drsend><i class="bi bi-send"></i> ' + esc(p.sent && p.sent.key !== linesKey(p) ? k('ui.dx-send-again', 'Send again') : k('ui.dx-send', 'Send to the contractor')) + '</button>' : '') +
-      '<button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-mot', 'To Received') : k('ui.dx-start-mot', 'Next: Received')) + '</button></div>';
+      (inside ? '<button type="button" class="pill-btn" data-dckinx><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button>' : '<button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-proj', 'Open the project') : k('ui.dx-start-proj', 'Start the project')) + '</button>') + '</div>';
     h += rsend ? sendForm(p) : '';
     h += sentHtml(p);
     h += '<div class="dx-lh"><h3 class="fdv-h">' + esc(k('ui.dx-the-list', 'The list')) + '</h3>' + (can('edit', gOf(p, 'dckrav')) ? '<button type="button" class="icon-btn sm dx-pen" aria-pressed="' + rpen + '" data-drpen aria-label="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '" title="' + esc(rpen ? k('ui.dx-pen-done', 'Done changing the list') : k('ui.dx-pen', 'Change the list')) + '"><i class="bi bi-' + (rpen ? 'check2' : 'pencil') + '"></i></button>' : '') + (can('edit', gOf(p, 'dckrav')) ? selBtn('r', p.id) : '') + (rpen ? '<span class="muted dc-help">' + esc(k('ui.dx-pen-help', 'Remove lines or add new ones')) + '</span>' : '') + '</div>';
@@ -1962,7 +1975,7 @@
     if (t.closest('[data-drxlsx]')) { var px = krav(ropen); if (!px) return; if (rsend) markSent(px.id, 'xlsx'); var fx = new File([kravXlsx(px)], fileName(px, 'Dokumentkrav', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fx); return; }
     if (t.closest('[data-drstart]')) { var ps = krav(ropen); if (!ps) return; var nid = uid(), tt2 = Fe.tools(), had = (tt2.dctl || []).filter(function (x) { return x && x.krav === ps.id; })[0];
       if (had) {   /* started before: open that one and add what is new in the requirements (JP 13:05 – a second tap made a second project) */
-        var add0 = 0; saveP(had.id, function (p) { var hv = {}; (p.lines || []).forEach(function (l) { hv[l.code + '|' + l.t + '|' + (l.name || '')] = 1; }); (ps.lines || []).forEach(function (l, i) { if (!hv[l.code + '|' + l.t + '|' + (l.name || '')]) { add0++; p.lines.push(Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' })); } }); ['bid', 'bname', 'pname', 'pid', 'no'].forEach(function (f) { if (ps[f]) p[f] = ps[f]; }); rematch(p); });
+        var add0 = syncKrav(had.id, ps);
         if (add0) toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: add0 })));
         rpicking = false; if (window.PageTabs && PageTabs.show) PageTabs.show('doc', true); setTab('docs'); go(had.id); return; }
       tt2.dctl = (tt2.dctl || []).concat([{ id: nid, name: ps.name, no: ps.no || '', bid: ps.bid || '', bname: ps.bname || '', pname: ps.pname || '', pid: ps.pid || '', trade: ps.type || '', made: new Date().toISOString(), planName: k('ui.doc-req', 'Document requirements') + ': ' + ps.name, planAt: today(), krav: ps.id,
@@ -1981,6 +1994,9 @@
       }).catch(function () { b.disabled = false; lb.textContent = k('ui.fdv-make-pdf', 'Make PDF'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).'))); }); return;
     }
     if (t.closest('[data-dcnew]')) { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); adding = true; radding = false; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
+    if (t.closest('[data-dccancel]') && open && kin) { var rk4 = krav(ropen);
+      if (rk4 && !(rk4.lines || []).length) { var t4 = Fe.tools(); t4.dckrav = (t4.dckrav || []).filter(function (x) { return x.id !== rk4.id; }); Fe.saveTools(t4); saveP(open, function (x) { if (x.krav === rk4.id) delete x.krav; }); ropen = null; }   /* nothing was made: no empty list is left behind */
+      rpicking = false; kin = false; draw(); window.scrollTo(0, 0); return; }
     if (t.closest('[data-dccancel]')) { adding = false; editing = false; picking = false; if (rpicking && ropen && krav(ropen) && !(krav(ropen).lines || []).length) { rpicking = false; rback(); return; } rpicking = false; draw(); return; }
     if (t.closest('[data-drpick]')) { rpicking = true; ticks = {}; xsel = {}; xoff = {}; draw(); window.scrollTo(0, 0); return; }
     if ((b = t.closest('[data-dcptype]'))) { var ty = allTypes().filter(function (x) { return x.id === b.dataset.dcptype; })[0]; if (!ty) return; var CC = pickCodes();
@@ -1996,7 +2012,8 @@
       var addr = 0; saveP(ropen, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = linesFor(cr).filter(function (l) { return !have[l.code + '|' + l.t]; }); (p.lines || []).forEach(function (l) { if (l.name) have[l.code + '|' + l.name] = 1; });
         xtras().forEach(function (x) { var xl = xLine(x); if (!xoff[xKey(x)] && !have[xl.code + '|' + xl.name]) { have[xl.code + '|' + xl.name] = 1; nl.push(xl); } }); addr = nl.length; p.lines = (p.lines || []).concat(nl); if (lastType && !p.type) p.type = lastType; }, 'dckrav');
       xsel = {}; xoff = {};
-      rpicking = false; ticks = {}; toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dr-made', '{n} documents on the list', { n: addr }))); draw(); window.scrollTo(0, 0); return;
+      rpicking = false; ticks = {}; if (open && kin) { var pk3 = proj(open), rk3 = krav(ropen); if (pk3 && rk3) syncKrav(pk3.id, rk3); kin = false; }
+      toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dr-made', '{n} documents on the list', { n: addr }))); draw(); window.scrollTo(0, 0); return;
     }
     if (t.closest('[data-dcmake]')) {
       var cs = Object.keys(ticks).filter(function (c) { return ticks[c]; }); if (!cs.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-tick-first', 'Tick the systems first – or tap a project type.'))); return; }
@@ -2008,6 +2025,12 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
+    if (t.closest('[data-dckin]') && open) { var pk = proj(open); if (!pk) return; var rk = kravOf(pk);
+      if (!rk) {   /* no requirements yet: make an empty list for this project, with its name and values, and open the picker */
+        var kid = uid(), tk = Fe.tools(); tk.dckrav = (tk.dckrav || []).concat([{ id: kid, name: pk.name, no: pk.no || '', bid: pk.bid || '', bname: pk.bname || '', pname: pk.pname || '', pid: pk.pid || '', type: '', lines: [], dw: pk.dw || undefined }]); Fe.saveTools(tk);
+        saveP(pk.id, function (x) { x.krav = kid; }); rk = krav(kid); }
+      kin = true; ropen = rk.id; rpicking = !(rk.lines || []).length; ticks = {}; xsel = {}; xoff = {}; rpen = false; draw(); window.scrollTo(0, 0); return; }
+    if (t.closest('[data-dckinx]') && open) { var pk2 = proj(open), rk2 = kravOf(pk2); if (pk2 && rk2) syncKrav(pk2.id, rk2); kin = false; rpicking = false; rpen = false; draw(); window.scrollTo(0, 0); return; }
     if (t.closest('[data-dcdwo]')) { dwOpen = !dwOpen; draw(); return; }
     if ((b = t.closest('[data-dcdw]'))) { var dq = b.dataset.dcdw.split('|'), dkey = dq[0] === 'dckrav' ? 'dckrav' : 'dctl', did = dq[1], dv = dq[2];
       saveP(did, function (x) { x.dw = dv; }, dkey); (Fe.tools().dctl || []).filter(function (q) { return q.id === did || q.krav === did; }).forEach(function (q) { saveP(q.id, function (x) { pairs(x); }); });
