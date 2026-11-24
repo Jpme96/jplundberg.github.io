@@ -274,7 +274,7 @@
   function setTab(t) { tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
 
   /* the building and the property (JP 10:42): building ID and name, property name and ID – on the project, the requirements and the reports */
-  var SITE = [['bid', 'ui.dc-bid', 'Building ID', 40], ['bname', 'ui.dc-bname', 'Building name', 120], ['pname', 'ui.dc-pname', 'Property name', 120], ['pid', 'ui.dc-pid', 'Property ID', 60]];
+  var SITE = [['bid', 'ui.dc-bid', 'Building ID', 40], ['bname', 'ui.dc-bname', 'Building name', 120], ['pid', 'ui.dc-pid', 'Property ID', 60], ['pname', 'ui.dc-pname', 'Property name', 120]];   /* numbers on the left, names on the right (JP 2026-11-24 09:11) */
   function siteFields(p) { return '<div class="dc-site">' + SITE.map(function (q) { return '<label><span>' + esc(k(q[1], q[2])) + '</span><input name="' + q[0] + '" maxlength="' + q[3] + '" value="' + esc(p && p[q[0]] || '') + '"></label>'; }).join('') + '</div>'; }
   function siteRead(f, v) { SITE.forEach(function (q) { v[q[0]] = f[q[0]] ? f[q[0]].value.trim().slice(0, q[3]) : ''; }); return v; }
   function siteRows(p) { return SITE.map(function (q) { return [k(q[1], q[2]), p[q[0]]]; }); }

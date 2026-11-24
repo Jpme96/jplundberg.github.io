@@ -224,6 +224,8 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
      (B and C together), the examples as hints; shared as PDF / Excel (a document plan that reads back), and "Start document control" copies it */
   await tap('[data-dcback]'); await sl(500);
   await tap('[data-drnew]'); await sl(200);
+  /* number on the left, name on the right – building, then property (JP 2026-11-24 09:11) */
+  check(await p.evaluate(() => [...document.querySelectorAll('form[data-drform] .dc-site input')].map(i => i.name).join(',')) === 'bid,bname,pid,pname', 'the building and property fields go number | name, number | name');
   await p.evaluate(() => { const f = document.querySelector('form[data-drform]'); f.name.value = 'Made-up bathroom'; f.no.value = 'P-9'; f.bid.value = '99901'; f.bname.value = 'Made-up block A'; f.pname.value = 'Made-up estate'; f.pid.value = '1/2'; f.requestSubmit(); }); await sl(500);
   check(await p.evaluate(() => document.body.classList.contains('dr-full') && /^#dr=/.test(location.hash) && !!document.querySelector('.dc-pick')), 'new requirements open on their own page (#dr=…) with the system picker');
   const df = await p.evaluate(() => DocCtl.linesFor(['211', '330', '442']).map(l => l.code + ' ' + l.t + ' ' + (l.hint ? 1 : 0)).join());
