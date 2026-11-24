@@ -1392,7 +1392,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
      like the rest; you only change your own. It shows on Overview as a card with the running time and this week's hours;
      admins see everyone's week on the Team tab. */
   /* the three Documents tabs can be switched off for the whole team by an admin (JP 2026-11-19 21:42); all three off = no Documents in the menu */
-  var DTABS = [['doc', 'Documentation', 'Dokumentasjon'], ['insp', 'Inspections', 'Befaringer'], ['files', 'Files', 'Filer']];
+  var DTABS = [['doc', 'Documentation', 'Dokumentasjon'], ['insp', 'Inspections', 'Befaringer'], ['files', 'Uploads', 'Opplastinger']];
   function dtabsOff() { var r = (S.recs || {}).cfgdoctabs; var d = r && !r.del && r.d ? r.d : {}; return Array.isArray(d.off) ? d.off.filter(function (x) { return /^(doc|insp|files)$/.test(x); }) : []; }
   function dtabsOn() { var off = dtabsOff(); return DTABS.filter(function (t) { return off.indexOf(t[0]) < 0; }); }
   async function dtabsSet(key, on) { var off = dtabsOff().filter(function (x) { return x !== key; }); if (!on) off.push(key); if (await putRec('cfg', 'cfgdoctabs', { off: off }, L('Documents tabs', 'Faner i Dokumenter'))) { if (S.sheet) settingsSheet(); draw(); } }
