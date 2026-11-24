@@ -64,6 +64,10 @@ const fs = require('fs'), os = require('os'), path = require('path');
   check(pv.rows === 2 && pv.tags === 2 && !pv.art, 'the Document plan tab shows the plan as a table with status tags ' + JSON.stringify(pv));
   const o1 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-dcdlone]').click(); for (let i = 0; i < 40 && !got; i++) await new Promise(r => setTimeout(r, 100)); FdvPdf.share = old; return got && got.name; });
   check(/\.xlsx$/.test(o1 || ''), '"Download only this" on the plan tab gives the Excel file ' + o1);
+  /* the naming tool can make a document plan (Vedlegg 7) from its files (JP 2026-11-24 22:51) */
+  await p.evaluate(async () => { await window.DocTools.ren([new File(['%PDF-1.1 made up'], '365 DA Vifte madeup.pdf', { type: 'application/pdf' })]); }); await sl(800);
+  const v7 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; const b2 = document.querySelector('[data-dxrenplan]'); if (!b2) { FdvPdf.share = old; return 'no button'; } b2.click(); for (let i = 0; i < 20 && !got; i++) await new Promise(r => setTimeout(r, 100)); FdvPdf.share = old; return got ? got.name + '|' + new TextDecoder().decode(await got.arrayBuffer()).includes('365') : 'nothing'; });
+  check(/Vedlegg 7.*\.xlsx\|true$/.test(v7), 'the naming tool downloads a Vedlegg 7 made from its files ' + v7);
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
 })();

@@ -55,7 +55,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.goto(T + '#overview'); await sl(1200);
   const ov = await text();
   check(/Testveien 9/.test(ov) && /1 of 3/.test(ov) && /1\s*approved/.test(ov) && /33 %/.test(ov), 'Overview lists the projects with how far they are ' + JSON.stringify(ov.slice(ov.indexOf('PROJ'), ov.indexOf('PROJ') + 300)));
-  check(/This week/.test(ov) && /Testveien 9: imported \(3 documents\)/.test(ov), 'Overview has "This week" in short – a project brought in says imported, not changed (2026-11-16)');
+  check(!/This week/.test(ov), 'Overview has no "This week" – it shows what needs doing (JP 2026-11-24 22:57)');
 
   /* a shared file: 2.4 MB in three encrypted chunks */
   await own.goto(T + '#files'); await own.waitForSelector('input[data-fadd]');
@@ -116,27 +116,27 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(con, () => /Sent on this link/.test(document.body.innerText) && /A-101 plan\.pdf/.test(document.getElementById('log').innerText) && /Waiting for the team/.test(document.getElementById('log').innerText) && /Kari Test/.test(document.getElementById('log').innerText), 10000), 'the sender sees what was sent, by whom, and that the team has not taken it in yet');
   check((await raw('/api/up/team/0000000000000000/info', { cookie: 'noauth=1' })).status === 410, 'a made-up link id does not work');
 
-  await own.goto(T + '#overview'); await own.goto(T + '#files');
-  check(await until(own, () => /A-101 plan\.pdf/.test(document.body.innerText), 15000), 'the team sees the file name (opened with the link key on the device)');
-  check(await own.evaluate(() => /Kari Test, Bygg AS/.test(document.body.innerText) && /Revised plan, rev\. C/.test(document.body.innerText)), 'the team sees who sent it and the message');
-  await own.evaluate(() => document.querySelector('[data-act=upkeep]').click());
-  check(await until(own, () => [...document.querySelectorAll('[data-act=fopen]')].some(x => /A-101 plan\.pdf/.test(x.textContent)), 15000), '"Keep" puts it into the shared files');
-  await own.evaluate(() => { window.__blobs = []; [...document.querySelectorAll('[data-act=fopen]')].find(x => /A-101/.test(x.textContent)).click(); });
-  check(await until(own, () => window.__blobs.some(x => x && /A-101/.test(x.name || '')), 15000), 'and it opens');
-  const got = await own.evaluate(() => window.__blobs.find(x => /A-101/.test(x.name || '')).text().then(t => t.slice(0, 25)));
-  check(got === '%PDF-1.4 made-up drawing ', 'the uploaded file comes back as sent');
-  /* in the viewer from Documents, which zooms inside the PDF (JP 2026-11-23) – a frame only if that viewer can't load */
-  check(await until(own, () => !!document.querySelector('.dx-fv') || !!document.querySelector('#prevBox iframe'), 10000), 'a PDF is shown in Team');
-  check(await own.evaluate(() => !!document.querySelector('.dx-fv .dx-fvb')), 'in the zoomable viewer');
+  /* a project's link sends its files straight into the project's Levering (JP 2026-11-24 22:46) – not listed in Opplastinger */
+  const lid0 = link.split('#')[1].split('.')[1];
+  await own.goto(T + '#overview'); await own.goto(T + '#files'); await sl(1500);
+  check(await own.evaluate(() => { const c = document.querySelector('.t-upl'); return !!c && !c.querySelector('[data-ups]') && /straight into the project/.test(c.textContent) && !document.querySelector('[data-act=upkeep]'); }), 'Opplastinger: the project\'s link says its files go straight into the project – no list, no Keep');
+  const tp = await own.evaluate(() => ((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).id);
+  await own.goto(T + '#dc=' + tp); await sl(800);
+  await own.evaluate(() => { const s2 = document.querySelector('[data-dctab="lev"], [data-dctab="files"]'); s2 && s2.click(); });
+  check(await until(own, () => (((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).some(f => /A-101 plan\.pdf/.test(f.name) && f.nw), 25000), 'opening the project brings the file in from the link, marked new ' + await own.evaluate(() => JSON.stringify((((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).map(f => [f.name, f.nw, f.upf]).concat([location.hash, !!(window.DocHost && DocHost.linkFiles)]))));
+  check(await until(own, () => !!document.querySelector('.dc-freshline') || !!document.querySelector('.dc-fresh'), 6000), 'the new-files line shows on Levering');
+  check(await until(own, () => true, 300) && await (async () => { for (let i = 0; i < 60; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + lid0 + ':')) return true; await sl(500); } return false; })(), 'once the project\'s copy is shared with the team, the copy on the link is removed');
+  /* it opens in the viewer from Documents, which zooms inside the PDF (JP 2026-11-23) */
+  await own.evaluate(() => { const v = [...document.querySelectorAll('[data-dcview]')].find(x => /A-101/.test(x.textContent)); v && v.click(); });
+  check(await until(own, () => !!document.querySelector('.dx-fv .dx-fvb'), 10000), 'the file from the link opens in the zoomable viewer');
   /* the icons sit in the middle of their round buttons (JP 2026-11-23: the close X was off-centre in Team) */
-  const off = await own.evaluate(() => [...document.querySelectorAll('.icon-btn')].filter(b => b.offsetParent && b.querySelector('i.bi')).map(b => { const r = b.getBoundingClientRect(), g = b.querySelector('i.bi').getBoundingClientRect(); return { dx: Math.abs((g.left + g.width / 2) - (r.left + r.width / 2)), dy: Math.abs((g.top + g.height / 2) - (r.top + r.height / 2)), c: b.className }; }).filter(x => x.dx > 1.5 || x.dy > 1.5).concat([...document.querySelectorAll('.icon-btn > i.bi')].filter(i => i.offsetParent && getComputedStyle(i, '::before').verticalAlign !== 'baseline' && getComputedStyle(i, '::before').display !== 'block').map(i => ({ glyph: 'lowered', c: i.className }))));
+  const off = await own.evaluate(() => [...document.querySelectorAll('.icon-btn')].filter(b => b.offsetParent && b.querySelector('i.bi')).map(b => { const r = b.getBoundingClientRect(), g = b.querySelector('i.bi').getBoundingClientRect(); return { dx: Math.abs((r.left + r.width / 2) - (g.left + g.width / 2)), dy: Math.abs((r.top + r.height / 2) - (g.top + g.height / 2)) }; }).filter(o => o.dx > 2.5 || o.dy > 2.5));
   check(!off.length, 'every icon is centred in its round button ' + JSON.stringify(off));
   const cx = await own.evaluate(() => { const b = document.querySelector('.dx-fv [data-dxfvx]'); if (!b) return null; const c = getComputedStyle(b), r = b.getBoundingClientRect(), sh = b.closest('.dcn-sheet').getBoundingClientRect(); return { border: c.borderTopColor, bg: c.backgroundColor, gap: Math.round(sh.right - r.right) }; });
   check(cx && /rgba\(0, 0, 0, 0\)|transparent/.test(cx.border) && /rgba\(0, 0, 0, 0\)|transparent/.test(cx.bg) && cx.gap >= 0 && cx.gap <= 24, 'the close X has no circle and sits in the top corner ' + JSON.stringify(cx));
-  await own.evaluate(() => { const x = document.querySelector('.dx-fv [data-dxfvx]'); if (x) x.click(); });
-  await own.evaluate(() => document.querySelector('[data-act=close]').click()); await sl(300);
-  await con.reload(); 
-  check(await until(con, () => /Received/.test((document.getElementById('log') || {}).innerText || ''), 10000), 'the sender sees "Received" once the team has kept it');
+  await own.evaluate(() => { const x = document.querySelector('.dx-fv [data-dxfvx]'); if (x) x.click(); }); await sl(300);
+  await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(800);   /* back to an empty Levering for the steps below */
+  await own.goto(T + '#files'); await sl(1200);
   /* switching the link off */
   /* remind the contractor: the card counts what is late and "Remind" makes a message with those items and the link */
   await own.evaluate(() => { window.__shared = null; navigator.share = o => { window.__shared = o.text; return Promise.resolve(); }; });
@@ -150,6 +150,33 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await con.goto('about:blank'); await con.goto(SITE + 'upload/' + link.slice(link.indexOf('#')));
   check(offInfo.status === 410 && await until(con, () => /run out or was switched off/.test(document.body.innerText), 8000), 'a switched-off link stops working (' + offInfo.status + ')');
   await con.close();
+
+  /* a link without a project (JP 2026-11-24 22:51): its files wait in Opplastinger – Download as they are, or Put in a project */
+  await own.goto(T + '#files'); await sl(800);
+  await own.click('[data-act=uplink]'); await own.waitForSelector('form[data-form=uplink]');
+  await own.select('select[name=pid]', '');
+  await own.click('form[data-form=uplink] button[type=submit]'); await own.waitForSelector('#invLink');
+  const link2 = await own.$eval('#invLink', e => e.value), lid2 = link2.split('#')[1].split('.')[1];
+  await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); c && c.click(); }); await sl(300);
+  const con2 = await (await b.createBrowserContext()).newPage();
+  await con2.setRequestInterception(true);
+  con2.on('request', async r => { const u = r.url(); if (u.includes('/upload/api/')) { const res = await raw('/api/up/' + u.split('/upload/api/')[1], { method: r.method(), body: r.postData(), headers: { 'content-type': 'application/json', cookie: 'noauth=1' } }); return r.respond({ status: res.status, contentType: 'application/json', body: res.body }); } r.continue(); });
+  const send2 = async (name, body) => { await con2.goto(SITE + 'upload/' + link2.slice(link2.indexOf('#'))); await con2.waitForSelector('#pick'); const fp = path.join(tmp, name); fs.writeFileSync(fp, body); await (await con2.$('#pick')).uploadFile(fp); await sl(300); await con2.click('#send'); await sl(300); if (await con2.evaluate(() => !document.getElementById('needWho').hidden)) { await con2.type('#who', 'Made-up Rør AS'); await con2.click('#send'); } return until(con2, () => /was sent|ble sendt/.test(document.body.innerText), 15000); };
+  check(await send2('332 DV Ror madeup.pdf', '%PDF-1.4 made-up pipes ' + 'y'.repeat(800)), 'a file is sent on the link without a project');
+  await own.goto(T + '#overview'); await own.goto(T + '#files');
+  check(await until(own, () => { const c = document.querySelector('.t-upl[data-upwait]'); return !!c && /332 DV Ror madeup\.pdf/.test(c.textContent) && !!c.querySelector('[data-act=upren]') && !!c.querySelector('[data-act=upproj]') && !!c.querySelector('[data-act=upzip]'); }, 15000), 'it waits on the link\'s card with Name and download, Put in a project and Download as they are');
+  await own.evaluate(() => { window.__dlNames = []; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) { window.__dlNames.push(this.download); return; } return oc.call(this); }; });
+  await own.evaluate(() => document.querySelector('.t-upl[data-upwait] [data-act=upzip]').click());
+  check(await until(own, () => window.__dlNames.some(n => /\.zip$/.test(n)), 15000), 'Download as they are gives one .zip');
+  check(await (async () => { for (let i = 0; i < 30; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + lid2 + ':')) return true; await sl(400); } return false; })(), 'and the files are gone from the link afterwards');
+  check(await send2('333 DV Sprinkler madeup.pdf', '%PDF-1.4 made-up sprinkler ' + 'z'.repeat(900)), 'another file on the same link');
+  await own.goto(T + '#overview'); await own.goto(T + '#files');
+  await until(own, () => !!document.querySelector('.t-upl[data-upwait] [data-act=upproj]') && !document.querySelector('.t-upl[data-upwait] [data-act=upproj]').closest('[hidden]'), 15000);
+  await own.evaluate(() => document.querySelector('.t-upl[data-upwait] [data-act=upproj]').click()); await sl(400);
+  await own.evaluate(() => { const b2 = [...document.querySelectorAll('[data-act=upprojgo]')].find(x => /Testveien 9/.test(x.textContent)); b2 && b2.click(); });
+  check(await until(own, () => (((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).some(f => /333 DV Sprinkler madeup\.pdf/.test(f.name) && f.nw), 20000), 'Put in a project: the file lands in that project\'s Levering, marked new');
+  await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(800);
+  await con2.close();
 
   /* push when Team is closed: the switch in Settings stores this device's subscription for the team */
   const k = await own.evaluate(() => fetch('/api/push', { headers: { 'x-team': '1' } }).then(r => r.json()));
@@ -173,23 +200,11 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(/No signal/.test(await text()), 'and says it is showing what was saved');
   await own.setOfflineMode(false);
 
-  /* removing what came in on a link, deleting a switched-off link, emptying the change log (admin) */
+  /* Opplastinger keeps no history: the switched-off project link is gone, and there is no change log (JP 2026-11-24 22:56–22:57) */
   await own.goto(T + '#overview'); await own.goto(T + '#files'); await sl(1500);
-  const rmBefore = await own.evaluate(() => document.querySelectorAll('[data-act=uprm]').length);
-  check(rmBefore >= 1, 'each uploaded file has a remove button (' + rmBefore + ')');
-  check(await own.evaluate(() => !!document.querySelector('[data-act=updel]')), 'a switched-off link can be deleted with what came in');
-  await own.evaluate(() => document.querySelector('[data-act=updel]').click()); await sl(1500);
-  check(await own.evaluate(() => !document.querySelector('.t-upl')), 'the link card is gone');
-  check(await own.evaluate(() => [...document.querySelectorAll('[data-act=fopen]')].some(x => /A-101/.test(x.textContent))), 'the file that was kept stays in the shared files');
-  await own.goto(T + '#team'); await sl(1500);
-  await own.evaluate(() => { const b = document.querySelector('[data-act=log]'); b && b.click(); }); await sl(1500);
-  check(await own.evaluate(() => document.querySelectorAll('.t-log li').length <= 5 && !document.querySelector('.t-log ~ .t-small')), 'the change log shows the newest five on the page (JP 2026-11-17 21:20)');
-  await own.evaluate(() => { const b = document.querySelector('[data-act=logall]'); b && b.click(); }); await sl(400);
-  check(await own.evaluate(() => !!document.querySelector('.t-sheet-log .t-log')), 'Show all opens the whole log in a popup');
-  const lr = await own.evaluate(() => !!document.querySelector('[data-act=logreset]'));
-  if (lr) { await own.evaluate(() => document.querySelector('[data-act=logreset]').click()); await sl(1500); }
-  const logN = (await raw('/__mem')).body.match(/"l:\d{9}"/g) || [];
-  check(lr && logN.length === 1, 'an admin can empty the change log – one line is left saying so (' + logN.length + ')');
+  check(await own.evaluate(() => ![...document.querySelectorAll('.t-upl')].some(c => /Switched off/.test(c.textContent))), 'the switched-off project link is not shown any more (the one moved to a project is live)');
+  await own.goto(T + '#team'); await sl(1000);
+  check(await own.evaluate(() => !document.querySelector('[data-act=log]')) && !((await raw('/__mem')).body.match(/"l:\d{9}"/g) || []).length, 'there is no change log – no card, no lines on the server');
   /* deleting a project in Team */
   await own.goto(T + '#docs'); await sl(1200);
   const pid = await own.evaluate(() => { const a = [...document.querySelectorAll('a[href^="#dc="], [data-dcopen]')][0]; return a ? (a.getAttribute('href') || '').replace('#dc=', '') || a.dataset.dcopen : ''; });

@@ -457,7 +457,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   async function putRec(kind, id, data, sum) {
     var e = S.me.team.epoch, cur = S.recs[id];
     var s = await seal(data, id + '|' + kind + '|' + e, e);
-    var sm = sum ? Object.assign({ e: e }, await seal({ t: String(sum).slice(0, 200) }, 'log', e)) : undefined;
+    var sm = undefined;   /* no change log – nothing about the change is sent (JP 2026-11-24 22:57) */
     try {
       var res = await api('rec', { method: 'PUT', body: { id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm } });
       S.recs[id] = { id: id, k: kind, v: res.v, t: res.t, by: S.me.email, e: e, d: data };
@@ -471,7 +471,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   async function delRec(id, sum) {
     var cur = S.recs[id]; if (!cur) return false;
-    var e = S.me.team.epoch, sm = sum ? Object.assign({ e: e }, await seal({ t: String(sum).slice(0, 200) }, 'log', e)) : undefined;
+    var e = S.me.team.epoch, sm = undefined;   /* no change log (JP 2026-11-24 22:57) */
     try { var res = await api('rec', { method: 'PUT', body: { id: id, k: cur.k, del: true, v: cur.v, s: sm } }); cur.del = 1; cur.v = res.v; if (S.raw[id]) { S.raw[id] = Object.assign({}, S.raw[id], { del: 1, v: res.v }); saveCache(); } return true; }
     catch (err) { if (err.offline) { enqueue({ id: id, k: cur.k, del: true, v: cur.v, s: sm }); cur.del = 1; return true; } toast(failMsg(err)); return false; }
   }
@@ -562,7 +562,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
     out += welcomeCard();
-    out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard() + weekCard();
+    out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard();   /* "Denne uka" is gone – Oversikt shows what needs doing (JP 2026-11-24 22:57) */
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
@@ -739,8 +739,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     out += '</div><div class="t-col">';
     if (adm) out += accessCard();
     out += clockTeamCard();
-    out += '<p class="t-h"><span>' + L('Change log', 'Endringslogg') + '</span><button class="t-btn ghost sm" type="button" data-act="log">' + (S.logOpen ? L('Hide', 'Skjul') : L('Show', 'Vis')) + '</button></p>' +
-      (S.logOpen ? logHtml(5) + (S.log.length > 5 || (S.log.length && rank() >= 3) ? '<button class="t-btn ghost sm t-logall" type="button" data-act="logall">' + L('Show all ({n})', 'Vis alle ({n})').replace('{n}', S.log.length) + '</button>' : '') : '') + '</div></div>';   /* the newest five here, the whole log in a popup (JP 2026-11-17 21:20) */
+    out += '</div></div>';   /* no change log (JP 2026-11-24 22:57) – the two columns still close here */
     return out;
   }
   async function fillCodes() { for (var i = 0; i < S.requests.length; i++) { var q = S.requests[i], el = document.querySelector('[data-code="' + CSS.escape(q.email) + '"]'); if (el) el.textContent = await checkCode(q.pub); } }
@@ -939,6 +938,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; for (var nk in d.m) if (d.m[nk] == null || d.m[nk] === '') delete d.m[nk];   /* null or empty removes a code */ return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); }, flowOn: function () { return flowCfgOn(); },
         uplinks: function (pid) { return links().filter(function (r) { return r.d && r.d.pid === pid && !r.d.off && r.d.exp > Date.now(); }).map(function (r) { return { id: r.id, exp: new Date(r.d.exp).toISOString().slice(0, 10) }; }); },
         uplinkOff: function (id) { upOff(id); },
+        linkFiles: function (pid) { var L0 = list('upl').filter(function (r) { return r.d && r.d.pid === pid && r.d.key; }); return L0.reduce(function (pr, r) { return pr.then(function (acc) { return linkFiles(r).then(function (fs) { return acc.concat(fs); }, function () { return acc; }); }); }, Promise.resolve([])); },
+        upDone: function (lid, fids) { return upDone(lid, fids); },
+        linksOff: function (pid) { return linksOff(pid); },
         /* a project's delivered files, shared with the team (JP 2026-11-24): sent up encrypted, fetched on another device, removed with the file */
         fup: function (blob) { if (rank() < 1 || !blob || blob.size > FMAX) return Promise.resolve(null); return sendChunks(blob).catch(function () { return null; }); },
         fget: function (tf, name, type) { return getFile({ fid: tf.fid, n: tf.n, e: tf.e, name: name, type: type }); },
@@ -1217,10 +1219,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var fl = files(), by = {}, out = '';
     if (rank() >= 1) out += '<div class="t-card t-noprint"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('fproj', S.fproj) + '</label><div class="t-acts2"><label class="t-btn">' + L('Add files', 'Legg til filer') + '<input type="file" multiple hidden data-fadd></label><label class="t-btn ghost">' + L('Take a photo', 'Ta et bilde') + '<input type="file" accept="image/*" capture="environment" hidden data-fadd></label></div>' +
       '<button class="t-btn ghost wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button></div>';
-    var ls = links();
-    if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off;
-      return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"><h2>' + esc(projName(r.d.pid) || r.d.label || L('Upload link', 'Opplastingslenke')) + ' <span class="t-chip t-upcount"></span></h2><p class="t-small">' + esc(live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off', 'Slått av')) + '</p><ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul>' +
-        (live ? lateLine(r) + '<div class="t-acts2">' + remindBtn(r) + '<button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button><button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button></div>' : (rank() >= 1 ? '<div class="t-acts2"><button class="t-btn sm ghost t-danger" type="button" data-act="updel" data-id="' + esc(r.id) + '">' + L('Delete the link and what came in', 'Slett lenken og det som kom inn') + '</button></div>' : '')) + '</div>'; }).join('');
+    /* Opplastinger shows what is live or waiting – no history (JP 2026-11-24 22:56): a project's link sends its files straight into the
+       project's Levering; a link without a project keeps its files here until you rename and download them, put them in a project or just download them */
+    var ls = links().filter(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = r.d.pid && projName(r.d.pid); return live || !hasP; });
+    if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = !!(r.d.pid && projName(r.d.pid));
+      return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"' + (hasP ? '' : ' data-upwait') + '><h2>' + esc(hasP ? projName(r.d.pid) : (r.d.label || L('Upload link', 'Opplastingslenke'))) + ' <span class="t-chip t-upcount"></span></h2>' +
+        '<p class="t-small">' + esc((live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off', 'Slått av')) + ' · ' + (hasP ? L('files go straight into the project', 'filene legges rett i prosjektet') : L('no project', 'uten prosjekt'))) + '</p>' +
+        (hasP ? '<p class="t-small"><a href="#dc=' + esc(r.d.pid) + '">' + L('Open the project', 'Åpne prosjektet') + '</a></p>' : '<ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul><div class="t-upacts" data-upacts="' + esc(r.d.lid) + '" hidden></div>') +
+        (live ? lateLine(r) + '<div class="t-acts2">' + remindBtn(r) + '<button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button><button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button></div>' : '') + '</div>'; }).join('');
     fl.forEach(function (r) { var k = r.d.pid || ''; (by[k] = by[k] || []).push(r); });
     out += '<p class="t-h"><span>' + L('Shared files', 'Delte filer') + '</span><span>' + fl.length + '</span></p>';
     if (!fl.length) return out + '<p class="t-empty">' + L('No files yet. Files here are encrypted and shared with the team.', 'Ingen filer ennå. Filer her er kryptert og delt med teamet.') + '</p>';
@@ -1237,28 +1243,36 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     for (var i = 0; i < ls.length; i++) {
       var r = ls[i], ul = document.querySelector('[data-ups="' + r.d.lid + '"]'); if (!ul) continue;
       try {
-        var j = await api('uploads?lid=' + r.d.lid), key = await C.importKey('raw', ub64(r.d.key), 'AES-GCM', false, ['decrypt']), kept = {}, groups = {}, order = [], fresh = 0;
-        files().forEach(function (x) { if (x.d.from === r.d.lid) kept[x.d.fid] = 1; });
-        S.upMeta = S.upMeta || {};
-        for (var k = 0; k < j.files.length; k++) {
-          var u = j.files[k], meta = null;
-          try { meta = JSON.parse(TD.decode(await C.decrypt({ name: 'AES-GCM', iv: ub64(u.name.iv), additionalData: TE.encode(r.d.lid + '|' + u.fid + '|name') }, key, ub64(u.name.ct)))); } catch (x) { meta = { name: L('(could not be read)', '(kunne ikke leses)') }; }
-          var um = S.upMeta[u.fid] = { fid: u.fid, n: u.n, name: String(meta.name || 'file').slice(0, 160), type: meta.type || '', size: meta.size || u.size, lid: r.d.lid, k: r.d.key, pid: r.d.pid, from: r.d.lid, who: String(meta.who || '').slice(0, 120), msg: String(meta.msg || '').slice(0, 1000), at: u.t };
-          var g = meta.b || u.fid; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(um);
-          if (!kept[u.fid]) fresh++;
-        }
-        order.sort(function (a, b) { return groups[b][0].at - groups[a][0].at; });
-        var card = ul.closest('.t-upl'), cnt = card && card.querySelector('.t-upcount');
-        if (cnt) cnt.textContent = fresh ? L(fresh + ' new', fresh === 1 ? '1 ny' : fresh + ' nye') : '';
-        ul.innerHTML = order.length ? order.map(function (g) {
-          var l = groups[g], m0 = l[0], left = l.filter(function (x) { return !kept[x.fid]; });
+        var w = await linkIn(r), card = ul.closest('.t-upl'), cnt = card && card.querySelector('.t-upcount'), acts = document.querySelector('[data-upacts="' + r.d.lid + '"]'), live = r.d.exp > Date.now() && !r.d.off;
+        if (!w.length && !live) { if (card) card.remove(); continue; }   /* an old link with nothing waiting is gone */
+        if (cnt) cnt.textContent = w.length ? L(w.length + ' waiting', w.length + ' venter') : '';
+        var groups = {}, order = []; w.forEach(function (um) { var g = um.b || um.fid; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(um); });
+        ul.innerHTML = order.length ? order.map(function (g) { var l = groups[g], m0 = l[0];
           return '<li class="t-upb"><div class="t-upbh"><b>' + esc(m0.who || L('Someone with the link', 'Noen med lenken')) + '</b><span class="t-small">' + esc(fmtTime(m0.at)) + '</span></div>' + (m0.msg ? '<p class="t-prevmsg">' + esc(m0.msg) + '</p>' : '') +
-            '<ul class="t-list">' + l.map(function (x) { return '<li><button class="t-row" type="button" data-act="upopen" data-fid="' + esc(x.fid) + '"><span class="grow"><span>' + esc(x.name) + '</span><small>' + esc(fsize(x.size)) + '</small></span></button>' + (kept[x.fid] ? '<span class="t-chip">' + L('Kept', 'Lagt til') + '</span>' : rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="upkeep" data-fid="' + esc(x.fid) + '">' + L('Keep', 'Behold') + '</button>' : '') + (rank() >= 1 ? '<button class="t-icon" type="button" data-act="uprm" data-lid="' + esc(x.lid) + '" data-fid="' + esc(x.fid) + '" aria-label="' + esc(L('Remove', 'Fjern')) + '">×</button>' : '') + '</li>'; }).join('') + '</ul>' +
-            (left.length > 1 && rank() >= 1 ? '<button class="t-btn sm ghost" type="button" data-act="upkeepall" data-fids="' + esc(left.map(function (x) { return x.fid; }).join(',')) + '">' + L('Keep all ' + left.length, 'Behold alle ' + left.length) + '</button>' : '') + '</li>';
-        }).join('') : '<li class="t-small">' + esc(L('Nothing sent yet.', 'Ingenting sendt ennå.')) + '</li>';
+            '<ul class="t-list">' + l.map(function (x) { return '<li><button class="t-row" type="button" data-act="upopen" data-fid="' + esc(x.fid) + '"><span class="grow"><span>' + esc(x.name) + '</span><small>' + esc(fsize(x.size)) + '</small></span></button></li>'; }).join('') + '</ul></li>'; }).join('')
+          : '<li class="t-small">' + esc(L('Nothing waiting.', 'Ingenting venter.')) + '</li>';
+        if (acts) { acts.hidden = !w.length || rank() < 1; acts.innerHTML = '<div class="t-btns"><button class="t-btn" type="button" data-act="upren" data-lid="' + esc(r.d.lid) + '">' + L('Name and download', 'Gi navn og last ned') + '</button><button class="t-btn ghost" type="button" data-act="upproj" data-lid="' + esc(r.d.lid) + '">' + L('Put in a project', 'Legg i prosjekt') + '</button></div><button class="t-link" type="button" data-act="upzip" data-lid="' + esc(r.d.lid) + '">' + L('Download as they are', 'Last ned som de er') + '</button>'; }
       } catch (x) { ul.innerHTML = '<li class="t-small">' + esc(failMsg(x)) + '</li>'; }
     }
   }
+  /* a link without a project gets one: its files (and anything sent later) go into that project's Levering when it opens */
+  async function linkToProject(lid, pid) { var lr = links().filter(function (x) { return x.d.lid === lid; })[0]; if (!lr || !pid) return; if (!(await putRec('upl', lr.id, Object.assign({}, lr.d, { pid: pid })))) return; closeSheet(true); S.dtab = 'doc'; location.hash = '#dc=' + pid; draw(); }
+  /* the files on a link that nobody has taken yet – their names opened with the link's key */
+  async function linkIn(r) {
+    if (!r || !r.d || !r.d.key) return [];
+    var j = await api('uploads?lid=' + r.d.lid), key = await C.importKey('raw', ub64(r.d.key), 'AES-GCM', false, ['decrypt']), out = [];
+    S.upMeta = S.upMeta || {};
+    for (var k = 0; k < j.files.length; k++) { var u = j.files[k], meta = null; if (u.kept) continue;
+      try { meta = JSON.parse(TD.decode(await C.decrypt({ name: 'AES-GCM', iv: ub64(u.name.iv), additionalData: TE.encode(r.d.lid + '|' + u.fid + '|name') }, key, ub64(u.name.ct)))); } catch (x) { meta = { name: L('(could not be read)', '(kunne ikke leses)') }; }
+      out.push(S.upMeta[u.fid] = { fid: u.fid, n: u.n, name: String(meta.name || 'file').slice(0, 160), type: meta.type || '', size: meta.size || u.size, lid: r.d.lid, k: r.d.key, pid: r.d.pid, from: r.d.lid, who: String(meta.who || '').slice(0, 120), msg: String(meta.msg || '').slice(0, 1000), at: u.t, b: meta.b }); }
+    return out.sort(function (a, b) { return b.at - a.at; });
+  }
+  /* the files themselves, ready for Documents (each knows its link, so the link's copy can go once it is safe elsewhere) */
+  async function linkFiles(r) { var w = await linkIn(r), out = []; for (var i = 0; i < w.length; i++) { try { var f = await getFile(w[i]); f._upf = w[i].fid; f._uplid = w[i].lid; f._who = w[i].who; out.push(f); } catch (x) {} } return out; }
+  function upDone(lid, fids) { if (rank() < 1 || !lid || !fids || !fids.length) return Promise.resolve(); return api('uprm', { method: 'POST', body: { lid: lid, fids: fids } }).then(function () { if (S.dtab === 'files') draw(); }).catch(function () {}); }
+  /* a deleted project's links close (after the Undo time) – the contractor then sees that the link has run out */
+  async function linksOff(pid) { var L0 = list('upl').filter(function (r) { return r.d && r.d.pid === pid && !r.d.off; }); for (var i = 0; i < L0.length; i++) { var lo = L0[i]; try { await api('uplink?lid=' + lo.d.lid, { method: 'DELETE' }); await putRec('upl', lo.id, Object.assign({}, lo.d, { off: 1 })); } catch (x) {} } }
+
   /* keep files from an upload link in the project's shared files – and tell the sender they were received */
   async function keepUploads(fids) {
     var done = [], lid = '';
@@ -1316,6 +1330,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<form class="t-form" data-form="uplink"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('pid', S.fproj) + '</label><label class="t-lbl">' + L('Works for', 'Virker i') + '<select name="days"><option value="7">' + L('1 week', '1 uke') + '</option><option value="14" selected>' + L('2 weeks', '2 uker') + '</option><option value="30">' + L('30 days', '30 dager') + '</option><option value="60">' + L('60 days', '60 dager') + '</option></select></label>' +
       '<p class="t-err" id="err"></p><button class="t-btn wide" type="submit">' + L('Make the link', 'Lag lenken') + '</button><button class="t-btn ghost wide" type="button" data-act="close">' + L('Cancel', 'Avbryt') + '</button></form>');
   }
+  async function onUpNew(f) { var nm = f.name.value.trim(); if (!nm) { f.name.focus(); return; } await docsReady(); var pid = window.DocTools && window.DocTools.newProject(nm); if (pid) await linkToProject(f.dataset.lid, pid); }
   async function onUplink(f) {
     busy(f, true);
     try {
@@ -1362,29 +1377,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         (due ? '<span class="t-pdue' + (late ? ' t-warn' : '') + '">' + esc((late ? L('Overdue ', 'Forfalt ') : L('Due ', 'Frist ')) + fmtDate(due)) + '</span>' : '') + '</a>';
     }).join('') + '</div>';
   }
-  function weekText() {
-    var from = Date.now() - 7 * 864e5, n = { meet: 0, done: 0, newA: 0, docs: {}, files: 0, people: {} };
-    for (var id in S.recs) { var r = S.recs[id]; if (!r.t || r.t < from || r.del || !r.d) continue; n.people[r.by] = 1;
-      if (r.k === 'meeting') n.meet++; else if (r.k === 'action') { if (r.d.done) n.done++; else n.newA++; } else if (r.k === 'file') n.files++;
-      else if (r.k === 'dcl' && r.d.l) {   /* a line made this week (version 1) was brought in or added; a later version is a real change – approved, rejected or other (JP 2026-11-16) */
-        /* a requirements list's lines (dckrav) count under its own name too; lines whose project is gone are left out – they showed as "…" (JP 21:32) */
-        var pn = projName(r.d.pid, r.d.key); if (!pn) continue; var dd = n.docs[pn] = n.docs[pn] || { add: 0, ok: 0, rej: 0, ch: 0 };
-        if ((r.v || 1) <= 1) dd.add++; else if (r.d.l.st === 'ok') dd.ok++; else if (r.d.l.st === 'rej') dd.rej++; else dd.ch++; } }
-    var out = [];
-    if (n.meet) out.push(L(n.meet + (n.meet === 1 ? ' meeting' : ' meetings'), n.meet + (n.meet === 1 ? ' møte' : ' møter')));
-    if (n.done || n.newA) out.push(L(n.done + ' actions done, ' + n.newA + ' open or changed', n.done + ' oppgaver ferdige, ' + n.newA + ' åpne eller endret'));
-    Object.keys(n.docs).forEach(function (pn) { var dd = n.docs[pn], bits = [];
-      if (dd.add && !dd.ok && !dd.rej && !dd.ch) { out.push(L(pn + ': imported (' + dd.add + ' documents)', pn + ': importert (' + dd.add + ' dokumenter)')); return; }
-      if (dd.ok) bits.push(L(dd.ok + ' approved', dd.ok + ' godkjent')); if (dd.rej) bits.push(L(dd.rej + ' not approved', dd.rej + ' ikke godkjent'));
-      if (dd.ch) bits.push(L(dd.ch + ' changed', dd.ch + ' endret')); if (dd.add) bits.push(L(dd.add + ' added', dd.add + ' lagt til'));
-      out.push(pn + ': ' + bits.join(', ')); });
-    if (n.files) out.push(L(n.files + ' files added', n.files + ' filer lagt til'));
-    return { lines: out, who: Object.keys(n.people).length };
-  }
-  function weekCard() {
-    var w = weekText(); if (!w.lines.length) return '';
-    return '<div class="t-card t-week"><h2>' + L('This week', 'Denne uka') + '</h2><ul>' + w.lines.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><p class="t-small">' + esc(L(w.who + (w.who === 1 ? ' person' : ' people') + ' did something the last 7 days', w.who + (w.who === 1 ? ' person' : ' personer') + ' gjorde noe de siste 7 dagene')) + '</p><button class="t-btn sm ghost" type="button" data-act="weekCopy">' + L('Copy as text', 'Kopier som tekst') + '</button></div>';
-  }
+
 
   /* ---------- clocking in and out (Phase G, JP 2026-11-15) ----------
      Admins turn it on for the whole team and can switch it off person by person (record cfgclock, kind cfg – only
@@ -1512,9 +1505,22 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'accsave') { t.disabled = true; try { await saveAccess(); } catch (e2) { t.disabled = false; toast(failMsg(e2)); } return; }
     if (a === 'accstd') { if (S.accEdit) { S.accEdit.m = {}; S.accOpen = true; draw(); } return; }
     if (a === 'fopen') { var fr = S.recs[t.dataset.id]; if (fr && fr.d) openFile(fr.d); return; }
-    if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !(await sure(L('Delete this file for everyone? It stays in the history.', 'Slette denne filen for alle? Den blir liggende i historikken.')))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
+    if (a === 'fdel') { var fd = S.recs[t.dataset.id]; if (!fd || !(await sure(L('Delete this file for everyone?', 'Slette denne filen for alle?')))) return; if (await delRec(t.dataset.id, L('File: ', 'Fil: ') + (fd.d ? fd.d.name : ''))) draw(); return; }
     if (a === 'upopen') { var um = (S.upMeta || {})[t.dataset.fid]; if (um) openFile(um); return; }
     if (a === 'upkeep') { t.disabled = true; await keepUploads([t.dataset.fid]); return; }
+    /* a link without a project (JP 2026-11-24 22:51): rename and download, put in a project, or download as they are – then they are gone here */
+    if (a === 'upren' || a === 'upzip') { var ur = links().filter(function (x) { return x.d.lid === t.dataset.lid; })[0]; if (!ur) return; t.disabled = true;
+      try { var ufs = await linkFiles(ur); await docsReady();
+        if (a === 'upzip') { var parts = []; for (var ui = 0; ui < ufs.length; ui++) parts.push([ufs[ui].name, new Uint8Array(await ufs[ui].arrayBuffer())]);
+          saveFile(new File([window.DocTools.zip(parts)], (ur.d.label || L('Upload link', 'Opplastingslenke')).replace(/[\\/:*?"<>|]+/g, '-') + '.zip', { type: 'application/zip' })); await upDone(ur.d.lid, ufs.map(function (f) { return f._upf; })); draw(); }
+        else { S.dtab = 'doc'; location.hash = '#docs'; draw(); setTimeout(function () { if (window.DocTools) window.DocTools.ren(ufs); }, 300); }
+      } catch (x) { toast(failMsg(x)); } t.disabled = false; return; }
+    if (a === 'upproj') { var pr0 = projects();
+      openSheet('<h2>' + L('Put in a project', 'Legg i prosjekt') + '</h2><p class="t-small">' + L('The files go into the project’s Levering, marked as new.', 'Filene legges i prosjektets Levering, merket som nye.') + '</p>' +
+        '<form class="t-form" data-form="upnew" data-lid="' + esc(t.dataset.lid) + '"><label class="t-lbl">' + L('New project', 'Nytt prosjekt') + '<input name="name" maxlength="120" placeholder="' + esc(L('The project’s name', 'Prosjektets navn')) + '"></label><button class="t-btn" type="submit">' + L('Make it and put the files in', 'Lag det og legg filene der') + '</button></form>' +
+        (pr0.length ? '<p class="t-h">' + L('Or an existing project', 'Eller et prosjekt du har') + '</p><ul class="t-list">' + pr0.map(function (p0) { return '<li><button class="t-row" type="button" data-act="upprojgo" data-lid="' + esc(t.dataset.lid) + '" data-pid="' + esc(p0.id) + '"><span class="grow"><span>' + esc(p0.name) + '</span></span></button></li>'; }).join('') + '</ul>' : '') +
+        '<div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Cancel', 'Avbryt') + '</button></div>'); return; }
+    if (a === 'upprojgo') { await linkToProject(t.dataset.lid, t.dataset.pid); return; }
     if (a === 'uprm') { if (!(await sure(L('Remove this file from the list? If it was kept, it stays in the shared files.', 'Fjerne denne filen fra listen? Er den lagt til, blir den liggende i de delte filene.')))) return; t.disabled = true; try { await api('uprm', { method: 'POST', body: { lid: t.dataset.lid, fids: [t.dataset.fid] } }); toast(L('Removed', 'Fjernet')); draw(); } catch (x) { t.disabled = false; toast(failMsg(x)); } return; }
     if (a === 'welcomeOk') { try { localStorage.setItem('team.welcome.' + S.tid, '1'); } catch (x) {} draw(); return; }
     if (a === 'updel') { var ld = S.recs[t.dataset.id]; if (!ld || !ld.d || !(await sure(L('Delete this upload link and everything that came in on it? Files you kept stay in the shared files.', 'Slette denne opplastingslenken og alt som kom inn med den? Filer du har lagt til, blir liggende i de delte filene.')))) return; try { await api('uprm', { method: 'POST', body: { lid: ld.d.lid, all: true } }); await delRec(ld.id, L('Upload link', 'Opplastingslenke')); toast(L('Deleted', 'Slettet')); draw(); } catch (x) { toast(failMsg(x)); } return; }
@@ -1528,7 +1534,6 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       return; }
     if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText(L('The link', 'Lenken'), lu); }); return; }
     if (a === 'upoff') { upOff(t.dataset.id); return; }
-    if (a === 'weekCopy') { var wt = weekText(), txt = S.me.team.name + ' – ' + L('this week', 'denne uka') + '\n' + wt.lines.map(function (x) { return '• ' + x; }).join('\n'); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText('', txt); }); return; }
     if (a === 'seen') { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (x) {} badge(0); draw(); return; }
     if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); closeSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); closeSheet(); }); return; }
     if (a === 'renameTeam') return renameSheet();
@@ -1539,7 +1544,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'newMeeting') return startEdit(rid(), true);
     if (a === 'edit') return startEdit(t.dataset.id);
     if (a === 'cancelEdit') { var wasNew = S.edit && S.edit.isNew; endEdit(); if (wasNew) location.hash = '#meetings'; return; }
-    if (a === 'delMeeting') { if (!(await sure(L('Delete this meeting? It stays in the history.', 'Slette dette møtet? Det blir liggende i historikken.')))) return; var mid = S.edit.id, ttl = S.recs[mid] && S.recs[mid].d ? S.recs[mid].d.title : ''; var mkeep = S.recs[mid] && { k: S.recs[mid].k, d: S.recs[mid].d }; if (await delRec(mid, L('Meeting: ', 'Møte: ') + ttl)) { endEdit(true); location.hash = '#meetings'; draw(); if (mkeep && mkeep.d) undoToast(L('Meeting deleted.', 'Møtet er slettet.'), function () { return putRec(mkeep.k, mid, mkeep.d, L('Restored – meeting: ', 'Gjenopprettet – møte: ') + ttl).then(function () { draw(); }); }); } return; }
+    if (a === 'delMeeting') { if (!(await sure(L('Delete this meeting? You can undo it right after.', 'Slette dette møtet? Du kan angre rett etterpå.')))) return; var mid = S.edit.id, ttl = S.recs[mid] && S.recs[mid].d ? S.recs[mid].d.title : ''; var mkeep = S.recs[mid] && { k: S.recs[mid].k, d: S.recs[mid].d }; if (await delRec(mid, L('Meeting: ', 'Møte: ') + ttl)) { endEdit(true); location.hash = '#meetings'; draw(); if (mkeep && mkeep.d) undoToast(L('Meeting deleted.', 'Møtet er slettet.'), function () { return putRec(mkeep.k, mid, mkeep.d, L('Restored – meeting: ', 'Gjenopprettet – møte: ') + ttl).then(function () { draw(); }); }); } return; }
     if (a === 'print') return window.print();
     if (a === 'newAction') return actionSheet(null, t.dataset.meeting);
     if (a === 'editAction') return actionSheet(t.dataset.id);
@@ -1579,7 +1584,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('form[data-form]'); if (!f) return;
     e.preventDefault();
-    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, inote: onInote, uplink: onUplink, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
+    ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, inote: onInote, uplink: onUplink, upnew: onUpNew, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
 

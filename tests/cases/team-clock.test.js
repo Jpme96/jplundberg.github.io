@@ -72,7 +72,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const tt = await text();
   check(/Hours this week/i.test(tt), 'the Team tab shows hours this week for admins ' + (/Hours this week/i.test(tt) ? '' : tt.slice(0, 400).replace(/\n/g, ' | ')));
   const all = JSON.parse((await raw('/__mem')).body), logs = all.filter(x => /^l:\d+$/.test(x[0])).map(x => x[1]);
-  check(logs.length > 0 && !logs.some(l => l.k === 'clk') && logs.some(l => l.k === 'cfg'), 'clocking in and out stays out of the change log (the setting is in it) – ' + logs.map(l => l.k).join(','));
+  check(!logs.length, 'there is no change log at all (JP 2026-11-24 22:57) – ' + logs.map(l => l.k).join(','));
 
   /* switched off for one person: their card goes */
   await own.goto(T + '#overview'); await sl(600);

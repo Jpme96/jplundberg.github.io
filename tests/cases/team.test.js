@@ -229,7 +229,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const th = await own.evaluate(() => { const r = getComputedStyle(document.documentElement); const a = { theme: document.documentElement.dataset.theme, acc: r.getPropertyValue('--acc').trim() };
     localStorage.setItem('team.theme', 'dark'); window.__teamTheme(); a.dark = document.documentElement.dataset.theme; a.acc2 = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(); localStorage.removeItem('team.theme'); window.__teamTheme(); return a; });
   check(th.theme === 'light' && th.acc === '#9d174d' && th.dark === 'dark' && th.acc2 === '#f06595', 'Team is light with the deep berry accent by default; dark (pink) is a choice (JP 2026-11-19) ' + JSON.stringify(th));
-  check(await own.evaluate(async () => { const a = document.querySelector('.t-tabs'); window.dispatchEvent(new HashChangeEvent('hashchange')); await new Promise(r => setTimeout(r, 100)); return document.querySelector('.t-tabs') === a; }), 'a redraw with nothing new leaves the page alone – no stutter (JP 2026-11-17 21:35)');
+  check(await own.evaluate(async () => { window.dispatchEvent(new HashChangeEvent('hashchange')); await new Promise(r => setTimeout(r, 100));   /* the box opened above is now in the page once */ const a = document.querySelector('.t-tabs'); window.dispatchEvent(new HashChangeEvent('hashchange')); await new Promise(r => setTimeout(r, 100)); return document.querySelector('.t-tabs') === a; }), 'a redraw with nothing new leaves the page alone – no stutter (JP 2026-11-17 21:35)');
   const ac0 = await own.evaluate(() => ({ boxes: document.querySelectorAll('[data-accm]').length, people: document.querySelectorAll('[data-acctr]').length, cells: document.querySelectorAll('[data-accpp]').length, save: document.querySelector('[data-act="accsave"]').disabled }));
   check(ac0.boxes === 36 && ac0.people >= 1 && ac0.cells >= ac0.people && ac0.save, 'the access card: 9 actions × 4 roles, a row per person who is not an admin, Save off until something changes ' + JSON.stringify(ac0));
   const kname = await kari.evaluate(() => DocHost.Fe.list('dctl')[0].name);
@@ -331,8 +331,9 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(/MARK-SECRET-1/.test(await text(kari2)) && /MARK-SECRET-4/.test(await text(kari2)), 'she reads meetings from before and after the new key');
 
   /* --- the change log, shown to members, decrypted on the device --- */
-  await own.goto(U + '#team'); await own.click('[data-act=log]'); await until(own, () => !!document.querySelector('[data-act=logall]')); await own.click('[data-act=logall]');
-  check(await until(own, () => /approved Kari/.test(document.body.innerText) && /removed Ola/.test(document.body.innerText) && /MARK-SECRET-1/.test(document.body.innerText) && /Documents: School rehab SECRET-DC/.test(document.body.innerText)), 'the change log shows who did what');
+  /* no change log any more (JP 2026-11-24 22:57): no card, and the server keeps no log lines */
+  await own.goto(U + '#team'); await sl(600);
+  check(await own.evaluate(() => !document.querySelector('[data-act=log]')) && !/"l:\d{9}"/.test((await raw('/__mem')).body), 'there is no change log – no card and no log lines on the server');
   await word(own, 'the team tab');
 
   /* --- the server never had anything readable --- */
@@ -458,9 +459,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await own.evaluate(() => { const t = DocHost.Fe.tools(), p = t.dctl[0]; for (let i = 0; i < 2500; i++) p.lines.push({ id: 'big' + i, code: String(200 + (i % 500)), t: 'E', st: '' }); DocHost.Fe.saveTools(t); });
   await sl(5000);
   const ovBig = await own.evaluate(async () => { const t0 = performance.now(); location.hash = '#overview'; await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); return { ms: Math.round(performance.now() - t0), week: !!document.querySelector('.t-week'), projs: document.querySelectorAll('.t-projs .t-proj').length }; });
-  const wk = await own.evaluate(() => (document.querySelector('.t-week') || {}).innerText || '');
-  check(wk && !/…/.test(wk) && /\(requirements\)/.test(wk), 'the week names every project, requirements lists too – no “…” (JP 21:32) ' + JSON.stringify(wk.slice(0, 200)));
-  check(ovBig.ms < 1500 && ovBig.week && ovBig.projs >= 1, 'the Overview opens quickly with a 2 500-line project (the week and the projects are counted once, not per line) ' + JSON.stringify(ovBig));
+  check(ovBig.ms < 1500 && !ovBig.week && ovBig.projs >= 1, 'the Overview opens quickly with a 2 500-line project (the week and the projects are counted once, not per line) ' + JSON.stringify(ovBig));
 
   /* --- kept apart from /cmd --- */
   const wr = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '');

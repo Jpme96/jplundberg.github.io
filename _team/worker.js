@@ -137,6 +137,7 @@ export class TeamStore {
     const url = new URL(request.url), m = request.method, p = url.pathname.replace(/^\/api\//, '').replace(/\/+$/, '');
     if (p.startsWith('/dir/')) return this.dir(p.slice(5), url, request);   /* only the Durable Object 'dir' is ever asked these */
     if (p.startsWith('/up/')) { try { return await this.upPublic(p.slice(4), m, request, url); } catch (e) { return json({ error: 'server error' }, 500); } }
+    if (!this.noLog) { this.noLog = 1; if (!(await this.s.get('nolog'))) { await this.wipeLog(); await this.s.put('nolog', 1); } }   /* no change log any more – the old lines go once (JP 2026-11-24 22:57, asked and approved) */
     const email = request.headers.get('x-email') || '', owner = request.headers.get('x-owner') || '';
     let b = {};
     if (m !== 'GET' && m !== 'DELETE') { try { b = JSON.parse((await request.text()) || '{}') || {}; } catch (e) { return json({ error: 'bad json' }, 400); } }
@@ -523,19 +524,10 @@ export class TeamStore {
     }
   }
 
-  /* the change log: only ever added to – there is no way to edit or remove a line */
-  async log(email, a, x) {
-    const n = ((await this.s.get('lseq')) || 0) + 1;
-    await this.s.put('l:' + String(n).padStart(9, '0'), Object.assign({ n, t: Date.now(), by: email, a }, clean(x)));
-    await this.s.put('lseq', n);
-    if (n > MAXLOG) { const old = 'l:' + String(n - MAXLOG).padStart(9, '0'); await this.s.delete(old); }
-  }
-  async logReset(email) {
-    const all = await this.s.list({ prefix: 'l:' }); let n = 0;
-    for (const k of all.keys()) { await this.s.delete(k); n++; }
-    await this.s.put('lseq', 0); await this.log(email, 'log-reset', { n });
-    return json({ ok: true, removed: n });
-  }
+  /* no change log (JP 2026-11-24 22:57 "I honestly don't want to store logs"): nothing is written; the calls stay so nothing else changes */
+  async log() {}
+  async wipeLog() { const all = await this.s.list({ prefix: 'l:' }); for (const k of all.keys()) await this.s.delete(k); await this.s.delete('lseq'); }
+  async logReset() { await this.wipeLog(); return json({ ok: true }); }
   async upRemove(email, b) {
     const lid = String(b.lid || ''); if (!LID.test(lid)) return json({ error: 'bad link' }, 400);
     const l = await this.s.get('u:' + lid); if (!l) return json({ ok: true });

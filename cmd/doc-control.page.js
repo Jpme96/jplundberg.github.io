@@ -236,12 +236,19 @@
   function tfIn(p, id) { var f = ((p || {}).files || []).filter(function (x) { return x.id === id; })[0]; return f && f.tf; }
   function dropFile(id, tf) { delBlob(id); if (tf && HOST && HOST.fdel) HOST.fdel(tf); }
   var SHQ = {}, SHN = {}, SHT = {}, SHR = {}, shBusy = false, shList = [];   /* SHT: what this device sent up (put back if a sync drops it); SHR: tries per file */
+  /* files from a project's upload link go straight into its Levering (JP 2026-11-24 22:46): fetched when the project is open, added as new
+     files, and the copy on the link is removed once the project's own copy is shared with the team (UPD) */
+  var UPD = {}, LSYNC = {};
+  function linkSync(p) {
+    if (!HOST || !HOST.linkFiles || !p || (LSYNC[p.id] && Date.now() - LSYNC[p.id] < 30000) || !can('import', gOf(p, 'dctl'))) return; LSYNC[p.id] = Date.now();
+    HOST.linkFiles(p.id).then(function (fs) { if (fs && fs.length) importFiles(p.id, fs, null, { link: 1 }); }).catch(function () {});
+  }
   function shareUp(pid, ids) {
     if (!HOST || !HOST.fup) return; ids.forEach(function (id) { if (!SHQ[id]) { SHQ[id] = 1; shList.push([pid, id]); SHN[pid] = (SHN[pid] || 0) + 1; } }); if (shBusy) return; shBusy = true;
     (function next() { var it = shList.shift(); if (!it) { shBusy = false; draw(); return; }
       var pid0 = it[0], id0 = it[1], done = function () { SHN[pid0] = Math.max(0, (SHN[pid0] || 1) - 1); next(); };
       var retry = function () { delete SHQ[id0]; SHR[id0] = (SHR[id0] || 0) + 1; if (SHR[id0] <= 3) setTimeout(function () { shareUp(pid0, [id0]); }, 4000 * SHR[id0]); };   /* a failed upload is tried again (a busy line), three times */
-      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl).then(function (tf) { if (!tf) { retry(); return; } SHT[id0] = tf; saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
+      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl).then(function (tf) { if (!tf) { retry(); return; } SHT[id0] = tf; if (UPD[id0] && HOST.upDone) { HOST.upDone(UPD[id0][0], [UPD[id0][1]]); delete UPD[id0]; } saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
         .catch(retry).then(done); })();
     draw();
   }
@@ -298,13 +305,13 @@
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
   function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
   open = hashId();
-  function go(id) { if (id !== open) kin = false; if (flowOn() && id !== open) setTab('');   /* the new flow picks the step that fits the project */
+  function go(id) { if (id !== open) { kin = false; delete LSYNC[id]; }   /* opening a project looks for files from its upload links again */ if (flowOn() && id !== open) setTab('');   /* the new flow picks the step that fits the project */
     open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
   /* "‹ Documentation" always goes to the list (one tab: the step before may be the project's Requirements) – a step back in the
      browser's history only when that is where it leads */
   function home0() { kin = false; open = null; ropen = null; openLine = null; rpicking = false; editing = false; redit = false; }
   function back() { var prev = history.state && history.state.from; if (hashId() && history.state && history.state.dc && prev === 'list') { history.back(); return; } home0(); history.pushState({ list: 1 }, '', location.pathname + location.search); draw(); window.scrollTo(0, 0); }
-  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r || id) PageTabs.show('doc', true); } draw(); } });
+  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { if (id && id !== open) delete LSYNC[id]; open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r || id) PageTabs.show('doc', true); } draw(); } });
   function setTab(t) { if (t !== 'krav') kin = false; tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
 
   /* the building and the property (JP 10:42): building ID and name, property name and ID – on the project, the requirements and the reports */
@@ -368,7 +375,7 @@
   /* Give files the right names (JP 2026-11-16 20:43 – "we had an automatic namer earlier"): the files sit in a project of their own that
      only lives here (`TOOL.p`, never saved), so the file naming – suggestions from the name and the PDF's text, the naming rules for
      documents, photos and drawings – works on them as it does in Received; you download them renamed as a .zip */
-  var TOOL = { p: null, blobs: {} };
+  var TOOL = { p: null, blobs: {}, upl: {} };   /* upl: a file that came on an upload link → [link, file] – the link's copy goes once it is downloaded */
   /* the tool's own rules, codes and building number stay on this device between visits (localStorage – no files, no names of files) */
   var TKEY = 'dcn.tool';
   function toolKeep() { var p = TOOL.p; try { localStorage.setItem(TKEY, JSON.stringify({ nrules: p.nrules, nuse: p.nuse, ncodes: p.ncodes, bid: p.bid, pid: p.pid, pname: p.pname, no: p.no })); } catch (e) {} }
@@ -447,6 +454,7 @@
     h += '<div class="dx-rsum"><span>' + (busy ? '<i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +   /* the counts line went (JP 2026-11-19) – the filters below show them */
       '<span class="dx-rbtn"><input type="file" multiple data-dxrenf hidden>' + addMenu('ren', [addItem('upload', k('ui.dc-pick-files', 'Choose files'), k('ui.dx-add-more-s', 'More PDFs, photos or a .zip'), 'data-dxrenopen'),   /* opens the drop popup, as before (JP 07:50) */
         addItem('arrow-counterclockwise', k('ui.dx-clear', 'Start again'), k('ui.dx-clear-s', 'Empties the list'), 'data-dxrenclr')]) + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
+      '<button type="button" class="pill-btn ghost" data-dxrenplan><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dx-ren-plan', 'Document plan (Vedlegg 7)')) + '</button>' +
       '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(F.length === 1 ? k('ui.dx-dl-go1', 'Download the file') : k('ui.dx-ren-dl4', 'Download …')) + '</span></button></span></div>';
     return h + N.files(p, F) + '</section>';
   }
@@ -477,12 +485,12 @@
       if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(function (buf) { var Z = zipEntries(buf).filter(function (z) { return !/\/$/.test(z.name) && !/(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db|desktop\.ini)(\/|$)/i.test(z.name) && !/(^|\/)\._/.test(z.name); });
         return Z.reduce(function (p2, z) { return p2.then(function () { var nm = z.name.split('/').pop(); if (!nm || /\.zip$/i.test(nm)) return; return inflate(z).then(function (u) { got.push({ name: nm, size: z.size, blob: new Blob([u]), dir: f.name + (z.name.indexOf('/') > 0 ? ' › ' + z.name.split('/').slice(0, -1).join(' › ') : '') }); }); }); }, Promise.resolve()); })
         .catch(function () { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dx-zip-bad', 'Could not read {f}', { f: f.name }))); });
-      got.push({ name: f.name, size: f.size, blob: f });
+      got.push({ name: f.name, size: f.size, blob: f, upl: f._uplid ? [f._uplid, f._upf] : null });
     }); }, Promise.resolve()).then(function () { return Promise.all(got.map(function (g) { return fingerprint(g.blob).then(function (h) { g.h = h; }); })); }).then(function () {
       /* the content decides (JP 2026-11-19): the very same file added again (same name, same content) is skipped; files with the same content but another name stay, marked for a person to check */
       var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.h || f.size)] = 1; });
       got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + (g.h || g.size); if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4);
-        TOOL.blobs[id] = g.blob; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, lm: fdate(g.blob), h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
+        TOOL.blobs[id] = g.blob; if (g.upl) TOOL.upl[id] = g.upl; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, lm: fdate(g.blob), h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
       draw(); var N = naming(); if (N) N.suggestAll('__ren').then(function () { draw(); });
     });
   }
@@ -518,10 +526,24 @@
     document.addEventListener('keydown', ek, true);
     document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
   }
+  /* files from an upload link without a project are gone from Opplastinger once you have downloaded them (JP 2026-11-24 22:51) */
+  function toolUpDone(F) { if (!HOST || !HOST.upDone) return; var by = {}; F.forEach(function (f) { var u = TOOL.upl[f.id]; if (u) { (by[u[0]] = by[u[0]] || []).push(u[1]); delete TOOL.upl[f.id]; } }); Object.keys(by).forEach(function (lid) { HOST.upDone(lid, by[lid]); }); }
+  /* a document plan (Vedlegg 7) from the files in the tool: their codes, document types and new names (JP 2026-11-24 22:51) */
+  function toolPlan() {
+    var N = naming(), p = toolP(), mk = 0, pl = { name: k('ui.dx-ren-plan-n', 'Document plan from the files'), no: '', lines: [] };
+    p.files.forEach(function (f) { var q = parseName(N ? N.newName(p, f) : f.name); if (!/^\d{3}/.test(q.code || '')) return; pl.lines.push({ id: 'l' + (mk++), code: q.code, sys: codeName(q.code) || '', type: '', t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '', planned: q.stem.slice(0, 160), st: 'recv', files: [] }); });
+    if (!pl.lines.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-mk-none', 'No file has an NS 3451 code yet – give the files their names first.'))); return; }
+    dlOut(new File([kravXlsxBby(pl)], 'Vedlegg 7 ' + k('ui.dc-hand-plan', 'Document plan') + ' ' + today() + '.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); toolUpDone(p.files);
+  }
+  window.DocTools = {   /* for Team's Opplastinger: open the naming tool with files, pack files, make a project */
+    ren: function (fs) { open = null; ropen = null; xtool = 'ren'; draw(); window.scrollTo(0, 0); return renAdd(fs); },
+    zip: function (files) { return zipStore(files); },
+    newProject: function (name) { var t = Fe.tools(), id = uid(); t.dctl = (t.dctl || []).concat([{ id: id, name: String(name || '').slice(0, 120), made: new Date().toISOString(), lines: [], files: [] }]); Fe.saveTools(t); return id; }
+  };
   function renDownload(only) {
     var N = naming(), p = toolP(), F = only ? p.files.filter(function (f) { return only.indexOf(f.id) >= 0; }) : p.files, used = {};
     return Promise.all(F.map(function (f) { return Promise.resolve(TOOL.blobs[f.id]).then(function (b) { return b ? b.arrayBuffer() : null; }).then(function (buf) { if (!buf) return null; var n = N ? N.newName(p, f) : f.name, base = n, i = 2; while (used[n.toLowerCase()]) n = base.replace(/(\.[^.]+)?$/, ' (' + i++ + ')$1'); used[n.toLowerCase()] = 1; return [n, new Uint8Array(buf)]; }); }))
-      .then(function (files) { files = files.filter(Boolean); var one = files.length === 1, blob = one ? new Blob([files[0][1]]) : zipStore(files), f = one ? new File([blob], files[0][0], { type: (F[0] && TOOL.blobs[F[0].id] && TOOL.blobs[F[0].id].type) || 'application/octet-stream' }) : new File([blob], k('ui.dx-ren-zip', 'Renamed files') + ' ' + today() + '.zip', { type: 'application/zip' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f); else { var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); } return f; });
+      .then(function (files) { files = files.filter(Boolean); var one = files.length === 1, blob = one ? new Blob([files[0][1]]) : zipStore(files), f = one ? new File([blob], files[0][0], { type: (F[0] && TOOL.blobs[F[0].id] && TOOL.blobs[F[0].id].type) || 'application/octet-stream' }) : new File([blob], k('ui.dx-ren-zip', 'Renamed files') + ' ' + today() + '.zip', { type: 'application/zip' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(f); else { var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); } toolUpDone(F); return f; });
   }
   function fdvPanel() {
     var R = fdvRes || [], bad = R.filter(function (x) { return x.iss.length; });
@@ -540,7 +562,7 @@
     var kid = gone && gone.krav && !(t0.dctl || []).some(function (x) { return x.id !== pid && x.krav === gone.krav; }) ? gone.krav : null;
     var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); if (kid) t3.dckrav = (t3.dckrav || []).filter(function (x) { return x.id !== kid; }); Fe.saveTools(t3); if (inside) back(); else draw();
     toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; if (kid) t4.dckrav = allK; Fe.saveTools(t4); draw(); });
-    setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { dropFile(f.id, f.tf); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000);
+    setTimeout(function () { if (!proj(pid) && gone) { if (HOST && HOST.linksOff) HOST.linksOff(pid); (gone.files || []).forEach(function (f) { dropFile(f.id, f.tf); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000);
   }
   function home() {
     var moved = !HOST && !!Fe.tools().dcTeamAt, L = rowsAll();
@@ -699,6 +721,7 @@
     return h + '<p class="muted dc-help">' + esc(k('ui.dc-fl-end-note', 'Checked against the project’s requirements and the client’s checklist. Names are checked by the rules; whether the content is good enough is for a person to judge.')) + '</p>';
   }
   function full(p) {
+    linkSync(p);   /* files sent on the project's upload links come in */
     if (flowOn()) return flowFull(p);
     var T = [['over', k('ui.dc-tab-over', 'Overview'), 'speedometer2'], ['docs', k('ui.dc-tab-docs', 'Documents'), 'list-check'], ['files', k('ui.dc-tab-files', 'Files'), 'files']];
     if (tab !== 'report' && !T.some(function (t) { return t[0] === tab; })) tab = 'over';
@@ -2028,7 +2051,7 @@
   }
   var OKX = /\.(pdf|jpe?g|png|heic|heif|webp|gif|docx?|xlsx?|xlsm|odt|ods|txt|rtf|dwg|dxf|ifc|csv|msg|eml|mp4|mov|zip)$/i;
   function mime(n) { n = n.toLowerCase(); return /\.pdf$/.test(n) ? 'application/pdf' : /\.jpe?g$/.test(n) ? 'image/jpeg' : /\.png$/.test(n) ? 'image/png' : 'application/octet-stream'; }
-  function importFiles(id, list, names) {
+  function importFiles(id, list, names, src) {
     var got = (names || []).map(function (n) { return { name: n, size: 0, blob: null, nf: true }; });
     list.reduce(function (pr, f) {
       return pr.then(function () {
@@ -2036,21 +2059,31 @@
           var Z = zipEntries(buf).filter(function (z) { return !/\/$/.test(z.name) && !/(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db|desktop\.ini)(\/|$)/i.test(z.name) && !/(^|\/)\._/.test(z.name); });
           return Z.reduce(function (p2, z) { return p2.then(function () { var nm = z.name.split('/').pop(); if (!OKX.test(nm) || /\.zip$/i.test(nm)) return; return inflate(z).then(function (u) { got.push({ name: nm, path: z.name.split('/').slice(0, -1).join('/'), size: z.size, blob: new Blob([u], { type: mime(nm) }) }); }).catch(function () { got.push({ name: nm, size: z.size, blob: null }); }); }); }, Promise.resolve());
         });
-        if (OKX.test(f.name)) got.push({ name: f.name, path: (f.webkitRelativePath || '').split('/').slice(0, -1).join('/'), size: f.size, blob: f });
+        if (OKX.test(f.name)) got.push({ name: f.name, path: (f.webkitRelativePath || '').split('/').slice(0, -1).join('/'), size: f.size, blob: f, upf: f._upf, uplid: f._uplid, who: f._who });
       });
     }, Promise.resolve()).then(function () { return Promise.all(got.map(function (g) { return g.blob ? fingerprint(g.blob).then(function (h) { g.h = h; }) : null; })); }).then(function () {
       /* the content decides, as in the rename tool (JP 2026-11-24): the very same file again (same name, same content) is skipped;
          the same content under another name is kept and shown in "N files are here more than once" for a person to check */
       var p0 = proj(id); if (!p0) return;
       var have = {}; (p0.files || []).forEach(function (f) { var n = f.name.toLowerCase(); have[n + '|s' + (f.nf ? 0 : f.size)] = have[n + '|s' + (f.nf ? 0 : f.size)] || (f.h ? 'h' : 'n'); if (f.h) have[n + '|h' + f.h] = 1; });
-      var add = got.filter(function (g) { var n = g.name.toLowerCase(), ks = n + '|s' + g.size; if (g.h ? have[n + '|h' + g.h] || have[ks] === 'n' : have[ks]) return false; if (g.h) have[n + '|h' + g.h] = 1; have[ks] = have[ks] || (g.h ? 'h' : 'n'); return true; }).map(function (g) { var pn = parseName(g.name); return { id: uid() + Math.random().toString(36).slice(2, 4), name: g.name.slice(0, 160), path: (g.path || '').slice(0, 160), size: g.size, at: today(), lm: fdate(g.blob), h: g.h || undefined, p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues, blob: g.blob, nf: g.nf || undefined }; });
+      var upHad = {}; (p0.files || []).forEach(function (f) { if (f.upf) upHad[f.upf] = 1; });
+      var add = got.filter(function (g) { if (g.upf && upHad[g.upf]) return false; var n = g.name.toLowerCase(), ks = n + '|s' + g.size; if (g.h ? have[n + '|h' + g.h] || have[ks] === 'n' : have[ks]) return false; if (g.h) have[n + '|h' + g.h] = 1; have[ks] = have[ks] || (g.h ? 'h' : 'n'); return true; }).map(function (g) { var pn = parseName(g.name); return { id: uid() + Math.random().toString(36).slice(2, 4), name: g.name.slice(0, 160), path: (g.path || '').slice(0, 160), size: g.size, at: today(), lm: fdate(g.blob), h: g.h || undefined, p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues, blob: g.blob, nf: g.nf || undefined }; });
       return add.reduce(function (pr, f) { return pr.then(function () { if (f.blob) return putBlob(f.id, f.blob); }); }, Promise.resolve()).then(function () {
         var matched = 0;
         saveP(id, function (p) {
-          p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; if (o.size && !names) o.nw = 1; return o; }));   /* nw: just uploaded – shown in "Give the new files the right names" until someone presses Done (JP 2026-11-24) */
+          p.files = (p.files || []).concat(add.map(function (f) { var o = Object.assign({}, f); delete o.blob; delete o.uplid; delete o.who; if (!o.upf) delete o.upf; if (o.size && !names) o.nw = 1; return o; }));   /* nw: just uploaded – shown in "Give the new files the right names" until someone presses Done (JP 2026-11-24) */
           add.forEach(function (f) { var x = p.files.filter(function (y) { return y.id === f.id; })[0]; if (namingOn() && naming()) naming().guess(x); var l = (p.lines || []).length && bestLine(p, x.p); if (l) { x.line = l.id; l.files = (l.files || []).concat([x.id]); if (l.st === 'missing') l.st = 'recv'; matched++; } });
           pairs(p);
         });
+        if (src && src.link) {   /* one message per batch, the line on Levering does the rest; the upload copies of files already here go at once */
+          got.forEach(function (g) { if (!g.upf) return; var a0 = add.filter(function (f) { return f === g; })[0]; if (a0) UPD[a0.id] = [g.uplid, g.upf]; else if (HOST.upDone) HOST.upDone(g.uplid, [g.upf]); });
+          var who = (got.filter(function (g) { return g.who; })[0] || {}).who;
+          if (add.length) toast('<i class="bi bi-cloud-arrow-down"></i> ' + esc(who ? k('ui.dc-link-in-w', '{n} files came in from {w}', { n: add.length, w: who }) : k('ui.dc-link-in', '{n} files came in on the upload link', { n: add.length })));
+          draw(); shareUp(id, add.filter(function (f) { return f.blob; }).map(function (f) { return f.id; }));
+          var nw2 = add.map(function (f) { return f.id; }), sg2 = function () { var N = naming(); if (N && nw2.length) N.suggestAll(id, nw2).then(function () { draw(); }); };
+          if (HOST && !namingOn()) { if (naming()) sg2(); else if (dcnLoading) dcnLoading.then(sg2); }
+          return;
+        }
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
         if (HOST && !namingOn() && add.some(function (f) { return f.size && !names; })) { freshPop = id; freshF = 'new'; freshStep = 1; freshHad = false; }   /* your own upload: name them now, in the popup */
         setTab('files'); draw();
@@ -2250,8 +2283,9 @@
     if ((b = t.closest('[data-dxpldl]'))) { var pe = plList().filter(function (x) { return x.id === b.dataset.dxpldl; })[0]; if (pe) plFile(pe).then(function (f) { if (f) window.FdvPdf.share(f); }); return; }
     var pd = t.closest('[data-dxpldel]'); if (pd) { if (!pd.classList.contains('sure')) { pd.classList.add('sure'); pd.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-pl-sure', 'Delete the plan? Tap again')); setTimeout(function () { if (pd.isConnected) { pd.classList.remove('sure'); pd.innerHTML = '<i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')); } }, 4000); return; } plDel(pd.dataset.dxpldel); return; }
     var b0 = t.closest('[data-dxrenclr]'); if (b0) { if (!b0.classList.contains('sure')) { b0.classList.add('sure'); b0.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-clear-sure', 'Remove all files? Tap again')); setTimeout(function () { if (b0.isConnected) { b0.classList.remove('sure'); b0.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dx-clear', 'Start again')); } }, 4000); return; }
-      TOOL = { p: null, blobs: {} }; draw(); return; }
+      TOOL = { p: null, blobs: {}, upl: {} }; draw(); return; }
     if (t.closest('[data-dxrenuse]')) { var N9 = naming(); if (N9) { var nn9 = N9.useAll('__ren'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dx-ren-used', '{n} files have their new name', { n: nn9 }))); } return; }
+    if (t.closest('[data-dxrenplan]')) { toolPlan(); return; }
     if ((b = t.closest('[data-dxrendl]'))) { if (b.disabled) return; if (toolP().files.length === 1) { b.disabled = true; renDownload().then(function () { b.disabled = false; }, function () { b.disabled = false; }); return; } dlPop(); return; }   /* more than one file: choose what to download first */
     if (t.closest('[data-dxfdvclr]')) { fdvRes = null; var ta0 = document.querySelector('form[data-dxfdv] textarea'); if (ta0) ta0.value = ''; draw(); return; }   /* a new list to check (JP 2026-11-23 "no reset button when you import") */
     if (t.closest('[data-dxfdvcopy]')) { copyText((fdvRes || []).filter(function (x) { return x.iss.length; }).map(function (x) { return x.n + '\t' + x.iss.join(' · '); }).join('\n')); return; }
