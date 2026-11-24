@@ -1,6 +1,50 @@
 /* Built by _team/build.py from cmd/styles.css and cmd/work/page.css – only what Document control uses. Edit those, not this. */
 .dc-host {
   /* tokens */
+  --bg: #0e0f11;
+  --ink-rgb: 231, 231, 234;
+  --card-rgb: 23, 24, 27;
+  --accent-rgb: 20, 184, 166;
+  --card: rgba(var(--card-rgb), .82);
+  --line: rgba(var(--ink-rgb), .1);
+  --text: #e7e7ea;
+  --muted: rgba(var(--ink-rgb), .6);
+  --heading: #ffffff;
+  --accent: #14b8a6;
+  --accent-soft: rgba(var(--accent-rgb), .14);
+  --on-accent: #0a0b0c;
+  --bg-solid: #17181b;
+  --bg-opacity: .22;
+  --glow: rgba(var(--accent-rgb), .38);   /* the clock's glow follows your accent colour */
+  --danger: #e66767;
+  --ease-ios: cubic-bezier(.32, .72, 0, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  /* status colours, by what they mean (the same in both themes unless the light set says otherwise) */
+  --ok: #22b35e; --ok-rgb: 34, 179, 94;
+  --warn: #c98500; --warn-rgb: 201, 133, 0;
+  --danger-rgb: 230, 103, 103;
+  --orange: #e8743b; --orange-rgb: 232, 116, 59;
+  --blue: #3987e5; --blue-rgb: 57, 135, 229; --gold: #d9a400; --pink: #d55181; --violet: #8a6fdf; --violet-rgb: 138, 111, 223; --slate: #5b6470; --slate-rgb: 91, 100, 112;
+  --scheme: dark;
+  --quote: rgba(var(--ink-rgb), .75);
+  --moon-filter: grayscale(1);
+  --preview-bg: linear-gradient(135deg, #1f6f6b, #3b3f8f 60%, #a0466b);
+  --glass-card: rgba(var(--card-rgb), calc(.74 - var(--glass) * .58));
+  --glass-edge: rgba(255, 255, 255, calc(.05 + var(--glass) * .12));
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(.03 + var(--glass) * .12)), 0 10px 30px rgba(0, 0, 0, calc(.1 + var(--glass) * .16));
+  --soft-shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 14px 34px rgba(0, 0, 0, .3);
+  --soft-shadow-sm: 0 1px 2px rgba(0, 0, 0, .22), 0 10px 26px rgba(0, 0, 0, .26);
+  --wx-rain: rgba(170, 200, 230, .16); --wx-snow-filter: none; --wx-stars: block;
+  --calm-a: .22; --calm-b: .07;
+  /* the page pictures */
+  --sc-plane: #eef2f8; --sc-plane-shadow: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); --sc-route: rgba(var(--ink-rgb), .62);
+  --sc-cloud: rgba(var(--ink-rgb), .2); --hs-smoke: rgba(var(--ink-rgb), .22); --sc-cup: #f4f1ea; --sc-cup-line: none; --sc-cuph: #f4f1ea;
+  --sc-steam: rgba(var(--ink-rgb), .45); --sc-bubs: rgba(255, 255, 255, .35); --sc-wheel: rgba(var(--ink-rgb), .7);
+  --sc-wheel2: #8a8f99; --sc-lane: rgba(255, 255, 255, .55); --sc-vglass: #1d2a3b;
+  /* /tokens */
+  color-scheme: dark;
+
+  /* tokens */
   --bg: #f2f3f5;
   --ink-rgb: 24, 26, 31;
   --card-rgb: 255, 255, 255;
@@ -1399,3 +1443,18 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-freshsheet > .dc-fresh { margin: 0; border: 0; padding: 0; background: none; }
 .dc-freshbtns { position: sticky; bottom: -20px; display: flex; justify-content: flex-end; gap: 8px; margin: 12px -20px -20px; padding: 12px 20px 16px; background: var(--bg); border-top: 1px solid var(--line); }
 .dc-skipk { font-size: 14px; }
+.dc-sumbar .dc-gname { padding: 9px 14px; font-size: 14px; }
+.dc-badl { font: inherit; padding: 0; text-decoration: underline; }
+.dc-th { display: flex; align-items: center; gap: 8px; margin: 16px 0 6px; font-size: 15px; }
+.dc-tdup .dc-help { margin: 0 0 8px; }
+.dc-tdg { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 12px; }
+.dc-tdo { flex: 1 1 200px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(var(--ink-rgb), .16); border-radius: 10px; }
+.dc-tdo:hover { border-color: var(--ok); }
+.dc-tdk { flex: 1; min-width: 0; text-align: left; padding: 9px 4px 9px 12px; border: 0; background: none; color: var(--ink, inherit); font: inherit; font-size: 13.5px; cursor: pointer; word-break: break-word; }
+.dc-tdk b { font-weight: 500; }
+.dc-tdk small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.dc-tdok { flex-basis: 100%; font-size: 13px; text-align: left; }
+.dc-tnh { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 16px 0 6px; }
+.dc-tnh .dc-th { margin: 0; flex: 1; }
+.dc-tnh .dc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dc-linkb { font-size: 13px; margin: 4px 0 0; }

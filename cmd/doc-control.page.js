@@ -387,6 +387,13 @@
   function fingerprint(b) { try { return b.arrayBuffer().then(function (buf) { return crypto.subtle.digest('SHA-256', buf); }).then(function (d) { return [].map.call(new Uint8Array(d).slice(0, 16), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }).catch(function () { return ''; }); } catch (e) { return Promise.resolve(''); } }
   function dupGroups(pid) { var p = pid ? proj(pid) || { files: [] } : toolP(), by = {}; (p.files || []).forEach(function (f) { if (f.h && !(p.dupOk || {})[f.h]) (by[f.h] = by[f.h] || []).push(f); }); return Object.keys(by).filter(function (h) { return by[h].length > 1; }).map(function (h) { return by[h]; }); }
   function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' kB'; }
+  /* a project's copies leave it (unlinked from their lines), with Undo; their team copies go after the Undo time */
+  function dupRemove(pid, g, keep) {
+    var outP = g.filter(function (x) { return x.id !== keep; }).map(function (x) { return x.id; }), snap = JSON.parse(JSON.stringify(proj(pid)));
+    saveP(pid, function (p2) { (p2.files || []).forEach(function (x) { if (outP.indexOf(x.id) >= 0) gone(p2, x); }); p2.files = (p2.files || []).filter(function (x) { return outP.indexOf(x.id) < 0; }); });
+    toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-dup-done', '{n} removed from the project – the one you chose is kept.', { n: outP.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === snap.id ? snap : x; }); Fe.saveTools(t2); draw(); });
+    setTimeout(function () { var p3 = proj(pid); outP.forEach(function (id) { if (!p3 || !(p3.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(snap, id)); }); }, 9000);
+  }
   /* pid: a project's delivered files (JP 2026-11-24: "it did not check for duplicates" when files were uploaded to a project); none: the rename tool's list */
   function dupPop(gi, pid) {
     var old = document.querySelector('.dx-dupov'); if (old) old.remove();
@@ -411,10 +418,7 @@
       if ((b = t.closest('[data-dupgo]'))) { close(); dupPop(gi + +b.dataset.dupgo, pid); return; }
       if (t.closest('[data-dupok]')) { if (pid) saveP(pid, function (p1) { (p1.dupOk = p1.dupOk || {})[g[0].h] = 1; }); else { var p0 = toolP(); (p0.dupOk = p0.dupOk || {})[g[0].h] = 1; } close(); draw(); if (dupGroups(pid).length) dupPop(gi, pid); return; }
       if (t.closest('[data-duprm]') && pid) {   /* a project: the others leave the project (unlinked from their lines), with Undo */
-        var outP = g.filter(function (x) { return x.id !== keep; }).map(function (x) { return x.id; }), snap = JSON.parse(JSON.stringify(proj(pid)));
-        saveP(pid, function (p2) { (p2.files || []).forEach(function (x) { if (outP.indexOf(x.id) >= 0) gone(p2, x); }); p2.files = (p2.files || []).filter(function (x) { return outP.indexOf(x.id) < 0; }); });
-        toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-dup-done', '{n} removed from the project – the one you chose is kept.', { n: outP.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === snap.id ? snap : x; }); Fe.saveTools(t2); draw(); });
-        setTimeout(function () { var p3 = proj(pid); outP.forEach(function (id) { if (!p3 || !(p3.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(snap, id)); }); }, 9000);
+        dupRemove(pid, g, keep);
         close(); draw(); if (dupGroups(pid).length) dupPop(gi, pid); return;
       }
       if (t.closest('[data-duprm]')) {
@@ -837,6 +841,25 @@
     return '<div class="dc-drop" ' + attr + '><i class="bi bi-cloud-arrow-up dc-dropi" aria-hidden="true"></i><b>' + esc(k('ui.dc-drop-here', 'Drop the files here, or')) + '</b>' + main +
       (others ? '<span class="dc-dropor">' + esc(k('ui.dc-drop-or', 'or')) + '</span><div class="dc-droprow">' + others + '</div>' : '') + (note ? '<small class="dc-dropnote">' + esc(note) + '</small>' : '') + '</div>';
   }
+  /* the tidy-up popup: duplicates (tap the one to keep), then the naming cards for New / Name problems / All */
+  var freshF = 'new', linkOpen = null;
+  function tidyPop(p, F, NW, BADF, DG) {
+    var N0 = naming(), L = freshF === 'bad' ? BADF : freshF === 'all' ? F : NW;
+    if (N0) { var sgo = (freshF === 'all' ? [] : L).filter(function (f) { return !FRESH_SG[f.id]; }).map(function (f) { FRESH_SG[f.id] = 1; return f.id; }); if (sgo.length) setTimeout(function () { N0.suggestAll(p.id, sgo); }, 0); }
+    var nDone = N0 ? L.filter(function (f) { return N0.ready(p, f) && N0.newName(p, f) === f.name; }).length : 0, allDone = !DG.length && (!L.length || nDone === L.length);
+    var title = DG.length ? k('ui.dc-tidy-h', 'Tidy up the files') : freshF === 'new' ? k('ui.dc-fresh-h', 'Give the new files the right names') : k('ui.dc-names-h', 'Give the files the right names');
+    var h = '<div class="dx-tov dc-freshov" data-dcfreshov><div class="dx-tsheet dc-freshsheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '"><section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(title) + '</b></span>' +
+      '<button type="button" class="icon-btn sm" data-dcfreshlater aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>';
+    if (DG.length) h += '<div class="dc-tdup"><h4 class="dc-th"><i class="bi bi-files"></i> ' + esc(k('ui.dc-same-files', 'The same files')) + '</h4><p class="muted dc-help">' + esc(k('ui.dc-same-help', 'Same content, different names. Tap the one to keep – the others leave the project.')) + '</p>' +
+      DG.map(function (g, gi) { return '<div class="dc-tdg">' + g.map(function (f) { return '<div class="dc-tdo"><button type="button" class="dc-tdk" data-dckeep="' + gi + '|' + esc(f.id) + '"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(kb(f.size || 0)) + ' · ' + esc((f.iss || []).length ? k('ui.dc-name-bad', 'Name problem') : k('ui.dc-name-ok', 'Name OK')) + '</small></button>' +
+        '<button type="button" class="icon-btn sm" data-dcdupview="' + esc(f.id) + '" aria-label="' + esc(k('ui.dx-dup-open', 'Open')) + '"><i class="bi bi-eye"></i></button></div>'; }).join('') +
+        '<button type="button" class="text-btn dc-tdok" data-dcdupok="' + gi + '">' + esc(k('ui.dx-dup-ok', 'They are different – keep all')) + '</button></div>'; }).join('') + '</div>';
+    h += '<div class="dc-tnh"><h4 class="dc-th"><i class="bi bi-pencil-square"></i> ' + esc(k('ui.dc-give-names', 'Give names')) + '</h4><div class="dc-chips">' +
+      [['new', k('ui.dc-ff-new', 'New'), NW.length], ['bad', k('ui.dc-ff-bad', 'Name problems'), BADF.length], ['all', k('ui.all', 'All'), F.length]].map(function (c) { return '<button type="button" class="dc-chip" data-dcff="' + c[0] + '" aria-pressed="' + (freshF === c[0]) + '">' + esc(c[1]) + ' <span class="tnum">' + c[2] + '</span></button>'; }).join('') + '</div></div>';
+    h += L.length ? '<small class="dc-freshp' + (L.length && nDone === L.length ? ' ok' : '') + '">' + esc(k('ui.dc-fresh-p', '{d} of {n} have their new name', { d: nDone, n: L.length })) + '</small>' + (N0 ? N0.files(p, L) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>')
+      : '<p class="muted dc-help">' + esc(freshF === 'new' ? k('ui.dc-ff-new0', 'No new files left to name.') : freshF === 'bad' ? k('ui.dc-ff-bad0', 'No name problems left.') : k('ui.dc-ff-all0', 'No files yet.')) + '</p>';
+    return h + '</section><div class="dc-freshbtns"><button type="button" class="dc-chip" data-dcfreshlater>' + esc(k('ui.dc-fresh-later', 'Not now')) + '</button><button type="button" class="' + (allDone ? 'pill-btn' : 'dc-chip') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div></div></div>';
+  }
   function files(p) {
     /* one question instead of three equal buttons (JP 2026-11-23 "this part is the confusing part"): you have the files, or the
        documentation is already in the FDV system and only the names are needed; once files are in, just small links to add more */
@@ -856,23 +879,21 @@
     /* the same content more than once in the project: a bar to check them, as in the rename tool (JP 2026-11-24) */
     var DGp = dupGroups(p.id), dnp = DGp.reduce(function (a, g) { return a + g.length; }, 0);
     h += dwBox(p);
-    if (DGp.length) h += '<div class="dx-dupbar" role="status"><i class="bi bi-files"></i><span>' + esc(k('ui.dx-dup-bar', '{n} files are here more than once (same content) – {g} groups to check', { n: dnp, g: DGp.length })) + '</span><button type="button" class="pill-btn sm" data-dxdups="' + esc(p.id) + '">' + esc(k('ui.dx-dup-go', 'Check them')) + '</button></div>';
-    /* files just uploaded (by you or someone in the team): named like in "Give files the right names" – suggestions, then Use (JP 2026-11-24) */
-    var NW = HOST && !namingOn() ? F.filter(function (f) { return f.nw; }) : [];   /* Team; in /cmd with the new naming the whole list is already this view */
-    if (NW.length) { var N0 = naming();
-      /* suggestions come by themselves for files that haven't had them yet (JP 2026-11-24) – once per file on this device */
-      if (N0) { var sgo = NW.filter(function (f) { return !FRESH_SG[f.id]; }).map(function (f) { FRESH_SG[f.id] = 1; return f.id; }); if (sgo.length) setTimeout(function () { N0.suggestAll(p.id, sgo); }, 0); }
-      var nDone = N0 ? NW.filter(function (f) { return N0.ready(p, f) && N0.newName(p, f) === f.name; }).length : 0, allDone = nDone === NW.length;
-      /* a popup right after your own upload; otherwise (Not now, or a teammate's files) a line that opens it (JP 2026-11-24 17:52) */
-      if (freshPop === p.id) h += '<div class="dx-tov dc-freshov" data-dcfreshov><div class="dx-tsheet dc-freshsheet" role="dialog" aria-modal="true">' + '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small>' +
-        '<small class="dc-freshp' + (allDone ? ' ok' : '') + '">' + esc(k('ui.dc-fresh-p', '{d} of {n} have their new name', { d: nDone, n: NW.length })) + '</small></span>' +
-        '<button type="button" class="icon-btn sm" data-dcfreshlater aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>' +
-        '<div class="dc-freshbtns"><button type="button" class="dc-chip" data-dcfreshlater>' + esc(k('ui.dc-fresh-later', 'Not now')) + '</button><button type="button" class="' + (allDone ? 'pill-btn' : 'dc-chip') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div></div></div>';
-      else h += '<button type="button" class="dc-freshline" data-dcfreshopen="' + esc(p.id) + '"><i class="bi bi-pencil-square"></i><span>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-line1' : 'ui.dc-fresh-line', NW.length === 1 ? '1 new file needs its name' : '{n} new files need their names', { n: NW.length })) + ' · <b>' + esc(k('ui.dc-fresh-go', 'Give them names')) + '</b></span><i class="bi bi-chevron-right"></i></button>'; }
+    /* Team: one popup tidies the files – duplicates first, then the names, with New / Name problems / All – and one line opens it
+       (JP 2026-11-24 19:07–19:12); in /cmd the bar stays and the whole list is the naming view */
+    var tidy = HOST && !namingOn(), NW = tidy ? F.filter(function (f) { return f.nw; }) : [], BADF = F.filter(function (f) { return (f.iss || []).length; });
+    if (DGp.length && !tidy) h += '<div class="dx-dupbar" role="status"><i class="bi bi-files"></i><span>' + esc(k('ui.dx-dup-bar', '{n} files are here more than once (same content) – {g} groups to check', { n: dnp, g: DGp.length })) + '</span><button type="button" class="pill-btn sm" data-dxdups="' + esc(p.id) + '">' + esc(k('ui.dx-dup-go', 'Check them')) + '</button></div>';
+    if (tidy && freshPop === p.id) h += tidyPop(p, F, NW, BADF, DGp);
+    else if (tidy && (NW.length || DGp.length)) h += '<button type="button" class="dc-freshline" data-dcfreshopen="' + esc(p.id) + '" data-dcff="' + (NW.length ? 'new' : BADF.length ? 'bad' : 'all') + '"><i class="bi bi-pencil-square"></i><span>' +
+      [NW.length ? esc(k(NW.length === 1 ? 'ui.dc-fresh-line1' : 'ui.dc-fresh-line', NW.length === 1 ? '1 new file needs its name' : '{n} new files need their names', { n: NW.length })) : '',
+        DGp.length ? esc(k(DGp.length === 1 ? 'ui.dc-dupg1' : 'ui.dc-dupg', DGp.length === 1 ? '1 group of the same files' : '{n} groups of the same files', { n: DGp.length })) : ''].filter(Boolean).join(' · ') +
+      ' · <b>' + esc(k('ui.dc-tidy-go', 'Go through')) + '</b></span><i class="bi bi-chevron-right"></i></button>';
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
     F.sort(function (a, b) { return rank(a) - rank(b) || (a.name < b.name ? -1 : 1); });
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
-    h += '<div class="dc-sumbar"><p class="dc-note">' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad })) + '</p>' +
+    h += '<div class="dc-sumbar"><p class="dc-note">' + (tidy && bad ? esc(k('ui.dc-files-sum2', '{n} files delivered · {u} not in the plan', { n: F.length, u: u })) + ' · <button type="button" class="text-btn dc-badl" data-dcfreshopen="' + esc(p.id) + '" data-dcff="bad">' + esc(k('ui.dc-n-bad', '{b} with name problems', { b: bad })) + '</button>'
+      : esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad }))) + '</p>' +
+      (tidy && F.length ? '<button type="button" class="dc-chip dc-gname" data-dcfreshopen="' + esc(p.id) + '" data-dcff="' + (NW.length ? 'new' : BADF.length ? 'bad' : 'all') + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-give-names', 'Give names')) + '</button>' : '') +
       (imp ? addMenu('p:' + p.id, [addItem('upload', k('ui.dc-pick-files', 'Choose files'), k('ui.dc-way-files-s', 'PDFs, a folder or one .zip from the contractor'), '<label class="dc-additem dc-file" role="menuitem">', fileIn),
         addItem('file-earmark-spreadsheet', k('ui.dc-names-import2', 'Import list'), k('ui.dc-add-fdv', 'Names from the FDV system'), '<label class="dc-additem dc-file" role="menuitem">', namesIn),
         addItem('clipboard', k('ui.dc-names-paste', 'Paste names'), '', 'data-dcpastebtn')].concat(HOST && HOST.uplink ? [addItem('link-45deg', k('ui.dc-way-link-btn', 'Send upload link'), k('ui.dc-add-link', 'The contractor delivers it'), 'data-dcuplink="' + esc(p.id) + '"')] : [])) : '') + '</div>' + (imp && HOST && HOST.uplink ? upLinks(p) : '');
@@ -886,7 +907,9 @@
         '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div>' +
         ((f.iss || []).length ? '<ul class="dc-iss">' + f.iss.map(function (x) { return '<li class="' + x[0] + '"><i class="bi bi-' + (x[0] === 'err' ? 'x-octagon' : 'exclamation-triangle') + '"></i> ' + esc(issueText(x, f)) + '</li>'; }).join('') + '</ul>' : '') +
         (l ? '<p class="dc-to"><i class="bi bi-arrow-return-right"></i> <b>' + esc(l.code) + '</b> <span data-noi18n>' + esc(lineTitle(l)) + '</span> · ' + esc(typeLabel(l)) + '</p>' :
-          (fsel ? '' : '<select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select>')) + '</li>';
+          /* linking by hand (JP 2026-11-24 19:12 "what is the point of this"): nothing without a plan; with one a small link that opens the list */
+          (fsel || !(p.lines || []).length ? '' : linkOpen === f.id ? '<select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select>'
+            : '<button type="button" class="text-btn dc-linkb" data-dclinkopen="' + esc(f.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-link-line', 'Link to a line')) + '</button>')) + '</li>';
     }).join('') + '</ul>';
     if (fsel) h += selBar('f', p.id, F.map(function (f) { return f.id; }), '<button type="button" class="dc-qb" style="--c:' + stc('rej') + '" data-dcselfdel><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-sel-del-files', 'Remove the files')) + '</button>');
     return h;
@@ -1911,7 +1934,7 @@
           pairs(p);
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
-        if (HOST && !namingOn() && add.some(function (f) { return f.size && !names; })) freshPop = id;   /* your own upload: name them now, in the popup */
+        if (HOST && !namingOn() && add.some(function (f) { return f.size && !names; })) { freshPop = id; freshF = 'new'; }   /* your own upload: name them now, in the popup */
         setTab('files'); draw();
         shareUp(id, add.filter(function (f) { return f.blob; }).map(function (f) { return f.id; }));
         var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
@@ -1953,7 +1976,12 @@
     /* a choice that picks files keeps the menu (and its file field) until the files are chosen; anything else closes it */
     if (addOpen && !e.target.closest('.dc-addlist label')) { addOpen = ''; document.querySelectorAll('.dc-addlist').forEach(function (x) { x.hidden = true; }); document.querySelectorAll('[data-dcaddm]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); }); }
     /* the naming popup for new files: open from the line, Not now, a click on the dark backdrop */
-    if ((sb = e.target.closest('[data-dcfreshopen]'))) { freshPop = sb.dataset.dcfreshopen; draw(); return; }
+    if ((sb = e.target.closest('[data-dclinkopen]'))) { linkOpen = sb.dataset.dclinkopen; draw(); var ls = document.querySelector('select[data-dcflink="' + linkOpen + '"]'); if (ls) { ls.focus(); try { ls.showPicker && ls.showPicker(); } catch (er) {} } return; }
+    if ((sb = e.target.closest('[data-dcfreshopen]'))) { freshPop = sb.dataset.dcfreshopen; freshF = sb.dataset.dcff || 'new'; draw(); return; }
+    if (freshPop && (sb = e.target.closest('.dc-freshov [data-dcff]'))) { freshF = sb.dataset.dcff; draw(); return; }
+    if (freshPop && (sb = e.target.closest('[data-dckeep]'))) { var kq = sb.dataset.dckeep.split('|'), kg = dupGroups(freshPop)[+kq[0]]; if (kg) dupRemove(freshPop, kg, kq[1]); draw(); return; }
+    if (freshPop && (sb = e.target.closest('[data-dcdupok]'))) { var og = dupGroups(freshPop)[+sb.dataset.dcdupok], opid = freshPop; if (og) saveP(opid, function (p1) { (p1.dupOk = p1.dupOk || {})[og[0].h] = 1; }); draw(); return; }
+    if (freshPop && (sb = e.target.closest('[data-dcdupview]'))) { var vf = ((proj(freshPop) || {}).files || []).filter(function (x) { return x.id === sb.dataset.dcdupview; })[0], NV = naming(); if (vf && NV && NV.view) getBlob(vf.id).then(function (bl) { if (bl) NV.view(bl, vf.name); else if (HOST && vf.tf) teamBlob(vf.id).then(function (b2) { if (b2) NV.view(b2, vf.name); }); }); return; }
     if (e.target.closest('[data-dcfreshlater]') || (e.target.matches && e.target.matches('[data-dcfreshov]'))) { freshPop = null; draw(); return; }
     if ((sb = e.target.closest('[data-dcsel]'))) { SEL = SEL.k === sb.dataset.dcsel ? { k: '', ids: {} } : { k: sb.dataset.dcsel, ids: {} }; if (SEL.k) { openLine = null; rpen = false; } draw(); return; }
     if (SEL.k && (sb = e.target.closest('[data-dcpick]')) && !e.target.closest('[data-dcview], select, input, a')) { var pi = sb.dataset.dcpick; if (SEL.ids[pi]) delete SEL.ids[pi]; else SEL.ids[pi] = 1; draw(); return; }

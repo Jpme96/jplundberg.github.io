@@ -405,7 +405,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.evaluateOnNewDocument(() => localStorage.setItem('team.lang', 'nb'));
   await kari.goto(U + '#overview'); await kari.reload(); await kari.waitForSelector('.t-tabs');
   const nbt = await text(kari);
-  check(/Oversikt/.test(nbt) && /Møter/.test(nbt) && /Dokumenter/.test(nbt) && !/Overview|Meetings/.test(nbt), 'Norwegian when chosen');
+  check(/Oversikt/.test(nbt) && /Møter/.test(nbt) && /Dokumentasjon/.test(nbt) && !/Overview|Meetings/.test(nbt), 'Norwegian when chosen');
   await kari.goto(U + '#docs'); await kari.reload(); await until(kari, () => !!document.querySelector('#wkDocCtl [data-drnew], #wkDocCtl .dx-list'), 20000);
   check(/Dokumentasjon/.test(await text(kari)) && !/Documentation|Document control/.test(await text(kari)), 'Documentation in Norwegian too');
   await word(kari, 'Norwegian overview');

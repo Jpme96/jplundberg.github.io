@@ -95,6 +95,9 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(fl.n === 5 && fl.m.join(';') === '234 DA Vindu sørfasade modell X fra Made-up.pdf|E|;332 DV Sprinkleranlegg.pdf|BC|;332 SE Sprinkleranlegg.pdf|A|;99999-H02-V-332-P-01 – Rørplan rev 2.pdf|K|version+nodwg;random scan 7.pdf|-|nocode'
     && fl.st === 'recv,recv,recv,missing,recv,missing' && fl.tab === 'files' && fl.loose === 1, 'files (also from a .zip, without __MACOSX) are matched by code + document code, checked by name, and their lines become Received ' + JSON.stringify(fl));
   /* link the loose one by hand to 336 */
+  /* linking by hand is a small link that opens the list (JP 2026-11-24 19:12) */
+  check(await p.evaluate(() => !document.querySelector('.dc-files select[data-dcflink]') && !!document.querySelector('.dc-files [data-dclinkopen]')), 'a file outside the plan shows "Link to a line", not a big box');
+  await p.evaluate(() => document.querySelector('.dc-files [data-dclinkopen]').click()); await sl(300);
   await p.evaluate(() => { const r = Features.list('dctl')[0], s = document.querySelector('select[data-dcflink]'); s.value = r.lines[3].id; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   check(await p.evaluate(() => { const r = Features.list('dctl')[0]; return r.lines[3].st === 'recv' && r.lines[3].files.length === 1 && r.files.every(f => f.line); }), 'a file that wasn\'t matched can be linked to a line by hand');
   /* statuses and a comment */

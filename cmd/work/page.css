@@ -965,3 +965,19 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-freshsheet > .dc-fresh { margin: 0; border: 0; padding: 0; background: none; }
 .dc-freshbtns { position: sticky; bottom: -20px; display: flex; justify-content: flex-end; gap: 8px; margin: 12px -20px -20px; padding: 12px 20px 16px; background: var(--bg); border-top: 1px solid var(--line); }
 .dc-skipk { font-size: 14px; }
+/* The tidy-up popup (JP 2026-11-24 19:12): duplicates first, then the names with New / Name problems / All; "Give names" on the summary line */
+.dc-sumbar .dc-gname { padding: 9px 14px; font-size: 14px; }
+.dc-badl { font: inherit; padding: 0; text-decoration: underline; }
+.dc-th { display: flex; align-items: center; gap: 8px; margin: 16px 0 6px; font-size: 15px; }
+.dc-tdup .dc-help { margin: 0 0 8px; }
+.dc-tdg { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 12px; }
+.dc-tdo { flex: 1 1 200px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(var(--ink-rgb), .16); border-radius: 10px; }
+.dc-tdo:hover { border-color: var(--ok); }
+.dc-tdk { flex: 1; min-width: 0; text-align: left; padding: 9px 4px 9px 12px; border: 0; background: none; color: var(--ink, inherit); font: inherit; font-size: 13.5px; cursor: pointer; word-break: break-word; }
+.dc-tdk b { font-weight: 500; }
+.dc-tdk small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.dc-tdok { flex-basis: 100%; font-size: 13px; text-align: left; }
+.dc-tnh { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 16px 0 6px; }
+.dc-tnh .dc-th { margin: 0; flex: 1; }
+.dc-tnh .dc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dc-linkb { font-size: 13px; margin: 4px 0 0; }

@@ -113,7 +113,8 @@ styles = rd(os.path.join(CMD, 'styles.css'))
 dark = re.search(r'^:root \{(.*?)^\}', styles, re.S | re.M).group(1)
 light = re.search(r'^:root\[data-theme="light"\] \{(.*?)^\}', styles, re.S | re.M).group(1)
 css = ['/* Built by _team/build.py from cmd/styles.css and cmd/work/page.css – only what Document control uses. Edit those, not this. */',
-       '.dc-host {' + light + '}', ':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov {' + dark + '}',
+       # light = cmd's dark tokens with the light ones over them, as the cascade does in cmd – the light block alone lacks --warn-rgb, --ok-rgb … (JP 2026-11-24: the new-files line had no colour in Team)
+       '.dc-host {' + dark + light + '}', ':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov {' + dark + '}',
        # Team's own colours win inside Documentation too: the accent, text on it, the error colour, the grey text; blue and violet tags go neutral (JP 2026-11-19)
        '.dc-host, :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --accent: var(--acc); --accent-rgb: var(--acc-rgb); --on-accent: var(--acc-ink); --accent-soft: var(--acc-soft); --glow: rgba(var(--acc-rgb), .3); --danger: var(--bad); --muted: var(--t-muted); --blue: var(--neutral); --violet: var(--neutral); --pink: var(--acc); }']
 css += pick(styles) + pick(rd(os.path.join(CMD, 'work', 'page.css')))

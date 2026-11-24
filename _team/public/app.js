@@ -499,7 +499,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
     var dKey = function (d) { var sm = d.querySelector('summary'); return d.className + '|' + (sm ? sm.textContent.trim() : ''); }, dWas = {};
     [].forEach.call($app.querySelectorAll('details'), function (d) { if (!d.closest('.dc-host, #wkDocCtl, #wkDocReq')) dWas[dKey(d)] = d.open; });   /* a box you opened or closed stays that way when the page is drawn again (JP 2026-11-17 19:59) */
-    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documents', 'Dokumenter')], ['team', 'team', L('Team', 'Team')]].filter(function (t) { return t[0] !== 'docs' || dtabsOn().length; }).map(function (t) {
+    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documentation', 'Dokumentasjon')], ['team', 'team', L('Team', 'Team')]].filter(function (t) { return t[0] !== 'docs' || dtabsOn().length; }).map(function (t) {
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
@@ -548,7 +548,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (!ms.length && !as.length && !ds.length) return out + '<p class="t-empty">' + esc(L('Nothing found for “' + q + '”.', 'Fant ingenting for «' + q + '».')) + '</p>';
     if (ms.length) out += '<p class="t-h">' + L('Meetings', 'Møter') + '</p>' + ms.slice(0, 30).map(meetingCard).join('');
     if (as.length) out += '<p class="t-h">' + L('Actions', 'Oppgaver') + '</p>' + actionList(as.slice(0, 50), true);
-    if (ds.length) out += '<p class="t-h">' + L('Documents', 'Dokumenter') + '</p><ul class="t-list">' + ds.slice(0, 30).map(function (x) { return '<li><a class="t-row" href="#dc=' + esc(x.p.id) + '"><span class="grow"><span>' + esc(x.p.name) + '</span><small>' + esc(x.n ? L(x.n + ' matching documents', x.n + ' treff i dokumentene') : L('The project', 'Prosjektet')) + '</small></span></a></li>'; }).join('') + '</ul>';
+    if (ds.length) out += '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p><ul class="t-list">' + ds.slice(0, 30).map(function (x) { return '<li><a class="t-row" href="#dc=' + esc(x.p.id) + '"><span class="grow"><span>' + esc(x.p.name) + '</span><small>' + esc(x.n ? L(x.n + ' matching documents', x.n + ' treff i dokumentene') : L('The project', 'Prosjektet')) + '</small></span></a></li>'; }).join('') + '</ul>';
     return out;
   }
   function viewOverview() {
@@ -572,7 +572,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var key = 'team.welcome.' + S.tid; try { if (localStorage.getItem(key) || (navigator.webdriver && !window.__welcomeTest)) return ''; } catch (e) { return ''; }   /* tests skip it, like the switch screen */
     var steps = [
       ['home', L('Overview', 'Oversikt'), L('Your open actions and the next meeting – start here each day.', 'Dine åpne oppgaver og neste møte – start her hver dag.')],
-      ['docs', L('Documents', 'Dokumenter'), L('The document requirements, what has come in and the report for each project.', 'Dokumentkravene, det som har kommet inn og rapporten for hvert prosjekt.')],
+      ['docs', L('Documentation', 'Dokumentasjon'), L('The document requirements, what has come in and the report for each project.', 'Dokumentkravene, det som har kommet inn og rapporten for hvert prosjekt.')],
       ['cal', L('Meetings', 'Møter'), L('Agendas, minutes and the actions that come out of them.', 'Saksliste, referat og oppgavene som kommer ut av dem.')],
       ['gear', L('Settings', 'Innstillinger'), L('Turn on notifications to hear when something changes – only who changed what kind, never the content.', 'Slå på varsler for å høre når noe endres – bare hvem som endret hva slags, aldri innholdet.')]
     ];
@@ -907,7 +907,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function viewDocs() {
     if (/^#d[rc]=/.test(location.hash)) S.dtab = 'doc'; else if (/^#files/.test(location.hash)) S.dtab = 'files';
     var DT = dtabsOn(); if (DT.length && !DT.some(function (t) { return t[0] === S.dtab; })) S.dtab = DT[0][0];
-    var out = '<div class="t-dhead">' + head(L('Documents', 'Dokumenter'), L('Documentation for each project – requirements, document plan, delivery, comparison and final check. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, dokumentplan, levering, sammenligning og sluttkontroll. De samme verktøyene som i /cmd.'));
+    var out = '<div class="t-dhead">' + head(L('Documentation', 'Dokumentasjon'), L('Documentation for each project – requirements, document plan, delivery, comparison and final check. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, dokumentplan, levering, sammenligning og sluttkontroll. De samme verktøyene som i /cmd.'));
     out += '<div class="t-pick t-noprint" role="group">' + DT.map(function (t) { return [t[0], L(t[1], t[2])]; }).map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
     /* Import from /cmd: always one small fold (JP 13:48 – the page was heavy; 2026-11-17 20:11 – less scrolling) */
     var dHas = DFe.list('dctl').length + DFe.list('dckrav').length > 0;
@@ -1394,7 +1394,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function dtabsAdmin() {
     if (rank() < 3) return '';
     var off = dtabsOff();
-    return '<p class="t-h">' + L('Documents', 'Dokumenter') + '</p>' + DTABS.map(function (t) { var on = off.indexOf(t[0]) < 0; return '<label class="t-switch"><span><b>' + L(t[1], t[2]) + '</b><small>' + (on ? L('On for everyone in the team', 'På for alle i teamet') : L('Off – nobody sees this tab', 'Av – ingen ser denne fanen')) + '</small></span><input type="checkbox" data-dtoff="' + t[0] + '"' + (on ? ' checked' : '') + '></label>'; }).join('') +
+    return '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p>' + DTABS.map(function (t) { var on = off.indexOf(t[0]) < 0; return '<label class="t-switch"><span><b>' + L(t[1], t[2]) + '</b><small>' + (on ? L('On for everyone in the team', 'På for alle i teamet') : L('Off – nobody sees this tab', 'Av – ingen ser denne fanen')) + '</small></span><input type="checkbox" data-dtoff="' + t[0] + '"' + (on ? ' checked' : '') + '></label>'; }).join('') +
       (off.length === 3 ? '<p class="t-small">' + L('All three are off, so Documents is gone from the menu.', 'Alle tre er av, så Dokumenter er borte fra menyen.') + '</p>' : '');
   }
   function clockCfg() { var r = S.recs.cfgclock; var d = r && !r.del && r.d ? r.d : {}; return { on: !!d.on, off: Array.isArray(d.off) ? d.off : [] }; }
