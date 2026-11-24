@@ -196,10 +196,27 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   /* files uploaded to a project: a box to give them the right names, like "Give files the right names"; Done closes it (JP 2026-11-24) */
   if (pid) {
     await own.goto(T + '#dc=' + pid); await sl(1500);
-    await own.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="lev"]'); s && s.click(); }); await sl(500);
+    await until(own, () => !!document.querySelector('[data-dctab="lev"], [data-dctab="files"]'), 8000);   /* this test keeps the old view: its Files tab draws the same delivery part */
+    await own.evaluate(() => { const s = document.querySelector('[data-dctab="lev"], [data-dctab="files"]'); s && s.click(); }); await sl(500);
     const upd = fs.mkdtempSync(path.join(os.tmpdir(), 'tfr-')), up = path.join(upd, 'Tegning madeup 15.pdf'), up2 = path.join(upd, 'Untitled.jpg'); fs.writeFileSync(up, '%PDF-1.1\n%%EOF\n'); fs.writeFileSync(up2, 'not really a picture');
-    const inp = await own.$('input[data-dcfiles]'); if (inp) await inp.uploadFile(up, up2);
+    /* nothing delivered yet: one big box to drop on, Choose files as its main button (JP 2026-11-24 17:53) */
+    await until(own, () => !!document.querySelector('.dc-drop input[data-dcfiles]'), 8000);
+    const eb = await own.evaluate(() => ({ box: !!document.querySelector('.dc-drop .pill-btn input[data-dcfiles]'), menu: !!document.querySelector('.dc-addm') }));
+    check(eb.box && !eb.menu, 'an empty Levering is one box to drop on, no Add menu yet ' + JSON.stringify(eb) + (eb.box ? '' : await own.evaluate(() => { const i = document.querySelector('input[data-dcfiles]'); let e = i, c = []; while (e && c.length < 5) { c.push(e.tagName + '.' + e.className); e = e.parentNode; } return c.join(' < '); })));
+    const inp = await own.$('.dc-drop input[data-dcfiles]'); if (inp) await inp.uploadFile(up, up2);
     check(await until(own, () => { const b = document.querySelector('.dc-fresh'); return !!b && /Gi de nye filene riktig navn|Give the new files/.test(b.textContent) && /Tegning madeup 15/.test(b.textContent); }, 10000), 'an uploaded file gets the "Give the new files the right names" box');
+    /* it is a popup after your own upload; Not now leaves a line that opens it again, and with files there is "+ Add" (JP 2026-11-24 17:53) */
+    const pp = await own.evaluate(() => ({ pop: !!document.querySelector('.dc-freshov .dc-fresh'), box: !!document.querySelector('.dc-drop'), add: !!document.querySelector('.dc-sumbar [data-dcaddm]') }));
+    check(pp.pop && !pp.box && pp.add, 'the naming box opens as a popup; the page has "+ Add" instead of the big box ' + JSON.stringify(pp));
+    await own.evaluate(() => { const b = document.querySelector('.dc-freshbtns [data-dcfreshlater]'); b && b.click(); }); await sl(400);
+    const nl = await own.evaluate(() => ({ pop: !!document.querySelector('.dc-freshov'), line: (document.querySelector('.dc-freshline') || {}).textContent || '' }));
+    check(!nl.pop && /2 (nye filer|new files)/.test(nl.line), 'Not now closes it and leaves "2 new files need their names" ' + JSON.stringify(nl));
+    await own.evaluate(() => document.querySelector('.dc-freshline').click()); await sl(400);
+    check(await own.evaluate(() => !!document.querySelector('.dc-freshov .dc-fresh')), 'the line opens the popup again');
+    await own.evaluate(() => document.querySelector('.dc-sumbar [data-dcaddm]').click()); await sl(200);
+    const am = await own.evaluate(() => { const l = document.querySelector('.dc-sumbar .dc-addlist'); return { open: !!l && !l.hidden, files: !!(l && l.querySelector('input[data-dcfiles]')), names: !!(l && l.querySelector('input[data-dcnames]')), paste: !!(l && l.querySelector('[data-dcpastebtn]')) }; });
+    check(am.open && am.files && am.names && am.paste, 'the Add menu has Choose files, Import list and Paste names ' + JSON.stringify(am));
+    await own.keyboard.press('Escape'); await sl(200);
     /* "Select all" in that box ticks every file in it (JP 2026-11-24 08:47: it didn't) */
     await until(own, () => document.querySelectorAll('.dc-fresh [data-dcnpk]').length >= 2, 6000);
     await own.evaluate(() => { const a = document.querySelector('.dc-fresh input[data-dcnpkall]'); a && a.click(); }); await sl(400);
@@ -231,7 +248,12 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     const d2 = await own.evaluate(() => ({ bar: !!document.querySelector('.dx-dupbar'), pop: !!document.querySelector('.dx-dupov'), copy: [...document.querySelectorAll('.dc-fresh .dcn-head b, .dc-fresh .dcn-sumt b, .dc-fh')].some(b => /Kopi av tegning/.test(b.textContent)) }));
     check(!d2.bar && !d2.pop && !d2.copy, 'Check them: the one you choose stays, the copy leaves the project, and the bar is gone ' + JSON.stringify(d2));
     await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); });
-    check(await until(own, () => !document.querySelector('.dc-fresh'), 4000), 'and Done closes it');
+    check(await until(own, () => !document.querySelector('.dc-fresh') && !document.querySelector('.dc-freshline'), 4000), 'and Done closes it, with no line left');
+    /* files dropped anywhere on Levering are added, and the popup opens for them */
+    await own.evaluate(() => { const dt = new DataTransfer(); dt.items.add(new File(['%PDF-1.1\n%%EOF\n made up drop'], 'Dropped madeup 16.pdf', { type: 'application/pdf' }));
+      document.querySelector('.dc-sumbar').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })); });
+    check(await until(own, () => !!document.querySelector('.dc-freshov') && /Dropped madeup 16/.test(document.querySelector('.dc-freshov').textContent), 8000), 'a file dropped on Levering is added and the naming popup opens');
+    await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); }); await sl(300);
   }
   if (pid) { await own.goto(T + '#docs'); await sl(800); await own.goto(T + '#dc=' + pid); await until(own, () => !!document.querySelector('[data-dcprojinfo], [data-dcdel]'), 8000); await own.evaluate(() => { let b = document.querySelector('[data-dcdel]'); if (!b) { const i = document.querySelector('[data-dcprojinfo], [data-dctab="over"]'); i && i.click(); b = document.querySelector('[data-dcdel]'); } b && b.click(); }); await sl(500); await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); }); await sl(2500); await own.goto(T + '#overview'); await own.reload(); await sl(2500); }
   check(pid && !/Testveien 9/.test(await own.evaluate(() => (document.querySelector('.t-projs') || {}).textContent || '')), 'a project can be deleted in Team (' + pid + ')');

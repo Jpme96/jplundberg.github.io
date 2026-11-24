@@ -134,13 +134,16 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(rd.boxes === 0 && !rd.all && (rd.rows === 0 || rd.open), 'Ready shows the files without pick boxes or Select all ' + JSON.stringify(rd));
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnflt=""]').click()); await sl(200);
   /* the add button opens a popup to drop files on (JP 07:50); a drop there adds them and closes it */
+  /* with files, adding is in the "+ Add" menu (JP 2026-11-24 17:53) – Choose files still opens the drop popup */
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcaddm="ren"]').click()); await sl(200);
+  check(await p.evaluate(() => !document.querySelector('.dx-ren .dc-addlist').hidden && !!document.querySelector('.dx-ren .dc-addlist [data-dxrenclr]')), 'the Add menu has Choose files and Start again');
   await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200);
   const dp = await p.evaluate(async () => { const o = document.querySelector('.dx-drop'); if (!o || o.parentNode !== document.body) return 'no popup';
     const n0 = document.querySelectorAll('.dx-ren .dcn-row').length, dt = new DataTransfer(); dt.items.add(new File(['made up'], 'Made-up dropped.pdf'));
     o.querySelector('.dx-dz').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })); await new Promise(r => setTimeout(r, 1500));
     return { gone: !document.querySelector('.dx-drop'), added: document.querySelectorAll('.dx-ren .dcn-row').length - n0, there: [...document.querySelectorAll('.dx-ren .dcn-row')].some(x => /Made-up dropped/.test(x.textContent)) }; });
   check(dp.gone && dp.there, 'files dropped on the popup are added and the popup closes ' + JSON.stringify(dp));
-  await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200); await p.keyboard.press('Escape'); await sl(200);
+  await p.evaluate(() => document.querySelector('.dx-ren [data-dcaddm="ren"]').click()); await sl(200); await p.evaluate(() => document.querySelector('[data-dxrenopen]').click()); await sl(200); await p.keyboard.press('Escape'); await sl(200);
   check(await p.evaluate(() => !document.querySelector('.dx-drop')), 'Escape closes the drop popup');
   /* a photo's name needs the property ID: asked at the top and in the file's popup, kept for the next files (JP 09:18) */
   await p.evaluate(() => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(); dt.items.add(new File(['made up'], 'IMG_0001.jpeg', { type: 'image/jpeg' })); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(1500);

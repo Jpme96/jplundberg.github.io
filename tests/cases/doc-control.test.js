@@ -86,8 +86,8 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const e0 = await p.evaluate(() => ({ empty: !!document.querySelector('.dc-empty [data-dcfiles]'), chips: !!document.querySelector('.dc-chips'), quick: !!document.querySelector('[data-dcquick]'), search: !!document.querySelector('[data-dcq]') }));
   check(e0.empty && !e0.chips && !e0.quick && !e0.search, 'Dokumenter before delivery: the plan and one import button, no filters ' + JSON.stringify(e0));
   await tap('[data-dctab="files"]'); await sl(300);
-  const e1 = await p.evaluate(() => ({ ways: document.querySelectorAll('.dc-way').length, files: !!document.querySelector('.dc-way1 [data-dcfiles]'), names: !!document.querySelector('.dc-way [data-dcnames]'), paste: !!document.querySelector('.dc-way [data-dcpastebtn]'), help: document.querySelectorAll('.dc-help').length }));
-  check(e1.ways === 2 && e1.files && e1.names && e1.paste && e1.help === 0, 'Filer before delivery: one question, two ways in ' + JSON.stringify(e1));
+  const e1 = await p.evaluate(() => ({ box: document.querySelectorAll('.dc-drop').length, files: !!document.querySelector('.dc-drop .pill-btn [data-dcfiles]'), names: !!document.querySelector('.dc-drop .dc-droprow [data-dcnames]'), paste: !!document.querySelector('.dc-drop .dc-droprow [data-dcpastebtn]'), help: document.querySelectorAll('.dc-help').length }));
+  check(e1.box === 1 && e1.files && e1.names && e1.paste && e1.help === 0, 'Filer before delivery: one box to drop on, Choose files as the main button, the other ways under it (JP 2026-11-24) ' + JSON.stringify(e1));
   await tap('[data-dctab="over"]'); await sl(300);
   /* the files */
   await (await p.$('input[data-dcfiles]')).uploadFile(f1, f2, zf); await sl(1500);

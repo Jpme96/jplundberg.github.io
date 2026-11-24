@@ -432,13 +432,14 @@
     if (N) F.forEach(function (f) { if (f.orig && f.orig !== f.name) moved++; else if (N.ready(p, f)) ok++; });
     var h = '<section class="dx-panel dx-ren"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
       '<p class="muted dc-help">' + esc(k('ui.dx-ren-help2', 'Pick the files or one .zip. Each file gets a suggested NS 3451 code and document type from its name and – for PDFs – its text; the naming rules (documents, photos, drawings) build the new name. Check, fix, then download them renamed. Nothing is saved or sent.')) + '</p>' +
-      '<div class="dc-facts"><button type="button" class="pill-btn dc-file" data-dxrenopen><i class="bi bi-files"></i> ' + esc(F.length ? k('ui.dx-ren-more', 'Add more files') : k('ui.dx-ren-pick', 'Pick files or a .zip')) + '</button><input type="file" multiple data-dxrenf hidden>' + (F.length ? '<button type="button" class="dc-chip dx-clr" data-dxrenclr><i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dx-clear', 'Start again')) + '</button>' : '') + '</div>';
+      (F.length ? '' : dropBox('data-dxrendrop', '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + '<input type="file" multiple data-dxrenf hidden></label>', '', k('ui.dx-drop-note', 'PDFs, photos, drawings – or one .zip. Nothing is saved or sent.')));
     if (!F.length) return h + '</section>';
     if (!N) return h + '<p class="muted">' + esc(k('ui.dx-ren-loading', 'Loading the file naming …')) + '</p></section>';
     var busy = N.busy(), DG = dupGroups(), dn = DG.reduce(function (a, g) { return a + g.length; }, 0);
     if (DG.length) h += '<div class="dx-dupbar" role="status"><i class="bi bi-files"></i><span>' + esc(k('ui.dx-dup-bar', '{n} files are here more than once (same content) – {g} groups to check', { n: dn, g: DG.length })) + '</span><button type="button" class="pill-btn sm" data-dxdups>' + esc(k('ui.dx-dup-go', 'Check them')) + '</button></div>';
     h += '<div class="dx-rsum"><span>' + (busy ? '<i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +   /* the counts line went (JP 2026-11-19) – the filters below show them */
-      '<span class="dx-rbtn">' + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
+      '<span class="dx-rbtn"><input type="file" multiple data-dxrenf hidden>' + addMenu('ren', [addItem('upload', k('ui.dc-pick-files', 'Choose files'), k('ui.dx-add-more-s', 'More PDFs, photos or a .zip'), 'data-dxrenopen'),   /* opens the drop popup, as before (JP 07:50) */
+        addItem('arrow-counterclockwise', k('ui.dx-clear', 'Start again'), k('ui.dx-clear-s', 'Empties the list'), 'data-dxrenclr')]) + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
       '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(F.length === 1 ? k('ui.dx-dl-go1', 'Download the file') : k('ui.dx-ren-dl4', 'Download …')) + '</span></button></span></div>';
     return h + N.files(p, F) + '</section>';
   }
@@ -631,7 +632,7 @@
     else {
       h += '<div class="dc-nokrav"><p class="dc-help">' + esc(req() ? k('ui.dc-fl-krav-req2', 'No requirements yet – the delivery is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none2', 'No requirements yet – the delivery is checked against the document plan.')) + '</p>' +
         '<div class="dc-facts">' + (ed ? '<button type="button" class="pill-btn" data-dckin><i class="bi bi-list-check"></i> ' + esc(k('ui.dc-fl-krav-make', 'Make requirements')) + '</button>' : '') +
-        '<button type="button" class="pill-btn ghost" data-dctab="' + (hasPlan(p) || !p.noPlan ? 'plan' : 'lev') + '">' + esc(k('ui.dc-fl-krav-skip', 'Go on without requirements')) + ' <i class="bi bi-chevron-right"></i></button></div></div>';
+        '<button type="button" class="text-btn dc-skipk" data-dctab="' + (hasPlan(p) || !p.noPlan ? 'plan' : 'lev') + '">' + esc(k('ui.dc-fl-krav-skip', 'Go on without requirements')) + ' <i class="bi bi-chevron-right"></i></button></div></div>';
       return h + dwPick(p, 'dctl') + '<div class="dc-fproj">' + projBox(p) + '</div>';
     }
     h += dwPick(r, 'dckrav');
@@ -821,24 +822,33 @@
     var L0 = HOST && HOST.uplinks ? HOST.uplinks(p.id) : []; if (!L0.length) return '';
     return '<ul class="dc-uplinks">' + L0.map(function (x) { return '<li><i class="bi bi-link-45deg"></i><span>' + esc(k('ui.dc-link-live', 'Link sent – works until {d}', { d: fmt(x.exp) })) + '</span><button type="button" class="text-btn" data-dcupoff="' + esc(x.id) + '">' + esc(k('ui.dc-link-off', 'Switch off')) + '</button></li>'; }).join('') + '</ul>';
   }
-  var FRESH_SG = {};
+  var FRESH_SG = {}, freshPop = null;   /* freshPop: the project whose naming popup is open */
+  /* Adding files (JP 2026-11-24 17:45–17:53): nothing delivered yet → one big box to drop on, with Choose files and the other ways as
+     smaller buttons; files there → one "+ Add ▾" button with a small menu, so the page stays calm while you correct things. Files can be
+     dropped anywhere on Delivery. The same in "Give files the right names". */
+  var addOpen = '';
+  function addMenu(key, items) {
+    var on = addOpen === key;
+    return '<span class="dc-addm"><button type="button" class="pill-btn dc-addb" data-dcaddm="' + esc(key) + '" aria-expanded="' + on + '" aria-haspopup="menu"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-add', 'Add')) + ' <i class="bi bi-chevron-' + (on ? 'up' : 'down') + '"></i></button>' +
+      '<span class="dc-addlist" role="menu"' + (on ? '' : ' hidden') + '>' + items.join('') + '</span></span>';
+  }
+  function addItem(icon, label, sub, attr, inner) { return (/^<label/.test(attr) ? attr : '<button type="button" class="dc-additem" role="menuitem" ' + attr + '>') + '<i class="bi bi-' + icon + '"></i><span>' + esc(label) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (inner || '') + (/^<label/.test(attr) ? '</label>' : '</button>'); }
+  function dropBox(attr, main, others, note) {
+    return '<div class="dc-drop" ' + attr + '><i class="bi bi-cloud-arrow-up dc-dropi" aria-hidden="true"></i><b>' + esc(k('ui.dc-drop-here', 'Drop the files here, or')) + '</b>' + main +
+      (others ? '<span class="dc-dropor">' + esc(k('ui.dc-drop-or', 'or')) + '</span><div class="dc-droprow">' + others + '</div>' : '') + (note ? '<small class="dc-dropnote">' + esc(note) + '</small>' : '') + '</div>';
+  }
   function files(p) {
     /* one question instead of three equal buttons (JP 2026-11-23 "this part is the confusing part"): you have the files, or the
        documentation is already in the FDV system and only the names are needed; once files are in, just small links to add more */
     var F = (p.files || []).slice(), imp = can('import', gOf(p, 'dctl')), h = '';
     var fileIn = '<input type="file" multiple data-dcfiles="' + esc(p.id) + '" hidden>', namesIn = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcnames="' + esc(p.id) + '" hidden>';
     if (!F.length) {
-      h += imp ? '<p class="dc-ask">' + esc(k('ui.dc-how-have', 'How do you have the documentation?')) + '</p><div class="dc-ways">' +
-        '<div class="dc-way dc-way1"><b><i class="bi bi-folder-symlink"></i> ' + esc(k('ui.dc-way-files', 'I have the files')) + '</b><small>' + esc(k('ui.dc-way-files-s', 'PDFs, a folder or one .zip from the contractor')) + '</small>' +
-          '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + fileIn + '</label></div>' +
-        '<div class="dc-way"><b><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-way-fdv', 'It is already in the FDV system')) + '</b><small>' + esc(k('ui.dc-way-fdv-s', 'Only the names are needed – export the list from the FDV system or paste them')) + '</small>' +
-          '<span class="dc-facts"><label class="dc-chip dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="dc-chip" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button></span></div>' +
-        /* the contractor still has them: an upload link for this project, made right here (Team only – JP 2026-11-23 "what if I don't have the file") */
-        (HOST && HOST.uplink ? '<div class="dc-way"><b><i class="bi bi-send"></i> ' + esc(k('ui.dc-way-link', 'The contractor has them')) + '</b><small>' + esc(k('ui.dc-way-link-s', 'Send an upload link – they see what is missing and deliver straight into the project, no account needed')) + '</small>' +
-          '<span class="dc-facts"><button type="button" class="dc-chip" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button></span>' + upLinks(p) + '</div>' : '') + '</div>'
+      h += imp ? dropBox('data-dcdrop="' + esc(p.id) + '"', '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + fileIn + '</label>',
+        '<label class="dc-chip dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="dc-chip" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button>' +
+          (HOST && HOST.uplink ? '<button type="button" class="dc-chip" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button>' : ''),
+        k('ui.dc-drop-note', 'PDFs, a folder or one .zip. Already in the FDV system? Import the list or paste the names. The contractor has them? Send an upload link.')) + (HOST && HOST.uplink ? upLinks(p) : '')
         : '<p class="muted dc-help">' + esc(k('ui.dc-no-files-yet', 'Nothing delivered yet.')) + '</p>';
-    } else if (imp) h += '<div class="dc-more"><label class="text-btn dc-file"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-add-more-files', 'Add more files')) + fileIn + '</label>' +
-      '<label class="text-btn dc-file"><i class="bi bi-list-ul"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="text-btn" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button>' + (HOST && HOST.uplink ? '<button type="button" class="text-btn" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button>' : '') + '</div>' + upLinks(p);
+    }
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
     if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
@@ -853,13 +863,19 @@
       /* suggestions come by themselves for files that haven't had them yet (JP 2026-11-24) – once per file on this device */
       if (N0) { var sgo = NW.filter(function (f) { return !FRESH_SG[f.id]; }).map(function (f) { FRESH_SG[f.id] = 1; return f.id; }); if (sgo.length) setTimeout(function () { N0.suggestAll(p.id, sgo); }, 0); }
       var nDone = N0 ? NW.filter(function (f) { return N0.ready(p, f) && N0.newName(p, f) === f.name; }).length : 0, allDone = nDone === NW.length;
-      h += '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small>' +
+      /* a popup right after your own upload; otherwise (Not now, or a teammate's files) a line that opens it (JP 2026-11-24 17:52) */
+      if (freshPop === p.id) h += '<div class="dx-tov dc-freshov" data-dcfreshov><div class="dx-tsheet dc-freshsheet" role="dialog" aria-modal="true">' + '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small>' +
         '<small class="dc-freshp' + (allDone ? ' ok' : '') + '">' + esc(k('ui.dc-fresh-p', '{d} of {n} have their new name', { d: nDone, n: NW.length })) + '</small></span>' +
-        '<button type="button" class="' + (allDone ? 'pill-btn' : 'dc-chip') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>'; }
+        '<button type="button" class="icon-btn sm" data-dcfreshlater aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>' +
+        '<div class="dc-freshbtns"><button type="button" class="dc-chip" data-dcfreshlater>' + esc(k('ui.dc-fresh-later', 'Not now')) + '</button><button type="button" class="' + (allDone ? 'pill-btn' : 'dc-chip') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div></div></div>';
+      else h += '<button type="button" class="dc-freshline" data-dcfreshopen="' + esc(p.id) + '"><i class="bi bi-pencil-square"></i><span>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-line1' : 'ui.dc-fresh-line', NW.length === 1 ? '1 new file needs its name' : '{n} new files need their names', { n: NW.length })) + ' · <b>' + esc(k('ui.dc-fresh-go', 'Give them names')) + '</b></span><i class="bi bi-chevron-right"></i></button>'; }
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
     F.sort(function (a, b) { return rank(a) - rank(b) || (a.name < b.name ? -1 : 1); });
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
-    h += '<p class="dc-note">' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad })) + '</p>';
+    h += '<div class="dc-sumbar"><p class="dc-note">' + esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad })) + '</p>' +
+      (imp ? addMenu('p:' + p.id, [addItem('upload', k('ui.dc-pick-files', 'Choose files'), k('ui.dc-way-files-s', 'PDFs, a folder or one .zip from the contractor'), '<label class="dc-additem dc-file" role="menuitem">', fileIn),
+        addItem('file-earmark-spreadsheet', k('ui.dc-names-import2', 'Import list'), k('ui.dc-add-fdv', 'Names from the FDV system'), '<label class="dc-additem dc-file" role="menuitem">', namesIn),
+        addItem('clipboard', k('ui.dc-names-paste', 'Paste names'), '', 'data-dcpastebtn')].concat(HOST && HOST.uplink ? [addItem('link-45deg', k('ui.dc-way-link-btn', 'Send upload link'), k('ui.dc-add-link', 'The contractor delivers it'), 'data-dcuplink="' + esc(p.id) + '"')] : [])) : '') + '</div>' + (imp && HOST && HOST.uplink ? upLinks(p) : '');
     if (namingOn()) { var N = naming(); return h + (N ? N.files(p, F) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>'); }
     var fsel = selOn('f', p.id);
     h += '<div class="dc-selrow">' + selBtn('f', p.id) + '</div>';
@@ -944,6 +960,14 @@
   var tovDown = null;
   document.addEventListener('pointerdown', function (e) { tovDown = e.target; }, true);
   document.addEventListener('click', function (e) { var o = e.target; if (o && o.matches && o.matches('[data-dxtov]') && tovDown === o && xtool) { xtool = null; draw(); } });
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; if (addOpen) { addOpen = ''; draw(); } else if (freshPop && !document.querySelector('.dcn-ov, .xv')) { freshPop = null; draw(); } });   /* an open menu closes first */
+  function dropOk(e) { var ty = e.dataTransfer && e.dataTransfer.types; if (!ty || [].indexOf.call(ty, 'Files') < 0) return null; var r = e.target.closest && e.target.closest('#wkDocCtl');
+    if (!r || !open || (tab !== 'lev' && tab !== 'files') || e.target.closest('.dcn-ov, .dx-tov')) return null; var pr = proj(open); return pr && can('import', gOf(pr, 'dctl')) ? pr : null; }
+  document.addEventListener('dragover', function (e) { if (!dropOk(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; document.documentElement.classList.add('dc-dragging'); });
+  document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) document.documentElement.classList.remove('dc-dragging'); });
+  document.addEventListener('dragover', function (e) { var ty = e.dataTransfer && e.dataTransfer.types; if (ty && [].indexOf.call(ty, 'Files') >= 0 && renOn() && e.target.closest && e.target.closest('.dx-ren') && !e.target.closest('.dcn-ov')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+  document.addEventListener('drop', function (e) { if (!(renOn() && e.target.closest && e.target.closest('.dx-ren') && !e.target.closest('.dcn-ov'))) return; var fl = [].slice.call((e.dataTransfer && e.dataTransfer.files) || []); if (!fl.length) return; e.preventDefault(); addOpen = ''; renAdd(fl); });
+  document.addEventListener('drop', function (e) { document.documentElement.classList.remove('dc-dragging'); var pr = dropOk(e); if (!pr) return; e.preventDefault(); var fl = [].slice.call(e.dataTransfer.files || []); if (fl.length) { addOpen = ''; importFiles(pr.id, fl); } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && xtool && document.querySelector('[data-dxtov]') && !document.querySelector('.dcn-ov, .xv')) { xtool = null; draw(); } });
   ['pointerdown', 'click', 'keydown', 'change', 'input', 'drop'].forEach(function (ev) { document.addEventListener(ev, function () { window.__dcUser = Date.now(); }, true); });
   function draw() {
@@ -1870,6 +1894,7 @@
           pairs(p);
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
+        if (HOST && !namingOn() && add.some(function (f) { return f.size && !names; })) freshPop = id;   /* your own upload: name them now, in the popup */
         setTab('files'); draw();
         shareUp(id, add.filter(function (f) { return f.blob; }).map(function (f) { return f.id; }));
         var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
@@ -1906,6 +1931,13 @@
   /* ---------- events ---------- */
   document.addEventListener('click', function (e) {
     var sb;
+    /* the Add menu: open/close; a click elsewhere closes it (the choice inside still runs) */
+    if ((sb = e.target.closest('[data-dcaddm]'))) { addOpen = addOpen === sb.dataset.dcaddm ? '' : sb.dataset.dcaddm; draw(); return; }
+    /* a choice that picks files keeps the menu (and its file field) until the files are chosen; anything else closes it */
+    if (addOpen && !e.target.closest('.dc-addlist label')) { addOpen = ''; document.querySelectorAll('.dc-addlist').forEach(function (x) { x.hidden = true; }); document.querySelectorAll('[data-dcaddm]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); }); }
+    /* the naming popup for new files: open from the line, Not now, a click on the dark backdrop */
+    if ((sb = e.target.closest('[data-dcfreshopen]'))) { freshPop = sb.dataset.dcfreshopen; draw(); return; }
+    if (e.target.closest('[data-dcfreshlater]') || (e.target.matches && e.target.matches('[data-dcfreshov]'))) { freshPop = null; draw(); return; }
     if ((sb = e.target.closest('[data-dcsel]'))) { SEL = SEL.k === sb.dataset.dcsel ? { k: '', ids: {} } : { k: sb.dataset.dcsel, ids: {} }; if (SEL.k) { openLine = null; rpen = false; } draw(); return; }
     if (SEL.k && (sb = e.target.closest('[data-dcpick]')) && !e.target.closest('[data-dcview], select, input, a')) { var pi = sb.dataset.dcpick; if (SEL.ids[pi]) delete SEL.ids[pi]; else SEL.ids[pi] = 1; draw(); return; }
     if (SEL.k && (sb = e.target.closest('[data-dcselall]'))) { var on1 = !!sb.dataset.dcselall; SEL.ids = {}; if (on1) (sb.dataset.ids || '').split(' ').filter(Boolean).forEach(function (x) { SEL.ids[x] = 1; }); draw(); return; }
@@ -2101,7 +2133,7 @@
       var pid = b.dataset.dcdel || b.dataset.dxdel, gp = proj(pid); if (!gp) return;
       sure(k('ui.dc-del-sure', 'Delete the project «{n}»? Its plan and files go too. You can undo it right after.', { n: gp.name || '' })).then(function (ok) { if (ok) delProj(pid, !!b.dataset.dcdel); }); return;
     }
-    if ((b = t.closest('[data-dcfreshok]'))) { saveP(b.dataset.dcfreshok, function (p) { (p.files || []).forEach(function (f) { delete f.nw; }); }); draw(); return; }
+    if ((b = t.closest('[data-dcfreshok]'))) { freshPop = null; saveP(b.dataset.dcfreshok, function (p) { (p.files || []).forEach(function (f) { delete f.nw; }); }); draw(); return; }
     if ((b = t.closest('[data-dxdelr]'))) {
       var rid = b.dataset.dxdelr, gr = (Fe.tools().dckrav || []).filter(function (x) { return x.id === rid; })[0]; if (!gr) return;
       sure(k('ui.dr-del-sure', 'Delete the requirements «{n}»? You can undo it right after.', { n: gr.name || '' })).then(function (ok) { if (!ok) return;
@@ -2158,7 +2190,7 @@
     var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov')) return;
     if (t.hasAttribute('data-dctfrom') && tform) { tformRead(); var fr = tformFrom(t.value); tform.from = t.value; tform.codes = fr.codes; tform.x = fr.x; blurIn(); draw(); return; }
     if (t.dataset.dctc && tform) { if (t.checked) tform.codes[t.dataset.dctc] = 1; else delete tform.codes[t.dataset.dctc]; var cn = document.querySelector('[data-dctn]'); if (cn) cn.textContent = k('ui.dx-n-picked', '{n} picked', { n: Object.keys(tform.codes).length }); var dd = t.closest('details'), sp = dd && dd.querySelector('.dc-pn'); if (sp) sp.textContent = dd.querySelectorAll('[data-dctc]:checked').length || ''; return; }
-    if (t.hasAttribute('data-dxrenf')) { var fl = [].slice.call(t.files || []); t.value = ''; if (fl.length) renAdd(fl); return; }
+    if (t.hasAttribute('data-dxrenf')) { var fl = [].slice.call(t.files || []); t.value = ''; addOpen = ''; if (fl.length) renAdd(fl); return; }
     if (t.hasAttribute('data-dxfdvf')) { var ff = t.files && t.files[0]; t.value = ''; if (ff) (/\.xls[xm]$/i.test(ff.name) ? ff.arrayBuffer().then(readBook) : ff.text().then(function (x) { return x.indexOf(';') >= 0 || x.indexOf('\t') >= 0 ? readCsv(x) : [{ rows: x.split(/\r?\n/).map(function (l) { return [l]; }) }]; })).then(function (sh) { var nn = namesFrom(sh); if (!nn.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-names-none', 'No document names found – a name starts with the 3-digit code, like “332 SE Sprinkler”.'))); return; } fdvCheck(nn); }); return; }
     if (t.hasAttribute('data-dxplanf')) { var pf = [].slice.call(t.files || []); t.value = ''; plAdd(pf); return; }
     if (t.hasAttribute('data-dcchk')) { var cf = t.files && t.files[0]; t.value = ''; if (cf) checkPlan(cf); return; }
@@ -2166,13 +2198,13 @@
       saveP(pid, function (p) { var have = {}; (p.lines || []).forEach(function (l) { have[l.code + '|' + l.t] = 1; }); var nl = (kk.lines || []).filter(function (l) { return !have[l.code + '|' + l.t]; }).map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }); addk = nl.length; p.lines = (p.lines || []).concat(nl); if (!p.planName) { p.planName = k('ui.doc-req', 'Document requirements') + ': ' + kk.name; p.planAt = today(); } p.krav = kk.id; rematch(p); });
       toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: addk }))); draw(); return; }
     if (t.dataset.dcplan && t.files && t.files[0]) { importPlan(t.dataset.dcplan, t.files[0]); t.value = ''; return; }
-    if (t.dataset.dcfiles && t.files && t.files.length) { importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
+    if (t.dataset.dcfiles && t.files && t.files.length) { addOpen = ''; importFiles(t.dataset.dcfiles, [].slice.call(t.files)); t.value = ''; return; }
     if (t.matches('[data-dcreq]') && t.files && t.files[0]) { importReq(t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcreqadd]') && t.files && t.files[0]) { importReq(t.files[0], true); t.value = ''; return; }
     if (t.matches('[data-dcreqpick]')) { useReq(t.value); draw(); return; }
     if (t.dataset.dctick) { ticks[t.dataset.dctick] = t.checked; updPick(); return; }
     if (t.dataset.dcxtick) { xoff[t.dataset.dcxtick] = !t.checked; updPick(); return; }
-    if (t.dataset.dcnames && t.files && t.files[0]) { importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
+    if (t.dataset.dcnames && t.files && t.files[0]) { addOpen = ''; importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }
     if (t.dataset.dclink && t.value) { var a = t.dataset.dclink, v = t.value; saveP(open, function (p) { link(p, a, v); }); draw(); return; }
     if (t.matches('[data-dcnon]')) { try { localStorage.setItem('dash.dcNaming', t.checked ? '1' : ''); } catch (e1) {} draw(); return; }
