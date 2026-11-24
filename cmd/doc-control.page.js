@@ -850,7 +850,7 @@
      (a right name first), nothing removed until "Keep the chosen one", or all groups at once; 2 Gi navn – the naming cards for
      New / Name problems / All. Without duplicates it opens on Gi navn; solving the last group goes there by itself. */
   var freshStep = 1, freshHad = false, dupPick = {};
-  function midName(n) { n = String(n || ''); return n.length > 38 ? n.slice(0, 20) + '…' + n.slice(-16) : n; }
+  function midName(n) { n = String(n || ''); return n.length > 30 ? n.slice(0, 14) + '…' + n.slice(-15) : n;   /* the end shows: "… – Kopi.pdf" tells copies apart */ }
   function dupBest(g) { var k0 = dupPick[g[0].h]; if (k0 && g.some(function (f) { return f.id === k0; })) return k0; return (g.filter(function (f) { return !(f.iss || []).length; })[0] || g[0]).id; }
   function tidyPop(p, F, NW, BADF, DG) {
     if (DG.length) freshHad = true;

@@ -118,6 +118,11 @@ css = ['/* Built by _team/build.py from cmd/styles.css and cmd/work/page.css –
        # Team's own colours win inside Documentation too: the accent, text on it, the error colour, the grey text; blue and violet tags go neutral (JP 2026-11-19)
        '.dc-host, :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --accent: var(--acc); --accent-rgb: var(--acc-rgb); --on-accent: var(--acc-ink); --accent-soft: var(--acc-soft); --glow: rgba(var(--acc-rgb), .3); --danger: var(--bad); --muted: var(--t-muted); --blue: var(--neutral); --violet: var(--neutral); --pink: var(--acc); }']
 css += pick(styles) + pick(rd(os.path.join(CMD, 'work', 'page.css')))
+# the status tags (modern.css) – Team didn't have them, so "Navn OK" showed as plain text (JP 2026-11-24)
+modern = rd(os.path.join(CMD, 'modern.css'))
+css.append('.dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; --stt-fg: 78%; --stt-bg: .13; }')
+css.append(':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; --stt-fg: 62%; --stt-bg: .15; }')
+css += [m.group(0) for m in re.finditer(r'^\.stt[^{]*\{[^}]*\}', modern, re.M)]
 put('dc.css', '\n'.join(css) + '\n')
 
 # the icon font

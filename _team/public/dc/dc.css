@@ -1478,3 +1478,13 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-linkb { font-size: 13px; margin: 4px 0 0; }
 :is(.dx-ren, .dcn-ov, .dx-panel, .dx-plans, .dx-plb, .dx-dupbtns, .dcn-pkact) .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
 .dcn-pkh .dcn-pkc.dcn-pkall { height: 36px; }
+.dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; --stt-fg: 78%; --stt-bg: .13; }
+:root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; --stt-fg: 62%; --stt-bg: .15; }
+.stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;
+  --c: var(--slate); --c-rgb: var(--slate-rgb); color: color-mix(in srgb, var(--c) var(--stt-fg), var(--stt-mix)); background: rgba(var(--c-rgb), var(--stt-bg)); }
+.stt-ok { --c: var(--ok); --c-rgb: var(--ok-rgb); }
+.stt-soon { --c: var(--warn); --c-rgb: var(--warn-rgb); }
+.stt-cmt { --c: var(--orange); --c-rgb: var(--orange-rgb); }
+.stt-bad { --c: var(--danger); --c-rgb: var(--danger-rgb); }
+.stt-plan { --c: var(--blue); --c-rgb: var(--blue-rgb); }
+.stt-na { --c: var(--slate); --c-rgb: var(--slate-rgb); }
