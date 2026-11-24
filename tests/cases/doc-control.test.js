@@ -260,6 +260,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   const ord = await p.evaluate(() => ({ codes: [...document.querySelectorAll('.dr-sys .dr-sh .dc-code')].map(e => e.textContent).join(), first: [...document.querySelectorAll('.dr-sys')][0].querySelectorAll('.dr-line b')[0].textContent, hint: [...document.querySelectorAll('.dr-hint')].map(e => e.textContent).find(t => /routines/.test(t)) }));
   check(ord.codes === '330,332' && /^Compliance/.test(ord.first) && /^Operation: Made-up routines/.test(ord.hint), 'a line added later sorts into its code and type order; Drift/Vedlikehold descriptions are named, not lettered ' + JSON.stringify(ord));
   await p.evaluate(() => { const r = Features.list('dckrav')[0], l = r.lines.filter(x => x.code === '330' && x.t === 'A')[0]; document.querySelector('[data-drldel="' + l.id + '"]').click(); }); await sl(400);
+  await p.evaluate(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }); await sl(500);   /* deletes are asked first (JP 2026-11-24 21:56) */
   /* the Excel reads back as a document plan */
   await p.evaluate(() => document.querySelector('#wkDocReq [data-drsend]').click()); await sl(300);   /* PDF and Excel are in the Send sheet (JP 14:52) */
   const back = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-drxlsx]').click(); FdvPdf.share = old; if (!got) return null;
@@ -318,6 +319,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   await tap('[data-dcline="' + id0 + '"]'); await sl(250);
   const hintShown = await p.evaluate(() => (document.querySelector('.dc-hint') || {}).textContent || '');
   await tap('[data-dcldel="' + id0 + '"]'); await sl(400);
+  await p.evaluate(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }); await sl(500);   /* deletes are asked first (JP 2026-11-24 21:56) */
   const ed = await p.evaluate(() => Features.list('dctl').filter(x => x.name === 'Made-up bathroom')[0].lines.filter(l => !l.spec).map(l => l.code + ' ' + l.t + (l.sys ? ' ' + l.sys : '')).join());
   check(/Made-up user text/.test(hintShown) && ed === '330 H Made-up fire general,332 A Made-up sprinkler,332 BC Made-up sprinkler,274 A Made-up membrane declaration', 'the hint shows on the line; a line is added by hand and one removed ' + JSON.stringify({ hintShown, ed }));
   /* back closes the project page */

@@ -77,7 +77,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
 })();
 (function () {
   'use strict';
-  var nb = (function () { try { var v = localStorage.getItem('team.lang'); if (v) return v === 'nb'; } catch (e) {} return /^(nb|no|nn)/i.test(navigator.language || ''); })();
+  var nb = (function () { try { var v = localStorage.getItem('team.lang'); if (v) return v === 'nb'; } catch (e) {} return true; })();   /* Norwegian unless someone picks English themselves (JP 2026-11-24 21:56) */
   function L(en, no) { return nb ? no : en; }
   /* the app's own popups instead of the browser's grey boxes (window.Ask from /dc/filedrop.js – 2026-11-19) */
   function sure(msg) { return window.Ask ? window.Ask.confirm(msg, { danger: true }) : Promise.resolve(window.confirm(msg)); }   /* native-ok: only if Ask is missing */
@@ -128,7 +128,12 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function rank() { return S.me && S.me.member ? ROLES.indexOf(S.me.member.role) : -1; }
   function nameOf(em) { if (!em) return '—'; if (S.me && em === S.me.email) return L('You', 'Deg'); for (var i = 0; i < S.members.length; i++) if (S.members[i].email === em) return S.members[i].name; return em.split('@')[0]; }
   var toastT = 0;
-  function toast(t) { var el = document.getElementById('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('on'); }, 3200); }
+  function toast(t) { var el = document.getElementById('toast'); el.textContent = t; el.classList.remove('undo'); el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('on'); }, 3200); }
+  /* a delete is asked first and can be undone right after (JP 2026-11-24 21:56): the message gets an Angre button for 8 s */
+  function undoToast(t, fn) { var el = document.getElementById('toast'); el.innerHTML = ''; el.appendChild(document.createTextNode(t + ' '));
+    var b = document.createElement('button'); b.type = 'button'; b.className = 't-undo'; b.textContent = L('Undo', 'Angre'); el.appendChild(b); el.classList.add('on', 'undo'); clearTimeout(toastT);
+    b.onclick = function () { el.classList.remove('on', 'undo'); clearTimeout(toastT); Promise.resolve(fn()).then(function () { toast(L('Undone', 'Angret')); }); };
+    toastT = setTimeout(function () { el.classList.remove('on', 'undo'); }, 8000); }
   function typing() { var a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); }
 
   /* ---------- the server ---------- */
@@ -1534,11 +1539,12 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'newMeeting') return startEdit(rid(), true);
     if (a === 'edit') return startEdit(t.dataset.id);
     if (a === 'cancelEdit') { var wasNew = S.edit && S.edit.isNew; endEdit(); if (wasNew) location.hash = '#meetings'; return; }
-    if (a === 'delMeeting') { if (!(await sure(L('Delete this meeting? It stays in the history.', 'Slette dette møtet? Det blir liggende i historikken.')))) return; var mid = S.edit.id, ttl = S.recs[mid] && S.recs[mid].d ? S.recs[mid].d.title : ''; if (await delRec(mid, L('Meeting: ', 'Møte: ') + ttl)) { endEdit(true); location.hash = '#meetings'; draw(); } return; }
+    if (a === 'delMeeting') { if (!(await sure(L('Delete this meeting? It stays in the history.', 'Slette dette møtet? Det blir liggende i historikken.')))) return; var mid = S.edit.id, ttl = S.recs[mid] && S.recs[mid].d ? S.recs[mid].d.title : ''; var mkeep = S.recs[mid] && { k: S.recs[mid].k, d: S.recs[mid].d }; if (await delRec(mid, L('Meeting: ', 'Møte: ') + ttl)) { endEdit(true); location.hash = '#meetings'; draw(); if (mkeep && mkeep.d) undoToast(L('Meeting deleted.', 'Møtet er slettet.'), function () { return putRec(mkeep.k, mid, mkeep.d, L('Restored – meeting: ', 'Gjenopprettet – møte: ') + ttl).then(function () { draw(); }); }); } return; }
     if (a === 'print') return window.print();
     if (a === 'newAction') return actionSheet(null, t.dataset.meeting);
     if (a === 'editAction') return actionSheet(t.dataset.id);
-    if (a === 'delAction') { var ad = S.recs[t.dataset.id]; if (await delRec(t.dataset.id, L('Action: ', 'Oppgave: ') + (ad && ad.d ? ad.d.text : ''))) { closeSheet(); draw(); } return; }
+    if (a === 'delAction') { var ad = S.recs[t.dataset.id], aid = t.dataset.id; if (!(await sure(L('Delete this action?', 'Slette denne oppgaven?')))) return;   /* asked first, Undo after (JP 2026-11-24 21:56) */
+      var akeep = ad && { k: ad.k, d: ad.d }; if (await delRec(aid, L('Action: ', 'Oppgave: ') + (ad && ad.d ? ad.d.text : ''))) { closeSheet(); draw(); if (akeep && akeep.d) undoToast(L('Action deleted.', 'Oppgaven er slettet.'), function () { return putRec(akeep.k, aid, akeep.d, L('Restored – action: ', 'Gjenopprettet – oppgave: ') + (akeep.d.text || '')).then(function () { draw(); }); }); } return; }
     if (a === 'invite') return inviteSheet();
     if (a === 'shareInvite') { var v = document.getElementById('invLink').value; navigator.share({ title: S.me.team.name, text: L('Join our team', 'Bli med i teamet vårt'), url: v }).catch(function () {}); return; }
     if (a === 'copyInvite') { var inp = document.getElementById('invLink'); inp.select(); (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { document.execCommand('copy'); toast(L('Copied', 'Kopiert')); }); return; }

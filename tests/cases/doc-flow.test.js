@@ -43,13 +43,15 @@ const fs = require('fs'), os = require('os'), path = require('path');
   check(ed.sts >= 5 && ed.due && ed.cmt, 'a row in the final check opens its line with the statuses, deadline and comment ' + JSON.stringify(ed));
   await p.evaluate(() => document.querySelector('.dc-fedit [data-dcst$=":na"]').click()); await sl(300);
   check(await p.evaluate(() => Features.list('dctl')[0].lines.filter(l => l.st === 'na').length === 1), 'and a status set there is saved on the line');
-  /* the project can still be edited and deleted: ⋯ in the header leads to it (JP 2026-11-23 "I cannot delete the projects") */
-  await p.evaluate(() => document.querySelector('[data-dcprojinfo]').click()); await sl(400);
-  const pj = await p.evaluate(() => ({ step: (document.querySelector('.dc-fsteps [aria-selected=true]') || {}).dataset.dctab, del: !!document.querySelector('.dc-fproj [data-dcdel]'), edit: !!document.querySelector('.dc-fproj [data-dcedit]') }));
-  check(pj.step === 'krav' && pj.del && pj.edit, 'the project has Edit and Delete in the new flow ' + JSON.stringify(pj));
-  await p.evaluate(() => document.querySelector('.dc-fproj [data-dcedit]').click()); await sl(300);
-  check(await p.evaluate(() => !!document.querySelector('.dc-flow form')), 'Edit opens the project form');
-  await p.evaluate(() => { const c = [...document.querySelectorAll('.dc-flow form button')].find(b => /Cancel/.test(b.textContent)); if (c) c.click(); }); await sl(300);
+  /* ⋯ in the header is a small menu: Edit the project (a popup where you are) and Delete the project (JP 2026-11-24 21:55) */
+  const st0 = await p.evaluate(() => (document.querySelector('.dc-fsteps [aria-selected=true]') || {}).dataset.dctab);
+  await p.evaluate(() => document.querySelector('[data-dcprojinfo]').click()); await sl(300);
+  const pj = await p.evaluate(() => ({ step: (document.querySelector('.dc-fsteps [aria-selected=true]') || {}).dataset.dctab, open: !document.querySelector('.dc-pmenu .dc-addlist').hidden, edit: !!document.querySelector('.dc-pmenu [data-dcpedit]'), del: !!document.querySelector('.dc-pmenu [data-dcdel]'), box: !!document.querySelector('.dc-fproj') }));
+  check(pj.step === st0 && pj.open && pj.edit && pj.del && !pj.box, 'the ⋯ menu opens where you are, with Edit and Delete ' + JSON.stringify(pj));
+  await p.evaluate(() => document.querySelector('.dc-pmenu [data-dcpedit]').click()); await sl(300);
+  check(await p.evaluate(() => !!document.querySelector('.dc-ppov form[data-dcpform]')), 'Edit opens the project form in a popup');
+  await p.evaluate(() => { const f = document.querySelector('.dc-ppov form[data-dcpform]'); f.no.value = 'MU-77'; f.requestSubmit(); }); await sl(400);
+  check(await p.evaluate(() => !document.querySelector('.dc-ppov') && Features.list('dctl')[0].no === 'MU-77'), 'saving the form closes the popup and keeps the change');
   /* a list made from the project's requirements is not the contractor's plan (JP 2026-11-23) */
   await go(p, 'work/#dc=fp3', 2500);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
@@ -63,7 +65,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => { const t = Features.tools(); t.dckrav = [{ id: 'kr9', name: 'Made-up both parts', lines: [{ id: 'q1', code: '234', t: 'E' }] }]; t.dctl.push({ id: 'fp9', name: 'Made-up both parts', krav: 'kr9', lines: [], files: [] }); Features.saveTools(t); });
   await go(p, 'work/#dc=fp9', 2500);
   await p.evaluate(() => document.querySelector('[data-dcprojinfo]').click()); await sl(400);
-  await p.evaluate(() => document.querySelector('.dc-fproj [data-dcdel]').click()); await sl(400);
+  await p.evaluate(() => document.querySelector('.dc-pmenu [data-dcdel]').click()); await sl(400);
   check(await p.evaluate(() => !!document.querySelector('.ask-ov') && Features.tools().dctl.some(x => x.id === 'fp9')), 'deleting asks first (the app\'s own popup), nothing gone yet');
   await p.evaluate(() => document.querySelector('.ask-ov .ask-ok').click()); await sl(600);
   check(await p.evaluate(() => { const t = Features.tools(); return !t.dctl.some(x => x.id === 'fp9') && !(t.dckrav || []).some(x => x.id === 'kr9'); }), 'deleting the project removes its requirements list too');
@@ -107,6 +109,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => { const b = document.querySelector('.dc-frow2.open [data-dcst$=":ok"]'); b && b.click(); }); await sl(400);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(400);
   await p.evaluate(() => { const li = [...document.querySelectorAll('[data-dcfdel]')].find(b => /Vindu madeup/.test((b.closest('li') || b.parentElement.parentElement).textContent)); li.click(); }); await sl(600);
+  await p.evaluate(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }); await sl(500);   /* deletes are asked first (JP 2026-11-24 21:56) */
   const ag = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0], S = [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.innerText.replace(/\n/g, ' '));
     return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), files: r.files.length, lev: S[2], cmp: S[3] }; });
   check(ag.lines.split(',').length === 2 && ag.files === 2 && /2 /.test(ag.lev) && /^4 \D+ 2 /.test(ag.cmp), 'deleting an approved file takes the line made from it along – Delivery and Comparison both say 2 ' + JSON.stringify(ag));

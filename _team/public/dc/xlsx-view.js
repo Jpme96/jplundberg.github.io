@@ -343,7 +343,13 @@
     }
     function stepZoom(d) { var i = 0; while (i < ZS.length - 1 && ZS[i] < zoom - .001) i++; if (d > 0) setZoom(ZS[Math.min(ZS.length - 1, ZS[i] > zoom + .001 ? i : i + 1)]); else setZoom(ZS[Math.max(0, i - 1)]); }
     setZoom(zoom);
-    grid.addEventListener('wheel', function (e) { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); stepZoom(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+    /* Ctrl/⌘ + wheel (and a trackpad pinch) zooms towards the mouse, not the corner; Shift + wheel goes side to side – a Windows mouse
+       has no sideways wheel (JP 2026-11-24 21:55) */
+    grid.addEventListener('wheel', function (e) {
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); var r = grid.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, z0 = zoom, cx = grid.scrollLeft + x, cy = grid.scrollTop + y;
+        stepZoom(e.deltaY < 0 ? 1 : -1); var q = zoom / z0; if (q !== 1) { grid.scrollLeft = cx * q - x; grid.scrollTop = cy * q - y; } return; }
+      if (e.shiftKey && !e.deltaX && e.deltaY && grid.scrollWidth > grid.clientWidth) { e.preventDefault(); grid.scrollLeft += e.deltaY; }
+    }, { passive: false });
     function act(a) {
       if (a === 'zin') return stepZoom(1);
       if (a === 'zout') return stepZoom(-1);

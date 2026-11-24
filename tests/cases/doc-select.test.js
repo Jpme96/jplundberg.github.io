@@ -38,7 +38,8 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   if (await p.evaluate(() => !!document.querySelector('[data-dcnon]:checked'))) await tap('[data-dcnon]');
   check(await tap('[data-dcsel^="f:"]'), 'Files has "Select several"');
   await tap('li[data-dcpick="f1"]'); await tap('li[data-dcpick="f3"]');
-  await tap('[data-dcselfdel]');
+  await tap('[data-dcselfdel]'); await sl(400);
+  await p.evaluate(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }); await sl(500);   /* deletes are asked first (JP 2026-11-24 21:56) */
   const fl = await p.evaluate(() => Features.list('dctl')[0].files.map(f => f.id).join());
   check(fl === 'f2', 'Remove the files: the two ticked are gone ' + fl);
 

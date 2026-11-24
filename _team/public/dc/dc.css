@@ -1333,7 +1333,6 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-uplinks li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: var(--muted); }
 .dc-uplinks li > span { flex: 1 1 200px; }
 .dc-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.dc-fproj { margin-top: 26px; padding-top: 6px; border-top: 1px solid var(--line); }
 .dc-flow .fdv-top .icon-btn { align-self: center; }
 @media (max-width: 560px) {
   .dc-fsteps { display: flex; overflow: visible; }

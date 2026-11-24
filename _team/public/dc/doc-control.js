@@ -616,9 +616,11 @@
     var names = { krav: k('ui.dx-krav', 'Requirements'), plan: k('ui.dc-plan', 'Document plan'), lev: k('ui.dc-fl-lev', 'Delivery'), cmp: k('ui.dc-fl-cmp', 'Comparison'), end: k('ui.dc-fl-end', 'Final check') };
     var cur = tab === 'report' ? 'end' : tab;
     var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
-      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span><button type="button" class="icon-btn sm" data-dcprojinfo aria-label="' + esc(k('ui.dc-the-project', 'The project')) + '" title="' + esc(k('ui.dc-fl-proj-t', 'The project – edit or delete')) + '"><i class="bi bi-three-dots"></i></button></div>' +
+      '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.trade, p.who].filter(Boolean).join(' · ')) + '</small></div><span class="dc-verdict dc-v-' + verdict[0] + '">' + esc(verdict[1]) + '</span><span class="dc-addm dc-pmenu"><button type="button" class="icon-btn sm" data-dcprojinfo aria-expanded="' + projMenu + '" aria-label="' + esc(k('ui.dc-the-project', 'The project')) + '" title="' + esc(k('ui.dc-fl-proj-t', 'The project – edit or delete')) + '"><i class="bi bi-three-dots"></i></button>' +
+      '<span class="dc-addlist" role="menu"' + (projMenu ? '' : ' hidden') + '>' + addItem('pencil', k('ui.dc-proj-edit', 'Edit the project'), k('ui.dc-proj-edit-s', 'Name, number, building, contractor, deadline'), 'data-dcpedit') + (can('delp', gOf(p, 'dctl')) ? addItem('trash3', k('ui.dc-proj-del', 'Delete the project'), '', 'data-dcdel="' + esc(p.id) + '"') : '') + '</span></span></div>' +
       '<nav class="dc-fsteps" role="tablist" aria-label="' + esc(k('ui.dx-steps', 'Steps')) + '">' + FLOW.map(function (t, i) { return '<button type="button" role="tab" aria-selected="' + (t === cur) + '" data-dctab="' + t + '"><b><span class="dc-fn">' + (i + 1) + '</span><span class="dc-fname">' + esc(names[t]) + '</span></b><small>' + esc(subs[t]) + '</small></button>'; }).join('') + '</nav>';
     var body = editing ? projForm(p) : tab === 'report' ? reportTab(p) : cur === 'krav' ? flowKrav(p, r) : cur === 'plan' ? flowPlan(p, pc) : cur === 'lev' ? files(p) : cur === 'cmp' ? flowCmp(p, loose) : flowEnd(p, iss, verdict, c);
+    if (projPop) body += '<div class="dx-tov dc-ppov" data-dcppov><div class="dx-tsheet dc-freshsheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dc-proj-edit', 'Edit the project')) + '"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-proj-edit', 'Edit the project')) + '</b></span><button type="button" class="icon-btn sm" data-dcppx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' + projForm(p) + '</div></div>';
     return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + '</div></div>';
   }
   function fnext(t, label) { return '<div class="dc-fnext"><button type="button" class="pill-btn" data-dctab="' + t + '">' + esc(label) + ' <i class="bi bi-chevron-right"></i></button></div>'; }
@@ -641,10 +643,10 @@
       h += '<div class="dc-nokrav"><p class="dc-help">' + esc(req() ? k('ui.dc-fl-krav-req2', 'No requirements yet – the delivery is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none2', 'No requirements yet – the delivery is checked against the document plan.')) + '</p>' +
         '<div class="dc-facts">' + (ed ? '<button type="button" class="pill-btn" data-dckin><i class="bi bi-list-check"></i> ' + esc(k('ui.dc-fl-krav-make', 'Make requirements')) + '</button>' : '') +
         '<button type="button" class="text-btn dc-skipk" data-dctab="' + (hasPlan(p) || !p.noPlan ? 'plan' : 'lev') + '">' + esc(k('ui.dc-fl-krav-skip', 'Go on without requirements')) + ' <i class="bi bi-chevron-right"></i></button></div></div>';
-      return h + dwPick(p, 'dctl') + '<div class="dc-fproj">' + projBox(p) + '</div>';
+      return h + dwPick(p, 'dctl');
     }
     h += dwPick(r, 'dckrav');
-    return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan')) + '<div class="dc-fproj">' + projBox(p) + '</div>';
+    return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan'));
   }
   function flowPlan(p, pc) {
     var L = p.lines || [], imp = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden>';
@@ -850,7 +852,7 @@
       (others ? '<span class="dc-dropor">' + esc(k('ui.dc-drop-or', 'or')) + '</span><div class="dc-droprow">' + others + '</div>' : '') + (note ? '<small class="dc-dropnote">' + esc(note) + '</small>' : '') + '</div>';
   }
   /* the tidy-up popup: duplicates (tap the one to keep), then the naming cards for New / Name problems / All */
-  var freshF = 'new', linkOpen = null;
+  var freshF = 'new', linkOpen = null, projMenu = false, projPop = false;   /* the … menu and the project form as a popup (JP 2026-11-24 21:55) */
   /* the tidy-up popup in two steps (JP 2026-11-24 19:49–19:59): 1 Duplikater – each group in its own box, the best file picked
      (a right name first), nothing removed until "Keep the chosen one", or all groups at once; 2 Gi navn – the naming cards for
      New / Name problems / All. Without duplicates it opens on Gi navn; solving the last group goes there by itself. */
@@ -1099,7 +1101,7 @@
   var tovDown = null;
   document.addEventListener('pointerdown', function (e) { tovDown = e.target; }, true);
   document.addEventListener('click', function (e) { var o = e.target; if (o && o.matches && o.matches('[data-dxtov]') && tovDown === o && xtool) { xtool = null; draw(); } });
-  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; if (dlPickOpen) { dlPickOpen = false; dlOpen = true; draw(); } else if (dlOpen) { dlOpen = false; draw(); } else if (addOpen) { addOpen = ''; draw(); } else if (freshPop && !document.querySelector('.dcn-ov, .xv')) { freshPop = null; draw(); } });   /* an open menu closes first */
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; if (projPop) { projPop = false; draw(); } else if (projMenu) { projMenu = false; draw(); } else if (dlPickOpen) { dlPickOpen = false; dlOpen = true; draw(); } else if (dlOpen) { dlOpen = false; draw(); } else if (addOpen) { addOpen = ''; draw(); } else if (freshPop && !document.querySelector('.dcn-ov, .xv')) { freshPop = null; draw(); } });   /* an open menu closes first */
   function dropOk(e) { var ty = e.dataTransfer && e.dataTransfer.types; if (!ty || [].indexOf.call(ty, 'Files') < 0) return null; var r = e.target.closest && e.target.closest('#wkDocCtl');
     if (!r || !open || (tab !== 'lev' && tab !== 'files') || e.target.closest('.dcn-ov, .dx-tov')) return null; var pr = proj(open); return pr && can('import', gOf(pr, 'dctl')) ? pr : null; }
   document.addEventListener('dragover', function (e) { if (!dropOk(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; document.documentElement.classList.add('dc-dragging'); });
@@ -2122,7 +2124,11 @@
       toast('<i class="bi bi-check2-all"></i> ' + esc(k('ui.dc-sel-st-done', '{n} lines: {s}', { n: ids1.length, s: sv === 'missing' ? k('ui.dc-sel-reset', 'Not checked') : stName(sv) })), function () { var t1 = Fe.tools(); t1.dctl = (t1.dctl || []).map(function (x) { return x.id === keep1.id ? keep1 : x; }); Fe.saveTools(t1); draw(); });
       return;
     }
-    if (SEL.k && e.target.closest('[data-dcselfdel]')) {
+    if (SEL.k && e.target.closest('[data-dcselfdel]') && !e.__sure) {   /* asked first (JP 2026-11-24 21:56) */
+      var n2 = selIds().length; if (!n2) return; var ev2 = e;
+      sure(k('ui.dc-sel-del-sure', 'Remove {n} files from the project? You can undo it right after.', { n: n2 })).then(function (ok) { if (ok) { ev2.__sure = 1; selDelFiles(); } }); return;
+    }
+    function selDelFiles() {
       var ids2 = selIds(), pr2 = proj(open); if (!pr2 || !ids2.length) return; var keep2 = JSON.parse(JSON.stringify(pr2));
       saveP(open, function (p) { (p.files || []).forEach(function (f) { if (ids2.indexOf(f.id) >= 0) gone(p, f); }); p.files = (p.files || []).filter(function (x) { return ids2.indexOf(x.id) < 0; }); });
       SEL.ids = {}; draw();
@@ -2172,8 +2178,9 @@
     if (t.closest('[data-drfill]')) { var nf2 = 0; saveP(ropen, function (p) { var out = []; (p.lines || []).forEach(function (l) { if (!l.t && defTypes(l.code) && !/^1/.test(l.code)) { var nl = linesFor([l.code]); nf2 += nl.length; out = out.concat(nl); } else out.push(l); }); p.lines = out; }, 'dckrav'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dr-made', '{n} documents on the list', { n: nf2 }))); draw(); return; }
     if (t.closest('button[data-dredit]')) { redit = true; draw(); return; }
     if (t.closest('[data-dreditx]')) { redit = false; draw(); return; }
-    if ((b = t.closest('[data-drldel]'))) { var rl = b.dataset.drldel, kp = JSON.parse(JSON.stringify(krav(ropen))); saveP(ropen, function (p) { p.lines = (p.lines || []).filter(function (x) { return x.id !== rl; }); }, 'dckrav'); draw();
-      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t8 = Fe.tools(); t8.dckrav = (t8.dckrav || []).map(function (x) { return x.id === kp.id ? kp : x; }); Fe.saveTools(t8); draw(); }); return; }
+    if ((b = t.closest('[data-drldel]'))) { var bl1 = b; sure(k('ui.dc-ldel-sure2', 'Remove this line from the requirements? You can undo it right after.')).then(function (ok) { if (!ok) return; var b = bl1;
+      var rl = b.dataset.drldel, kp = JSON.parse(JSON.stringify(krav(ropen))); saveP(ropen, function (p) { p.lines = (p.lines || []).filter(function (x) { return x.id !== rl; }); }, 'dckrav'); draw();
+      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t8 = Fe.tools(); t8.dckrav = (t8.dckrav || []).map(function (x) { return x.id === kp.id ? kp : x; }); Fe.saveTools(t8); draw(); }); }); return; }
     if ((b = t.closest('[data-drdel]'))) { var did = b.dataset.drdel, allK = JSON.parse(JSON.stringify(Fe.tools().dckrav || [])); var t9 = Fe.tools(); t9.dckrav = (t9.dckrav || []).filter(function (x) { return x.id !== did; }); Fe.saveTools(t9); rback();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dr-deleted', 'Requirements deleted')), function () { var t10 = Fe.tools(); t10.dckrav = allK; Fe.saveTools(t10); draw(); }); return; }
     if (t.closest('[data-drxbby]')) { var pb = krav(ropen); if (!pb) return; if (rsend) markSent(pb.id, 'xlsx'); var fb = new File([kravXlsxBby(pb)], fileName(pb, 'Dokumentplan', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fb); return; }
@@ -2198,6 +2205,8 @@
       }).catch(function () { b.disabled = false; lb.textContent = k('ui.fdv-make-pdf', 'Make PDF'); toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.fdv-pdf-failed', 'The PDF could not be made – check the connection the first time (the PDF tool is fetched once).'))); }); return;
     }
     if (t.closest('[data-dcnew]')) { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); adding = true; radding = false; draw(); var i = document.querySelector('.dc-pform input'); if (i) i.focus(); return; }
+    if (t.closest('[data-dccancel]') && projPop) { projPop = false; draw(); return; }
+    if (projMenu && !t.closest('.dc-pmenu')) { projMenu = false; draw(); }
     if (t.closest('[data-dccancel]') && open && kin) { var rk4 = krav(ropen);
       if (rk4 && !(rk4.lines || []).length) { var t4 = Fe.tools(); t4.dckrav = (t4.dckrav || []).filter(function (x) { return x.id !== rk4.id; }); Fe.saveTools(t4); saveP(open, function (x) { if (x.krav === rk4.id) delete x.krav; }); ropen = null; }   /* nothing was made: no empty list is left behind */
       rpicking = false; kin = false; draw(); window.scrollTo(0, 0); return; }
@@ -2225,8 +2234,9 @@
       picking = false; ticks = {}; toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-plan-read', '{n} documents in the plan', { n: added }))); setTab('docs'); filt = 'all'; draw(); window.scrollTo(0, 0); return;
     }
     if ((b = t.closest('[data-dctdel]'))) { if (!canAdmin()) return; tform = null; blurIn(); var tid = b.dataset.dctdel, tt = Fe.tools(), old = JSON.parse(JSON.stringify(tt.dctypes || [])); tt.dctypes = (tt.dctypes || []).filter(function (x) { return x.id !== tid; }); Fe.saveTools(tt); draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-type-removed', 'Project type removed')), function () { var t5 = Fe.tools(); t5.dctypes = old; Fe.saveTools(t5); draw(); }); return; }
-    if ((b = t.closest('[data-dcldel]'))) { var lid = b.dataset.dcldel, keep2 = JSON.parse(JSON.stringify(proj(open))); saveP(open, function (p) { var l = lineOf(p, lid); (l && l.files || []).forEach(function (fid) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.line = ''; }); p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); }); openLine = null; draw();
-      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
+    if ((b = t.closest('[data-dcldel]'))) { var bl0 = b; sure(k('ui.dc-ldel-sure', 'Remove this line from the plan? You can undo it right after.')).then(function (ok) { if (!ok) return; var b = bl0;   /* asked first (JP 2026-11-24 21:56) */
+      var lid = b.dataset.dcldel, keep2 = JSON.parse(JSON.stringify(proj(open))); saveP(open, function (p) { var l = lineOf(p, lid); (l && l.files || []).forEach(function (fid) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.line = ''; }); p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); }); openLine = null; draw();
+      toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
     if (t.closest('[data-dckin]') && open) { var pk = proj(open); if (!pk) return; kinOpen(pk); draw(); window.scrollTo(0, 0); return; }
@@ -2260,7 +2270,9 @@
     if ((b = t.closest('[data-dxmot]'))) { if (tab === 'report') setTab('docs'); if (open === b.dataset.dxmot) draw(); else go(b.dataset.dxmot); return; }
     if ((b = t.closest('[data-dxrap]'))) { setTab('report'); if (open === b.dataset.dxrap) draw(); else go(b.dataset.dxrap); return; }
     if (t.closest('[data-dcback]')) { back(); return; }
-    if (t.closest('[data-dcprojinfo]')) { setTab('krav'); openLine = null; draw(); var pb = document.querySelector('.dc-fproj'); if (pb) pb.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (t.closest('[data-dcprojinfo]')) { projMenu = !projMenu; draw(); return; }
+    if (t.closest('[data-dcpedit]')) { projMenu = false; projPop = true; draw(); var pi = document.querySelector('.dc-ppov input'); if (pi) pi.focus(); return; }
+    if (projPop && (t.closest('[data-dcppx]') || (t.matches && t.matches('[data-dcppov]')))) { projPop = false; draw(); return; }
     if ((b = t.closest('[data-dcren]'))) { renaming = b.dataset.dcren; draw(); var ri = document.getElementById('dcr-' + renaming); if (ri) { ri.focus(); ri.select(); } return; }
     if (t.closest('[data-dcren0]')) { renaming = null; draw(); return; }
     if ((b = t.closest('[data-dcupoff]')) && HOST && HOST.uplinkOff) { HOST.uplinkOff(b.dataset.dcupoff); return; }
@@ -2290,15 +2302,18 @@
       var vw = NV ? Promise.resolve() : (naming(), dcnLoading || Promise.resolve());
       Promise.all([renOn() && TOOL.blobs[fid] ? Promise.resolve(TOOL.blobs[fid]) : getBlob(fid), vw.catch(function () {})]).then(function (z) { var bl = z[0]; NV = window.DocNaming && window.DocNaming.view; if (bl && NV) { NV(bl, fnm); return; } if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(HOST && HOST.fup ? k('ui.dc-file-later', 'The file is still only on the device it was uploaded from – it is shared with the team the next time the project is opened there.') : k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
     if ((b = t.closest('[data-dcfdel]')) && renOn()) { var rid = b.dataset.dcfdel; toolP().files = toolP().files.filter(function (x) { return x.id !== rid; }); delete TOOL.blobs[rid]; draw(); return; }
-    if ((b = t.closest('[data-dcfdel]'))) {
+    if ((b = t.closest('[data-dcfdel]'))) {   /* asked first, Undo after (JP 2026-11-24 21:56) */
+      var fq = ((proj(open) || {}).files || []).filter(function (x) { return x.id === b.dataset.dcfdel; })[0], bfd = b;
+      sure(k('ui.dc-fdel-sure', 'Remove «{n}» from the project? You can undo it right after.', { n: fq ? fq.name : '' })).then(function (ok) { if (!ok) return; var b = bfd;
       var id = b.dataset.dcfdel, pr = proj(open), keep = JSON.parse(JSON.stringify(pr));
       saveP(open, function (p) { var f = (p.files || []).filter(function (x) { return x.id === id; })[0]; if (f) gone(p, f); p.files = (p.files || []).filter(function (x) { return x.id !== id; }); });
       draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-file-removed', 'File removed')), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep.id ? keep : x; }); Fe.saveTools(t2); draw(); });
-      setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(keep, id)); }, 9000); return;
+      setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(keep, id)); }, 9000);
+      }); return;
     }
     /* delete a project – from the project or straight from the list, always asked first, with Undo after (JP 2026-11-24) */
     if ((b = t.closest('[data-dcdel], [data-dxdel]'))) {
-      var pid = b.dataset.dcdel || b.dataset.dxdel, gp = proj(pid); if (!gp) return;
+      var pid = b.dataset.dcdel || b.dataset.dxdel, gp = proj(pid); if (!gp) return; projMenu = false;
       sure(k('ui.dc-del-sure', 'Delete the project «{n}»? Its plan and files go too. You can undo it right after.', { n: gp.name || '' })).then(function (ok) { if (ok) delProj(pid, !!b.dataset.dcdel); }); return;
     }
     if ((b = t.closest('[data-dcfreshok]'))) { freshPop = null; saveP(b.dataset.dcfreshok, function (p) { (p.files || []).forEach(function (f) { delete f.nw; }); }); draw(); return; }
@@ -2427,7 +2442,7 @@
     var id = f.dataset.dcpform;
     if (id) saveP(id, function (p) { Object.assign(p, v); });
     else { var t = Fe.tools(); id = uid(); t.dctl = (t.dctl || []).concat([Object.assign({ id: id, made: new Date().toISOString(), lines: [], files: [] }, v)]); Fe.saveTools(t); var fresh = true; }
-    adding = false; editing = false; document.activeElement && document.activeElement.blur && document.activeElement.blur();
+    adding = false; editing = false; projPop = false; document.activeElement && document.activeElement.blur && document.activeElement.blur();
     if (fresh && flowOn()) { go(id); setTab('krav'); var pn = proj(id); if (pn) { kinOpen(pn); draw(); } return; }   /* a new project starts in step 1 Krav, on the picker (JP 18:37) */
     if (open !== id) go(id); else draw();
   });
