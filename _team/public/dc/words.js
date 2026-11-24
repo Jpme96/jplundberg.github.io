@@ -184,6 +184,7 @@ window.DC_NB = {
 "ui.dc-names-ph": "Ett dokumentnavn per linje, som i FDV-systemet – f.eks. 332 SE Sprinkleranlegg",
 "ui.dc-names-read": "{n} nye navn · {m} koblet til planen",
 "ui.dc-naming": "Filnavn",
+"ui.dc-no-file": "Ingen fil er levert for denne linjen",
 "ui.dc-no-files-yet": "Ingenting levert ennå.",
 "ui.dc-no-plan": "Ingen plan ennå",
 "ui.dc-no-plan-yet": "Ingen dokumentplan ennå – importer den under Oversikt.",

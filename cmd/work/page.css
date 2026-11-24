@@ -917,3 +917,4 @@ html.dcn-modal { overflow: hidden; }
 .dcn-card .dcn-b .pill-btn { font-size: 14px; }
 .dcn-card .dcn-head .dcn-open { font-size: 13px; }
 .dcn-row.dcn-card > .dc-iss, .dcn-row.dcn-card > .dcn-why, .dcn-row.dcn-card > .dcn-cc, .dcn-lk summary { font-size: 13px; }
+.dc-nofile { color: var(--muted); display: flex; align-items: center; gap: 6px; }

@@ -99,6 +99,17 @@ const fs = require('fs'), os = require('os'), path = require('path');
   /* the Vedlegg 7 from such a plan has the delivered names in Planlagt navngivning (JP 2026-11-24 09:34: it was empty) */
   const v7 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-dcvx7]').click(); FdvPdf.share = old; if (!got) return ''; return new TextDecoder().decode(await got.arrayBuffer()); });
   check(/234 SE Vindu madeup/.test(v7), 'the Vedlegg 7 made from the delivery fills Planlagt navngivning with the delivered names');
+  /* Comparison: opening a line shows its file first; deleting a file takes its line along, so Delivery and Comparison agree (JP 2026-11-24 14:18) */
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="cmp"]').click()); await sl(400);
+  await p.evaluate(() => [...document.querySelectorAll('[data-dcline]')].find(b => /Vindu madeup/.test(b.textContent)).click()); await sl(400);
+  const lp = await p.evaluate(() => { const e = document.querySelector('.dc-frow2.open .dc-ledit'); return e && e.firstElementChild ? e.firstElementChild.className + '|' + !!e.firstElementChild.querySelector('[data-dcview]') : ''; });
+  check(lp === 'dc-flist|true', 'opening a line in Comparison shows its file first, ready to open ' + lp);
+  await p.evaluate(() => { const b = document.querySelector('.dc-frow2.open [data-dcst$=":ok"]'); b && b.click(); }); await sl(400);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="lev"]').click()); await sl(400);
+  await p.evaluate(() => { const li = [...document.querySelectorAll('[data-dcfdel]')].find(b => /Vindu madeup/.test((b.closest('li') || b.parentElement.parentElement).textContent)); li.click(); }); await sl(600);
+  const ag = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0], S = [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.innerText.replace(/\n/g, ' '));
+    return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), files: r.files.length, lev: S[2], cmp: S[3] }; });
+  check(ag.lines.split(',').length === 2 && ag.files === 2 && /2 /.test(ag.lev) && /^4 \D+ 2 /.test(ag.cmp), 'deleting an approved file takes the line made from it along – Delivery and Comparison both say 2 ' + JSON.stringify(ag));
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();

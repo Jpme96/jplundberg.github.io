@@ -362,7 +362,7 @@
       if (t.closest('[data-dupok]')) { if (pid) saveP(pid, function (p1) { (p1.dupOk = p1.dupOk || {})[g[0].h] = 1; }); else { var p0 = toolP(); (p0.dupOk = p0.dupOk || {})[g[0].h] = 1; } close(); draw(); if (dupGroups(pid).length) dupPop(gi, pid); return; }
       if (t.closest('[data-duprm]') && pid) {   /* a project: the others leave the project (unlinked from their lines), with Undo */
         var outP = g.filter(function (x) { return x.id !== keep; }).map(function (x) { return x.id; }), snap = JSON.parse(JSON.stringify(proj(pid)));
-        saveP(pid, function (p2) { (p2.files || []).forEach(function (x) { if (outP.indexOf(x.id) >= 0 && x.line) unlink(p2, x.line, x.id); }); p2.files = (p2.files || []).filter(function (x) { return outP.indexOf(x.id) < 0; }); });
+        saveP(pid, function (p2) { (p2.files || []).forEach(function (x) { if (outP.indexOf(x.id) >= 0) gone(p2, x); }); p2.files = (p2.files || []).filter(function (x) { return outP.indexOf(x.id) < 0; }); });
         toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-dup-done', '{n} removed from the project – the one you chose is kept.', { n: outP.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === snap.id ? snap : x; }); Fe.saveTools(t2); draw(); });
         setTimeout(function () { var p3 = proj(pid); outP.forEach(function (id) { if (!p3 || !(p3.files || []).some(function (x) { return x.id === id; })) delBlob(id); }); }, 9000);
         close(); draw(); if (dupGroups(pid).length) dupPop(gi, pid); return;
@@ -697,12 +697,12 @@
   function foldBar(pre, gs) { var all = gs.every(function (g) { return gopen[pre + ':' + g]; }); return '<div class="dc-foldbar"><button type="button" class="text-btn" data-dcgall="' + esc(pre) + '" data-gs="' + esc(gs.join(' ')) + '" data-on="' + (all ? '' : '1') + '"><i class="bi bi-arrows-' + (all ? 'collapse' : 'expand') + '"></i> ' + esc(all ? k('ui.dc-close-all', 'Close all groups') : k('ui.dc-open-all', 'Open all groups')) + '</button></div>'; }
   /* one line opened: its note, planned name, statuses, deadline, responsible, comment, files – the same in Dokumenter and the new flow */
   function lineEdit(p, l, fs) {
-    return '<div class="dc-ledit">' + (l.note ? '<p class="muted dc-pnote" data-noi18n>' + esc(l.note) + '</p>' : '') + (l.planned ? '<p class="dc-pnote"><span class="muted">' + esc(l.ex ? k('ui.dc-example-name', 'Example name') : k('ui.dc-planned-name', 'Planned name')) + ':</span> <span data-noi18n>' + esc(l.planned) + '</span></p>' : '') +
+    /* the delivered file comes first, so you see what you approve – and it says so when there is none (JP 2026-11-24 "I cannot see the files in Sammenligning") */
+    return '<div class="dc-ledit">' + (fs.length ? '<ul class="dc-flist">' + fs.map(function (f) { return '<li>' + (f.nf ? '<span class="dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span>' : '<button type="button" class="text-btn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button>') + ((f.iss || []).length ? '<i class="bi bi-exclamation-triangle dc-warn" title="' + esc(f.iss.map(function (x) { return issueText(x, f); }).join('; ')) + '"></i>' : '') + '<button type="button" class="icon-btn sm" data-dcunlink="' + esc(l.id) + ':' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-unlink', 'Not this document')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '<p class="dc-pnote dc-nofile"><i class="bi bi-file-earmark-x"></i> ' + esc(k('ui.dc-no-file', 'No file delivered for this line')) + '</p>') + (l.note ? '<p class="muted dc-pnote" data-noi18n>' + esc(l.note) + '</p>' : '') + (l.planned ? '<p class="dc-pnote"><span class="muted">' + esc(l.ex ? k('ui.dc-example-name', 'Example name') : k('ui.dc-planned-name', 'Planned name')) + ':</span> <span data-noi18n>' + esc(l.planned) + '</span></p>' : '') +
             (l.hint ? '<p class="dc-hint"><span class="muted">' + esc(k('ui.dc-should-contain', 'Should contain')) + ':</span> <span data-noi18n>' + esc(l.hint).replace(/\n/g, '<br>') + '</span></p>' : '') + (l.opt ? '<p class="muted dc-pnote">' + esc(k('ui.dc-if-contract', 'Only if it is in the contract')) + '</p>' : '') +
             '<div class="dc-sts">' + ST.filter(function (s) { return s[0] === l.st || can(stAct(s[0]), gOf(p, 'dctl')); }).map(function (s) { return '<button type="button" class="dc-sb" style="--c:' + stc(s[0]) + '" aria-pressed="' + (l.st === s[0]) + '" data-dcst="' + esc(l.id) + ':' + s[0] + '"><i class="bi bi-' + s[4] + '"></i> ' + esc(k(s[1], s[2])) + '</button>'; }).join('') + '</div>' +
             '<div class="dc-dw"><label><span>' + esc(k('ui.dc-due', 'Deadline')) + '</span><input type="date" data-dcdue="' + esc(l.id) + '" value="' + esc(l.due || '') + '"></label><label><span>' + esc(k('ui.dc-who', 'Responsible')) + '</span><input data-dcwho="' + esc(l.id) + '" maxlength="60" value="' + esc(l.who || '') + '" placeholder="' + esc(k('ui.dc-who-ph', 'e.g. the plumber')) + '" autocomplete="off"></label></div>' +
             '<textarea class="dc-ctext" data-dccmt="' + esc(l.id) + '" rows="2" maxlength="1000" placeholder="' + esc(k('ui.dc-comment-ph', 'Comment to the contractor, e.g. Missing the signed declaration')) + '">' + esc(l.cmt || '') + '</textarea>' +
-            (fs.length ? '<ul class="dc-flist">' + fs.map(function (f) { return '<li>' + (f.nf ? '<span class="dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span>' : '<button type="button" class="text-btn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button>') + ((f.iss || []).length ? '<i class="bi bi-exclamation-triangle dc-warn" title="' + esc(f.iss.map(function (x) { return issueText(x, f); }).join('; ')) + '"></i>' : '') + '<button type="button" class="icon-btn sm" data-dcunlink="' + esc(l.id) + ':' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-unlink', 'Not this document')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '') +
             (looseFiles(p).length ? '<select class="dc-link" data-dclink="' + esc(l.id) + '"><option value="">' + esc(k('ui.dc-link-file', 'Link a file that wasn’t matched …')) + '</option>' + looseFiles(p).map(function (f) { return '<option value="' + esc(f.id) + '">' + esc(f.name) + '</option>'; }).join('') + '</select>' : '') +
             '<div class="dc-lrm"><button type="button" class="text-btn dc-del" data-dcldel="' + esc(l.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.dc-remove-line', 'Remove the line')) + '</button></div></div>';
   }
@@ -1814,6 +1814,11 @@
     if (f.line) { var o = lineOf(p, f.line); if (o) o.files = (o.files || []).filter(function (x) { return x !== fileId; }); }
     f.line = l.id; f.hand = true; l.files = (l.files || []).filter(function (x) { return x !== fileId; }).concat([fileId]); if (l.st === 'missing') l.st = 'recv';
   }
+  /* a file leaves the project (deleted, or a duplicate removed): its line no longer counts as delivered (JP 2026-11-24: Levering said 2,
+     Comparison 4 – the lines of deleted files kept Approved). A line made from that file (fd) goes with it; any other line is Missing again,
+     unless it was Not relevant. Undo of the delete puts the whole project back. */
+  function gone(p, f) { var lid = f.line; if (!lid) return; unlink(p, lid, f.id); var l = lineOf(p, lid); if (!l || (l.files || []).length) return;
+    if (l.fd) p.lines = (p.lines || []).filter(function (x) { return x.id !== lid; }); else if (l.st !== 'na') l.st = 'missing'; }
   function unlink(p, lineId, fileId) {
     var l = lineOf(p, lineId), f = (p.files || []).filter(function (x) { return x.id === fileId; })[0];
     if (l) { l.files = (l.files || []).filter(function (x) { return x !== fileId; }); if (!l.files.length && l.st === 'recv') l.st = 'missing'; }
@@ -1836,7 +1841,7 @@
     }
     if (SEL.k && e.target.closest('[data-dcselfdel]')) {
       var ids2 = selIds(), pr2 = proj(open); if (!pr2 || !ids2.length) return; var keep2 = JSON.parse(JSON.stringify(pr2));
-      saveP(open, function (p) { (p.files || []).forEach(function (f) { if (ids2.indexOf(f.id) >= 0 && f.line) unlink(p, f.line, f.id); }); p.files = (p.files || []).filter(function (x) { return ids2.indexOf(x.id) < 0; }); });
+      saveP(open, function (p) { (p.files || []).forEach(function (f) { if (ids2.indexOf(f.id) >= 0) gone(p, f); }); p.files = (p.files || []).filter(function (x) { return ids2.indexOf(x.id) < 0; }); });
       SEL.ids = {}; draw();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-sel-files-gone', '{n} files removed', { n: ids2.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t2); draw(); });
       var op2 = open; setTimeout(function () { var p = proj(op2); ids2.forEach(function (id) { if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }); }, 9000);
@@ -1971,7 +1976,7 @@
     if ((b = t.closest('[data-dcnoplan]'))) { saveP(b.dataset.dcnoplan, function (p) { p.noPlan = true; }); draw(); return; }
     if ((b = t.closest('[data-dcmkplan]'))) { var mk = 0; saveP(b.dataset.dcmkplan, function (p) {   /* a plan from the delivery: a line per file with a code, plus the project's requirements still missing */
         p.lines = p.lines || []; looseFiles(p).forEach(function (f) { var q = parseName(f.name); if (!/^\d{3}/.test(q.code || '')) return; var id = uid() + mk++;
-          p.lines.push({ id: id, code: q.code, sys: codeName(q.code) || '', type: '', t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '', planned: q.stem.slice(0, 160), st: 'recv', files: [f.id] }); f.line = id; });
+          p.lines.push({ id: id, code: q.code, sys: codeName(q.code) || '', type: '', t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '', planned: q.stem.slice(0, 160), st: 'recv', files: [f.id], fd: 1 }); f.line = id; });   /* fd: made from this file – it goes if the file is deleted */
         var r0 = kravOf(p); if (r0) (r0.lines || []).forEach(function (q) { var c3 = String(q.code).slice(0, 3); if (!p.lines.some(function (l) { return String(l.code).slice(0, 3) === c3 && String(q.t || '').indexOf((l.t || ' ').charAt(0)) >= 0; })) { p.lines.push({ id: uid() + mk++, code: q.code, sys: q.sys || lineTitle(q), type: q.type || '', t: q.t || '', planned: '', st: 'missing', files: [] }); } });
       }); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: mk }))); draw(); return; }
     if ((b = t.closest('[data-dcvx7]'))) { var pv = proj(b.dataset.dcvx7); if (!pv) return; var fv = new File([kravXlsxBby(pv)], fileName(pv, 'Dokumentplan', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fv); return; }
@@ -1995,7 +2000,7 @@
     if ((b = t.closest('[data-dcfdel]')) && renOn()) { var rid = b.dataset.dcfdel; toolP().files = toolP().files.filter(function (x) { return x.id !== rid; }); delete TOOL.blobs[rid]; draw(); return; }
     if ((b = t.closest('[data-dcfdel]'))) {
       var id = b.dataset.dcfdel, pr = proj(open), keep = JSON.parse(JSON.stringify(pr));
-      saveP(open, function (p) { var f = (p.files || []).filter(function (x) { return x.id === id; })[0]; if (f && f.line) unlink(p, f.line, id); p.files = (p.files || []).filter(function (x) { return x.id !== id; }); });
+      saveP(open, function (p) { var f = (p.files || []).filter(function (x) { return x.id === id; })[0]; if (f) gone(p, f); p.files = (p.files || []).filter(function (x) { return x.id !== id; }); });
       draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-file-removed', 'File removed')), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep.id ? keep : x; }); Fe.saveTools(t2); draw(); });
       setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }, 9000); return;
     }
