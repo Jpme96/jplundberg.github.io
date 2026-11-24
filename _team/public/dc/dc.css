@@ -1354,4 +1354,5 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
   .dcn-nb .dcn-b { flex: 0 1 auto; max-width: 52%; flex-wrap: nowrap; }
   .dcn-nb .dcn-b > .pill-btn { min-width: 0; }
 }
-.dcn-fillb { white-space: normal; text-align: left; line-height: 1.25; height: auto; padding-top: 6px; padding-bottom: 6px; }
+.dcn-b .pill-btn.dcn-fillb { white-space: normal; text-align: left; line-height: 1.25; height: auto; padding-top: 6px; padding-bottom: 6px; min-width: 0; flex: 0 1 auto; }
+.dcn-nb .dcn-b > .icon-btn { flex: none; }

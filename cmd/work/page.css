@@ -907,4 +907,5 @@ html.dcn-modal { overflow: hidden; }
 .dc-freshh .dc-freshp.ok { color: var(--ok); }
 @media (max-width: 440px) { .dcn-pvg { grid-template-columns: 1fr; } .dcn-head, .dcn-part { padding-left: 14px; padding-right: 14px; } .dcn-head { flex-wrap: wrap; } }
 @media (min-width: 560px) { .dcn-nb { flex-wrap: nowrap; } .dcn-nb .dcn-sug { flex: 1 1 auto; min-width: 0; } .dcn-nb .dcn-b { flex: 0 1 auto; max-width: 52%; flex-wrap: nowrap; } .dcn-nb .dcn-b > .pill-btn { min-width: 0; } }
-.dcn-fillb { white-space: normal; text-align: left; line-height: 1.25; height: auto; padding-top: 6px; padding-bottom: 6px; }
+.dcn-b .pill-btn.dcn-fillb { white-space: normal; text-align: left; line-height: 1.25; height: auto; padding-top: 6px; padding-bottom: 6px; min-width: 0; flex: 0 1 auto; }
+.dcn-nb .dcn-b > .icon-btn { flex: none; }
