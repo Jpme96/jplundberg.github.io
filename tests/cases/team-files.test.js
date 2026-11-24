@@ -216,7 +216,8 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     check(/2 (filer|files)/.test(d1.bar) && d1.names.filter(n => /Tegning madeup 15/.test(n)).length === 1 && d1.names.some(n => /Kopi av tegning/.test(n)), 'the same file again is skipped; the same content under another name is kept and the bar asks to check them ' + JSON.stringify(d1));
     await own.evaluate(() => document.querySelector('[data-dxdups]').click()); await sl(400);
     await own.evaluate(() => { const r = [...document.querySelectorAll('.dx-dupov input[name=dupkeep]')].find(x => /Tegning madeup 15/.test(x.closest('label').textContent)); r.click(); }); await sl(200);
-    await own.evaluate(() => document.querySelector('.dx-dupov [data-duprm]').click()); await sl(1500);
+    await own.evaluate(() => document.querySelector('.dx-dupov [data-duprm]').click());
+    await until(own, () => !document.querySelector('.dx-dupbar') && ![...document.querySelectorAll('.dc-fresh .dcn-head b, .dc-fresh .dcn-sumt b, .dc-fh')].some(b => /Kopi av tegning/.test(b.textContent)), 8000);   /* saved to the team first – slower under load */
     const d2 = await own.evaluate(() => ({ bar: !!document.querySelector('.dx-dupbar'), pop: !!document.querySelector('.dx-dupov'), copy: [...document.querySelectorAll('.dc-fresh .dcn-head b, .dc-fresh .dcn-sumt b, .dc-fh')].some(b => /Kopi av tegning/.test(b.textContent)) }));
     check(!d2.bar && !d2.pop && !d2.copy, 'Check them: the one you choose stays, the copy leaves the project, and the bar is gone ' + JSON.stringify(d2));
     await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); });
