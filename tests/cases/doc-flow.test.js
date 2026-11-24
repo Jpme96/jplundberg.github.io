@@ -55,6 +55,10 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
   const kp = await p.evaluate(() => ({ t: document.querySelector('.dc-flow .fdv-body').textContent, imp: !!document.querySelector('.dc-flow input[data-dcplan]') }));
   check(/made from the requirements/.test(kp.t) && !/contractor’s plan, checked/.test(kp.t) && kp.imp, 'a project made from requirements says so in Dokumentplan, with import of the contractor’s plan ' + kp.t.slice(0, 120));
+  /* a project made from requirements in Norwegian (the word has a soft hyphen) is not a contractor's plan (JP 2026-11-24) */
+  await p.evaluate(() => { const t = Features.tools(); t.dctl.push({ id: 'fp7', name: 'Made-up nb', krav: 'kr7', planName: 'Dokument\u00adkrav: Made-up nb', lines: [], files: [] }); Features.saveTools(t); });
+  await go(p, 'work/#dc=fp7', 2500);
+  check(await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="plan"]'); return !!s && !/OK/.test(s.textContent) && !!document.querySelector('.dc-flow input[data-dcplan]'); }), 'a project made from Norwegian requirements does not say the plan is checked OK');
   /* deleting a project made from requirements removes its requirements list too – it is one project (JP 2026-11-23) */
   await p.evaluate(() => { const t = Features.tools(); t.dckrav = [{ id: 'kr9', name: 'Made-up both parts', lines: [{ id: 'q1', code: '234', t: 'E' }] }]; t.dctl.push({ id: 'fp9', name: 'Made-up both parts', krav: 'kr9', lines: [], files: [] }); Features.saveTools(t); });
   await go(p, 'work/#dc=fp9', 2500);

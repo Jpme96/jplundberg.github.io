@@ -504,7 +504,7 @@
      matching, the statuses and the report are the ones above. ---------- */
   /* a contractor's plan that was imported – not the list made from the project's requirements (which is also called a plan in the
      data: planName "Dokumentkrav: …") (JP 2026-11-23: a project made from requirements said "the contractor's plan") */
-  function hasPlan(p) { return !!(p && p.planName && (p.planFile || !/^(Dokumentkrav|Document requirements):/i.test(p.planName))); }
+  function hasPlan(p) { return !!(p && p.planName && (p.planFile || !/^(Dokumentkrav|Document requirements):/i.test(String(p.planName).replace(/\u00ad/g, '')))); }   /* the Norwegian word has a soft hyphen (Dokument\u00adkrav) – JP 2026-11-24 "Sjekket · OK" with no plan */
   var FLOW = ['krav', 'plan', 'lev', 'cmp', 'end'], cmpPile = 'got';
   function flowOn() { try { if (localStorage.getItem('dash.dcOldView') === '1') return false; } catch (e) {}   /* the old view, only for the tests of it (dash.dcFlow from the first test switch no longer counts – JP 2026-11-23) */
     if (HOST && HOST.flowOn) return HOST.flowOn(); return true; }   /* the standard from 2026-11-23 (JP "implement the new flow"); in Team an admin turns it on or off for the whole team (Settings) */
