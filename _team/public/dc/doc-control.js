@@ -389,12 +389,15 @@
   function dupGroups(pid) { var p = pid ? proj(pid) || { files: [] } : toolP(), by = {}; (p.files || []).forEach(function (f) { if (f.h && !(p.dupOk || {})[f.h]) (by[f.h] = by[f.h] || []).push(f); }); return Object.keys(by).filter(function (h) { return by[h].length > 1; }).map(function (h) { return by[h]; }); }
   function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' kB'; }
   /* a project's copies leave it (unlinked from their lines), with Undo; their team copies go after the Undo time */
-  function dupRemove(pid, g, keep) {
-    var outP = g.filter(function (x) { return x.id !== keep; }).map(function (x) { return x.id; }), snap = JSON.parse(JSON.stringify(proj(pid)));
+  function dupRemove(pid, g, keep) { dupRemoveMany(pid, [[g, keep]]); }
+  function dupRemoveMany(pid, list) {
+    var outP = []; list.forEach(function (x) { x[0].forEach(function (f) { if (f.id !== x[1]) outP.push(f.id); }); }); if (!outP.length) return;
+    var snap = JSON.parse(JSON.stringify(proj(pid)));
     saveP(pid, function (p2) { (p2.files || []).forEach(function (x) { if (outP.indexOf(x.id) >= 0) gone(p2, x); }); p2.files = (p2.files || []).filter(function (x) { return outP.indexOf(x.id) < 0; }); });
     toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-dup-done', '{n} removed from the project – the one you chose is kept.', { n: outP.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === snap.id ? snap : x; }); Fe.saveTools(t2); draw(); });
     setTimeout(function () { var p3 = proj(pid); outP.forEach(function (id) { if (!p3 || !(p3.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(snap, id)); }); }, 9000);
   }
+
   /* pid: a project's delivered files (JP 2026-11-24: "it did not check for duplicates" when files were uploaded to a project); none: the rename tool's list */
   function dupPop(gi, pid) {
     var old = document.querySelector('.dx-dupov'); if (old) old.remove();
@@ -405,8 +408,8 @@
     var render = function () {
       ov.innerHTML = '<div class="dcn-sheet dx-dupsheet" role="dialog" aria-modal="true"><div class="dcn-shead"><b>' + esc(k('ui.dx-dup-t', 'Same content – group {i} of {n}', { i: gi + 1, n: G.length })) + '</b><button type="button" class="icon-btn" data-dupx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
         '<p class="muted dc-help">' + esc(k(pid ? 'ui.dc-dup-help' : 'ui.dx-dup-help', pid ? 'These files have exactly the same content. Look at them, choose the one to keep, then remove the others from the project.' : 'These files have exactly the same content. Look at them, choose the one to keep, then remove the others from the list. The files on your computer are not touched.')) + '</p>' +
-        '<ul class="dx-duplist">' + g.map(function (f) { return '<li><label class="dx-dupk"><input type="radio" name="dupkeep" value="' + esc(f.id) + '"' + (f.id === keep ? ' checked' : '') + '><span><b data-noi18n>' + esc(f.name) + '</b><small>' + esc((f.dir ? f.dir + ' · ' : '') + kb(f.size)) + '</small></span><span class="stt ' + (f.id === keep ? 'stt-ok' : 'stt-soon') + '">' + esc(f.id === keep ? k('ui.dx-dup-keep', 'Keep') : k('ui.dx-dup-out', 'Removed from the list')) + '</span></label><button type="button" class="dc-chip" data-dupview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dx-dup-open', 'Open')) + '</button></li>'; }).join('') + '</ul>' +
-        '<div class="dx-dupbtns"><button type="button" class="pill-btn" data-duprm><i class="bi bi-trash3"></i> ' + esc(k('ui.dx-dup-rm', 'Remove the other {n}', { n: g.length - 1 })) + '</button><button type="button" class="dc-chip" data-dupok>' + esc(k('ui.dx-dup-ok', 'They are different – keep all')) + '</button>' +
+        '<ul class="dx-duplist">' + g.map(function (f) { return '<li><label class="dx-dupk"><input type="radio" name="dupkeep" value="' + esc(f.id) + '"' + (f.id === keep ? ' checked' : '') + '><span><b data-noi18n>' + esc(f.name) + '</b><small>' + esc((f.dir ? f.dir + ' · ' : '') + kb(f.size)) + '</small></span><span class="stt ' + (f.id === keep ? 'stt-ok' : 'stt-soon') + '">' + esc(f.id === keep ? k('ui.dx-dup-keep', 'Keep') : k('ui.dx-dup-out', 'Removed from the list')) + '</span></label><button type="button" class="pill-btn sm ghost" data-dupview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dx-dup-open', 'Open')) + '</button></li>'; }).join('') + '</ul>' +
+        '<div class="dx-dupbtns"><button type="button" class="pill-btn" data-duprm><i class="bi bi-trash3"></i> ' + esc(k('ui.dx-dup-rm', 'Remove the other {n}', { n: g.length - 1 })) + '</button><button type="button" class="pill-btn ghost" data-dupok>' + esc(k('ui.dx-dup-ok', 'They are different – keep all')) + '</button>' +
         (G.length > 1 ? '<span class="dx-dupnav"><button type="button" class="icon-btn" data-dupgo="-1" aria-label="' + esc(k('ui.dx-dup-prev', 'Previous group')) + '"' + (gi ? '' : ' disabled') + '><i class="bi bi-chevron-left"></i></button><button type="button" class="icon-btn" data-dupgo="1" aria-label="' + esc(k('ui.dx-dup-next', 'Next group')) + '"' + (gi < G.length - 1 ? '' : ' disabled') + '><i class="bi bi-chevron-right"></i></button></span>' : '') + '</div></div>';
     };
     render();
@@ -501,7 +504,7 @@
         '<div class="dx-dlopts" role="radiogroup" aria-label="' + esc(k('ui.dx-dl-which', 'Which files')) + '">' + opt('all', k('ui.dx-dl-all', 'All'), F.length) + opt('sel', k('ui.dx-dl-sel', 'Only the selected'), sel.length) + opt('ready', k('ui.dx-dl-ready', 'Only the finished'), fin.length) + '</div>' +
         '<div class="dx-dlsum"><b>' + esc(L.length === 1 ? k('ui.dx-dl-sum1', '1 file') : k('ui.dx-dl-sum', '{n} files in the .zip', { n: L.length })) + '</b>' + (nw ? '<span class="stt stt-ok">' + esc(k('ui.dx-dl-new', '{n} get a new name', { n: nw })) + '</span>' : '') + (L.length - nw ? '<span class="stt stt-soon">' + esc(k('ui.dx-dl-keep', '{n} keep the name they came with', { n: L.length - nw })) + '</span>' : '') + '<span class="spacer"></span><span class="muted">' + esc((mb >= 1 ? mb.toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(mb * 1024)) + ' kB')) + '</span></div>' +
         '<p class="muted dx-dlcap">' + esc(k('ui.dx-dl-what', 'This is downloaded:')) + '</p><ul class="dx-dllist">' + A.slice(0, 400).map(function (f) { var n2 = nn(f), nwf = isNew(f); return '<li' + (skip[f.id] ? ' class="dx-dloff"' : '') + '><label class="dcn-pkc"><input type="checkbox" data-dlpk="' + esc(f.id) + '"' + (skip[f.id] ? '' : ' checked') + ' aria-label="' + esc(k('ui.dcn-pk-one', 'Select {f}', { f: n2 })) + '"></label><span><b data-noi18n>' + esc(n2) + '</b>' + (nwf ? '<small class="muted" data-noi18n>' + esc(k('ui.dx-dl-was', 'was: {f}', { f: f.orig || f.name })) + '</small>' : '') + '</span><span class="stt ' + (nwf ? 'stt-ok' : 'stt-soon') + '">' + esc(nwf ? k('ui.dx-dl-tnew', 'New name') : k('ui.dx-dl-tkeep', 'Keeps the name')) + '</span></li>'; }).join('') + (A.length > 400 ? '<li class="muted">' + esc(k('ui.dcn-bk-more', 'and {n} more', { n: A.length - 400 })) + '</li>' : '') + '</ul>' +
-        '<div class="dcn-b dx-dlbtns"><button type="button" class="dc-chip" data-dlx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-dlgo' + (L.length ? '' : ' disabled') + '><i class="bi bi-download"></i> ' + esc(L.length === 1 ? k('ui.dx-dl-go1', 'Download the file') : k('ui.dx-dl-go', 'Download {n} files (.zip)', { n: L.length })) + '</button></div></div>';
+        '<div class="dcn-b dx-dlbtns"><button type="button" class="pill-btn ghost" data-dlx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-dlgo' + (L.length ? '' : ' disabled') + '><i class="bi bi-download"></i> ' + esc(L.length === 1 ? k('ui.dx-dl-go1', 'Download the file') : k('ui.dx-dl-go', 'Download {n} files (.zip)', { n: L.length })) + '</button></div></div>';
     };
     render();
     var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
@@ -524,7 +527,7 @@
   function fdvPanel() {
     var R = fdvRes || [], bad = R.filter(function (x) { return x.iss.length; });
     return '<section class="dx-panel"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-fdv', 'Check names from the FDV system')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
-      '<form class="dx-fdvf" data-dxfdv><textarea name="t" rows="5" placeholder="' + esc(k('ui.dx-fdv-ph', 'Paste the document names, one per line (e.g. from Plania)')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2-square"></i> ' + esc(k('ui.dx-fdv-check', 'Check the names')) + '</button><label class="dc-chip dc-file"><i class="bi bi-file-earmark-arrow-up"></i> ' + esc(k('ui.dx-fdv-import', 'Or import a list (.xlsx, .csv)')) + '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dxfdvf hidden></label></div></form>' +
+      '<form class="dx-fdvf" data-dxfdv><textarea name="t" rows="5" placeholder="' + esc(k('ui.dx-fdv-ph', 'Paste the document names, one per line (e.g. from Plania)')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2-square"></i> ' + esc(k('ui.dx-fdv-check', 'Check the names')) + '</button><label class="pill-btn sm ghost dc-file"><i class="bi bi-file-earmark-arrow-up"></i> ' + esc(k('ui.dx-fdv-import', 'Or import a list (.xlsx, .csv)')) + '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dxfdvf hidden></label></div></form>' +
       (fdvRes ? '<p class="dx-sum"><b>' + esc(k('ui.dx-fdv-sum', '{a} of {b} names follow the rules', { a: R.length - bad.length, b: R.length })) + '</b>' + (bad.length ? ' · <button type="button" class="text-btn" data-dxfdvcopy>' + esc(k('ui.dx-fdv-copy', 'Copy the ones to fix')) + '</button>' : '') + ' · <button type="button" class="text-btn" data-dxfdvclr><i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dx-fdv-clear', 'Start over')) + '</button>' + '</p><ul class="dx-flist">' + R.slice().sort(function (a, b) { return b.iss.length - a.iss.length; }).map(function (x) {
         return '<li class="' + (x.iss.length ? 'dx-bad' : '') + '"><i class="bi bi-' + (x.iss.length ? 'exclamation-circle' : 'check2') + '"></i><span><b data-noi18n>' + esc(x.n) + '</b>' + (x.iss.length ? '<small>' + esc(x.iss.join(' · ')) + '</small>' : '') + '</span></li>'; }).join('') + '</ul>' : '') + '</section>';
   }
@@ -844,22 +847,42 @@
   }
   /* the tidy-up popup: duplicates (tap the one to keep), then the naming cards for New / Name problems / All */
   var freshF = 'new', linkOpen = null;
+  /* the tidy-up popup in two steps (JP 2026-11-24 19:49–19:59): 1 Duplikater – each group in its own box, the best file picked
+     (a right name first), nothing removed until "Keep the chosen one", or all groups at once; 2 Gi navn – the naming cards for
+     New / Name problems / All. Without duplicates it opens on Gi navn; solving the last group goes there by itself. */
+  var freshStep = 1, freshHad = false, dupPick = {};
+  function midName(n) { n = String(n || ''); return n.length > 38 ? n.slice(0, 20) + '…' + n.slice(-16) : n; }
+  function dupBest(g) { var k0 = dupPick[g[0].h]; if (k0 && g.some(function (f) { return f.id === k0; })) return k0; return (g.filter(function (f) { return !(f.iss || []).length; })[0] || g[0]).id; }
   function tidyPop(p, F, NW, BADF, DG) {
-    var N0 = naming(), L = freshF === 'bad' ? BADF : freshF === 'all' ? F : NW;
-    if (N0) { var sgo = (freshF === 'all' ? [] : L).filter(function (f) { return !FRESH_SG[f.id]; }).map(function (f) { FRESH_SG[f.id] = 1; return f.id; }); if (sgo.length) setTimeout(function () { N0.suggestAll(p.id, sgo); }, 0); }
+    if (DG.length) freshHad = true;
+    if (freshStep === 1 && !DG.length) freshStep = 2;
+    var N0 = naming(), L = freshF === 'bad' ? BADF : freshF === 'all' ? F : NW, two = freshStep === 2;
+    if (two && N0) { var sgo = (freshF === 'all' ? [] : L).filter(function (f) { return !FRESH_SG[f.id]; }).map(function (f) { FRESH_SG[f.id] = 1; return f.id; }); if (sgo.length) setTimeout(function () { N0.suggestAll(p.id, sgo); }, 0); }
     var nDone = N0 ? L.filter(function (f) { return N0.ready(p, f) && N0.newName(p, f) === f.name; }).length : 0, allDone = !DG.length && (!L.length || nDone === L.length);
-    var title = DG.length ? k('ui.dc-tidy-h', 'Tidy up the files') : freshF === 'new' ? k('ui.dc-fresh-h', 'Give the new files the right names') : k('ui.dc-names-h', 'Give the files the right names');
+    var title = freshHad ? k('ui.dc-tidy-h', 'Tidy up the files') : freshF === 'new' ? k('ui.dc-fresh-h', 'Give the new files the right names') : k('ui.dc-names-h', 'Give the files the right names');
     var h = '<div class="dx-tov dc-freshov" data-dcfreshov><div class="dx-tsheet dc-freshsheet" role="dialog" aria-modal="true" aria-label="' + esc(title) + '"><section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(title) + '</b></span>' +
       '<button type="button" class="icon-btn sm" data-dcfreshlater aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>';
-    if (DG.length) h += '<div class="dc-tdup"><h4 class="dc-th"><i class="bi bi-files"></i> ' + esc(k('ui.dc-same-files', 'The same files')) + '</h4><p class="muted dc-tdhelp">' + esc(k('ui.dc-same-help', 'Same content, different names. Tap the one to keep – the others leave the project.')) + '</p>' +
-      DG.map(function (g, gi) { return '<div class="dc-tdg">' + g.map(function (f) { return '<div class="dc-tdo"><button type="button" class="dc-tdk" data-dckeep="' + gi + '|' + esc(f.id) + '"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(kb(f.size || 0)) + ' · ' + esc((f.iss || []).length ? k('ui.dc-name-bad', 'Name problem') : k('ui.dc-name-ok', 'Name OK')) + '</small></button>' +
-        '<button type="button" class="icon-btn sm" data-dcdupview="' + esc(f.id) + '" aria-label="' + esc(k('ui.dx-dup-open', 'Open')) + '"><i class="bi bi-eye"></i></button></div>'; }).join('') +
-        '<button type="button" class="text-btn dc-tdok" data-dcdupok="' + gi + '">' + esc(k('ui.dx-dup-ok', 'They are different – keep all')) + '</button></div>'; }).join('') + '</div>';
-    h += '<div class="dc-tnh"><h4 class="dc-th"><i class="bi bi-pencil-square"></i> ' + esc(k('ui.dc-give-names', 'Give names')) + '</h4><div class="dc-chips">' +
+    if (freshHad) h += '<div class="dc-tsteps" role="tablist">' +
+      '<button type="button" role="tab" data-dcstep="1" aria-selected="' + !two + '" class="' + (DG.length ? '' : 'ok') + '"><span class="dc-tsn">' + (DG.length ? '1' : '<i class="bi bi-check2"></i>') + '</span>' + esc(k('ui.dc-dups', 'Duplicates')) + '<small>' + esc(DG.length ? k('ui.dc-n-left', '{n} left', { n: DG.length }) : k('ui.dc-st-done', 'done')) + '</small></button>' +
+      '<button type="button" role="tab" data-dcstep="2" aria-selected="' + two + '"><span class="dc-tsn">2</span>' + esc(k('ui.dc-give-names', 'Give names')) + '<small>' + esc(k('ui.dc-n-new', '{n} new', { n: NW.length })) + '</small></button></div>';
+    if (!two) {
+      var rm = DG.reduce(function (a, g) { return a + g.length - 1; }, 0);
+      h += '<p class="muted dc-tdhelp">' + esc(k('ui.dc-same-help2', 'The same content under different names. The best one is chosen – change it if you want. Nothing is removed until you press Keep.')) + '</p>';
+      if (DG.length > 1) h += '<div class="dc-tdall"><i class="bi bi-magic"></i><span>' + esc(k('ui.dc-dup-all', 'Keep the chosen one in all {g} groups – removes {n} files', { g: DG.length, n: rm })) + '</span><button type="button" class="pill-btn" data-dcdupall>' + esc(k('ui.dc-dup-all-b', 'Keep the chosen ones')) + '</button></div>';
+      h += DG.map(function (g, gi) { var kp = dupBest(g);
+        return '<div class="dc-tdg"><p class="dc-tdgh">' + esc(k('ui.dc-dup-gh', 'Group {i} of {n} · {m} of the same', { i: gi + 1, n: DG.length, m: g.length })) + '</p>' + g.map(function (f) { var on = f.id === kp, bad = (f.iss || []).length;
+          return '<label class="dc-tdr' + (on ? ' on' : '') + '"><input type="radio" name="dcdp' + gi + '" data-dcdpick="' + esc(f.h) + '|' + esc(f.id) + '"' + (on ? ' checked' : '') + '><span class="dc-tdn" title="' + esc(f.name) + '" data-noi18n>' + esc(midName(f.name)) + '</span><small class="tnum">' + esc(kb(f.size || 0)) + '</small>' +
+            '<span class="stt ' + (bad ? 'stt-soon' : 'stt-ok') + '">' + esc(bad ? k('ui.dc-name-bad', 'Name problem') : k('ui.dc-name-ok', 'Name OK')) + '</span><span class="dc-tdw' + (on ? ' keep' : '') + '">' + esc(on ? k('ui.dc-dup-kept', 'Kept') : k('ui.dc-dup-goes', 'Removed')) + '</span>' +
+            '<button type="button" class="icon-btn sm" data-dcdupview="' + esc(f.id) + '" aria-label="' + esc(k('ui.dx-dup-open', 'Open')) + '"><i class="bi bi-eye"></i></button></label>'; }).join('') +
+          '<div class="dc-tdga"><button type="button" class="pill-btn sm ghost" data-dckeep="' + gi + '">' + esc(k('ui.dc-dup-keep1', 'Keep the chosen one · remove {n}', { n: g.length - 1 })) + '</button><button type="button" class="text-btn" data-dcdupok="' + gi + '">' + esc(k('ui.dx-dup-ok', 'They are different – keep all')) + '</button></div></div>'; }).join('');
+      return h + '</section><div class="dc-freshbtns"><button type="button" class="pill-btn ghost" data-dcfreshlater>' + esc(k('ui.dc-fresh-later', 'Not now')) + '</button><span class="dc-sp"></span><button type="button" class="pill-btn" data-dcstep="2">' + esc(k('ui.dc-next-names', 'Next: Give names')) + ' <i class="bi bi-arrow-right"></i></button></div></div></div>';
+    }
+    h += '<div class="dc-tnh"><div class="dc-chips">' +
       [['new', k('ui.dc-ff-new', 'New'), NW.length], ['bad', k('ui.dc-ff-bad', 'Name problems'), BADF.length], ['all', k('ui.all', 'All'), F.length]].map(function (c) { return '<button type="button" class="dc-chip" data-dcff="' + c[0] + '" aria-pressed="' + (freshF === c[0]) + '">' + esc(c[1]) + ' <span class="tnum">' + c[2] + '</span></button>'; }).join('') + '</div></div>';
-    h += L.length ? '<small class="dc-freshp' + (L.length && nDone === L.length ? ' ok' : '') + '">' + esc(k('ui.dc-fresh-p', '{d} of {n} have their new name', { d: nDone, n: L.length })) + '</small>' + (N0 ? N0.files(p, L) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>')
+    h += L.length ? '<small class="dc-freshp' + (nDone === L.length ? ' ok' : '') + '">' + esc(k('ui.dc-fresh-p', '{d} of {n} have their new name', { d: nDone, n: L.length })) + '</small>' + (N0 ? N0.files(p, L) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>')
       : '<p class="muted dc-help">' + esc(freshF === 'new' ? k('ui.dc-ff-new0', 'No new files left to name.') : freshF === 'bad' ? k('ui.dc-ff-bad0', 'No name problems left.') : k('ui.dc-ff-all0', 'No files yet.')) + '</p>';
-    return h + '</section><div class="dc-freshbtns"><button type="button" class="dc-chip" data-dcfreshlater>' + esc(k('ui.dc-fresh-later', 'Not now')) + '</button><button type="button" class="' + (allDone ? 'pill-btn' : 'dc-chip') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div></div></div>';
+    return h + '</section><div class="dc-freshbtns">' + (DG.length ? '<button type="button" class="pill-btn ghost" data-dcstep="1"><i class="bi bi-arrow-left"></i> ' + esc(k('ui.dc-dups', 'Duplicates')) + '</button>' : '<button type="button" class="pill-btn ghost" data-dcfreshlater>' + esc(k('ui.dc-fresh-later', 'Not now')) + '</button>') +
+      '<span class="dc-sp"></span><button type="button" class="' + (allDone ? 'pill-btn' : 'pill-btn ghost') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div></div></div>';
   }
   function files(p) {
     /* one question instead of three equal buttons (JP 2026-11-23 "this part is the confusing part"): you have the files, or the
@@ -868,8 +891,8 @@
     var fileIn = '<input type="file" multiple data-dcfiles="' + esc(p.id) + '" hidden>', namesIn = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcnames="' + esc(p.id) + '" hidden>';
     if (!F.length) {
       h += imp ? dropBox('data-dcdrop="' + esc(p.id) + '"', '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + fileIn + '</label>',
-        '<label class="dc-chip dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="dc-chip" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button>' +
-          (HOST && HOST.uplink ? '<button type="button" class="dc-chip" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button>' : ''),
+        '<label class="pill-btn ghost dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-names-import2', 'Import list')) + namesIn + '</label><button type="button" class="pill-btn ghost" data-dcpastebtn><i class="bi bi-clipboard"></i> ' + esc(k('ui.dc-names-paste', 'Paste names')) + '</button>' +
+          (HOST && HOST.uplink ? '<button type="button" class="pill-btn ghost" data-dcuplink="' + esc(p.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-way-link-btn', 'Send upload link')) + '</button>' : ''),
         k('ui.dc-drop-note', 'PDFs, a folder or one .zip. Already in the FDV system? Import the list or paste the names. The contractor has them? Send an upload link.')) + (HOST && HOST.uplink ? upLinks(p) : '')
         : '<p class="muted dc-help">' + esc(k('ui.dc-no-files-yet', 'Nothing delivered yet.')) + '</p>';
     }
@@ -894,7 +917,7 @@
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
     h += '<div class="dc-sumbar"><p class="dc-note">' + (tidy && bad ? esc(k('ui.dc-files-sum2', '{n} files delivered · {u} not in the plan', { n: F.length, u: u })) + ' · <button type="button" class="text-btn dc-badl" data-dcfreshopen="' + esc(p.id) + '" data-dcff="bad">' + esc(k('ui.dc-n-bad', '{b} with name problems', { b: bad })) + '</button>'
       : esc(k('ui.dc-files-sum', '{n} files delivered · {u} not in the plan · {b} with name problems', { n: F.length, u: u, b: bad }))) + '</p>' +
-      (tidy && F.length ? '<button type="button" class="dc-chip dc-gname" data-dcfreshopen="' + esc(p.id) + '" data-dcff="' + (NW.length ? 'new' : BADF.length ? 'bad' : 'all') + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-give-names', 'Give names')) + '</button>' : '') +
+      (tidy && F.length ? '<button type="button" class="pill-btn ghost dc-gname" data-dcfreshopen="' + esc(p.id) + '" data-dcff="' + (NW.length ? 'new' : BADF.length ? 'bad' : 'all') + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-give-names', 'Give names')) + '</button>' : '') +
       (imp ? addMenu('p:' + p.id, [addItem('upload', k('ui.dc-pick-files', 'Choose files'), k('ui.dc-way-files-s', 'PDFs, a folder or one .zip from the contractor'), '<label class="dc-additem dc-file" role="menuitem">', fileIn),
         addItem('file-earmark-spreadsheet', k('ui.dc-names-import2', 'Import list'), k('ui.dc-add-fdv', 'Names from the FDV system'), '<label class="dc-additem dc-file" role="menuitem">', namesIn),
         addItem('clipboard', k('ui.dc-names-paste', 'Paste names'), '', 'data-dcpastebtn')].concat(HOST && HOST.uplink ? [addItem('link-45deg', k('ui.dc-way-link-btn', 'Send upload link'), k('ui.dc-add-link', 'The contractor delivers it'), 'data-dcuplink="' + esc(p.id) + '"')] : [])) : '') + '</div>' + (imp && HOST && HOST.uplink ? upLinks(p) : '');
@@ -923,7 +946,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '4887f55408';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '31cf40dfc1';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
@@ -1250,7 +1273,7 @@
     h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-ptg">' + typeGroups().map(function (g) {
       return '<div class="dc-ptrow" data-dcptg><span class="dc-ptl">' + esc(g[0]) + '</span><div class="dc-chips dc-wrap">' + g[1].map(function (t) { return tpen && t.own ? '<button type="button" class="dc-chip dx-tedit" data-dctedit="' + esc(t.id) + '"><i class="bi bi-pencil"></i> ' + esc(t.name) + '</button>' : '<button type="button" class="dc-chip" aria-pressed="' + !!xsel[t.id] + '" data-dcptype="' + esc(t.id) + '">' + esc(t.name) + (t.own ? ' <i class="bi bi-person"></i>' : '') + '</button>'; }).join('') + '</div></div>';
     }).join('') + '</div>';
-    if (canAdmin()) h += '<div class="dx-trow"><button type="button" class="dc-chip dx-tnew" data-dctnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-type-new-b', 'New type')) + '</button>' + (ownTypes().length ? '<button type="button" class="dc-chip dx-pen" aria-pressed="' + tpen + '" data-dctpen title="' + esc(k('ui.dx-type-pen', 'Change your own types')) + '"><i class="bi bi-pencil"></i> ' + esc(tpen ? k('ui.dx-done', 'Done') : k('ui.dx-own-types', 'Your own types')) + '</button>' : '') + '</div>';
+    if (canAdmin()) h += '<div class="dx-trow"><button type="button" class="pill-btn ghost dx-tnew" data-dctnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-type-new-b', 'New type')) + '</button>' + (ownTypes().length ? '<button type="button" class="dc-chip dx-pen" aria-pressed="' + tpen + '" data-dctpen title="' + esc(k('ui.dx-type-pen', 'Change your own types')) + '"><i class="bi bi-pencil"></i> ' + esc(tpen ? k('ui.dx-done', 'Done') : k('ui.dx-own-types', 'Your own types')) + '</button>' : '') + '</div>';
     if (tform) h += typeForm();
     h += '<div data-dcxs>' + xsHtml() + '</div>';
     var groups = {}; keys.forEach(function (c) { (groups[c.slice(0, 2)] = groups[c.slice(0, 2)] || []).push(c); });
@@ -1845,8 +1868,8 @@
       return '<li class="dx-pli"><div class="dx-pln"><b data-noi18n>' + esc(e.name) + '</b><small class="muted">' + esc(fmt(String(e.chk || e.at).slice(0, 10))) + (e.by ? ' · ' + esc(e.by) : '') + (e.here ? ' · ' + esc(k('ui.dx-pl-here', 'file on the device that added it')) : '') + '</small></div>' +
         '<div class="dx-pls">' + plSumHtml(e.sum) + '</div>' +
         '<div class="dx-plb"><button type="button" class="pill-btn" data-dxplopen="' + esc(e.id) + '"><i class="bi bi-table"></i> ' + esc(k('ui.dx-pl-open', 'Open the check')) + '</button>' +
-        '<button type="button" class="dc-chip" data-dxpldl="' + esc(e.id) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</button>' +
-        '<button type="button" class="dc-chip dx-clr" data-dxpldel="' + esc(e.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')) + '</button></div></li>';
+        '<button type="button" class="pill-btn sm ghost" data-dxpldl="' + esc(e.id) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</button>' +
+        '<button type="button" class="pill-btn sm ghost dx-clr" data-dxpldel="' + esc(e.id) + '"><i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')) + '</button></div></li>';
     }).join('') + '</ul>';
     return h + '</section>';
   }
@@ -1935,7 +1958,7 @@
           pairs(p);
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
-        if (HOST && !namingOn() && add.some(function (f) { return f.size && !names; })) { freshPop = id; freshF = 'new'; }   /* your own upload: name them now, in the popup */
+        if (HOST && !namingOn() && add.some(function (f) { return f.size && !names; })) { freshPop = id; freshF = 'new'; freshStep = 1; freshHad = false; }   /* your own upload: name them now, in the popup */
         setTab('files'); draw();
         shareUp(id, add.filter(function (f) { return f.blob; }).map(function (f) { return f.id; }));
         var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
@@ -1978,9 +2001,11 @@
     if (addOpen && !e.target.closest('.dc-addlist label')) { addOpen = ''; document.querySelectorAll('.dc-addlist').forEach(function (x) { x.hidden = true; }); document.querySelectorAll('[data-dcaddm]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); }); }
     /* the naming popup for new files: open from the line, Not now, a click on the dark backdrop */
     if ((sb = e.target.closest('[data-dclinkopen]'))) { linkOpen = sb.dataset.dclinkopen; draw(); var ls = document.querySelector('select[data-dcflink="' + linkOpen + '"]'); if (ls) { ls.focus(); try { ls.showPicker && ls.showPicker(); } catch (er) {} } return; }
-    if ((sb = e.target.closest('[data-dcfreshopen]'))) { freshPop = sb.dataset.dcfreshopen; freshF = sb.dataset.dcff || 'new'; draw(); return; }
+    if ((sb = e.target.closest('[data-dcfreshopen]'))) { freshPop = sb.dataset.dcfreshopen; freshF = sb.dataset.dcff || 'new'; freshStep = sb.classList.contains('dc-freshline') ? 1 : 2; freshHad = false; draw(); return; }
+    if (freshPop && (sb = e.target.closest('.dc-freshov [data-dcstep]'))) { freshStep = +sb.dataset.dcstep; draw(); var sh = document.querySelector('.dc-freshsheet'); if (sh) sh.scrollTop = 0; return; }
+    if (freshPop && e.target.closest('[data-dcdupall]')) { var GA = dupGroups(freshPop); dupRemoveMany(freshPop, GA.map(function (g) { return [g, dupBest(g)]; })); draw(); return; }
     if (freshPop && (sb = e.target.closest('.dc-freshov [data-dcff]'))) { freshF = sb.dataset.dcff; draw(); return; }
-    if (freshPop && (sb = e.target.closest('[data-dckeep]'))) { var kq = sb.dataset.dckeep.split('|'), kg = dupGroups(freshPop)[+kq[0]]; if (kg) dupRemove(freshPop, kg, kq[1]); draw(); return; }
+    if (freshPop && (sb = e.target.closest('[data-dckeep]'))) { var kg = dupGroups(freshPop)[+sb.dataset.dckeep]; if (kg) dupRemoveMany(freshPop, [[kg, dupBest(kg)]]); draw(); return; }
     if (freshPop && (sb = e.target.closest('[data-dcdupok]'))) { var og = dupGroups(freshPop)[+sb.dataset.dcdupok], opid = freshPop; if (og) saveP(opid, function (p1) { (p1.dupOk = p1.dupOk || {})[og[0].h] = 1; }); draw(); return; }
     if (freshPop && (sb = e.target.closest('[data-dcdupview]'))) { var vf = ((proj(freshPop) || {}).files || []).filter(function (x) { return x.id === sb.dataset.dcdupview; })[0], NV = naming(); if (vf && NV && NV.view) getBlob(vf.id).then(function (bl) { if (bl) NV.view(bl, vf.name); else if (HOST && vf.tf) teamBlob(vf.id).then(function (b2) { if (b2) NV.view(b2, vf.name); }); }); return; }
     if (e.target.closest('[data-dcfreshlater]') || (e.target.matches && e.target.matches('[data-dcfreshov]'))) { freshPop = null; draw(); return; }
@@ -2245,6 +2270,7 @@
     if (t.matches('[data-dcreqpick]')) { useReq(t.value); draw(); return; }
     if (t.dataset.dctick) { ticks[t.dataset.dctick] = t.checked; updPick(); return; }
     if (t.dataset.dcxtick) { xoff[t.dataset.dcxtick] = !t.checked; updPick(); return; }
+    if (t.dataset.dcdpick) { var dq2 = t.dataset.dcdpick.split('|'); dupPick[dq2[0]] = dq2[1]; draw(); return; }   /* the file to keep in a duplicate group */
     if (t.dataset.dcnames && t.files && t.files[0]) { addOpen = ''; importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }
     if (t.dataset.dclink && t.value) { var a = t.dataset.dclink, v = t.value; saveP(open, function (p) { link(p, a, v); }); draw(); return; }

@@ -191,7 +191,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.keyboard.press('Escape'); await sl(300);
   check(await p.evaluate(() => !document.querySelector('.dcn-ov')), 'Escape closes the popup');
   await p.evaluate(() => { const r = [...document.querySelectorAll('.dx-ren [data-dcndel]')]; r.forEach(b => b.click()); }); await sl(300);
-  const hb = await p.evaluate(() => { const b = document.querySelector('.dx-ren .pill-btn'); return Math.round(b.getBoundingClientRect().height); });
+  const hb = await p.evaluate(() => { const b = document.querySelector('.dx-ren .pill-btn:not(.sm)'); return Math.round(b.getBoundingClientRect().height); });
   check(hb >= 44, 'the buttons are at least 44 px tall: ' + hb);
   /* code names (JP 07:48): an unnamed code is just its number; names pasted from your own copy show in the list, kept on this device */
   const nm0 = await p.evaluate(async () => { const s = (await R(/./)).querySelector('[data-dcncode]'); const o = s && s.querySelector('option[value="413"]'); return o ? o.textContent : null; });

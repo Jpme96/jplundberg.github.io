@@ -48,7 +48,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const c4 = await p.evaluate(() => { const li = document.querySelector('.dcn-fpop .dcn-row'), fs = q => { const e = li.querySelector(q); return e ? parseFloat(getComputedStyle(e).fontSize) : 0; };
     return { fill: (li.querySelector('[data-dcnfill]') || {}).textContent || '', gap: (li.querySelector('.dcn-sug code i') || {}).textContent || '', pick: fs('.dcn-cbtn'), sel: fs('.dcn-kind select'), code: fs('.dcn-sug code'), btn: fs('.dcn-b .pill-btn'), iss: fs(':scope > .dc-iss'), open: fs('.dcn-head .dcn-open') }; });
   check(/NS 3451/.test(c4.fill) && !/ns 3451/.test(c4.fill) && /NS 3451/.test(c4.gap), 'NS 3451 keeps its capitals in “Fill in … first” and in the name’s gap ' + JSON.stringify({ fill: c4.fill, gap: c4.gap }));
-  check(c4.pick === 14 && c4.sel === 14 && c4.code <= 15 && c4.btn === 14 && (!c4.iss || c4.iss === 13) && c4.open === 13, 'one type scale in the card: choices 14, new name ≤ 15, buttons 14, small text 13 ' + JSON.stringify(c4));
+  check(c4.pick === 14 && c4.sel === 14 && c4.code <= 15 && c4.btn === 14 && (!c4.iss || c4.iss === 13) && c4.open === 13.5, 'one type scale in the card: choices 14, new name ≤ 15, buttons 14, small text 13, the small Open button 13.5 (JP 2026-11-24 19:49) ' + JSON.stringify(c4));
   /* space between the cards in the list */
   await p.evaluate(() => document.querySelectorAll('[data-dcnfx]').forEach(x => x.click())); await sl(200);
   const gap = await p.evaluate(() => { const L = [...document.querySelectorAll('.dx-ren .dcn-files > li')]; return L.length > 1 ? Math.round(L[1].getBoundingClientRect().top - L[0].getBoundingClientRect().bottom) : -1; });
