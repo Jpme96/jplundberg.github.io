@@ -919,3 +919,19 @@ html.dcn-modal { overflow: hidden; }
 .dcn-row.dcn-card > .dc-iss, .dcn-row.dcn-card > .dcn-why, .dcn-row.dcn-card > .dcn-cc, .dcn-lk summary { font-size: 13px; }
 .dc-nofile { color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .dcn-pkodd { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--warn); }
+/* Drawings: what they are delivered as, and the overview in Levering (JP 2026-11-24) */
+.dc-dwreq { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 14px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+.dc-dwreq .dc-dwl { font-weight: 600; }
+.dc-dwreq .dc-dwbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.dc-dwreq small { flex-basis: 100%; font-size: 12.5px; }
+.dc-dwbox { margin: 12px 0 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 8px; }
+.dc-dwh { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.dc-dwh > b { font-size: 15px; }
+.dc-dwh .muted { flex: 1; font-size: 13px; }
+.dc-dwask { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--warn-rgb), .1); }
+.dc-dwask > span { flex: 1; min-width: 200px; font-size: 14px; }
+.dc-dwrow summary { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0; list-style: none; }
+.dc-dwrow summary::-webkit-details-marker { display: none; }
+.dc-dwrow summary b { margin-left: auto; }
+.dc-dwrow ul { margin: 4px 0 8px; padding-left: 18px; font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.dc-rp-ok td { color: var(--muted); }

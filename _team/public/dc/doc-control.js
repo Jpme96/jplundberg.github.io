@@ -236,17 +236,32 @@
   function teamBlob(id) { var f = HOST && HOST.fget && fileRec(id); if (!f || !f.tf) return Promise.resolve(null); return HOST.fget(f.tf, f.name, mime(f.name)).then(function (file) { if (file) putBlobLocal(id, file); return file || null; }).catch(function () { return null; }); }
   function tfIn(p, id) { var f = ((p || {}).files || []).filter(function (x) { return x.id === id; })[0]; return f && f.tf; }
   function dropFile(id, tf) { delBlob(id); if (tf && HOST && HOST.fdel) HOST.fdel(tf); }
-  var SHQ = {}, SHN = {}, shBusy = false, shList = [];
+  var SHQ = {}, SHN = {}, SHT = {}, SHR = {}, shBusy = false, shList = [];   /* SHT: what this device sent up (put back if a sync drops it); SHR: tries per file */
   function shareUp(pid, ids) {
     if (!HOST || !HOST.fup) return; ids.forEach(function (id) { if (!SHQ[id]) { SHQ[id] = 1; shList.push([pid, id]); SHN[pid] = (SHN[pid] || 0) + 1; } }); if (shBusy) return; shBusy = true;
     (function next() { var it = shList.shift(); if (!it) { shBusy = false; draw(); return; }
       var pid0 = it[0], id0 = it[1], done = function () { SHN[pid0] = Math.max(0, (SHN[pid0] || 1) - 1); next(); };
-      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl).then(function (tf) { if (tf) saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
-        .catch(function () { delete SHQ[id0]; }).then(done); })();
+      var retry = function () { delete SHQ[id0]; SHR[id0] = (SHR[id0] || 0) + 1; if (SHR[id0] <= 3) setTimeout(function () { shareUp(pid0, [id0]); }, 4000 * SHR[id0]); };   /* a failed upload is tried again (a busy line), three times */
+      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl).then(function (tf) { if (!tf) { retry(); return; } SHT[id0] = tf; saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
+        .catch(retry).then(done); })();
     draw();
   }
+  var dwOpen = false;
+  function dwBox(p) {
+    var st = dwStats(p); if (!st.n) return ''; var cur = dwOf(p), home = dwHome(p), ask = !cur && st.pdf.length;
+    var row = function (key, label, cls) { var L = st[key]; if (!L.length) return ''; return '<details class="dc-dwrow"><summary><span class="stt ' + cls + '">' + esc(label) + '</span><b class="tnum">' + L.length + '</b></summary><ul>' + L.map(function (x) { return '<li data-noi18n>' + esc(x.n) + '</li>'; }).join('') + '</ul></details>'; };
+    var need = { pdf: cur && cur !== 'pdf', dwg: cur && cur !== 'dwg' };
+    return '<section class="dc-dwbox" aria-label="' + esc(k('ui.dc-dw-t', 'Drawings')) + '"><div class="dc-dwh"><b>' + esc(k('ui.dc-dw-t', 'Drawings')) + ' <span class="tnum">' + st.n + '</span></b><span class="muted">' + esc(k('ui.dc-dw-krav', 'Required: {r}', { r: cur ? dwName(cur) : dwName('both') + ' (' + k('ui.dc-dw-assumed', 'assumed') + ')' })) + '</span>' +
+      (can('edit', gOf(home[1], home[0])) ? '<button type="button" class="text-btn" data-dcdwo>' + esc(k('ui.dcn-change', 'Change')) + '</button>' : '') + '</div>' +
+      (dwOpen ? dwPick(home[1], home[0]) : '') +
+      (ask && !dwOpen && can('edit', gOf(home[1], home[0])) ? '<div class="dc-dwask"><span>' + esc(k('ui.dc-dw-ask', 'Should the drawings also be delivered as DWG?')) + '</span><button type="button" class="dc-chip" data-dcdw="' + home[0] + '|' + esc(home[1].id) + '|both">' + esc(k('ui.dc-dw-yes', 'Yes')) + '</button><button type="button" class="dc-chip" data-dcdw="' + home[0] + '|' + esc(home[1].id) + '|pdf">' + esc(k('ui.dc-dw-no', 'No, only PDF')) + '</button></div>' : '') +
+      row('both', k('ui.dc-dw-n-both', 'Both PDF and DWG'), 'stt-ok') + row('pdf', k('ui.dc-dw-n-pdf', 'Only PDF – DWG missing'), need.pdf ? 'stt-bad' : cur === 'pdf' ? 'stt-ok' : 'stt-soon') + row('dwg', k('ui.dc-dw-n-dwg', 'Only DWG – PDF missing'), need.dwg ? 'stt-bad' : cur === 'dwg' ? 'stt-ok' : 'stt-soon') + '</section>';
+  }
   var SHC = {};   /* checked once a session: a file this device doesn't have isn't looked for again on every redraw */
-  function shareMissing(p) { if (!HOST || !HOST.fup) return; var L = (p.files || []).filter(function (f) { return !f.nf && !f.tf && !SHQ[f.id] && !SHC[f.id]; }); if (!L.length) return; L.forEach(function (f) { SHC[f.id] = 1; });
+  function shareMissing(p) { if (!HOST || !HOST.fup) return;
+    var back = (p.files || []).filter(function (f) { return !f.tf && SHT[f.id]; });   /* sent up, but a sync arriving at the same moment dropped the note – put it back, no new upload */
+    if (back.length) saveP(p.id, function (q) { (q.files || []).forEach(function (f) { if (!f.tf && SHT[f.id]) f.tf = SHT[f.id]; }); });
+    var L = (p.files || []).filter(function (f) { return !f.nf && !f.tf && !SHT[f.id] && !SHQ[f.id] && !SHC[f.id]; }); if (!L.length) return; L.forEach(function (f) { SHC[f.id] = 1; });
     Promise.all(L.map(function (f) { return getBlobLocal(f.id).then(function (b) { return b ? f.id : null; }); })).then(function (ids) { ids = ids.filter(Boolean); if (ids.length) shareUp(p.id, ids); }); }
   function putBlobLocal(id, b) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('files', 'readwrite'); t.objectStore('files').put(b, id); t.oncomplete = function () { res(true); }; t.onerror = t.onabort = function () { res(false); }; }); }).catch(function () { return false; }); }
   function getBlobLocal(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
@@ -314,6 +329,21 @@
      a project is a control project (dctl) with its requirements (dckrav, linked by `krav`), or requirements not started yet.
      Nothing is copied or joined in the data – the list and the steps read both. One-off tools sit on top. ---------- */
   function kravOf(p) { return p && p.krav ? krav(p.krav) : null; }
+  /* What the drawings are delivered as (JP 2026-11-24): 'both' (PDF and DWG – Boligbygg's rule), 'pdf' or 'dwg'. Kept on the requirements
+     (it is a requirement and goes to the contractor with them), on the project when it has none; '' = not chosen yet – works as 'both',
+     but nothing is counted as something to put right until it is chosen. */
+  function dwOf(x) { var r = x && x.krav ? kravOf(x) : null; return (r && r.dw) || (x && x.dw) || ''; }
+  function dwName(v) { return v === 'pdf' ? k('ui.dc-dw-pdf', 'Only PDF') : v === 'dwg' ? k('ui.dc-dw-dwg', 'Only DWG') : k('ui.dc-dw-both', 'PDF and DWG'); }
+  function dwHome(p) { var r = kravOf(p); return r ? ['dckrav', r] : ['dctl', p]; }   /* where a project's setting is kept */
+  function dwPick(x, key) {
+    var cur = key === 'dckrav' ? x.dw || '' : dwOf(x), ed = can('edit', gOf(x, key));
+    return '<div class="dc-dwreq"><span class="dc-dwl">' + esc(k('ui.dc-dw-req', 'Drawings are delivered as')) + '</span>' + (ed ? '<span class="dc-dwbtns" role="group">' + ['both', 'pdf', 'dwg'].map(function (v) { return '<button type="button" class="dc-chip" aria-pressed="' + (cur === v) + '" data-dcdw="' + key + '|' + esc(x.id) + '|' + v + '">' + esc(dwName(v)) + '</button>'; }).join('') + '</span>'
+      : '<b>' + esc(cur ? dwName(cur) : dwName('both')) + '</b>') + (cur ? '' : '<small class="muted">' + esc(k('ui.dc-dw-unset', 'Not chosen yet – PDF and DWG is assumed')) + '</small>') + '</div>';
+  }
+  /* the drawings of a project, by name without the file type: delivered as both, only as PDF, only as DWG */
+  function isDrawFile(f) { var stem = String(f.name).replace(/\.[a-z0-9]{2,5}$/i, ''); return TEG.test(stem) || /^\d{4,6}-/.test(stem) || (f.p && f.p.kind === 'drawing') || f.nk === 'drawing'; }
+  function dwStats(p) { var by = {}; (p.files || []).forEach(function (f) { if (f.nf) return; var m = String(f.name).match(/^(.*)\.(pdf|dwg)$/i); if (!m || !isDrawFile(f)) return; var s0 = m[1].toLowerCase(); (by[s0] = by[s0] || { n: m[1], f: [] })[m[2].toLowerCase()] = 1; by[s0].f.push(f); });
+    var o = { both: [], pdf: [], dwg: [] }; Object.keys(by).forEach(function (s0) { var x = by[s0]; o[x.pdf && x.dwg ? 'both' : x.pdf ? 'pdf' : 'dwg'].push(x); }); o.n = o.both.length + o.pdf.length + o.dwg.length; return o; }
   function ctlOf(r) { return r ? projects().filter(function (x) { return x && x.krav === r.id; })[0] || null : null; }
   function steps(cur, r, p) {
     var c = p ? counts(p.lines || []) : null, S = [
@@ -549,7 +579,8 @@
   }
   /* what the project manager needs at the end: everything that is not in order, and why */
   function flowIssues(p) {
-    var L = p.lines || [], F = {}, out = [], r = kravOf(p); (p.files || []).forEach(function (f) { F[f.id] = f; });
+    var L = p.lines || [], F = {}, out = [], r = kravOf(p), dwc = dwOf(p), ds = dwc ? dwStats(p) : null;
+    if (ds) [['pdf', dwc !== 'pdf', 'ui.dc-fl-nodwg', 'DWG missing'], ['dwg', dwc !== 'dwg', 'ui.dc-fl-nopdf', 'PDF missing']].forEach(function (q) { if (!q[1]) return; ds[q[0]].forEach(function (x) { var f = x.f[0], l = f.line && lineOf(p, f.line); out.push({ l: l || { code: (f.p && f.p.code) || '–', sys: '', t: 'K' }, kind: 'wa', what: k(q[2], q[3]), why: k('ui.dc-fl-dw-why', '{f} – required: {r}', { f: x.n, r: dwName(dwc) }) }); }); }); (p.files || []).forEach(function (f) { F[f.id] = f; });
     var inKrav = function (l) { return r && (r.lines || []).some(function (q) { return String(q.code).slice(0, 3) === String(l.code).slice(0, 3) && String(q.t || '').indexOf((l.t || '').charAt(0)) >= 0; }); };
     L.forEach(function (l) {
       var fs = (l.files || []).map(function (id) { return F[id]; }).filter(Boolean);
@@ -592,6 +623,7 @@
     var h = '<h3 class="fdv-h">' + esc(k('ui.dc-fl-krav-t', 'What the project requires')) + '</h3>';
     if (r) h += '<p class="muted dc-help">' + esc(k('ui.dc-fl-krav-h', 'The yardstick everything is checked against: the document types per NS code.')) + '</p><ul class="dc-flist2">' + byCode(r.lines || []).map(function (q) { return flowRow(q[0], q[1], q[2].map(function (l) { return typeLabel(l); }).filter(Boolean).join(' · ')); }).join('') + '</ul><p><button type="button" class="text-btn" data-dxkrav="' + esc(r.id) + '"><i class="bi bi-pencil"></i> ' + esc(k('ui.dc-fl-krav-open', 'Open the requirements')) + '</button></p>';
     else h += '<p class="muted dc-help">' + esc(req() ? k('ui.dc-fl-krav-req', 'No requirements made for this project – the plan is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none', 'No requirements made for this project. Make them under Documentation → New project, or import the client’s checklist.')) + '</p>';
+    h += dwPick(r || p, r ? 'dckrav' : 'dctl');
     return h + fnext('plan', k('ui.dc-fl-next-plan', 'Next: document plan')) + '<div class="dc-fproj">' + projBox(p) + '</div>';
   }
   function flowPlan(p, pc) {
@@ -802,6 +834,7 @@
     if (HOST && HOST.fup) { setTimeout(function () { shareMissing(p); }, 0); if (SHN[p.id]) h += '<p class="dc-sharing" role="status"><i class="bi bi-cloud-arrow-up"></i> ' + esc(k('ui.dc-sharing', 'Sharing {n} files with the team …', { n: SHN[p.id] })) + '</p>'; }
     /* the same content more than once in the project: a bar to check them, as in the rename tool (JP 2026-11-24) */
     var DGp = dupGroups(p.id), dnp = DGp.reduce(function (a, g) { return a + g.length; }, 0);
+    h += dwBox(p);
     if (DGp.length) h += '<div class="dx-dupbar" role="status"><i class="bi bi-files"></i><span>' + esc(k('ui.dx-dup-bar', '{n} files are here more than once (same content) – {g} groups to check', { n: dnp, g: DGp.length })) + '</span><button type="button" class="pill-btn sm" data-dxdups="' + esc(p.id) + '">' + esc(k('ui.dx-dup-go', 'Check them')) + '</button></div>';
     /* files just uploaded (by you or someone in the team): named like in "Give files the right names" – suggestions, then Use (JP 2026-11-24) */
     var NW = HOST && !namingOn() ? F.filter(function (f) { return f.nw; }) : [];   /* Team; in /cmd with the new naming the whole list is already this view */
@@ -858,6 +891,8 @@
     var h = '<header class="rp-head"><div><p class="rp-kick">' + esc(k('ui.doc-control', 'Document control')) + (p.trade ? ' · ' + esc(p.trade) : '') + '</p><h1>' + esc(p.name) + '</h1></div></header>' +
       '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-due', 'Deadline'), fmt(p.due)], [k('ui.date', 'Date'), fmt(today())], [k('ui.dc-checked-by', 'Checked by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-plan', 'Document plan'), p.planName]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
     h += '<h2>1 ' + esc(k('ui.dc-summary', 'Summary')) + '</h2><p>' + esc(k('ui.dc-summary-text', '{d} of {n} documents are approved or not relevant ({pc} %). Missing: {m}. Received, not yet checked: {r}. Not approved: {x}.', { d: c.done, n: c.all, pc: c.all ? Math.round(c.done / c.all * 100) : 0, m: c.missing, r: c.recv, x: c.rej })) + '</p>';
+    var dst = dwStats(p), dwc = dwOf(p);
+    if (dst.n) h += '<p>' + esc(k('ui.dc-rp-dw', 'Drawings: {b} of {n} delivered as PDF and DWG · only PDF: {p} · only DWG: {d}. Required: {r}.', { b: dst.both.length, n: dst.n, p: dst.pdf.length, d: dst.dwg.length, r: dwc ? dwName(dwc) : dwName('both') + ' (' + k('ui.dc-dw-assumed', 'assumed') + ')' })) + '</p>';
     var nc = function (v) { return '<td class="n">' + v + '</td>'; };
     h += '<table class="rp-grid dc-sumt"><thead><tr><th>NS 3451</th><th class="n">' + esc(k('ui.dc-documents', 'Documents')) + '</th><th class="n">' + esc(k('ui.dc-approved', 'Approved')) + '</th><th class="n">' + esc(stName('missing')) + '</th></tr></thead><tbody>' +
       byGroup(L).map(function (g) { var x = counts(g[1]); return '<tr><td>' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</td>' + nc(x.all) + nc(x.done) + nc(x.missing) + '</tr>'; }).join('') +
@@ -869,8 +904,17 @@
       byCode(miss).map(function (c) { return '<tr class="dr-crow"><td colspan="' + (dw ? 4 : 2) + '"><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</td></tr>' + c[2].map(function (l) { return '<tr><td>' + esc(typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + '</td><td>' + esc(l.planned && !l.ex ? l.planned : '') + '</td>' + (dw ? '<td' + (overdue(l) ? ' class="dc-late"' : '') + '>' + esc(dfmt(l)) + '</td><td>' + esc(l.who || '') + '</td>' : '') + '</tr>'; }).join(''); }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-missing', 'Nothing is missing.')) + '</p>');
     h += '<h2>3 ' + esc(k('ui.dc-with-comments', 'Not approved and comments')) + '</h2>' + (back.length ? '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-code', 'Code')) + '</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.status', 'Status')) + '</th><th>' + esc(k('ui.dc-comment', 'Comment')) + '</th></tr></thead><tbody>' +
       back.map(function (l) { return '<tr><td>' + esc(l.code) + '</td><td>' + esc(lineTitle(l) + ' · ' + typeLabel(l)) + '</td><td>' + esc(stName(l.st)) + '</td><td>' + esc(l.cmt || '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-none-comments', 'No comments.')) + '</p>');
-    h += '<h2>4 ' + esc(k('ui.dc-naming', 'File names')) + '</h2>' + (badF.length || looseF.length ? '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-file', 'File')) + '</th><th>' + esc(k('ui.dc-problem', 'Problem')) + '</th></tr></thead><tbody>' +
-      badF.concat(looseF.filter(function (f) { return !(f.iss || []).length; })).map(function (f) { return '<tr><td>' + esc(f.name) + '</td><td>' + esc((f.iss || []).map(function (x) { return issueText(x, f); }).concat(f.line ? [] : [k('ui.dc-not-in-plan-short', 'Not in the document plan')]).join('; ')) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-names-ok', 'All file names follow the rules.')) + '</p>');
+    /* 4 File names (JP 2026-11-24): every delivered file with its status – what needs putting right first, then notes, then OK – so the list
+       is complete; a note (a warning, like a drawing without its DWG) is "Note", an error is "Error" */
+    var fst = function (f) { var I = f.iss || [], er = I.filter(function (x) { return x[0] === 'err'; }), wa = I.filter(function (x) { return x[0] !== 'err'; }), out = [];
+      if (er.length) out.push(k('ui.dc-rp-err', 'Error') + ': ' + er.map(function (x) { return issueText(x, f); }).join('; '));
+      var notes = wa.map(function (x) { return issueText(x, f); }).concat(f.line || !L.length ? [] : [k('ui.dc-not-in-plan-short', 'Not in the document plan')]);   /* no plan, no lines: nothing to be outside of */
+      if (notes.length) out.push(k('ui.dc-rp-note', 'Note') + ': ' + notes.join('; '));
+      return { r: er.length ? 0 : notes.length ? 1 : 2, t: out.join(' · ') || k('ui.dc-rp-ok', 'OK') }; };
+    var FR = F.filter(function (f) { return !f.nf || f.line; }).map(function (f) { return { f: f, s: fst(f) }; }).sort(function (a, b) { return a.s.r - b.s.r || String(a.f.name).localeCompare(String(b.f.name), 'nb'); });
+    h += '<h2>4 ' + esc(k('ui.dc-naming', 'File names')) + '</h2>' + (FR.length ? '<p>' + esc(k('ui.dc-rp-files', '{n} files delivered – {e} with errors, {w} with notes, {o} OK.', { n: FR.length, e: FR.filter(function (x) { return !x.s.r; }).length, w: FR.filter(function (x) { return x.s.r === 1; }).length, o: FR.filter(function (x) { return x.s.r === 2; }).length })) + '</p>' +
+      '<table class="rp-grid dc-rt"><thead><tr><th>' + esc(k('ui.dc-file', 'File')) + '</th><th>' + esc(k('ui.status', 'Status')) + '</th></tr></thead><tbody>' +
+      FR.map(function (x) { return '<tr' + (x.s.r === 2 ? ' class="dc-rp-ok"' : '') + '><td>' + esc(x.f.name) + '</td><td>' + esc(x.s.t) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-rp-nofiles', 'No files delivered yet.')) + '</p>');
     return h;
   }
   function reportTab(p) {
@@ -1286,6 +1330,7 @@
       '<div class="fdv-title"><h2 data-noi18n>' + esc(p.name) + '</h2><small data-noi18n>' + esc([p.no, siteLine(p), p.type, L.length ? k('ui.dc-pick-count', '{c} systems · {n} documents', { c: Object.keys(sys).length, n: L.length }) : ''].filter(Boolean).join(' · ')) + '</small></div></div>' + steps('krav', p, ctlOf(p)) + '<div class="fdv-body">';
     if (rpicking || !L.length) return h + picker(p, 'req') + '</div></div>';
     if (L.some(function (l) { return !l.t && defTypes(l.code) && !/^1/.test(l.code); })) h += '<p class="dc-note dr-fillnote"><i class="bi bi-info-circle"></i> ' + esc(k('ui.dr-fill-help', 'Some systems have no document types yet.')) + ' <button type="button" class="text-btn" data-drfill>' + esc(k('ui.dr-fill', 'Fill in the document types')) + '</button></p>';
+    h += dwPick(p, 'dckrav');
     h += '<div class="dc-facts">' + (can('send', gOf(p, 'dckrav')) ? '<button type="button" class="pill-btn dx-pri" data-drsend><i class="bi bi-send"></i> ' + esc(p.sent && p.sent.key !== linesKey(p) ? k('ui.dx-send-again', 'Send again') : k('ui.dx-send', 'Send to the contractor')) + '</button>' : '') +
       '<button type="button" class="pill-btn" data-drstart><i class="bi bi-arrow-right"></i> ' + esc(ctlOf(p) ? k('ui.dx-to-mot', 'To Received') : k('ui.dx-start-mot', 'Next: Received')) + '</button></div>';
     h += rsend ? sendForm(p) : '';
@@ -1315,7 +1360,7 @@
   function kravReport(p) {
     var me = profile(), L = p.lines || [];
     var h = '<header class="rp-head"><div><p class="rp-kick">' + esc(k('ui.doc-req', 'Document requirements')) + (p.type ? ' · ' + esc(p.type) : '') + '</p><h1>' + esc(p.name) + '</h1></div></header>' +
-      '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.date', 'Date'), fmt(today())], [k('ui.dr-by', 'Made by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-documents', 'Documents'), String(L.length)]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.date', 'Date'), fmt(today())], [k('ui.dr-by', 'Made by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-documents', 'Documents'), String(L.length)], [k('ui.dc-dw-req', 'Drawings are delivered as'), dwName(p.dw || 'both')]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<p>' + esc(k('ui.dr-intro', 'The documentation to be delivered for FDV (forvaltning, drift og vedlikehold), with the document types of NS 3456 for each system after NS 3451. Name each file with the 3-digit code, a document code and a describing text.')) + '</p>';
     h += byGroup(L).map(function (g) {
       return '<h2>' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + '</h2><table class="rp-grid dc-rt dr-rt"><thead><tr><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-should-contain', 'Should contain')) + '</th></tr></thead><tbody>' +
@@ -1774,9 +1819,9 @@
     F.forEach(function (f) { var m = String(f.name).match(/^(.*)\.([a-z0-9]{2,5})$/i); if (!m) return; (by[m[1].toLowerCase()] = by[m[1].toLowerCase()] || {})[m[2].toLowerCase()] = 1; });
     F.forEach(function (f) {
       if (f.nf) return; var m = String(f.name).match(/^(.*)\.([a-z0-9]{2,5})$/i); f.iss = (f.iss || []).filter(function (x) { return PAIR.indexOf(x[1]) < 0; }); if (!m) return;
-      var stem = m[1], ext = m[2].toLowerCase(), set = by[stem.toLowerCase()] || {}, drawing = TEG.test(stem) || /^\d{4,6}-/.test(stem);
-      if (drawing && ext === 'pdf' && !set.dwg) f.iss.push(['warn', 'nodwg']);
-      else if (drawing && ext === 'dwg' && !set.pdf) f.iss.push(['warn', 'nopdf']);
+      var stem = m[1], ext = m[2].toLowerCase(), set = by[stem.toLowerCase()] || {}, drawing = isDrawFile(f), dw = dwOf(p);
+      if (drawing && ext === 'pdf' && !set.dwg) { if (dw !== 'pdf') f.iss.push(['warn', 'nodwg']); }   /* only PDF asked for: no note (JP 2026-11-24) */
+      else if (drawing && ext === 'dwg' && !set.pdf) { if (dw !== 'dwg') f.iss.push(['warn', 'nopdf']); }
       else if (!drawing && /^(docx?|xlsx?|xlsm|odt|ods|rtf|txt|msg|eml)$/.test(ext)) f.iss.push(['warn', 'notpdf']);
     });
   }
@@ -1964,6 +2009,10 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
+    if (t.closest('[data-dcdwo]')) { dwOpen = !dwOpen; draw(); return; }
+    if ((b = t.closest('[data-dcdw]'))) { var dq = b.dataset.dcdw.split('|'), dkey = dq[0] === 'dckrav' ? 'dckrav' : 'dctl', did = dq[1], dv = dq[2];
+      saveP(did, function (x) { x.dw = dv; }, dkey); (Fe.tools().dctl || []).filter(function (q) { return q.id === did || q.krav === did; }).forEach(function (q) { saveP(q.id, function (x) { pairs(x); }); });
+      dwOpen = false; draw(); return; }
     if ((b = t.closest('[data-dxdups]'))) { dupPop(0, b.dataset.dxdups || null); return; }
     if (t.closest('[data-dxplanadd]')) { renDrop({ label: k('ui.dx-t-plans', 'Document plans'), title: k('ui.dx-pl-drop-t', 'Add document plans'), here: k('ui.dx-pl-drop-here', 'Drop the document plans here'), accept: '.xlsx,.xlsm', help: k('ui.dx-pl-drop-help', 'Excel files (.xlsx) – as many as you like. Each is checked against the client’s checklist and kept until it is deleted.'), take: function (fl) { plAdd(fl.filter(function (f) { return /\.xls[xm]$/i.test(f.name); })); } }); return; }
     if ((b = t.closest('[data-dxplopen]'))) { plOpen(b.dataset.dxplopen); return; }
