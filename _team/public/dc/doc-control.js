@@ -322,6 +322,7 @@
   /* the tool's own rules, codes and building number stay on this device between visits (localStorage – no files, no names of files) */
   var TKEY = 'dcn.tool';
   function toolKeep() { var p = TOOL.p; try { localStorage.setItem(TKEY, JSON.stringify({ nrules: p.nrules, nuse: p.nuse, ncodes: p.ncodes, bid: p.bid, pid: p.pid, pname: p.pname, no: p.no })); } catch (e) {} }
+  function fdate(b) { var t = b && b.lastModified; if (!t) return undefined; var d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }   /* a file's own date, kept for a photo's name (JP 2026-11-24) */
   function toolP() { if (!TOOL.p) { var st = {}; try { st = JSON.parse(localStorage.getItem(TKEY) || '{}') || {}; } catch (e) {}
     var R = [], seen = {}, C = {}; (st.nrules || []).concat.apply(st.nrules || [], projects().map(function (p) { return p.nrules || []; })).forEach(function (r) { if (r && r.id && !seen[r.id]) { seen[r.id] = 1; R.push(JSON.parse(JSON.stringify(r))); } });
     [st].concat(projects()).forEach(function (p) { Object.keys(p.ncodes || {}).forEach(function (key) { C[key] = C[key] || []; (p.ncodes[key] || []).forEach(function (y) { if (y && y[0] && !C[key].some(function (z) { return z[0] === y[0]; })) C[key].push([y[0], y[1] || '']); }); }); });
@@ -415,7 +416,7 @@
       /* the content decides (JP 2026-11-19): the very same file added again (same name, same content) is skipped; files with the same content but another name stay, marked for a person to check */
       var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.h || f.size)] = 1; });
       got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + (g.h || g.size); if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4);
-        TOOL.blobs[id] = g.blob; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
+        TOOL.blobs[id] = g.blob; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, lm: fdate(g.blob), h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
       draw(); var N = naming(); if (N) N.suggestAll('__ren').then(function () { draw(); });
     });
   }
@@ -750,6 +751,7 @@
     var L0 = HOST && HOST.uplinks ? HOST.uplinks(p.id) : []; if (!L0.length) return '';
     return '<ul class="dc-uplinks">' + L0.map(function (x) { return '<li><i class="bi bi-link-45deg"></i><span>' + esc(k('ui.dc-link-live', 'Link sent – works until {d}', { d: fmt(x.exp) })) + '</span><button type="button" class="text-btn" data-dcupoff="' + esc(x.id) + '">' + esc(k('ui.dc-link-off', 'Switch off')) + '</button></li>'; }).join('') + '</ul>';
   }
+  var FRESH_SG = {};
   function files(p) {
     /* one question instead of three equal buttons (JP 2026-11-23 "this part is the confusing part"): you have the files, or the
        documentation is already in the FDV system and only the names are needed; once files are in, just small links to add more */
@@ -772,8 +774,13 @@
     if (!F.length) return h;
     /* files just uploaded (by you or someone in the team): named like in "Give files the right names" – suggestions, then Use (JP 2026-11-24) */
     var NW = HOST && !namingOn() ? F.filter(function (f) { return f.nw; }) : [];   /* Team; in /cmd with the new naming the whole list is already this view */
-    if (NW.length) { var N0 = naming(); h += '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small></span>' +
-      '<button type="button" class="pill-btn" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>'; }
+    if (NW.length) { var N0 = naming();
+      /* suggestions come by themselves for files that haven't had them yet (JP 2026-11-24) – once per file on this device */
+      if (N0) { var sgo = NW.filter(function (f) { return !FRESH_SG[f.id]; }).map(function (f) { FRESH_SG[f.id] = 1; return f.id; }); if (sgo.length) setTimeout(function () { N0.suggestAll(p.id, sgo); }, 0); }
+      var nDone = N0 ? NW.filter(function (f) { return N0.ready(p, f) && N0.newName(p, f) === f.name; }).length : 0, allDone = nDone === NW.length;
+      h += '<section class="dc-fresh"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-fresh-h', 'Give the new files the right names')) + '</b><small>' + esc(k(NW.length === 1 ? 'ui.dc-fresh-s1' : 'ui.dc-fresh-s', NW.length === 1 ? '1 file just uploaded – check the suggested name and use it' : '{n} files just uploaded – check the suggested names and use them', { n: NW.length })) + '</small>' +
+        '<small class="dc-freshp' + (allDone ? ' ok' : '') + '">' + esc(k('ui.dc-fresh-p', '{d} of {n} have their new name', { d: nDone, n: NW.length })) + '</small></span>' +
+        '<button type="button" class="' + (allDone ? 'pill-btn' : 'dc-chip') + '" data-dcfreshok="' + esc(p.id) + '"><i class="bi bi-check2"></i> ' + esc(k('ui.done', 'Done')) + '</button></div>' + (N0 ? N0.files(p, NW) : '<p class="muted">' + esc(k('ui.dcn-loading', 'Loading the new file naming …')) + '</p>') + '</section>'; }
     var rank = function (f) { return !f.line ? 0 : (f.iss || []).length ? 1 : 2; };
     F.sort(function (a, b) { return rank(a) - rank(b) || (a.name < b.name ? -1 : 1); });
     var u = F.filter(function (f) { return !f.line; }).length, bad = F.filter(function (f) { return (f.iss || []).length; }).length;
@@ -801,7 +808,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '1f71beeee4';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '308f5ae3b1';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
@@ -1764,7 +1771,7 @@
     }, Promise.resolve()).then(function () {
       var p0 = proj(id); if (!p0) return;
       var have = {}; (p0.files || []).forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.nf ? 0 : f.size)] = 1; });
-      var add = got.filter(function (g) { var key = g.name.toLowerCase() + '|' + g.size; if (have[key]) return false; have[key] = 1; return true; }).map(function (g) { var pn = parseName(g.name); return { id: uid() + Math.random().toString(36).slice(2, 4), name: g.name.slice(0, 160), path: (g.path || '').slice(0, 160), size: g.size, at: today(), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues, blob: g.blob, nf: g.nf || undefined }; });
+      var add = got.filter(function (g) { var key = g.name.toLowerCase() + '|' + g.size; if (have[key]) return false; have[key] = 1; return true; }).map(function (g) { var pn = parseName(g.name); return { id: uid() + Math.random().toString(36).slice(2, 4), name: g.name.slice(0, 160), path: (g.path || '').slice(0, 160), size: g.size, at: today(), lm: fdate(g.blob), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues, blob: g.blob, nf: g.nf || undefined }; });
       return add.reduce(function (pr, f) { return pr.then(function () { if (f.blob) return putBlob(f.id, f.blob); }); }, Promise.resolve()).then(function () {
         var matched = 0;
         saveP(id, function (p) {

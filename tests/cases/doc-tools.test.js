@@ -61,18 +61,22 @@ fs.writeFileSync(lone, '%PDF made up 4');
     return { f, spread, together: Math.max(...Object.values(rows).map(b => b.length)) }; });
   check(al.together >= 2 && al.spread <= 2, 'the boxes in a drawing row are on one line ' + JSON.stringify(al));
   /* the new name and Use this name sit level (JP 2026-11-23 "not properly lined") */
-  const lv = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), c = li.querySelector('.dcn-sug code'), bt = li.querySelector('[data-dcnuse]'); if (!c || !bt) return null; const a = c.getBoundingClientRect(), b = bt.getBoundingClientRect(); return { dBottom: Math.round(Math.abs(a.bottom - b.bottom)), sameRow: b.top < a.bottom, ha: Math.round(a.height), hb: Math.round(b.height) }; });
+  const lv = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), c = li.querySelector('.dcn-sug code'), bt = li.querySelector('[data-dcnuse], [data-dcnfill]'); if (!c || !bt) return null; const a = c.getBoundingClientRect(), b = bt.getBoundingClientRect(); return { dBottom: Math.round(Math.abs(a.bottom - b.bottom)), sameRow: b.top < a.bottom, ha: Math.round(a.height), hb: Math.round(b.height) }; });
   check(lv && lv.sameRow && lv.dBottom <= 2, 'the new name and Use this name are level ' + JSON.stringify(lv));
   await p.setViewport(vp0); await sl(400);
   await p.evaluate(() => { const b = document.querySelector('[data-dcnbid]'); b.value = '11621'; b.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(200);
   check(await p.evaluate(async () => /^11621-/.test((await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent)), 'the building number for drawings is filled in once for all of them');
-  /* and it can be changed again afterwards (JP 2026-11-23: "my building locked itself, I cannot change it") */
-  const bn = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), b = li.querySelector('[data-dcnbid]'); if (!b) return { box: false };
+  /* and it can be changed again afterwards (JP 2026-11-23: "my building locked itself, I cannot change it") – once set it is on the
+     "Shared by all the files" line, Change opens it (JP 2026-11-24), and the file's card no longer asks for it */
+  const bn = await p.evaluate(async () => { const inRow = !!(await R(/Rørplan sprinkler/)).querySelector('[data-dcnbid]'); document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); await new Promise(r => setTimeout(r, 200));
+    const line = document.querySelector('.dx-ren .dcn-shared'), txt = line ? line.textContent : ''; if (!line) return { box: false, inRow };
+    line.querySelector('[data-dcnpvo]').click(); await new Promise(r => setTimeout(r, 250)); const b = document.querySelector('.dx-ren .dcn-pvbox [data-dcnbid]'); if (!b) return { box: false, inRow, txt };
     const was = b.value; b.value = '22222'; b.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 250));
-    const now = (await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent;
-    const b2 = (await R(/Rørplan sprinkler/)).querySelector('[data-dcnbid]'); b2.value = '11621'; b2.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 250));
-    return { box: true, was, now }; });
-  check(bn.box && bn.was === '11621' && /^22222-/.test(bn.now), 'the building number stays in the row and can be changed ' + JSON.stringify(bn));
+    const now = (await R(/Rørplan sprinkler/)).querySelector('.dcn-sug code').textContent; document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); await new Promise(r => setTimeout(r, 200));
+    const b2 = document.querySelector('.dx-ren .dcn-pvbox [data-dcnbid]'); b2.value = '11621'; b2.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 250));
+    const done = document.querySelector('.dx-ren .dcn-pvbox [data-dcnpvo]'); done && done.click(); await new Promise(r => setTimeout(r, 200));
+    return { box: true, inRow, txt, was, now, folded: !document.querySelector('.dx-ren .dcn-pvbox') && !!document.querySelector('.dx-ren .dcn-shared') }; });
+  check(bn.box && !bn.inRow && /11621/.test(bn.txt) && bn.was === '11621' && /^22222-/.test(bn.now) && bn.folded, 'the building number is on the shared line once set, Change opens it, it can be changed, Done folds it again ' + JSON.stringify(bn));
   /* the PDF viewer zooms inside the PDF, not the whole page (JP 2026-11-23) */
   const zv = await p.evaluate(async () => {
     await new Promise((ok, no) => { if (window.jspdf) return ok(); const sc = document.createElement('script'); sc.src = '/cmd/vendor/jspdf.umd.min.js?v=2.5.2'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
@@ -172,8 +176,8 @@ fs.writeFileSync(lone, '%PDF made up 4');
     const t2 = await p.evaluate(async () => { const li = (await R(/MADEUP/)), ty = li.querySelector('[data-dcntype]'), lr = li.getBoundingClientRect();
     const out = [...li.querySelectorAll('input, select, button, label')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > lr.right + 1 || r.left < lr.left - 1); }).map(e => e.tagName + '.' + e.className);
     const n = li.querySelector('.dcn-s .dcn-n'), d = li.querySelector('[data-dcnv$=":desc"]');
-    return { typeOn: !!ty && !ty.disabled && ty.options.length > 5, code: (li.querySelector('[data-dcncode]') || {}).value, desc: d ? d.value : '', out, nameDown: !!n && !!n.querySelector('.dcn-open') && !li.querySelector('.dcn-g [data-dcview]'), first: li.querySelector('.dcn-g > *').classList.contains('dcn-kind') }; });
-  check(tz && t2.typeOn && !/^71/.test(t2.code) && !/¤/.test(t2.desc) && t2.out.length === 0 && t2.nameDown && t2.first, 'a ¤ name: no 2-digit code, words split; the type can be picked before the code; nothing sticks out; kind first; the name sits lower with its own Open button ' + JSON.stringify(t2));
+    return { typeOn: !!ty && !ty.disabled && ty.options.length > 5, code: (li.querySelector('[data-dcncode]') || {}).value, desc: d ? d.value : '', out, nameDown: !n && !!li.querySelector('.dcn-head .dcn-open, .dcn-sumb') && !li.querySelector('.dcn-g [data-dcview]'), first: li.querySelector('.dcn-g > *').classList.contains('dcn-kind') }; });
+  check(tz && t2.typeOn && !/^71/.test(t2.code) && !/¤/.test(t2.desc) && t2.out.length === 0 && t2.nameDown && t2.first, 'a ¤ name: no 2-digit code, words split; the type can be picked before the code; nothing sticks out; kind first; the file’s name and Open are in the card’s head (JP 2026-11-24) ' + JSON.stringify(t2));
   await p.setViewport({ width: 600, height: 900, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }); await sl(400);
   check(await p.evaluate(() => [...document.querySelectorAll('.dcn-fpop .dcn-row')].every(li => { const lr = li.getBoundingClientRect(); return [...li.querySelectorAll('select, input')].every(e => { const r = e.getBoundingClientRect(); return !r.width || r.right <= lr.right + 1; }); })), 'at 600 px (Team’s column) the fields stay inside the row');
   await p.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }); await sl(400);

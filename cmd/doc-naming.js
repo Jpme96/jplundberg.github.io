@@ -71,6 +71,12 @@
   function ruleFor(p, f) { var u = (p.nuse || {})[fkind(f)]; return nrule(p, u) || nrule(p, NDEF[fkind(f)]); }
   function ext(n) { return (String(n).match(/(\.[a-z0-9]{2,5})$/i) || ['', ''])[1].toLowerCase(); }
   function drawn(f) { var m = String(f.orig || f.name).replace(/\.[a-z0-9]{2,5}$/i, '').match(TEG); return m ? { floor: m[2], disc: m[3], dtype: m[5] } : {}; }
+  /* guesses that save typing (JP 2026-11-24): the free text starts as the old file name, a photo's floor as the last one you picked */
+  function lc1(t) { t = String(t || ''); return t.charAt(0).toLowerCase() + t.slice(1); }   /* floor, property ID – the ID keeps its capitals */
+  function freeGuess(f) { var n = String(f.orig || f.name).replace(/\.[a-z0-9]{2,5}$/i, ''); return /^(img|dsc|pxl|photo|image|bilde|untitled|uten navn)[\s_-]*\d*$/i.test(n) ? '' : n.replace(/[_]+/g, ' ').trim().slice(0, 60); }
+  function lastFloor() { try { return localStorage.getItem('dcn.floor') || ''; } catch (e) { return ''; } }
+  /* the day a photo was taken: the earliest EXIF date in its first 256 kB (DateTimeOriginal is never later than an edit date), else the file's own date */
+  function photoDate(blob) { return blob.slice(0, 262144).arrayBuffer().then(function (ab) { var t = new TextDecoder('latin1').decode(new Uint8Array(ab)), rx = /(19|20)(\d{2}):(\d{2}):(\d{2}) \d{2}:\d{2}:\d{2}/g, m, best = ''; while ((m = rx.exec(t))) { var d = m[1] + m[2] + '-' + m[3] + '-' + m[4]; if (+m[3] >= 1 && +m[3] <= 12 && +m[4] >= 1 && +m[4] <= 31 && (!best || d < best)) best = d; } return best; }).catch(function () { return ''; }); }
   function nval(p, f, part) {
     var v = f.nv || {}, d = drawn(f), x;
     switch (part.k) {
@@ -78,9 +84,10 @@
       case 'proj': return p.no || ''; case 'bno': return p.bid || ''; case 'unit': return p.pid || ''; case 'pname': return p.pname || '';
       case 'contractor': return v.contractor != null ? v.contractor : p.who || '';
       case 'desc': return v.desc != null ? v.desc : f.p && f.p.text || '';
-      case 'floor': case 'disc': case 'dtype': return v[part.k] != null ? v[part.k] : d[part.k] || (part.k === 'disc' ? guessDisc(f.p && f.p.code) : part.k === 'dtype' ? guessDtype(f.orig || f.name) : '');
+      case 'floor': case 'disc': case 'dtype': return v[part.k] != null ? v[part.k] : d[part.k] || (part.k === 'disc' ? guessDisc(f.p && f.p.code) : part.k === 'dtype' ? guessDtype(f.orig || f.name) : part.k === 'floor' && fkind(f) === 'photo' ? lastFloor() : '');
+      case 'free': return v.free != null ? v.free : freeGuess(f);
       case 'rev': x = String(v.rev || '').trim(); return x ? 'Rev' + x : '';
-      case 'date': var t = new Date(), y = t.getFullYear(), mo = pad(t.getMonth() + 1), da = pad(t.getDate()); return part.fmt === 'compact' ? '' + y + mo + da : part.fmt === 'no' ? da + '.' + mo + '.' + y : y + '-' + mo + '-' + da;
+      case 'date': var dd = f.dt || (fkind(f) === 'photo' ? f.lm : '') || '', t = /^\d{4}-\d{2}-\d{2}$/.test(dd) ? new Date(dd + 'T12:00:00') : new Date(), y = t.getFullYear(), mo = pad(t.getMonth() + 1), da = pad(t.getDate());   /* the day the photo was taken (or the file's own date) when known (JP 2026-11-24) */ return part.fmt === 'compact' ? '' + y + mo + da : part.fmt === 'no' ? da + '.' + mo + '.' + y : y + '-' + mo + '-' + da;
       case 'run': var n = 0, kd = fkind(f), c = f.p && f.p.code; (p.files || []).some(function (o) { if (fkind(o) === kd && (o.p && o.p.code) === c) n++; return o.id === f.id; }); return pad(Math.max(1, n));
       case 'text': return part.text || '';
       default: return v[part.k] || '';
@@ -433,51 +440,58 @@
       ownOpts(p, 'type', f.p.abbr || '', CATN.map(function (x) { return x[0]; }));
   }
   function tag(c, t) { return '<span class="dc-st" style="--c:' + c + '">' + esc(t) + '</span>'; }
-  function nfield(p, f, key) {
-    var id = 'dcn-' + f.id + '-' + key, v = nval(p, f, { k: key }), lab = '<label class="dcn-fl" for="' + id + '"><span>' + esc(partName(key)) + '</span>';
-    if (key === 'floor' || key === 'dtype' || key === 'disc') { var L = key === 'floor' ? FLOORS : key === 'dtype' ? DTYPES : FAG; return lab + '<select id="' + id + '" data-dcnv="' + esc(f.id) + ':' + key + '"><option value=""></option>' + L.map(function (x) { var m = mean(key, x); return '<option value="' + x + '"' + (x === v ? ' selected' : '') + '>' + esc(x + (m ? ' – ' + m : '')) + '</option>'; }).join('') + ownOpts(p, key, v, L) + '</select>' + (v && mean(key, v) && !(f.nv && f.nv[key] != null) && !drawn(f)[key] ? '<small class="dcn-gs">' + esc(k('ui.dcn-guess', 'Suggested – check it')) + '</small>' : '') + '</label>' + (nown === f.id + ':' + key ? ownForm(f.id, key) : ''); }
+  function nfield(p, f, key, need) {
+    var id = 'dcn-' + f.id + '-' + key, v = nval(p, f, { k: key }), lab = '<label class="dcn-fl" for="' + id + '"><span>' + esc(partName(key)) + '</span>', nc = need ? ' class="dcn-need"' : '';   /* an empty part the name still needs gets an orange edge (JP 2026-11-24) */
+    if (key === 'floor' || key === 'dtype' || key === 'disc') { var L = key === 'floor' ? FLOORS : key === 'dtype' ? DTYPES : FAG; return lab + '<select id="' + id + '"' + nc + ' data-dcnv="' + esc(f.id) + ':' + key + '"><option value=""></option>' + L.map(function (x) { var m = mean(key, x); return '<option value="' + x + '"' + (x === v ? ' selected' : '') + '>' + esc(x + (m ? ' – ' + m : '')) + '</option>'; }).join('') + ownOpts(p, key, v, L) + '</select>' + (v && mean(key, v) && !(f.nv && f.nv[key] != null) && !drawn(f)[key] ? '<small class="dcn-gs">' + esc(k('ui.dcn-guess', 'Suggested – check it')) + '</small>' : '') + '</label>' + (nown === f.id + ':' + key ? ownForm(f.id, key) : ''); }
     if (key === 'rev') v = (f.nv || {}).rev || '';
-    return lab + '<input id="' + id + '" data-dcnv="' + esc(f.id) + ':' + key + '" value="' + esc(v) + '" maxlength="80"></label>';
+    return lab + '<input id="' + id + '"' + nc + ' data-dcnv="' + esc(f.id) + ':' + key + '" value="' + esc(v) + '" maxlength="80"></label>';
   }
   var nopk = false;   /* set while Ready / Done are drawn: rows without a pick box */
-  function nrow(p, f, compact) {
+  function nrow(p, f, compact, headLine) {
     var r = ruleFor(p, f), b = nbuild(p, f, r), e = ext(f.orig || f.name), l = f.line && lineOf(p, f.line), kd = fkind(f), tags = [], lvl = 'ok';
     if (compact) {
       var st = fstate(p, f), ic = st === 'done' ? 'check2-circle' : st === 'ready' ? 'arrow-right-circle' : 'exclamation-circle', open = !!nexp[f.id];
       var line = '<button type="button" class="dcn-sumb" data-dcnexp="' + esc(f.id) + '" aria-expanded="' + open + '"><i class="bi bi-' + ic + ' dcn-s-' + st + '"></i><span class="dcn-sumt"><b data-noi18n>' + esc(f.name) + '</b>' +
         (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(!f.p.code && f.sg && f.sg.alt ? k('ui.dcn-alt-short', 'Choose code: {a}', { a: f.sg.alt.map(function (a) { return a[0]; }).join(k('ui.dcn-or', ' or ')) }) : k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return partName(x).toLowerCase(); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-right"></i></button>';
       if (!open) return '<li class="dcn-row dcn-c dcn-' + (st === 'todo' ? 'warn' : 'ok') + (pkOn(f.id) && !nopk ? ' dcn-pkd' : '') + '" data-dcnc="' + esc(f.id) + '">' + (nopk ? '' : '<label class="dcn-pkc"><input type="checkbox" data-dcnpk="' + esc(f.id) + '"' + (pkOn(f.id) ? ' checked' : '') + ' aria-label="' + esc(k('ui.dcn-pk-one', 'Select {f}', { f: f.name })) + '"></label>') + line + '</li>';
-      return nrow(p, f).replace('<div class="dcn-g">', line + '<div class="dcn-g">');
+      return nrow(p, f, false, line);
     }
     if (!f.p.code && kd !== 'photo') { tags.push(tag('var(--warn)', k('ui.dcn-needs-code', 'Needs a code'))); lvl = 'warn'; }
     else if (f.p.code && !f.p.abbr && kd === 'doc') { tags.push(tag('var(--warn)', k('ui.dcn-needs-type', 'Needs a type'))); lvl = 'warn'; }
     if (l) tags.push(tag('var(--ok)', k('ui.dcn-on-line', 'On line {c}', { c: l.code + (f.p.abbr ? ' ' + f.p.abbr : '') })));
     else if (f.p.code && !f.nf && !p.tool) { tags.push(tag('var(--violet)', k('ui.dcn-not-plan', 'Not in the plan'))); if (lvl === 'ok') lvl = 'odd'; }
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) tags.push(tag('var(--blue)', k('ui.dcn-suggested', 'Suggested – check it')));
-    var gaps = b.miss.filter(function (x) { return x !== 'code' && x !== 'type'; });
-    if (gaps.length) tags.push(tag('var(--warn)', k('ui.dcn-fill', 'Fill in: {w}', { w: gaps.map(function (x) { return partName(x).toLowerCase(); }).join(', ') })));
-    else if (!b.miss.length && b.plain === splitStem(f.name)) tags.push(tag('var(--ok)', k('ui.dcn-follows', 'Name follows the rule')));
+    /* the card (JP 2026-11-24, from the preview): a head with the file, then Code and type · Name parts · New name, each marked;
+       what's missing is said once – on the head and on the button – and an empty field has an orange edge */
+    var gaps = b.miss.filter(function (x) { return x !== 'code' && x !== 'type'; }), same = !b.miss.length && b.plain === splitStem(f.name);
+    if (gaps.length && lvl === 'ok') lvl = 'warn';
+    var stt = b.miss.length ? tag('var(--warn)', k(b.miss.length === 1 ? 'ui.dcn-miss1' : 'ui.dcn-missn', b.miss.length === 1 ? '1 field missing' : '{n} fields missing', { n: b.miss.length })) : same ? tag('var(--ok)', k('ui.dcn-follows', 'Name follows the rule')) : tag('var(--blue)', k('ui.dcn-ready', 'Ready'));
+    var head = headLine || '<div class="dcn-head"><i class="bi bi-' + (kd === 'photo' ? 'image' : kd === 'drawing' ? 'rulers' : 'file-earmark-text') + '" aria-hidden="true"></i><span class="dcn-hn"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(kd === 'photo' ? k('ui.dcn-k-photo', 'Photo') : kd === 'drawing' ? k('ui.dcn-k-drawing', 'Drawing') : k('ui.dcn-k-doc', 'Document')) + (f.orig && f.orig !== f.name ? ' · <span data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</span>' : '') + '</small></span>' + stt +
+      (f.nf ? '' : '<button type="button" class="dc-chip dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</div>';
     var code = f.p.code ? f.p.code + ' ' + (codeName(f.p.code) || '') : '', seen = {};
-    var h = '<li class="dcn-row dcn-' + lvl + '" data-dcnf="' + esc(f.id) + '"><div class="dcn-g">' +
+    var h = '<li class="dcn-row dcn-card dcn-' + lvl + '" data-dcnf="' + esc(f.id) + '">' + head + '<div class="dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-code', 'Code and type')) + '</p><div class="dcn-g">' +
       '<label class="dcn-c dcn-kind"><span>' + esc(k('ui.dcn-kind', 'Kind of file')) + '</span><select data-dcnk="' + esc(f.id) + '">' + [['doc', 'ui.dcn-k-doc', 'Document'], ['photo', 'ui.dcn-k-photo', 'Photo'], ['drawing', 'ui.dcn-k-drawing', 'Drawing']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === kd ? ' selected' : '') + '>' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select></label>' +
-      '<label class="dcn-c"><span>' + esc(k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '" class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, f) + '</select>' +
+      '<label class="dcn-c"><span>' + esc(kd === 'photo' ? k('ui.dcn-code-opt', 'NS 3451 code (optional)') : k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '" class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, f) + '</select>' +
         '<button type="button" class="dcn-cbtn" data-dcncpick="' + esc(f.id) + '"><span>' + esc(f.p.code ? f.p.code + (codeName(f.p.code) ? ' ' + codeName(f.p.code) : '') : k('ui.dcn-choose-code', 'Choose a code')) + '</span><i class="bi bi-search"></i></button></label>' + (nown === f.id + ':code' ? ownForm(f.id, 'code') : '') +
       (!f.p.code && f.sg && f.sg.alt ? '<div class="dcn-alt"><span>' + esc(k('ui.dcn-alt', 'Not sure – choose one:')) + '</span>' + f.sg.alt.map(function (a) { return '<button type="button" class="dc-chip dcn-altb" data-dcnalt="' + esc(f.id + '|' + a[0]) + '"><b data-noi18n>' + esc(a[0] + (codeName(a[0]) ? ' ' + codeName(a[0]) : '')) + '</b><small>' + esc(a[1]) + '</small></button>'; }).join('') + '</div>' : '') +
       (kd === 'doc' ? '<label class="dcn-c"><span>' + esc(k('ui.dcn-type', 'Document type')) + '</span><select data-dcntype="' + esc(f.id) + '">' + typeOpts(p, f) + '</select></label>' + (nown === f.id + ':type' ? ownForm(f.id, 'type') : '') : '') +
-      '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div></div>';
+      (tags.length || (f.sg && (f.sg.c || f.sg.t)) ? '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div>' : '') + '</div>';
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
-    h += '<div class="dcn-s">';
-    /* shown also once it's filled in, so it can be changed (2026-11-23, JP: "my building locked itself, I cannot change it") – it's one value for the project, used in every name */
-    r.parts.forEach(function (q) { if (PV[q.k]) h += pvField(p, q.k, !p[PV[q.k][0]], false); });
-    r.parts.forEach(function (q) { if (NPART[q.k] && NPART[q.k][2] && !seen[q.k]) { seen[q.k] = 1; h += nfield(p, f, q.k); } });
-    var cur0 = '<div class="dcn-n"><span>' + esc(k('ui.dcn-current', 'Current file name')) + '</span><span class="dcn-nrow"><b data-noi18n>' + esc(f.name) + '</b>' + (f.nf ? '' : '<button type="button" class="dc-chip dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</span>' + (f.orig && f.orig !== f.name ? '<small class="muted" data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</small>' : '') + '</div>';
-    h += cur0 + '<div class="dcn-sug"><span>' + esc(k('ui.dcn-name-from', 'Name from “{r}”', { r: rname(r) })) + '</span><code data-noi18n>' + b.html + esc(e) + '</code></div>' +
-      '<div class="dcn-b"><button type="button" class="pill-btn" data-dcnuse="' + esc(f.id) + '"' + (b.miss.length || b.plain + e === f.name ? ' disabled' : '') + '><i class="bi bi-pencil"></i> ' + esc(k('ui.dcn-use', 'Use this name')) + '</button>' +
+    var hs = '';
+    /* a project value (building, property, project) is asked here only while it's missing – once set it's on the "Shared by all the files" line above, where it can be changed (JP 2026-11-24) */
+    r.parts.forEach(function (q) { if (PV[q.k] && !p[PV[q.k][0]]) hs += pvField(p, q.k, true, false); });
+    r.parts.forEach(function (q) { if (NPART[q.k] && NPART[q.k][2] && !seen[q.k]) { seen[q.k] = 1; hs += nfield(p, f, q.k, b.miss.indexOf(q.k) >= 0); } });
+    if (hs) h += '<div class="dcn-s dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-parts', 'Name parts')) + '</p>' + hs + '</div>';
+    var mw = b.miss.map(function (x) { return x === 'code' ? k('ui.dcn-code', 'NS 3451 code').toLowerCase() : x === 'type' ? k('ui.dcn-type', 'Document type').toLowerCase() : x === 'room' ? k('ui.dcn-short-room', 'room') : lc1(partName(x)); }), mws = mw.length > 1 ? mw.slice(0, -1).join(', ') + k('ui.dcn-and', ' and ') + mw[mw.length - 1] : mw[0];
+    h += '<div class="dcn-new dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-new', 'New name')) + ' <span>· ' + esc(k('ui.dcn-name-from', 'Name from “{r}”', { r: rname(r) })) + '</span></p><div class="dcn-nb"><div class="dcn-sug"><code data-noi18n>' + b.html + esc(e) + '</code></div>' +
+      '<div class="dcn-b">' + (b.miss.length ? '<button type="button" class="pill-btn dcn-fillb" data-dcnfill="' + esc(f.id) + '"><i class="bi bi-arrow-up"></i> ' + esc(k('ui.dcn-fill-first', 'Fill in {w} first', { w: mws })) + '</button>'
+        : '<button type="button" class="pill-btn" data-dcnuse="' + esc(f.id) + '"' + (b.plain + e === f.name ? ' disabled' : '') + '><i class="bi bi-pencil"></i> ' + esc(k('ui.dcn-use', 'Use this name')) + '</button>') +
       (f.orig && f.orig !== f.name ? '<button type="button" class="text-btn" data-dcnorig="' + esc(f.id) + '">' + esc(k('ui.dcn-orig', 'Back to the name it came with')) + '</button>' : '') +
-      '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div></div>';
+      '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div></div></div>';
     var iss = (f.iss || []).filter(function (x) { return !(b.plain === splitStem(f.name) && !b.miss.length && r.id !== 'bby-doc' && PAIR.indexOf(x[1]) < 0); });   /* a name that follows your own rule isn't wrong for not looking like Boligbygg's */
     if (iss.length) h += '<ul class="dc-iss">' + iss.map(function (x) { return '<li class="' + x[0] + '"><i class="bi bi-' + (x[0] === 'err' ? 'x-octagon' : 'exclamation-triangle') + '"></i> ' + esc(issueText(x, f)) + '</li>'; }).join('') + '</ul>';
-    if (!l && !f.nf && !p.tool) h += '<select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select>';
+    var lk = '<select class="dc-link" data-dcflink="' + esc(f.id) + '"><option value="">' + esc(k('ui.dc-not-in-plan', 'Not in the plan – link it to a line …')) + '</option>' + linkOpts(p, f) + '</select>';
+    if (!l && !f.nf && !p.tool) h += kd === 'photo' ? '<details class="dcn-lk"><summary>' + esc(k('ui.dcn-lk-photo', 'Link to a line (optional)')) + '</summary>' + lk + '</details>' : lk;   /* a photo seldom has a line of its own (JP 2026-11-24) */
     h += ccHtml(p, f);
     return h + '</li>';
   }
@@ -603,7 +617,7 @@
       (big ? '<small>' + esc(k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' : '') + '</label>';
   }
   /* ---------- several files at once (JP 2026-11-19): a checkbox on each line, a bar with the changes, one popup per change, Undo ---------- */
-  var PKS = {}, pkP = '';
+  var PKS = {}, pkP = '', pvOpen = false;
   function pkOn(id) { return pkP === cur() && !!PKS[id]; }
   function pkN() { return pkP === cur() ? Object.keys(PKS).length : 0; }
   function pkFix(p) { if (pkP !== cur()) { PKS = {}; pkP = cur(); } var have = {}; (p.files || []).forEach(function (f) { have[f.id] = 1; }); Object.keys(PKS).forEach(function (id) { if (!have[id]) delete PKS[id]; }); }
@@ -666,8 +680,12 @@
     /* values for the whole batch (building number, property ID, property name, project number) – asked once, right here, where the names are
        (JP 2026-11-16 21:50 building number; 2026-11-17 09:18 "I cannot put the eiendoms-id") */
     var need = {}; F.forEach(function (f) { if (!f.nf) ruleFor(p, f).parts.forEach(function (q) { if (PV[q.k]) need[q.k] = 1; }); });
-    Object.keys(PV).forEach(function (key) { if (need[key] || p[PV[key][0]]) h += pvField(p, key, !!need[key], true); });
-    if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
+    /* shared by all the files (JP 2026-11-24): one calm line with Change; the fields open while one the names need is missing, or on Change – two per row, number beside name */
+    var pk = ['bno', 'proj', 'unit', 'pname'].filter(function (key) { return need[key] || p[PV[key][0]]; }), pmiss = pk.filter(function (key) { return need[key] && !p[PV[key][0]]; });
+    if (pk.length && (pvOpen || pmiss.length)) h += '<div class="dcn-pvbox"><div class="dcn-pvg">' + pk.map(function (key) { return pvField(p, key, !!need[key], false); }).join('') + '</div><p class="dcn-pvf"><small>' + esc(k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' + (pmiss.length ? '' : '<button type="button" class="dc-chip" data-dcnpvo>' + esc(k('ui.done', 'Done')) + '</button>') + '</p></div>';
+    else if (pk.length) { var sh = []; if (p.bid) sh.push(k('ui.dcn-sh-b', 'Building {v}', { v: p.bid })); if (p.pid || p.pname) sh.push(k('ui.dcn-sh-p', 'Property {v}', { v: [p.pid, p.pname].filter(Boolean).join(' ') })); if (p.no) sh.push(k('ui.dcn-sh-n', 'Project {v}', { v: p.no }));
+      h += '<div class="dcn-shared"><i class="bi bi-building" aria-hidden="true"></i><span><small>' + esc(k('ui.dcn-shared', 'Shared by all the files')) + '</small><span data-noi18n>' + esc(sh.join(' · ')) + '</span></span><button type="button" class="dc-chip" data-dcnpvo>' + esc(k('ui.dcn-change', 'Change')) + '</button></div>'; }
+    if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(todo === 1 ? k('ui.dcn-all1', 'Suggest a code and check the file') : k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
     var many = F.length > 1, cnt = { todo: 0, ready: 0, done: 0 }; if (many) F.forEach(function (f) { cnt[fstate(p, f)]++; });
     if (many) h += '<div class="dcn-flt" role="group">' + [['', k('ui.dcn-f-all', 'All {n}', { n: F.length })], ['todo', k('ui.dcn-f-todo', 'Needs you {n}', { n: cnt.todo })], ['ready', k('ui.dcn-f-ready', 'Ready {n}', { n: cnt.ready })], ['done', k('ui.dcn-f-done', 'Done {n}', { n: cnt.done })]].map(function (c) { return '<button type="button" class="dc-chip" aria-pressed="' + (nflt === c[0]) + '" data-dcnflt="' + c[0] + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>';
     var G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F;
@@ -698,7 +716,8 @@
   }
   /* suggest a code and type from the name for every file, then read every PDF that hasn't been read (one at a time) */
   function suggestAll(pid, only) {   /* only: just these file ids (the files just uploaded to a project – JP 2026-11-24) */
-    var pdfs = []; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf || (only && only.indexOf(f.id) < 0)) return; if (!f.p.code || !f.p.abbr) { guessName(f); relink(p, f); } if (ext(f.name) === '.pdf' && !f.cc) pdfs.push(f.id); }); }); draw();
+    var pdfs = [], pics = []; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf || (only && only.indexOf(f.id) < 0)) return; if (!f.p.code || !f.p.abbr) { guessName(f); relink(p, f); } if (ext(f.name) === '.pdf' && !f.cc) pdfs.push(f.id); if (fkind(f) === 'photo' && !f.dt && !f.orig) pics.push(f); }); }); draw();
+    pics.forEach(function (f) { getBlob(f.id).then(function (bl) { return bl ? photoDate(bl) : ''; }).then(function (d) { d = d || f.lm || ''; if (d) { saveP(pid, function (p) { var g = (p.files || []).filter(function (x) { return x.id === f.id; })[0]; if (g && !g.dt) g.dt = d; }); draw(); } }).catch(function () {}); });
     return pdfs.reduce(function (pr, id5) { return pr.then(function () { return new Promise(function (res) { ccRun(pid, id5); var w = setInterval(function () { if (!ccBusy[id5]) { clearInterval(w); res(); } }, 200); }); }); }, Promise.resolve());
   }
   /* "Use this name" for every file whose rule has nothing missing – returns how many got a new name */
@@ -725,7 +744,7 @@
       if (t.hasAttribute('data-dcnnsf') && t.files && t.files[0]) { var rd = new FileReader(); rd.onload = function () { nsSave(parseNS(String(rd.result || ''))); }; rd.readAsText(t.files[0]); t.value = ''; return; }
       if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
       if ((fid = t.dataset.dcnk)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.nk = v; }); draw(); return; }
-      if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
+      if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); if (a[1] === 'floor' && v) try { localStorage.setItem('dcn.floor', v); } catch (e) {} saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
       if (t.dataset.dcnpv) { var pf = t.dataset.dcnpv; saveP(cur(), function (p) { p[pf] = v.trim().slice(0, 60); }); if (document.activeElement === t) t.blur(); draw(); return; }
       if (t.dataset.dcnuseK) { saveP(cur(), function (p) { p.nuse = Object.assign({}, p.nuse); p.nuse[t.dataset.dcnuseK] = v; }); draw(); return; }
       if (t.dataset.dcnr) { ruleEdit(function (r) { r[t.dataset.dcnr] = t.dataset.dcnr === 'n' ? v.slice(0, 60) || r.n : v; }); return; }
@@ -740,6 +759,9 @@
       var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov')) return;
       var fileOf = function (p, id) { return (p.files || []).filter(function (x) { return x.id === id; })[0]; };
       if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) rename(p, f, nb2.plain + ext(f.orig || f.name)); }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var nxf = PF[j + 1] || PF.filter(function (x) { return x.id !== id && fstate(proj(cur()), x) !== 'done'; })[0]; if (nxf) nfo = nxf.id; }   /* renamed – on to the next file */ draw(); return; }
+      /* "Fill in floor and room first": takes you to the first empty field of that file (JP 2026-11-24) */
+      if ((b = t.closest('[data-dcnfill]'))) { var card = b.closest('.dcn-row'), nd = card && (card.querySelector('.dcn-s .dcn-need, .dcn-s input:not([value]), .dcn-s input[value=""]') || card.querySelector('[data-dcncpick]')); if (nd) { nd.scrollIntoView({ block: 'center', behavior: 'smooth' }); nd.focus(); if (nd.matches('[data-dcncpick]')) nd.click(); } return; }
+      if ((b = t.closest('[data-dcnpvo]'))) { pvOpen = !pvOpen; draw(); if (pvOpen) setTimeout(function () { var i = document.querySelector('.dcn-pvbox input'); if (i) i.focus(); }, 30); return; }
       if ((b = t.closest('[data-dcnorig]'))) { var id2 = b.dataset.dcnorig; saveP(cur(), function (p) { var f = fileOf(p, id2); if (f && f.orig) { rename(p, f, f.orig); delete f.orig; } }); draw(); return; }
       if ((b = t.closest('[data-dcnalt]'))) { var pa = b.dataset.dcnalt.split('|'); saveP(cur(), function (p) { var f = fileOf(p, pa[0]); if (!f) return; f.p.code = pa[1]; if (f.sg) { delete f.sg.alt; delete f.sg.c; } learn(f, pa[1]); relink(p, f); }); draw(); return; }
       if ((b = t.closest('[data-dcnlrx]'))) { var L0 = lrnGet(); delete L0.w[b.dataset.dcnlrx]; lrnSave(); draw(); return; }

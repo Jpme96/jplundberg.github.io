@@ -205,6 +205,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     await own.evaluate(() => { const a = document.querySelector('.dc-fresh input[data-dcnpkall]'); a && a.click(); }); await sl(400);
     const pk = await own.evaluate(() => { const B = [...document.querySelectorAll('.dc-fresh [data-dcnpk]')]; return { n: B.length, on: B.filter(b => b.checked).length, all: !!(document.querySelector('.dc-fresh input[data-dcnpkall]') || {}).checked }; });
     check(pk.n >= 2 && pk.on === pk.n && pk.all, 'Select all in the new-files box ticks every file (' + JSON.stringify(pk) + ')');
+    /* the box shows how far you've come, and Done is the main button only when every file has its new name (JP 2026-11-24) */
+    const pr = await own.evaluate(() => ({ p: (document.querySelector('.dc-fresh .dc-freshp') || {}).textContent || '', main: !!document.querySelector('.dc-fresh [data-dcfreshok].pill-btn'), cards: document.querySelectorAll('.dc-fresh .dcn-files > li').length }));
+    check(/^0 (av|of) 2/.test(pr.p) && !pr.main && pr.cards === 2, 'the new-files box says 0 of 2 have their new name, and Done is not the main button yet ' + JSON.stringify(pr));
     await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); });
     check(await until(own, () => !document.querySelector('.dc-fresh'), 4000), 'and Done closes it');
   }
