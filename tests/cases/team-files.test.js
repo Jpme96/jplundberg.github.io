@@ -197,9 +197,14 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   if (pid) {
     await own.goto(T + '#dc=' + pid); await sl(1500);
     await own.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="lev"]'); s && s.click(); }); await sl(500);
-    const up = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'tfr-')), 'Tegning madeup 15.pdf'); fs.writeFileSync(up, '%PDF-1.1\n%%EOF\n');
-    const inp = await own.$('input[data-dcfiles]'); if (inp) await inp.uploadFile(up);
+    const upd = fs.mkdtempSync(path.join(os.tmpdir(), 'tfr-')), up = path.join(upd, 'Tegning madeup 15.pdf'), up2 = path.join(upd, 'Untitled.jpg'); fs.writeFileSync(up, '%PDF-1.1\n%%EOF\n'); fs.writeFileSync(up2, 'not really a picture');
+    const inp = await own.$('input[data-dcfiles]'); if (inp) await inp.uploadFile(up, up2);
     check(await until(own, () => { const b = document.querySelector('.dc-fresh'); return !!b && /Gi de nye filene riktig navn|Give the new files/.test(b.textContent) && /Tegning madeup 15/.test(b.textContent); }, 10000), 'an uploaded file gets the "Give the new files the right names" box');
+    /* "Select all" in that box ticks every file in it (JP 2026-11-24 08:47: it didn't) */
+    await until(own, () => document.querySelectorAll('.dc-fresh [data-dcnpk]').length >= 2, 6000);
+    await own.evaluate(() => { const a = document.querySelector('.dc-fresh input[data-dcnpkall]'); a && a.click(); }); await sl(400);
+    const pk = await own.evaluate(() => { const B = [...document.querySelectorAll('.dc-fresh [data-dcnpk]')]; return { n: B.length, on: B.filter(b => b.checked).length, all: !!(document.querySelector('.dc-fresh input[data-dcnpkall]') || {}).checked }; });
+    check(pk.n >= 2 && pk.on === pk.n && pk.all, 'Select all in the new-files box ticks every file (' + JSON.stringify(pk) + ')');
     await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); });
     check(await until(own, () => !document.querySelector('.dc-fresh'), 4000), 'and Done closes it');
   }

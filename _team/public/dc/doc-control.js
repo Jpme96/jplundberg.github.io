@@ -860,7 +860,7 @@
     if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
     lastDraw = now;
-    var ae = document.activeElement; if (ae && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
+    var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
     var p = open && proj(open);
     if (open && !p && document.documentElement.classList.contains('unlocked')) open = null;
     if (p && p.req !== undefined && reqs().some(function (r) { return r.id === p.req; })) curReq = p.req; else if (p) curReq = ''; else { try { curReq = sessionStorage.getItem('dash.dcReq') || ''; } catch (e) {} }   /* an open project is checked against its own checklist */

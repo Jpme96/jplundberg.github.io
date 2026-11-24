@@ -15,7 +15,9 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => { [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(r => /delta/.test(r.textContent)).querySelector('button').click(); }); await sl(200);
   await p.evaluate(() => { const s = document.querySelector('.dcn-fpop select[data-dcncode]'), o = [...s.options].find(x => /^362/.test(x.value)); s.value = o.value; s.dispatchEvent(new Event('change', { bubbles: true })); document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); }); await sl(300);
   check(await p.evaluate(() => document.querySelectorAll('.dx-ren .dcn-row.dcn-c input[data-dcnpk]').length === 4 && !document.querySelector('.dcn-pkact')), 'a checkbox on each line, and no bar before anything is ticked');
-  await p.evaluate(() => document.querySelector('.dx-ren input[data-dcnpkall]').click()); await sl(200);
+  /* a real mouse click: it gives the box focus, and a focused field in the tool used to stop the redraw – Select all ticked only itself (JP 2026-11-24) */
+  await p.click('.dx-ren input[data-dcnpkall]'); await sl(300);
+  check(await p.evaluate(() => { const B = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c input[data-dcnpk]')]; return B.length === 4 && B.every(b => b.checked); }), 'clicking Select all with the mouse ticks every file in the list');
   check(await p.evaluate(() => { const r = document.querySelector('.dx-ren .dcn-row.dcn-c'), c = r.querySelector('.dcn-pkc'), b = r.querySelector('.dcn-sumb'); return c.getBoundingClientRect().right <= b.getBoundingClientRect().left + 1 && Math.abs(c.getBoundingClientRect().top - b.getBoundingClientRect().top) < 30; }), 'the checkbox sits on the left of its line, not above it (JP 2026-11-19)');
   check(await p.evaluate(() => /4 selected/.test((document.querySelector('.dcn-pkact') || {}).textContent || '')), 'Select all (4) ticks every file and the bar shows 4 selected');
   check(await p.evaluate(() => !document.querySelector('.dx-ren [data-dcnpks="all"]') && /Select all \(4\)/.test(document.querySelector('.dcn-pkall').textContent)), 'one box for all, with its words – no second All button');
