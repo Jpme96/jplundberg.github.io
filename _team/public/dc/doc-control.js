@@ -2094,7 +2094,7 @@
     if (addOpen && !e.target.closest('.dc-addlist label')) { addOpen = ''; document.querySelectorAll('.dc-addlist').forEach(function (x) { x.hidden = true; }); document.querySelectorAll('[data-dcaddm]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); }); }
     /* the report's Download menu, its file picker and the preview tabs (JP 2026-11-24 20:43–20:53) */
     if (e.target.closest('[data-dcdlm]')) { dlOpen = !dlOpen; addOpen = ''; draw(); return; }
-    if ((sb = e.target.closest('[data-dcrtab]'))) { rtab = sb.dataset.dcrtab; draw(); return; }
+    if ((sb = e.target.closest('[data-dcrtab]'))) { rtab = sb.dataset.dcrtab; dlOpen = false; draw(); return; }
     if (e.target.closest('[data-dcdlpick]')) { e.preventDefault(); dlOpen = false; dlPickOpen = true; draw(); return; }
     if (dlPickOpen && (e.target.closest('[data-dcdlpx]') || (e.target.matches && e.target.matches('[data-dcdlpov]')))) { dlPickOpen = false; dlOpen = true; draw(); return; }
     if (dlPickOpen && (sb = e.target.closest('[data-dcdlpall]'))) { var pa = proj(open); if (pa) { var ua = DLP[pa.id] = {}; if (sb.dataset.dcdlpall === '0') (pa.files || []).forEach(function (f) { ua[f.id] = 1; }); } draw(); return; }

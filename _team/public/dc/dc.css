@@ -1511,6 +1511,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-dlpov .dx-tsheet { max-width: 560px; }
 .dc-dlgh b { flex: 1; font-weight: 600; }
 .dc-dlfr { padding-left: 32px; }
+.dc-addlist, .dc-dllist { background: var(--bg-solid, var(--card)); }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }
 .stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;

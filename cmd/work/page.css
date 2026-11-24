@@ -1026,3 +1026,4 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-dlpov .dx-tsheet { max-width: 560px; }
 .dc-dlgh b { flex: 1; font-weight: 600; }
 .dc-dlfr { padding-left: 32px; }
+.dc-addlist, .dc-dllist { background: var(--bg-solid, var(--card)); }   /* solid: the page must not show through the menu (Team's card colour is see-through) */
