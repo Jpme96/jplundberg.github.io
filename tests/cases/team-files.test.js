@@ -63,8 +63,8 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   fs.writeFileSync(big, MARK.repeat(Math.ceil(2.4e6 / MARK.length)));
   await (await own.$('input[data-fadd]')).uploadFile(big);
   check(await until(own, () => /report\.txt/.test(document.body.innerText), 30000), 'the file is listed under Shared files');
-  const mem = (await raw('/__mem')).body;
-  check(/"f:[a-f0-9]{32}:2"/.test(mem) && !/made-up-file-content|report\.txt/.test(mem), 'the server holds three encrypted chunks and neither the content nor the name');
+  const mem = (await raw('/__mem')).body, r2 = (await raw('/__r2')).body;
+  check(/"t\/do-team\/f\/[a-f0-9]{32}\/2"/.test(r2) && !/"f:[a-f0-9]{32}:/.test(mem) && !/made-up-file-content|report\.txt/.test(mem + r2), 'the file’s three encrypted pieces are in R2 under the team’s prefix, none in the team’s database, and neither the content nor the name is readable');
   await own.click('[data-act=fopen]');
   check(await until(own, () => window.__blobs.some(x => x && x.size > 2.3e6), 20000), 'opening it brings back the whole file');
   const back = await own.evaluate(() => { const f = window.__blobs.filter(x => x && x.size > 2.3e6).pop(); return f.text().then(t => t.slice(0, 42) + '|' + f.size + '|' + f.name); });
@@ -208,6 +208,16 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     /* the box shows how far you've come, and Done is the main button only when every file has its new name (JP 2026-11-24) */
     const pr = await own.evaluate(() => ({ p: (document.querySelector('.dc-fresh .dc-freshp') || {}).textContent || '', main: !!document.querySelector('.dc-fresh [data-dcfreshok].pill-btn'), cards: document.querySelectorAll('.dc-fresh .dcn-files > li').length }));
     check(/^0 (av|of) 2/.test(pr.p) && !pr.main && pr.cards === 2, 'the new-files box says 0 of 2 have their new name, and Done is not the main button yet ' + JSON.stringify(pr));
+    /* the delivered files are shared with the team (JP 2026-11-24 "files should be shareable"): each gets an encrypted copy in the team's
+       storage (R2 in the test server), and a device without the file opens it from there */
+    const shared = await until(own, () => { const p = (DocHost.Fe.tools().dctl || []).filter(x => (x.files || []).some(f => /Tegning madeup 15/.test(f.name)))[0]; return !!p && p.files.filter(f => !f.nf).every(f => f.tf && f.tf.fid); }, 12000);
+    check(shared, 'each delivered file gets a copy in the team’s storage (tf on the file record)');
+    const away = await own.evaluate(async () => { const p = (DocHost.Fe.tools().dctl || []).filter(x => (x.files || []).some(f => /Tegning madeup 15/.test(f.name)))[0], f = p.files.filter(x => /Tegning madeup 15/.test(x.name))[0];
+      await new Promise(r => { const q = indexedDB.open('dash-dctl', 1); q.onsuccess = () => { const t = q.result.transaction('files', 'readwrite'); t.objectStore('files').delete(f.id); t.oncomplete = r; t.onerror = r; }; q.onerror = r; });
+      const b = document.querySelector('[data-dcview="' + f.id + '"]'); if (!b) return { btn: false }; b.click();
+      for (let i = 0; i < 40 && !document.querySelector('.dx-fv'); i++) await new Promise(r => setTimeout(r, 150));
+      const ok = !!document.querySelector('.dx-fv'); const x = document.querySelector('.dx-fv [data-dxfx], .dx-fv .icon-btn'); if (ok) document.querySelector('.dx-fv').remove(); return { btn: true, ok }; });
+    check(away.btn && away.ok, 'a device without the file opens it from the team ' + JSON.stringify(away));
     /* duplicates in a project (JP 2026-11-24 "it did not check for duplicates"): the very same file again is skipped; the same content
        under another name is kept, a bar says so, and Check them lets you keep one */
     const du = path.join(upd, 'Kopi av tegning madeup.pdf'); fs.writeFileSync(du, '%PDF-1.1\n%%EOF\n');

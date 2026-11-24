@@ -227,8 +227,27 @@
      the same coloured plan and the same edits (JP 23:46); elsewhere they stay on this device */
   function shared(id) { return HOST && HOST.store && /^(plan|xedit):/.test(id); }
   function putBlob(id, b) { if (shared(id)) return HOST.store.put(id, b); return putBlobLocal(id, b); }
-  function getBlob(id) { if (shared(id)) return HOST.store.get(id).then(function (v) { return v || getBlobLocal(id).then(function (b) { if (b) HOST.store.put(id, b); return b; }); }); return getBlobLocal(id); }   /* one imported before sharing: shared now, from the device that has it */
+  function getBlob(id) { if (shared(id)) return HOST.store.get(id).then(function (v) { return v || getBlobLocal(id).then(function (b) { if (b) HOST.store.put(id, b); return b; }); }); return getBlobLocal(id).then(function (b) { return b || teamBlob(id); }); }   /* one imported before sharing: shared now, from the device that has it */
   function delBlob(id) { if (shared(id)) return HOST.store.del(id); return delBlobLocal(id); }
+  /* Delivered files in Team are shared with the team (JP 2026-11-24 "files should be shareable"): each file is sent up encrypted (HOST.fup →
+     tf: {fid, n, e} on the file record); another device opens it from there and keeps a copy. The device that imported a file before this
+     sends it up by itself when the project is open there. /cmd keeps files on the device only, as before. */
+  function fileRec(id) { var L = (Fe.tools().dctl || []); for (var i = 0; i < L.length; i++) { var f = (L[i].files || []).filter(function (x) { return x.id === id; })[0]; if (f) return f; } return null; }
+  function teamBlob(id) { var f = HOST && HOST.fget && fileRec(id); if (!f || !f.tf) return Promise.resolve(null); return HOST.fget(f.tf, f.name, mime(f.name)).then(function (file) { if (file) putBlobLocal(id, file); return file || null; }).catch(function () { return null; }); }
+  function tfIn(p, id) { var f = ((p || {}).files || []).filter(function (x) { return x.id === id; })[0]; return f && f.tf; }
+  function dropFile(id, tf) { delBlob(id); if (tf && HOST && HOST.fdel) HOST.fdel(tf); }
+  var SHQ = {}, SHN = {}, shBusy = false, shList = [];
+  function shareUp(pid, ids) {
+    if (!HOST || !HOST.fup) return; ids.forEach(function (id) { if (!SHQ[id]) { SHQ[id] = 1; shList.push([pid, id]); SHN[pid] = (SHN[pid] || 0) + 1; } }); if (shBusy) return; shBusy = true;
+    (function next() { var it = shList.shift(); if (!it) { shBusy = false; draw(); return; }
+      var pid0 = it[0], id0 = it[1], done = function () { SHN[pid0] = Math.max(0, (SHN[pid0] || 1) - 1); next(); };
+      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl).then(function (tf) { if (tf) saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
+        .catch(function () { delete SHQ[id0]; }).then(done); })();
+    draw();
+  }
+  var SHC = {};   /* checked once a session: a file this device doesn't have isn't looked for again on every redraw */
+  function shareMissing(p) { if (!HOST || !HOST.fup) return; var L = (p.files || []).filter(function (f) { return !f.nf && !f.tf && !SHQ[f.id] && !SHC[f.id]; }); if (!L.length) return; L.forEach(function (f) { SHC[f.id] = 1; });
+    Promise.all(L.map(function (f) { return getBlobLocal(f.id).then(function (b) { return b ? f.id : null; }); })).then(function (ids) { ids = ids.filter(Boolean); if (ids.length) shareUp(p.id, ids); }); }
   function putBlobLocal(id, b) { return db().then(function (d) { return new Promise(function (res) { var t = d.transaction('files', 'readwrite'); t.objectStore('files').put(b, id); t.oncomplete = function () { res(true); }; t.onerror = t.onabort = function () { res(false); }; }); }).catch(function () { return false; }); }
   function getBlobLocal(id) { return db().then(function (d) { return new Promise(function (res) { var q = d.transaction('files').objectStore('files').get(id); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { res(null); }; }); }).catch(function () { return null; }); }
   function delBlobLocal(id) { return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
@@ -364,7 +383,7 @@
         var outP = g.filter(function (x) { return x.id !== keep; }).map(function (x) { return x.id; }), snap = JSON.parse(JSON.stringify(proj(pid)));
         saveP(pid, function (p2) { (p2.files || []).forEach(function (x) { if (outP.indexOf(x.id) >= 0) gone(p2, x); }); p2.files = (p2.files || []).filter(function (x) { return outP.indexOf(x.id) < 0; }); });
         toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-dup-done', '{n} removed from the project – the one you chose is kept.', { n: outP.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === snap.id ? snap : x; }); Fe.saveTools(t2); draw(); });
-        setTimeout(function () { var p3 = proj(pid); outP.forEach(function (id) { if (!p3 || !(p3.files || []).some(function (x) { return x.id === id; })) delBlob(id); }); }, 9000);
+        setTimeout(function () { var p3 = proj(pid); outP.forEach(function (id) { if (!p3 || !(p3.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(snap, id)); }); }, 9000);
         close(); draw(); if (dupGroups(pid).length) dupPop(gi, pid); return;
       }
       if (t.closest('[data-duprm]')) {
@@ -482,7 +501,7 @@
     var kid = gone && gone.krav && !(t0.dctl || []).some(function (x) { return x.id !== pid && x.krav === gone.krav; }) ? gone.krav : null;
     var t3 = Fe.tools(); t3.dctl = (t3.dctl || []).filter(function (x) { return x.id !== pid; }); if (kid) t3.dckrav = (t3.dckrav || []).filter(function (x) { return x.id !== kid; }); Fe.saveTools(t3); if (inside) back(); else draw();
     toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-deleted', 'Project deleted')), function () { var t4 = Fe.tools(); t4.dctl = all; if (kid) t4.dckrav = allK; Fe.saveTools(t4); draw(); });
-    setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { delBlob(f.id); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000);
+    setTimeout(function () { if (!proj(pid) && gone) { (gone.files || []).forEach(function (f) { dropFile(f.id, f.tf); }); delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000);
   }
   function home() {
     var moved = !HOST && !!Fe.tools().dcTeamAt, L = rowsAll();
@@ -780,6 +799,7 @@
     if (pasting) h += '<form class="dc-paste" data-dcpaste="' + esc(p.id) + '"><textarea name="t" rows="6" placeholder="' + esc(k('ui.dc-names-ph', 'One document name per line, as in the FDV system – e.g. 332 SE Sprinkleranlegg')) + '"></textarea><div class="dc-facts"><button type="submit" class="pill-btn"><i class="bi bi-check2"></i> ' + esc(k('ui.dc-names-add', 'Check the names')) + '</button><button type="button" class="text-btn" data-dcpastebtn>' + esc(k('ui.cancel', 'Cancel')) + '</button></div></form>';
     if (!HOST || namingOn()) h += nswitch();
     if (!F.length) return h;
+    if (HOST && HOST.fup) { setTimeout(function () { shareMissing(p); }, 0); if (SHN[p.id]) h += '<p class="dc-sharing" role="status"><i class="bi bi-cloud-arrow-up"></i> ' + esc(k('ui.dc-sharing', 'Sharing {n} files with the team …', { n: SHN[p.id] })) + '</p>'; }
     /* the same content more than once in the project: a bar to check them, as in the rename tool (JP 2026-11-24) */
     var DGp = dupGroups(p.id), dnp = DGp.reduce(function (a, g) { return a + g.length; }, 0);
     if (DGp.length) h += '<div class="dx-dupbar" role="status"><i class="bi bi-files"></i><span>' + esc(k('ui.dx-dup-bar', '{n} files are here more than once (same content) – {g} groups to check', { n: dnp, g: DGp.length })) + '</span><button type="button" class="pill-btn sm" data-dxdups="' + esc(p.id) + '">' + esc(k('ui.dx-dup-go', 'Check them')) + '</button></div>';
@@ -1794,6 +1814,7 @@
         });
         toast('<i class="bi bi-check2"></i> ' + esc(names && !list.length ? k('ui.dc-names-read', '{n} new names · {m} matched to the plan', { n: add.length, m: matched }) : k('ui.dc-files-read', '{n} new files · {m} matched to the plan', { n: add.length, m: matched })) + (got.length > add.length ? ' · ' + esc(k('ui.dc-files-dupe', '{n} already there', { n: got.length - add.length })) : ''));
         setTab('files'); draw();
+        shareUp(id, add.filter(function (f) { return f.blob; }).map(function (f) { return f.id; }));
         var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
         if (HOST && !namingOn()) { if (naming()) sg(); else if (dcnLoading) dcnLoading.then(sg); }
       });
@@ -1844,7 +1865,7 @@
       saveP(open, function (p) { (p.files || []).forEach(function (f) { if (ids2.indexOf(f.id) >= 0) gone(p, f); }); p.files = (p.files || []).filter(function (x) { return ids2.indexOf(x.id) < 0; }); });
       SEL.ids = {}; draw();
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-sel-files-gone', '{n} files removed', { n: ids2.length })), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t2); draw(); });
-      var op2 = open; setTimeout(function () { var p = proj(op2); ids2.forEach(function (id) { if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }); }, 9000);
+      var op2 = open; setTimeout(function () { var p = proj(op2); ids2.forEach(function (id) { if (!p || !(p.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(keep2, id)); }); }, 9000);
       return;
     }
     if (SEL.k && (e.target.closest('[data-drseldel]') || e.target.closest('[data-drselopt]'))) {
@@ -1996,13 +2017,13 @@
       var fnm = (function () { var pp = renOn() ? toolP() : proj(open), ff = pp && (pp.files || []).filter(function (x) { return x.id === fid; })[0]; return ff ? ff.name : 'file'; })();
       /* always the popup – the viewer is loaded first when it isn't yet (JP 2026-11-23 "make the files open in a pop-up") */
       var vw = NV ? Promise.resolve() : (naming(), dcnLoading || Promise.resolve());
-      Promise.all([renOn() && TOOL.blobs[fid] ? Promise.resolve(TOOL.blobs[fid]) : getBlob(fid), vw.catch(function () {})]).then(function (z) { var bl = z[0]; NV = window.DocNaming && window.DocNaming.view; if (bl && NV) { NV(bl, fnm); return; } if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
+      Promise.all([renOn() && TOOL.blobs[fid] ? Promise.resolve(TOOL.blobs[fid]) : getBlob(fid), vw.catch(function () {})]).then(function (z) { var bl = z[0]; NV = window.DocNaming && window.DocNaming.view; if (bl && NV) { NV(bl, fnm); return; } if (!bl) { if (w) w.close(); toast('<i class="bi bi-info-circle"></i> ' + esc(HOST && HOST.fup ? k('ui.dc-file-later', 'The file is still only on the device it was uploaded from – it is shared with the team the next time the project is opened there.') : k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.'))); return; } var url = URL.createObjectURL(bl); if (w) w.location = url; else location.href = url; setTimeout(function () { URL.revokeObjectURL(url); }, 60000); }); return; }
     if ((b = t.closest('[data-dcfdel]')) && renOn()) { var rid = b.dataset.dcfdel; toolP().files = toolP().files.filter(function (x) { return x.id !== rid; }); delete TOOL.blobs[rid]; draw(); return; }
     if ((b = t.closest('[data-dcfdel]'))) {
       var id = b.dataset.dcfdel, pr = proj(open), keep = JSON.parse(JSON.stringify(pr));
       saveP(open, function (p) { var f = (p.files || []).filter(function (x) { return x.id === id; })[0]; if (f) gone(p, f); p.files = (p.files || []).filter(function (x) { return x.id !== id; }); });
       draw(); toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-file-removed', 'File removed')), function () { var t2 = Fe.tools(); t2.dctl = (t2.dctl || []).map(function (x) { return x.id === keep.id ? keep : x; }); Fe.saveTools(t2); draw(); });
-      setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) delBlob(id); }, 9000); return;
+      setTimeout(function () { var p = proj(open); if (!p || !(p.files || []).some(function (x) { return x.id === id; })) dropFile(id, tfIn(keep, id)); }, 9000); return;
     }
     /* delete a project – from the project or straight from the list, always asked first, with Undo after (JP 2026-11-24) */
     if ((b = t.closest('[data-dcdel], [data-dxdel]'))) {

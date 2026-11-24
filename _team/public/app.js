@@ -934,6 +934,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; for (var nk in d.m) if (d.m[nk] == null || d.m[nk] === '') delete d.m[nk];   /* null or empty removes a code */ return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); }, flowOn: function () { return flowCfgOn(); },
         uplinks: function (pid) { return links().filter(function (r) { return r.d && r.d.pid === pid && !r.d.off && r.d.exp > Date.now(); }).map(function (r) { return { id: r.id, exp: new Date(r.d.exp).toISOString().slice(0, 10) }; }); },
         uplinkOff: function (id) { upOff(id); },
+        /* a project's delivered files, shared with the team (JP 2026-11-24): sent up encrypted, fetched on another device, removed with the file */
+        fup: function (blob) { if (rank() < 1 || !blob || blob.size > FMAX) return Promise.resolve(null); return sendChunks(blob).catch(function () { return null; }); },
+        fget: function (tf, name, type) { return getFile({ fid: tf.fid, n: tf.n, e: tf.e, name: name, type: type }); },
+        fdel: function (tf) { if (rank() < 1 || !tf || !tf.fid) return Promise.resolve(); return api('fdel', { method: 'POST', body: { fid: tf.fid, n: tf.n } }).catch(function () {}); },
         uplink: function (pid) { if (rank() < 1) return; S.fproj = pid; uplinkSheet(); } };   /* Filer → "Entreprenøren har dem": the upload-link sheet with this project chosen */
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
         window.FdvPdf = { html: function (h, f, n) { return window.PagedPdf.html(h, f, n); }, share: function (f) { return window.PagedPdf.share(f); } };
@@ -1147,14 +1151,19 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function docRO() { if (S.docCache && S.docCache.gen === S.docGen) return S.docCache.t; var t = docState(); S.docCache = { gen: S.docGen, t: t }; return t; }
   function projects() { return (docRO().dctl || []).map(function (p) { return { id: p.id, name: p.name }; }); }
   function projName(pid, key) { var t = docRO(); if (!t._names) { t._names = {}; (t.dckrav || []).forEach(function (p) { t._names['dckrav|' + p.id] = p.name + ' (' + L('requirements', 'krav') + ')'; }); (t.dctl || []).forEach(function (p) { t._names[p.id] = t._names['dctl|' + p.id] = p.name; }); } return t._names[key ? key + '|' + pid : pid] || ''; }
-  async function sendFile(file, pid) {
-    if (file.size > FMAX) { toast(L('Too big (over 55 MB): ', 'For stor (over 55 MB): ') + file.name); return false; }
+  /* the encrypted pieces of one file – shared files and, since 2026-11-24, a project's delivered files (DocHost.fup) */
+  async function sendChunks(file) {
     var e = S.me.team.epoch, fid = hexId(16), n = Math.max(1, Math.ceil(file.size / CHUNK));
     for (var i = 0; i < n; i++) {
       var part = new Uint8Array(await file.slice(i * CHUNK, (i + 1) * CHUNK).arrayBuffer()), iv = rnd(12);
       var ct = await C.encrypt({ name: 'AES-GCM', iv: iv, additionalData: TE.encode(fid + '|' + i + '|' + e) }, S.keys[e], part);
       await api('fchunk', { method: 'PUT', body: { fid: fid, n: i, iv: b64(iv), ct: b64(ct) } });
     }
+    return { fid: fid, n: n, e: e };
+  }
+  async function sendFile(file, pid) {
+    if (file.size > FMAX) { toast(L('Too big (over 55 MB): ', 'For stor (over 55 MB): ') + file.name); return false; }
+    var c = await sendChunks(file), fid = c.fid, n = c.n, e = c.e;
     return putRec('file', 'fl' + fid.slice(0, 20), { fid: fid, n: n, e: e, name: String(file.name || 'file').slice(0, 160), type: file.type || '', size: file.size, pid: pid || '', at: Date.now() }, L('File: ', 'Fil: ') + file.name);
   }
   async function getFile(d) {

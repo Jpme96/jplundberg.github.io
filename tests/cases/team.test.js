@@ -464,7 +464,9 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
 
   /* --- kept apart from /cmd --- */
   const wr = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'wrangler.jsonc'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
-  check(!/kv_namespaces|d1_databases|r2_buckets|"VAULT"|"LIVE"|dashboard-sync/.test(wr) && /TeamStore/.test(wr) && /work\.jplundberg\.com/.test(wr), "Team's Worker has none of /cmd's bindings");
+  /* Team has its own R2 bucket for file pieces (2026-11-24) – never /cmd's (dashboard-files) */
+  const r2b = (wr.match(/"bucket_name"\s*:\s*"([^"]+)"/g) || []).map(x => x.split('"')[3]);
+  check(!/kv_namespaces|d1_databases|"VAULT"|"LIVE"|dashboard-sync|dashboard-files/.test(wr) && r2b.join() === 'team-files' && /TeamStore/.test(wr) && /work\.jplundberg\.com/.test(wr), "Team's Worker has none of /cmd's bindings – only its own R2 bucket team-files " + r2b.join());
   const cmdJs = fs.readdirSync(path.join(__dirname, '..', '..', 'cmd')).filter(f => f.endsWith('.js')).map(f => fs.readFileSync(path.join(__dirname, '..', '..', 'cmd', f), 'utf8')).join('\n');
   check(!/team-keys|\/api\/recs|TeamStore/.test(cmdJs), '/cmd has no Team data or keys');
 

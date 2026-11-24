@@ -17,7 +17,7 @@ const ACTS = { newp: 'edit', delp: 'admin', edit: 'edit', send: 'edit', import: 
 const PROLES = ['none'].concat(['read', 'edit', 'approve', 'admin']);
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
-const FID = /^[a-f0-9]{20,32}$/, LID = /^[a-f0-9]{16}$/, MAXCHUNK = 1500000, MAXCHUNKS = 60, TEAMBYTES = 4e9, LINKBYTES = 1e9, LINKFILES = 300;
+const FID = /^[a-f0-9]{20,32}$/, LID = /^[a-f0-9]{16}$/, MAXCHUNK = 1500000, MAXCHUNKS = 60, TEAMBYTES = 10e9, LINKBYTES = 1e9, LINKFILES = 300;
 
 function json(o, status = 200) {
   return new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
@@ -101,6 +101,38 @@ export default {
 export class TeamStore {
   constructor(ctx, env) { this.ctx = ctx; this.s = ctx.storage; this.env = env; }
 
+  /* ---------- file pieces (JP 2026-11-24: 10 GB per team, project files shared with the team) ----------
+     Encrypted pieces live in R2 (binding FILES, bucket team-files) under this team's own prefix; a team's database holds at most 10 GB
+     in all, so files can't stay there. Pieces from before are read from the database and moved over a few at a time (moveSome).
+     Without the FILES binding everything works as before, in the database. */
+  ckey(fid, n) { return 't/' + this.ctx.id.toString() + '/f/' + fid + '/' + n; }
+  async cGet(fid, n) {
+    if (this.env && this.env.FILES) { const o = await this.env.FILES.get(this.ckey(fid, n)); if (o) return await o.json(); }
+    return (await this.s.get('f:' + fid + ':' + n)) || null;
+  }
+  async cPut(fid, n, v) {
+    if (this.env && this.env.FILES) { await this.env.FILES.put(this.ckey(fid, n), JSON.stringify(v)); await this.s.delete('f:' + fid + ':' + n); }
+    else await this.s.put('f:' + fid + ':' + n, v);
+  }
+  async cDel(fid, n) { if (this.env && this.env.FILES) await this.env.FILES.delete(this.ckey(fid, n)); await this.s.delete('f:' + fid + ':' + n); }
+  async moveSome() {
+    if (!this.env || !this.env.FILES || this.moving || (await this.s.get('fmoved'))) return; this.moving = true;
+    try { const m = await this.s.list({ prefix: 'f:', limit: 20 }); if (!m.size) { await this.s.put('fmoved', Date.now()); return; }
+      for (const [k, v] of m) { const q = k.split(':'); await this.env.FILES.put(this.ckey(q[1], q[2]), JSON.stringify(v)); await this.s.delete(k); } }
+    catch (e) {} finally { this.moving = false; }
+  }
+  async wipeFiles() {
+    if (!this.env || !this.env.FILES) return; const pre = 't/' + this.ctx.id.toString() + '/'; let cur;
+    for (let i = 0; i < 2000; i++) { const l = await this.env.FILES.list({ prefix: pre, cursor: cur, limit: 1000 }); if (l.objects.length) await this.env.FILES.delete(l.objects.map(o => o.key)); if (!l.truncated) break; cur = l.cursor; }
+  }
+  /* a project's delivered file leaves the project: its pieces go too (only pieces of the team's own uploads – never an upload link's) */
+  async delChunks(email, b) {
+    const fid = String(b.fid || ''), n = Math.min(MAXCHUNKS, Math.max(0, b.n | 0)); if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
+    let used = (await this.s.get('fbytes')) || 0, gone = 0;
+    for (let i = 0; i < n; i++) { const c = await this.cGet(fid, i); if (!c) continue; if (String(c.by || '').indexOf('link:') === 0) return json({ error: 'not yours' }, 403); used -= (c.ct || '').length; await this.cDel(fid, i); gone++; }
+    await this.s.put('fbytes', Math.max(0, used)); return json({ ok: true, gone });
+  }
+
   async fetch(request) {
     const url = new URL(request.url), m = request.method, p = url.pathname.replace(/^\/api\//, '').replace(/\/+$/, '');
     if (p.startsWith('/dir/')) return this.dir(p.slice(5), url, request);   /* only the Durable Object 'dir' is ever asked these */
@@ -135,6 +167,7 @@ export class TeamStore {
       if (p === 'log' && m === 'GET') return this.logList(url);
       if (p === 'fchunk' && m === 'GET') return this.getChunk(url);
       if (p === 'fchunk' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.putChunk(email, b); }
+      if (p === 'fdel' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.delChunks(email, b); }
       if (p === 'push' && m === 'GET') return json({ key: (await this.vapid()).pub });
       if (p === 'push' && m === 'POST') return this.pushSub(email, b);
       if (p === 'uploads' && m === 'GET') return this.uploads(url);
@@ -159,7 +192,7 @@ export class TeamStore {
       if (p === 'invites' && m === 'DELETE') { const id = url.searchParams.get('id') || ''; if (!/^[a-f0-9]{16}$/.test(id)) return json({ error: 'bad id' }, 400); for (const [k, v] of await this.s.list({ prefix: 'i:' })) if (k.slice(2, 18) === id) await this.s.delete(k); return json({ ok: true }); }
       if (p === 'approve' && m === 'POST') return this.approve(email, team, b);
       if (p === 'rename' && m === 'POST') { const nm = str(b.name, 60); if (!nm) return json({ error: 'a name is needed' }, 400); const old = team.name; team.name = nm; await this.s.put('team', team); await this.log(email, 'rename', { name: nm, from: old }); return json({ ok: true }); }
-      if (p === 'wipe' && m === 'POST') { if (!owner || email !== owner) return json({ error: 'only the owner can delete a team' }, 403); if (typeof b.confirm !== 'string' || b.confirm.trim() !== team.name) return json({ error: 'type the team name to delete it' }, 409); await this.s.deleteAll(); return json({ ok: true }); }
+      if (p === 'wipe' && m === 'POST') { if (!owner || email !== owner) return json({ error: 'only the owner can delete a team' }, 403); if (typeof b.confirm !== 'string' || b.confirm.trim() !== team.name) return json({ error: 'type the team name to delete it' }, 409); await this.wipeFiles(); await this.s.deleteAll(); return json({ ok: true }); }
       if (p === 'decline' && m === 'POST') { const q = await this.s.get('q:' + low(b.email)); if (!q) return json({ error: 'no request' }, 404); await this.s.delete('q:' + q.email); await this.log(email, 'decline', { who: q.email, name: q.name }); return json({ ok: true }); }
       if (p === 'role' && m === 'POST') return this.setRole(email, owner, b);
       if (p === 'remove' && m === 'POST') return this.remove(email, owner, team, b);
@@ -391,16 +424,16 @@ export class TeamStore {
     if (!FID.test(String(b.fid || '')) || n < 0 || n >= MAXCHUNKS || !blob(b) || b.ct.length > MAXCHUNK) return json({ error: 'bad chunk' }, 400);
     const used = (await this.s.get('fbytes')) || 0;
     if (used + b.ct.length > TEAMBYTES) return json({ error: 'the team has no room for more files' }, 507);
-    const k = 'f:' + b.fid + ':' + n, old = await this.s.get(k);
+    const old = await this.cGet(b.fid, n);
     if (old && old.by !== email) return json({ error: 'bad chunk' }, 409);
-    await this.s.put(k, { iv: b.iv, ct: b.ct, by: email, t: Date.now() });
+    await this.cPut(b.fid, n, { iv: b.iv, ct: b.ct, by: email, t: Date.now() });
     await this.s.put('fbytes', used + b.ct.length - (old ? old.ct.length : 0));
     return json({ ok: true });
   }
   async getChunk(url) {
     const fid = url.searchParams.get('fid') || '', n = +url.searchParams.get('n') | 0;
     if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
-    const c = await this.s.get('f:' + fid + ':' + n);
+    const c = await this.cGet(fid, n); this.ctx.waitUntil(this.moveSome());
     return c ? json({ iv: c.iv, ct: c.ct }) : json({ error: 'not found' }, 404);
   }
 
@@ -443,8 +476,8 @@ export class TeamStore {
       if (f.done) return json({ error: 'already sent' }, 409);
       if (l.bytes + b.ct.length > LINKBYTES) return json({ error: 'the link is full' }, 507);
       const used = (await this.s.get('fbytes')) || 0; if (used + b.ct.length > TEAMBYTES) return json({ error: 'the team has no room for more files' }, 507);
-      const ck = 'f:' + fid + ':' + n, old = await this.s.get(ck);
-      await this.s.put(ck, { iv: b.iv, ct: b.ct, by: 'link:' + lid, t: Date.now() });
+      const old = await this.cGet(fid, n);
+      await this.cPut(fid, n, { iv: b.iv, ct: b.ct, by: 'link:' + lid, t: Date.now() });
       const grow = b.ct.length - (old ? old.ct.length : 0);
       f.n = Math.max(f.n, n + 1); f.size += grow; l.bytes += grow;
       await this.s.put('fbytes', used + grow); await this.s.put(fk, f); await this.s.put('u:' + lid, l);
@@ -510,7 +543,7 @@ export class TeamStore {
     let used = (await this.s.get('fbytes')) || 0, n = 0;
     for (const fid of fids) {
       const k = 'uf:' + lid + ':' + fid, f = await this.s.get(k); if (!f) continue;
-      if (!f.kept) for (let i = 0; i < (f.n || 0); i++) { const ck = 'f:' + fid + ':' + i, c = await this.s.get(ck); if (c) { used -= c.ct.length; await this.s.delete(ck); } }
+      if (!f.kept) for (let i = 0; i < (f.n || 0); i++) { const c = await this.cGet(fid, i); if (c) { used -= c.ct.length; await this.cDel(fid, i); } }
       await this.s.delete(k); l.files = l.files.filter(x => x !== fid); l.bytes = Math.max(0, l.bytes - (f.kept ? 0 : f.size || 0)); n++;
     }
     if (all) { l.off = 1; l.exp = Math.min(l.exp, Date.now()); }

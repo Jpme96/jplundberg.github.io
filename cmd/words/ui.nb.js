@@ -947,6 +947,8 @@ I18N.add({
   "ui.dc-example-name": ["Example name", "Eksempelnavn"],
   "ui.dc-file": ["File", "Fil"],
   "ui.dc-file-elsewhere": ["The file is on the device it was imported on.", "Filen ligger på enheten den ble importert på."],
+  "ui.dc-file-later": ["The file is still only on the device it was uploaded from – it is shared with the team the next time the project is opened there.", "Filen ligger foreløpig bare på enheten den ble lastet opp fra – den deles med teamet neste gang prosjektet åpnes der."],
+  "ui.dc-sharing": ["Sharing {n} files with the team …", "Deler {n} filer med teamet …"],
   "ui.dc-file-removed": ["File removed", "Filen er fjernet"],
   "ui.dc-files-bad": ["Some files could not be read.", "Noen filer kunne ikke leses."],
   "ui.dc-files-dupe": ["{n} already there", "{n} fantes fra før"],

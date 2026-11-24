@@ -34,10 +34,19 @@ function storageFor(name) {
   };
 }
 const env = { TEAM_DOMAIN: TEAM, POLICY_AUD: AUD, OWNER: 'owner@x.no', ORIGIN };
+/* R2 (the encrypted file pieces, binding FILES) in memory – NO_R2=1 runs Team without it, as before the move (2026-11-24) */
+const r2 = new Map(); globalThis.__r2 = r2;
+if (!process.env.NO_R2) env.FILES = {
+  put: async (k, v) => { r2.set(k, String(v)); return {}; },
+  get: async k => r2.has(k) ? { json: async () => JSON.parse(r2.get(k)), text: async () => r2.get(k) } : null,
+  delete: async k => { (Array.isArray(k) ? k : [k]).forEach(x => r2.delete(x)); },
+  list: async ({ prefix = '', limit = 1000, cursor } = {}) => { const ks = [...r2.keys()].filter(k => k.startsWith(prefix)).sort(), from = cursor ? +cursor : 0, page = ks.slice(from, from + limit);
+    return { objects: page.map(key => ({ key })), truncated: from + limit < ks.length, cursor: String(from + limit) }; }
+};
 const stores = new Map();
 const chains = new Map();   /* one request at a time per Durable Object (one may call another, as the real ones can) */
 env.TEAM = { idFromName: n => n, get: n => {
-  if (!stores.has(n)) stores.set(n, new mod.TeamStore({ storage: storageFor(n) }, env));
+  if (!stores.has(n)) stores.set(n, new mod.TeamStore({ storage: storageFor(n), id: { toString: () => 'do-' + n }, waitUntil: p => { Promise.resolve(p).catch(() => {}); } }, env));
   const st = stores.get(n);
   return { fetch: req => { const c = (chains.get(n) || Promise.resolve()).then(() => st.fetch(req), () => st.fetch(req)); chains.set(n, c); return c; } };
 } };
@@ -54,6 +63,7 @@ env.ASSETS = { fetch: async req => {
 http.createServer(async (req, res) => {
   if (req.url === '/__internal/errlog') { const r = await mod.default.fetch(new Request('https://internal/api/errlog-internal'), env); return res.end(await r.text()); }   /* what the /cmd Worker gets over its service binding */
   if (req.url === '/__mem') { const all = []; for (const [n, m] of mems) for (const [k, v] of m) all.push([n === 'team' ? k : n + '/' + k, v]); return res.end(JSON.stringify(all)); }
+  if (req.url === '/__r2') { return res.end(JSON.stringify([...r2.entries()])); }   /* the file pieces in R2 (2026-11-24) */
   const ch = []; for await (const c of req) ch.push(c);
   const who = ((req.headers.cookie || '').match(/(?:^|;\s*)who=([^;]+)/) || [])[1];
   const headers = { ...req.headers };
