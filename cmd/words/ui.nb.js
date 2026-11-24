@@ -961,6 +961,8 @@ I18N.add({
   "ui.dcn-bk-odd-in": ["Take them in too – they keep their own naming rule", "Ta dem med likevel – de beholder sin egen navneregel"],
   "ui.dcn-pk-dwin": ["incl. {n} drawings – left out unless you take them in", "inkl. {n} tegninger – holdes utenfor med mindre du tar dem med"],
   "ui.dcn-pk-phin": ["incl. {n} photos – left out unless you take them in", "inkl. {n} bilder – holdes utenfor med mindre du tar dem med"],
+  "ui.dcn-pk-dwin1": ["incl. 1 drawing – left out unless you take it in", "inkl. 1 tegning – holdes utenfor med mindre du tar den med"],
+  "ui.dcn-pk-phin1": ["incl. 1 photo – left out unless you take it in", "inkl. 1 bilde – holdes utenfor med mindre du tar det med"],
   "ui.dc-file-removed": ["File removed", "Filen er fjernet"],
   "ui.dc-files-bad": ["Some files could not be read.", "Noen filer kunne ikke leses."],
   "ui.dc-files-dupe": ["{n} already there", "{n} fantes fra før"],

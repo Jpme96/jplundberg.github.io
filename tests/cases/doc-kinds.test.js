@@ -46,7 +46,7 @@ fs.writeFileSync(F.pic, Buffer.from('not really a picture'));
   /* Select all: the bar says a drawing is among them; Change code and Use the new name leave the drawing and the photo out */
   await p.evaluate(() => { const a = document.querySelector('.dx-ren input[data-dcnpkall]'); if (a.checked) a.click(); a.click(); }); await sl(300);
   const bar = await p.evaluate(() => (document.querySelector('.dcn-pkact .dcn-pkodd') || {}).textContent || '');
-  check(/incl\. 1 drawings/.test(bar), 'with everything ticked, the bar says a drawing is among them ' + bar);
+  check(/incl\. 1 drawing – /.test(bar), 'with everything ticked, the bar says a drawing is among them ' + bar);
   await p.evaluate(() => document.querySelector('[data-dcnpka="code"]').click()); await sl(300);
   const c1 = await p.evaluate(async () => { const s = document.querySelector('.dcn-bulk [data-bksel]'); s.value = [...s.options].find(o => /^365/.test(o.value)).value; s.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 200));
     const box = document.querySelector('.dcn-bulk .dcn-bkbox'), odd = document.querySelector('.dcn-bulk [data-bkodd]'), get = () => (document.querySelector('.dcn-bulk [data-bkgo]') || {}).textContent || '';
