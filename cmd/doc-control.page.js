@@ -693,7 +693,7 @@
   function flowEnd(p, iss, verdict, c) {
     var h = '<div class="dc-fverd dc-v-' + verdict[0] + '"><b>' + esc(verdict[1]) + '</b><small>' + esc(k('ui.dc-fl-end-sub', '{a} of {n} approved · {m} missing · {r} waiting for approval', { a: c.done, n: c.all, m: c.missing, r: c.recv })) + '</small></div>';
     if (iss.length) h += '<h3 class="fdv-h">' + esc(k('ui.dc-fl-end-fix', 'To put right before handover')) + '</h3><ul class="dc-flist2">' + iss.map(function (x) { return flowRow(x.l.code, (typeLabel(x.l) || '') + ' – ' + lineTitle(x.l), x.why, '<span class="dc-fpill dc-v-' + x.kind + '">' + esc(x.what) + '</span>', '', p, x.l); }).join('') + '</ul>';
-    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-dctab="report"><i class="bi bi-file-earmark-text"></i> ' + esc(k('ui.dc-fl-report', 'Report for the project manager')) + '</button>' + ((p.lines || []).length ? '<button type="button" class="pill-btn ghost" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7b', 'Filled-in Vedlegg 7')) + '</button>' : '') + '</div>';
+    h += '<div class="dc-facts"><button type="button" class="pill-btn" data-dctab="report"><i class="bi bi-file-earmark-text"></i> ' + esc(k('ui.dc-fl-report2', 'See the report and download')) + '</button></div>';   /* one place for every download – Vedlegg 7 is "Document plan" in the report's menu (JP 2026-11-24 21:41) */
     return h + '<p class="muted dc-help">' + esc(k('ui.dc-fl-end-note', 'Checked against the project’s requirements and the client’s checklist. Names are checked by the rules; whether the content is good enough is for a person to judge.')) + '</p>';
   }
   function full(p) {

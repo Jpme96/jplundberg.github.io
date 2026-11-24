@@ -31,6 +31,8 @@ const fs = require('fs'), os = require('os'), path = require('path');
   /* the report: one Download menu */
   await p.evaluate(() => { location.hash = '#dc=prp1'; }); await sl(300);
   await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="end"]').click()); await sl(300);
+  const e0 = await p.evaluate(() => ({ btn: (document.querySelector('.dc-flow [data-dctab="report"]') || {}).textContent || '', v7: !!document.querySelector('.dc-flow [data-dcvx7]') }));
+  check(/See the report and download/.test(e0.btn) && !e0.v7, 'the final check has one way on: See the report and download – no separate Vedlegg 7 button ' + JSON.stringify(e0));
   await p.evaluate(() => { const b2 = document.querySelector('[data-dctab="report"]'); b2 && b2.click(); }); await sl(600);
   const r0 = await p.evaluate(() => ({ menu: !!document.querySelector('[data-dcdlm]'), old: !!document.querySelector('.fdv-rbar [data-dcpdf]'), tabs: [...document.querySelectorAll('.dc-pvtabs [role="tab"]')].map(x => x.textContent).join(','), art: !!document.querySelector('.rp-doc') }));
   check(r0.menu && !r0.old && r0.tabs === 'Report,Document plan' && r0.art, 'the report has one Download button and two preview tabs ' + JSON.stringify(r0));
