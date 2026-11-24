@@ -909,3 +909,11 @@ html.dcn-modal { overflow: hidden; }
 @media (min-width: 560px) { .dcn-nb { flex-wrap: nowrap; } .dcn-nb .dcn-sug { flex: 1 1 auto; min-width: 0; } .dcn-nb .dcn-b { flex: 0 1 auto; max-width: 52%; flex-wrap: nowrap; } .dcn-nb .dcn-b > .pill-btn { min-width: 0; } }
 .dcn-b .pill-btn.dcn-fillb { white-space: normal; text-align: left; line-height: 1.25; height: auto; padding-top: 6px; padding-bottom: 6px; min-width: 0; flex: 0 1 auto; }
 .dcn-nb .dcn-b > .icon-btn { flex: none; }
+/* One type scale in the file card (JP 2026-11-24 "some inconsistency with some fonts"): labels 12px · what you choose or type 14px ·
+   the new name 14.5px bold · buttons 14px · small text (Open, warnings, tips) 13px */
+.dcn-card .dcn-cbtn, .dcn-card .dcn-cbtn span { font-size: 14px; }
+.dcn-card .dcn-g select, .dcn-card .dcn-s input, .dcn-card .dcn-s select { font-size: 14px; }
+.dcn-card .dcn-sug code, .dcn-card .dcn-sug code i { font-size: 14.5px; font-weight: 600; }
+.dcn-card .dcn-b .pill-btn { font-size: 14px; }
+.dcn-card .dcn-head .dcn-open { font-size: 13px; }
+.dcn-row.dcn-card > .dc-iss, .dcn-row.dcn-card > .dcn-why, .dcn-row.dcn-card > .dcn-cc, .dcn-lk summary { font-size: 13px; }

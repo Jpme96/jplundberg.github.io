@@ -73,7 +73,7 @@
   function ext(n) { return (String(n).match(/(\.[a-z0-9]{2,5})$/i) || ['', ''])[1].toLowerCase(); }
   function drawn(f) { var m = String(f.orig || f.name).replace(/\.[a-z0-9]{2,5}$/i, '').match(TEG); return m ? { floor: m[2], disc: m[3], dtype: m[5] } : {}; }
   /* guesses that save typing (JP 2026-11-24): the free text starts as the old file name, a photo's floor as the last one you picked */
-  function lc1(t) { t = String(t || ''); return t.charAt(0).toLowerCase() + t.slice(1); }   /* floor, property ID – the ID keeps its capitals */
+  function lc1(t) { t = String(t || ''); return /^[A-ZÆØÅ0-9]{2}/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1); }   /* a field name inside a sentence: floor, property ID – NS 3451 and ID keep their capitals (JP 2026-11-24) */
   function freeGuess(f) { var n = String(f.orig || f.name).replace(/\.[a-z0-9]{2,5}$/i, ''); return /^(img|dsc|pxl|photo|image|bilde|untitled|uten navn)[\s_-]*\d*$/i.test(n) ? '' : n.replace(/[_]+/g, ' ').trim().slice(0, 60); }
   function lastFloor() { try { return localStorage.getItem('dcn.floor') || ''; } catch (e) { return ''; } }
   /* the day a photo was taken: the earliest EXIF date in its first 256 kB (DateTimeOriginal is never later than an edit date), else the file's own date */
@@ -103,7 +103,7 @@
     r = r || ruleFor(p, f); var segs = [], miss = [];
     r.parts.forEach(function (q) {
       var v = nclean(nval(p, f, q)); if (v && r.cs === 'upper') v = v.toUpperCase(); else if (v && r.cs === 'lower') v = v.toLowerCase();
-      if (!v) { if (q.req === false) return; miss.push(q.k); segs.push({ q: q, v: '‹' + partName(q.k).toLowerCase() + '›', gap: 1 }); return; }
+      if (!v) { if (q.req === false) return; miss.push(q.k); segs.push({ q: q, v: '‹' + lc1(partName(q.k)) + '›', gap: 1 }); return; }
       segs.push({ q: q, v: v });
     });
     var plain = '', html = '';
@@ -453,7 +453,7 @@
     if (compact) {
       var st = fstate(p, f), ic = st === 'done' ? 'check2-circle' : st === 'ready' ? 'arrow-right-circle' : 'exclamation-circle', open = !!nexp[f.id];
       var line = '<button type="button" class="dcn-sumb" data-dcnexp="' + esc(f.id) + '" aria-expanded="' + open + '"><i class="bi bi-' + ic + ' dcn-s-' + st + '"></i><span class="dcn-sumt"><b data-noi18n>' + esc(f.name) + '</b>' +
-        (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(!f.p.code && f.sg && f.sg.alt ? k('ui.dcn-alt-short', 'Choose code: {a}', { a: f.sg.alt.map(function (a) { return a[0]; }).join(k('ui.dcn-or', ' or ')) }) : k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return partName(x).toLowerCase(); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-right"></i></button>';
+        (st === 'done' ? '' : '<small data-noi18n>' + (st === 'ready' ? '→ ' + esc(b.plain + e) : esc(!f.p.code && f.sg && f.sg.alt ? k('ui.dcn-alt-short', 'Choose code: {a}', { a: f.sg.alt.map(function (a) { return a[0]; }).join(k('ui.dcn-or', ' or ')) }) : k('ui.dcn-fill', 'Fill in: {w}', { w: (b.miss.length ? b.miss : ['code']).map(function (x) { return lc1(partName(x)); }).join(', ') }))) + '</small>') + '</span><i class="bi bi-chevron-right"></i></button>';
       if (!open) return '<li class="dcn-row dcn-c dcn-' + (st === 'todo' ? 'warn' : 'ok') + (pkOn(f.id) && !nopk ? ' dcn-pkd' : '') + '" data-dcnc="' + esc(f.id) + '">' + (nopk ? '' : '<label class="dcn-pkc"><input type="checkbox" data-dcnpk="' + esc(f.id) + '"' + (pkOn(f.id) ? ' checked' : '') + ' aria-label="' + esc(k('ui.dcn-pk-one', 'Select {f}', { f: f.name })) + '"></label>') + line + '</li>';
       return nrow(p, f, false, line);
     }
@@ -483,7 +483,7 @@
     r.parts.forEach(function (q) { if (PV[q.k] && !p[PV[q.k][0]]) hs += pvField(p, q.k, true, false); });
     r.parts.forEach(function (q) { if (NPART[q.k] && NPART[q.k][2] && !seen[q.k]) { seen[q.k] = 1; hs += nfield(p, f, q.k, b.miss.indexOf(q.k) >= 0); } });
     if (hs) h += '<div class="dcn-s dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-parts', 'Name parts')) + '</p>' + hs + '</div>';
-    var mw = b.miss.map(function (x) { return x === 'code' ? k('ui.dcn-code', 'NS 3451 code').toLowerCase() : x === 'type' ? k('ui.dcn-type', 'Document type').toLowerCase() : x === 'room' ? k('ui.dcn-short-room', 'room') : lc1(partName(x)); }), mws = mw.length > 1 ? mw.slice(0, -1).join(', ') + k('ui.dcn-and', ' and ') + mw[mw.length - 1] : mw[0];
+    var mw = b.miss.map(function (x) { return x === 'code' ? lc1(k('ui.dcn-code', 'NS 3451 code')) : x === 'type' ? lc1(k('ui.dcn-type', 'Document type')) : x === 'room' ? k('ui.dcn-short-room', 'room') : lc1(partName(x)); }), mws = mw.length > 1 ? mw.slice(0, -1).join(', ') + k('ui.dcn-and', ' and ') + mw[mw.length - 1] : mw[0];
     h += '<div class="dcn-new dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-new', 'New name')) + ' <span>· ' + esc(k('ui.dcn-name-from', 'Name from “{r}”', { r: rname(r) })) + '</span></p><div class="dcn-nb"><div class="dcn-sug"><code data-noi18n>' + b.html + esc(e) + '</code></div>' +
       '<div class="dcn-b">' + (b.miss.length ? '<button type="button" class="pill-btn dcn-fillb" data-dcnfill="' + esc(f.id) + '"><i class="bi bi-arrow-up"></i> ' + esc(k('ui.dcn-fill-first', 'Fill in {w} first', { w: mws })) + '</button>'
         : '<button type="button" class="pill-btn" data-dcnuse="' + esc(f.id) + '"' + (b.plain + e === f.name ? ' disabled' : '') + '><i class="bi bi-pencil"></i> ' + esc(k('ui.dcn-use', 'Use this name')) + '</button>') +

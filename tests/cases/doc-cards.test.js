@@ -11,7 +11,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => PageTabs.show('doc')); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
   await p.evaluate(() => { const i = document.querySelector('input[data-dxrenf]'), dt = new DataTransfer(), when = new Date(2025, 2, 14, 10).getTime();
-    dt.items.add(new File(['made up a'], 'madeup-logo.png', { type: 'image/png', lastModified: when })); dt.items.add(new File(['made up b'], 'IMG_0001.jpg', { type: 'image/jpeg', lastModified: when }));
+    dt.items.add(new File(['made up a'], 'madeup-logo.png', { type: 'image/png', lastModified: when })); dt.items.add(new File(['made up b'], 'IMG_0001.jpg', { type: 'image/jpeg', lastModified: when })); dt.items.add(new File(['made up c'], 'MADEUP DIRU testfil.pdf', { type: 'application/pdf' }));
     i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(1500);
   const R = re => p.evaluate(async src => { const re = new RegExp(src); document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); await new Promise(r => setTimeout(r, 150));
     const c = [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')].find(x => re.test(x.textContent)); if (c) { c.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 350)); } return !!document.querySelector('.dcn-fpop .dcn-row'); }, re.source);
@@ -43,6 +43,12 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await R(/IMG_0001/);
   const c3 = await p.evaluate(() => { const li = document.querySelector('.dcn-fpop .dcn-row'); return { floor: li.querySelector('[data-dcnv$=":floor"]').value, free: li.querySelector('[data-dcnv$=":free"]').value }; });
   check(c3.floor === 'H02' && c3.free === '', 'the next photo starts with the floor picked last; a camera name (IMG_0001) gives no free text ' + JSON.stringify(c3));
+  /* a document without a code: NS 3451 keeps its capitals in the button and the name's gap; the card uses one type scale (JP 2026-11-24) */
+  await R(/MADEUP DIRU/);
+  const c4 = await p.evaluate(() => { const li = document.querySelector('.dcn-fpop .dcn-row'), fs = q => { const e = li.querySelector(q); return e ? parseFloat(getComputedStyle(e).fontSize) : 0; };
+    return { fill: (li.querySelector('[data-dcnfill]') || {}).textContent || '', gap: (li.querySelector('.dcn-sug code i') || {}).textContent || '', pick: fs('.dcn-cbtn'), sel: fs('.dcn-kind select'), code: fs('.dcn-sug code'), btn: fs('.dcn-b .pill-btn'), iss: fs(':scope > .dc-iss'), open: fs('.dcn-head .dcn-open') }; });
+  check(/NS 3451/.test(c4.fill) && !/ns 3451/.test(c4.fill) && /NS 3451/.test(c4.gap), 'NS 3451 keeps its capitals in “Fill in … first” and in the name’s gap ' + JSON.stringify({ fill: c4.fill, gap: c4.gap }));
+  check(c4.pick === 14 && c4.sel === 14 && c4.code <= 15 && c4.btn === 14 && (!c4.iss || c4.iss === 13) && c4.open === 13, 'one type scale in the card: choices 14, new name ≤ 15, buttons 14, small text 13 ' + JSON.stringify(c4));
   /* space between the cards in the list */
   await p.evaluate(() => document.querySelectorAll('[data-dcnfx]').forEach(x => x.click())); await sl(200);
   const gap = await p.evaluate(() => { const L = [...document.querySelectorAll('.dx-ren .dcn-files > li')]; return L.length > 1 ? Math.round(L[1].getBoundingClientRect().top - L[0].getBoundingClientRect().bottom) : -1; });
