@@ -208,6 +208,17 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     /* the box shows how far you've come, and Done is the main button only when every file has its new name (JP 2026-11-24) */
     const pr = await own.evaluate(() => ({ p: (document.querySelector('.dc-fresh .dc-freshp') || {}).textContent || '', main: !!document.querySelector('.dc-fresh [data-dcfreshok].pill-btn'), cards: document.querySelectorAll('.dc-fresh .dcn-files > li').length }));
     check(/^0 (av|of) 2/.test(pr.p) && !pr.main && pr.cards === 2, 'the new-files box says 0 of 2 have their new name, and Done is not the main button yet ' + JSON.stringify(pr));
+    /* duplicates in a project (JP 2026-11-24 "it did not check for duplicates"): the very same file again is skipped; the same content
+       under another name is kept, a bar says so, and Check them lets you keep one */
+    const du = path.join(upd, 'Kopi av tegning madeup.pdf'); fs.writeFileSync(du, '%PDF-1.1\n%%EOF\n');
+    const inp2 = await own.$('input[data-dcfiles]'); if (inp2) await inp2.uploadFile(up, du); await sl(2500);
+    const d1 = await own.evaluate(() => ({ n: [...document.querySelectorAll('[data-dcfdel]')].length, bar: (document.querySelector('.dx-dupbar') || {}).textContent || '', names: [...document.querySelectorAll('.dc-fresh .dcn-head b, .dc-fresh .dcn-sumt b')].map(b => b.textContent) }));
+    check(/2 (filer|files)/.test(d1.bar) && d1.names.filter(n => /Tegning madeup 15/.test(n)).length === 1 && d1.names.some(n => /Kopi av tegning/.test(n)), 'the same file again is skipped; the same content under another name is kept and the bar asks to check them ' + JSON.stringify(d1));
+    await own.evaluate(() => document.querySelector('[data-dxdups]').click()); await sl(400);
+    await own.evaluate(() => { const r = [...document.querySelectorAll('.dx-dupov input[name=dupkeep]')].find(x => /Tegning madeup 15/.test(x.closest('label').textContent)); r.click(); }); await sl(200);
+    await own.evaluate(() => document.querySelector('.dx-dupov [data-duprm]').click()); await sl(1500);
+    const d2 = await own.evaluate(() => ({ bar: !!document.querySelector('.dx-dupbar'), pop: !!document.querySelector('.dx-dupov'), copy: [...document.querySelectorAll('.dc-fresh .dcn-head b, .dc-fresh .dcn-sumt b, .dc-fh')].some(b => /Kopi av tegning/.test(b.textContent)) }));
+    check(!d2.bar && !d2.pop && !d2.copy, 'Check them: the one you choose stays, the copy leaves the project, and the bar is gone ' + JSON.stringify(d2));
     await own.evaluate(() => { const b = document.querySelector('[data-dcfreshok]'); b && b.click(); });
     check(await until(own, () => !document.querySelector('.dc-fresh'), 4000), 'and Done closes it');
   }

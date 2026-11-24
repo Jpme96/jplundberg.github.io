@@ -53,6 +53,8 @@ window.DC_NB = {
 "ui.dc-due": "Frist",
 "ui.dc-due-late": "Forfalt {d}",
 "ui.dc-due-on": "Frist {d}",
+"ui.dc-dup-done": "{n} fjernet fra prosjektet – den du valgte er beholdt.",
+"ui.dc-dup-help": "Disse filene har nøyaktig samme innhold. Se på dem, velg den du vil beholde, og fjern de andre fra prosjektet.",
 "ui.dc-example-name": "Eksempelnavn",
 "ui.dc-file": "Fil",
 "ui.dc-file-elsewhere": "Filen ligger på enheten den ble importert på.",

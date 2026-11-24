@@ -4247,5 +4247,7 @@ I18N.add({
   "ui.dcn-sh-n": ["Project {v}", "Prosjekt {v}"],
   "ui.dcn-shared": ["Shared by all the files", "Felles for alle filene"],
   "ui.dcn-change": ["Change", "Endre"],
-  "ui.dcn-all1": ["Suggest a code and check the file", "Foreslå kode og sjekk filen"]
+  "ui.dcn-all1": ["Suggest a code and check the file", "Foreslå kode og sjekk filen"],
+  "ui.dc-dup-help": ["These files have exactly the same content. Look at them, choose the one to keep, then remove the others from the project.", "Disse filene har nøyaktig samme innhold. Se på dem, velg den du vil beholde, og fjern de andre fra prosjektet."],
+  "ui.dc-dup-done": ["{n} removed from the project – the one you chose is kept.", "{n} fjernet fra prosjektet – den du valgte er beholdt."]
 });
