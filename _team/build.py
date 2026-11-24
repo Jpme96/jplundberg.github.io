@@ -116,12 +116,17 @@ css = ['/* Built by _team/build.py from cmd/styles.css and cmd/work/page.css –
        # light = cmd's dark tokens with the light ones over them, as the cascade does in cmd – the light block alone lacks --warn-rgb, --ok-rgb … (JP 2026-11-24: the new-files line had no colour in Team)
        '.dc-host {' + dark + light + '}', ':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov {' + dark + '}',
        # Team's own colours win inside Documentation too: the accent, text on it, the error colour, the grey text; blue and violet tags go neutral (JP 2026-11-19)
-       '.dc-host, :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --accent: var(--acc); --accent-rgb: var(--acc-rgb); --on-accent: var(--acc-ink); --accent-soft: var(--acc-soft); --glow: rgba(var(--acc-rgb), .3); --danger: var(--bad); --muted: var(--t-muted); --blue: var(--neutral); --violet: var(--neutral); --pink: var(--acc); }']
+       '.dc-host, :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --accent: var(--acc); --accent-rgb: var(--acc-rgb); --on-accent: var(--acc-ink); --accent-soft: var(--acc-soft); --glow: rgba(var(--acc-rgb), .3); --danger: var(--bad); --muted: var(--t-muted); --blue: var(--neutral); --violet: var(--neutral); --pink: var(--acc); }',
+       # status colours from Oslo kommune's palette (JP 2026-11-24 20:36 "change that to oslo farger"): text in dark green / dark blue on the
+       # light Oslo tints (the design manual's rule); in dark mode the bright Oslo colour is the text on a faint tint
+       '.dc-host { --ok: #034b45; --ok-rgb: 67, 248, 182; --warn: #2a2859; --warn-rgb: 249, 198, 107; --danger-rgb: 255, 130, 116; --orange: #2a2859; --orange-rgb: 224, 173, 255; --blue: #2a2859; --blue-rgb: 111, 233, 255; --slate: #2a2859; --slate-rgb: 208, 191, 174; --stt-fg: 100%; --stt-bg: .34; }',
+       ':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --ok: #43f8b6; --ok-rgb: 67, 248, 182; --warn: #f9c66b; --warn-rgb: 249, 198, 107; --danger-rgb: 255, 130, 116; --orange: #e0adff; --orange-rgb: 224, 173, 255; --blue: #6fe9ff; --blue-rgb: 111, 233, 255; --slate: #d0bfae; --slate-rgb: 208, 191, 174; --stt-fg: 100%; --stt-bg: .16; }',
+       '.dc-host .stt-bad { --c: #2a2859; } :root[data-theme="dark"] .dc-host .stt-bad { --c: #ff8274; }']
 css += pick(styles) + pick(rd(os.path.join(CMD, 'work', 'page.css')))
 # the status tags (modern.css) – Team didn't have them, so "Navn OK" showed as plain text (JP 2026-11-24)
 modern = rd(os.path.join(CMD, 'modern.css'))
-css.append('.dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; --stt-fg: 78%; --stt-bg: .13; }')
-css.append(':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; --stt-fg: 62%; --stt-bg: .15; }')
+css.append('.dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }')
+css.append(':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }')
 css += [m.group(0) for m in re.finditer(r'^\.stt[^{]*\{[^}]*\}', modern, re.M)]
 put('dc.css', '\n'.join(css) + '\n')
 

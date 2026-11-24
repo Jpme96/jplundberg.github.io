@@ -998,3 +998,31 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 /* small buttons stay small inside the tools and popups that make every button 44 px (JP 2026-11-24 19:49) */
 :is(.dx-ren, .dcn-ov, .dx-panel, .dx-plans, .dx-plb, .dx-dupbtns, .dcn-pkact) .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
 .dcn-pkh .dcn-pkc.dcn-pkall { height: 36px; }   /* the same height as the small buttons beside it (JP 2026-11-24 19:49) */
+/* the report step (JP 2026-11-24 20:43–20:53): "Download ▾" with the handover package on top, the preview tabs, the file picker */
+.dc-rbar { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+.dc-dllist { width: 340px; padding: 8px; }
+.dc-dlall { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 0 0 6px; border-radius: 12px; background: rgba(var(--ok-rgb), .16); font-size: 14px; }
+.dc-dlall > i { font-size: 20px; color: var(--ok); }
+.dc-dlall > span { flex: 1; min-width: 0; }
+.dc-dlall b { font-weight: 600; } .dc-dlall small { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+.dc-dlor { display: block; font-size: 12.5px; color: var(--muted); margin: 6px 10px 2px; }
+.dc-dlit { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+.dc-dlit:hover { background: rgba(var(--ink-rgb), .05); }
+.dc-dlit.off { opacity: .55; cursor: default; }
+.dc-dlit input { flex: none; width: 18px; height: 18px; min-height: 0; margin: 2px 0 0; accent-color: var(--ok); }
+.dc-dlit > i { color: var(--muted); margin-top: 1px; }
+.dc-dlit b { font-weight: 600; } .dc-dlit small { display: block; font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.dc-dlpick { display: inline-block; margin-top: 4px; font-size: 13px; }
+.dc-dlgo { display: flex; margin: 8px 2px 2px; } .dc-dlgo .pill-btn { flex: 1; }
+.dc-pvtabs { display: flex; align-items: center; gap: 4px; margin: 4px 0 12px; border-bottom: 1px solid var(--line); }
+.dc-pvtabs [role="tab"] { border: 0; background: none; font: inherit; font-size: 14.5px; padding: 10px 12px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.dc-pvtabs [aria-selected="true"] { color: var(--text); font-weight: 600; border-color: var(--ok); }
+.dc-pvone { margin-left: auto; font-size: 13.5px; }
+.dc-pvt-wrap { overflow-x: auto; }
+.dc-pvt { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.dc-pvt th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.dc-pvt td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.dc-pvt td:first-child, .dc-pvt td:nth-child(3), .dc-pvt td:last-child { white-space: nowrap; }
+.dc-dlpov .dx-tsheet { max-width: 560px; }
+.dc-dlgh b { flex: 1; font-weight: 600; }
+.dc-dlfr { padding-left: 32px; }

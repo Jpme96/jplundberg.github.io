@@ -138,6 +138,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   });
   check(hz && /\.zip$/.test(hz.name) && hz.names.some(n => /^Contents\.txt$/.test(n)) && hz.names.some(n => /^\d{3}[^/]*\/.+/.test(n)) && hz.names.some(n => /\.pdf$/.test(n) && /^Report/.test(n)) && hz.names.some(n => /^Document plan.*\.xlsx$/.test(n)), 'the handover package: contents, a folder per code with the approved file, the report and the plan ' + JSON.stringify(hz));
   /* Excel with colours opens the file to see and edit (JP 21:47): sheet tabs, the colours, systems with no document type in grey, any cell changed, kept and downloaded */
+  await p.evaluate(() => { const t = document.querySelector('[data-dcrtab="plan"]'); if (t) t.click(); }); await sl(300);   /* the coloured plan is on the report's Document plan tab (JP 2026-11-24) */
   await tap('[data-dcxcol]');
   check(await until(() => !!document.querySelector('.xv .xv-t td')), 'the coloured plan opens in the viewer');
   const zm = await p.evaluate(async () => { const t = document.querySelector('.xv .xv-t'), w0 = t.getBoundingClientRect().width; document.querySelector('.xv [data-xv=zin]').click(); await new Promise(r => setTimeout(r, 80)); const w1 = t.getBoundingClientRect().width, lab = document.querySelector('.xv .xv-zv').textContent; document.querySelector('.xv [data-xv=z100]').click(); return { grew: w1 > w0 * 1.05, lab }; });
@@ -148,15 +149,15 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     const bg = ref => getComputedStyle(document.querySelector('[data-xvr="' + ref + '"]')).backgroundColor, tx = ref => (document.querySelector('[data-xvr="' + ref + '"]') || {}).textContent;
     return { tabs, b5: bg('B5'), b3: bg('B3'), i3: tx('I3'), i5: tx('I5'), wide: document.querySelector('.xv').scrollWidth <= innerWidth + 1 };
   });
-  check(xv.tabs === 'Generelt|3 - VVS*|2 - Bygning' && xv.b5 === 'rgb(217, 234, 211)' && xv.b3 === 'rgb(217, 217, 217)' && xv.i3 === 'No document type chosen' && /^Approved/.test(xv.i5) && xv.wide,
+  check(xv.tabs === 'Generelt|3 - VVS*|2 - Bygning' && xv.b5 === 'rgb(199, 253, 233)' && xv.b3 === 'rgb(232, 223, 214)' && xv.i3 === 'No document type chosen' && /^Approved/.test(xv.i5) && xv.wide,
     'the viewer: the plan\'s sheets, approved green, a system with no document type grey with a note, nothing wider than the phone ' + JSON.stringify(xv));
   await p.click('[data-xvr="H5"]'); await p.evaluate(() => { const t = document.querySelector('.xv-in'); t.value = 'Made-up edit ÆØÅ'; t.dispatchEvent(new Event('input', { bubbles: true })); }); await sl(700);
   check(/1 change of your own/.test(await p.$eval('.xv-foot', e => e.textContent)) && (await p.$eval('[data-xvr="H5"]', e => e.textContent)) === 'Made-up edit ÆØÅ', 'a cell is changed by typing in the bar');
   /* a status colour on a line's row sets the line's status (JP 23:46) – green, then yellow again */
   const fs8 = await p.evaluate(async () => { const S = ms => new Promise(r => setTimeout(r, ms)), c = r => document.querySelector('[data-xvr="' + r + '"]');
     c('B8').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }));
-    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#D9EAD3"]').click(); await S(400); const a = Features.list('dctl')[0].lines[3].st, said = document.querySelector('.xv-foot').textContent;
-    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#FFF2CC"]').click(); await S(400); return { a, said, b: Features.list('dctl')[0].lines[3].st }; });
+    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#C7FDE9"]').click(); await S(400); const a = Features.list('dctl')[0].lines[3].st, said = document.querySelector('.xv-foot').textContent;
+    document.querySelector('[data-xv="fill"]').click(); document.querySelector('[data-xvfill="#FFE7BC"]').click(); await S(400); return { a, said, b: Features.list('dctl')[0].lines[3].st }; });
   check(fs8.a === 'ok' && /1 line is now: Approved/.test(fs8.said) && fs8.b === 'recv', 'a status colour on a row sets that line\'s status ' + JSON.stringify(fs8));
   const dl = await p.evaluate(async () => {
     let got = null; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this; };
@@ -204,7 +205,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     const sOf = ref => +((s2.match(new RegExp('<c r="' + ref + '"[^>]*s="(\\d+)"')) || [])[1]);
     return { fills: fills.join(), green: xfs[sOf('B5')], red: xfs[sOf('B8')], hdrCount: /<cellXfs count="(\d+)"/.exec(st)[1], n: xfs.length };
   });
-  check(/FFD9EAD3/.test(xfill.fills) && /FFF4CCCC/.test(xfill.fills) && xfill.green !== xfill.red && xfill.green >= 2 && +xfill.hdrCount === xfill.n, 'the rows get fills (approved green, others their colour) and the style list stays consistent ' + JSON.stringify(xfill));
+  check(/FFC7FDE9/.test(xfill.fills) && /FFFFDFDC/.test(xfill.fills) && xfill.green !== xfill.red && xfill.green >= 2 && +xfill.hdrCount === xfill.n, 'the rows get fills (approved green, others their colour) and the style list stays consistent ' + JSON.stringify(xfill));
   /* names from the FDV system instead of files (2026-11-14): pasted, matched and checked the same way */
   check(JSON.stringify(await p.evaluate(() => DocCtl.namesText('Documents\n1. 336 DA Skumanlegg Made-up\n336 DA Skumanlegg Made-up\nnot a name\n235\tDV Kledning\n235 DV Kledning Made-up.pdf'))) === JSON.stringify(['336 DA Skumanlegg Made-up', '235 DV Kledning Made-up.pdf']), 'a pasted list keeps the document names (numbering and doubles removed)');
   await tap('[data-dctab="files"]'); await sl(300);
@@ -351,7 +352,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
   check(/^Check: Made-up plan B\.xlsx/.test(ck.title) && /^2 to fix · 4 to look at · 2 OK · 2 with no document type/.test(ck.note) && /Checked against Made-up checklist/.test(ck.note) && ck.tab === '3 - VVS',
     'the check sums up what to fix and what it was checked against ' + JSON.stringify(ck));
   check(ck.r3 === 'No document type chosen' && ck.r5 === 'OK' && /Not in the checklist for 332: Drawing/.test(ck.r7) && /336 is not in the checklist/.test(ck.r8) && /No document type chosen · The checklist asks for: Compliance/.test(ck.r9) && /3-digit NS 3451 code/.test(ck.r10)
-    && ck.bg9 === 'rgb(244, 204, 204)' && ck.bg5 === 'rgb(217, 234, 211)' && ck.bg7 === 'rgb(255, 242, 204)' && ck.n === nproj, 'each line says what is wrong: missing types the checklist asks for, types it doesn\'t, codes not in it, names without a code – and no project was made');
+    && ck.bg9 === 'rgb(255, 223, 220)' && ck.bg5 === 'rgb(199, 253, 233)' && ck.bg7 === 'rgb(255, 231, 188)' && ck.n === nproj, 'each line says what is wrong: missing types the checklist asks for, types it doesn\'t, codes not in it, names without a code – and no project was made');
   /* send to the contractor: the checked file and a message with what to fix */
   const snd = await p.evaluate(async () => { let got = null, txt = ''; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) got = this.download; };
     const cs = navigator.canShare; navigator.canShare = () => false; const cw = navigator.clipboard.writeText; navigator.clipboard.writeText = t => { txt = t; return Promise.resolve(); };
@@ -371,7 +372,7 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     key('z', { ctrlKey: true }); out.undone = tx('H6'); key('y', { ctrlKey: true }); out.redone = tx('H6');
     down('B5'); down('C6', { shiftKey: true }); out.range = document.querySelector('.xv-ref').textContent; out.inRange = document.querySelectorAll('.xv-t td.in').length;
     document.querySelector('[data-xv="bold"]').click(); out.bold = [st('B5').fontWeight, st('C6').fontWeight].join();
-    document.querySelector('[data-xv="fill"]').click(); { const m = document.querySelector('.xv-sw'), r = m.getBoundingClientRect(), tb = document.querySelector('.xv-tools').getBoundingClientRect(); out.swVisible = !m.hidden && getComputedStyle(m).position === 'fixed' && r.width > 100 && r.top >= tb.top + 30 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }   /* fixed, below the toolbar, on screen (the toolbar scrolls, so it can't clip it) */ document.querySelector('[data-xvfill="#DDEBF7"]').click(); out.fill = st('C5').backgroundColor; out.temp = /nothing is saved here/i.test(document.querySelector('.xv-foot').textContent);
+    document.querySelector('[data-xv="fill"]').click(); { const m = document.querySelector('.xv-sw'), r = m.getBoundingClientRect(), tb = document.querySelector('.xv-tools').getBoundingClientRect(); out.swVisible = !m.hidden && getComputedStyle(m).position === 'fixed' && r.width > 100 && r.top >= tb.top + 30 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }   /* fixed, below the toolbar, on screen (the toolbar scrolls, so it can't clip it) */ document.querySelector('[data-xvfill="#B3F5FF"]').click(); out.fill = st('C5').backgroundColor; out.temp = /nothing is saved here/i.test(document.querySelector('.xv-foot').textContent);
     key('Delete'); out.cleared = tx('B5') + '|' + tx('C6');
     key('z', { ctrlKey: true }); out.back = tx('B5');
     down('F11'); g.focus(); const dt = new DataTransfer(); dt.setData('text/plain', 'Made-up a\tMade-up b\nMade-up c\t"two\nlines"');
@@ -393,9 +394,9 @@ fs.writeFileSync(zf, zip([['FDV/332 DV Sprinkleranlegg.pdf', '%PDF made up'], ['
     return out;
   });
   check(xe.ref1 === 'H6' && xe.h6 === 'Zed' && xe.ref2 === 'H7' && xe.undone !== 'Zed' && xe.redone === 'Zed', 'the editor: arrow keys, start typing to replace, Enter moves down, undo and redo ' + JSON.stringify(xe));
-  check(xe.swVisible && xe.temp && xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(221, 235, 247)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back ' + JSON.stringify(xe));
+  check(xe.swVisible && xe.temp && xe.range === 'B5:C6' && xe.inRange === 4 && xe.bold === '700,700' && xe.fill === 'rgb(179, 245, 255)' && xe.cleared === '|' && xe.back !== '', 'a range with Shift: bold, fill colour, Delete clears, undo brings it back ' + JSON.stringify(xe));
   check(xe.paste === 'Made-up a|Made-up b|Made-up c|two\nlines' && xe.undoOn && xe.touch === 'B8:C9', 'paste from Excel fills the cells (tabs and lines, quoted line breaks)');
-  check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#ddebf7$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
+  check(/Made-up plan B – checked\.xlsx$/.test(xe.file) && xe.fb === true && /^#b3f5ff$/i.test(xe.fbg) && xe.fv === 'two\nlines' && xe.fh === 'Zed', 'the downloaded file has the bold, the fill and the text');
   /* checked against the second client's checklist: 333 is in it now */
   await p.evaluate(() => { const sel = document.querySelector('#wkDocCtl [data-dcreqpick]'); sel.value = 'cl2'; sel.dispatchEvent(new Event('change', { bubbles: true })); });
   await p.evaluate(b64 => { const u = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); DocCtl.checkPlan(new File([u], 'Made-up plan C.xlsx')); }, book2.toString('base64'));

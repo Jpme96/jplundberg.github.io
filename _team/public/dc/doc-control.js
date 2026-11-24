@@ -612,7 +612,7 @@
     var subs = { krav: r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : req() ? req().name : k('ui.dc-fl-no-krav', 'No requirements yet'),
       plan: hasPlan(p) ? (pc.err + pc.gaps.length ? k('ui.dc-fl-plan-dev', 'Checked · {n} deviations', { n: pc.err + pc.gaps.length }) : k('ui.dc-fl-plan-ok', 'Checked · OK')) : p.noPlan ? k('ui.dc-fl-no-plan', 'No plan') : L.length ? k('ui.dc-fl-from-krav', 'From the requirements') : k('ui.dc-fl-not-imported', 'Not imported'),
       lev: F.length ? k('ui.dc-fl-n-files', '{n} delivered', { n: F.length }) : k('ui.dc-fl-none-yet', 'Nothing yet'),
-      cmp: L.length ? k('ui.dc-fl-cmp-sub', '{a} delivered · {m} missing', { a: got, m: miss }) : '–', end: verdict[1] };
+      cmp: !L.length && F.length ? k('ui.dc-cmp-nolist', 'No list') : L.length ? k('ui.dc-fl-cmp-sub', '{a} delivered · {m} missing', { a: got, m: miss }) : '–', end: verdict[1] };
     var names = { krav: k('ui.dx-krav', 'Requirements'), plan: k('ui.dc-plan', 'Document plan'), lev: k('ui.dc-fl-lev', 'Delivery'), cmp: k('ui.dc-fl-cmp', 'Comparison'), end: k('ui.dc-fl-end', 'Final check') };
     var cur = tab === 'report' ? 'end' : tab;
     var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
@@ -674,6 +674,10 @@
   }
   function flowCmp(p, loose) {
     var L = p.lines || [], F = p.files || [];
+    /* no plan and no requirements: nothing to compare against – say so, make the list from the delivery, or go on (JP 2026-11-24 20:42) */
+    if (F.length && !L.length) return '<div class="dc-empty"><b>' + esc(k('ui.dc-cmp-nolist-t', 'No list to compare against')) + '</b><p class="muted">' + esc(k('ui.dc-cmp-nolist-h', 'This project has no document plan and no requirements. Make the list from what was delivered – then each document can be approved, and the report and Vedlegg 7 are made from it.')) + '</p>' +
+      (can('import', gOf(p, 'dctl')) ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: looseFiles(p).length })) + '</button>' : '') +
+      '<button type="button" class="text-btn" data-dctab="end">' + esc(k('ui.dc-cmp-skip', 'Skip to the final check')) + ' <i class="bi bi-chevron-right"></i></button></div>';
     if (!F.length && !L.some(function (l) { return l.st && l.st !== 'missing'; })) return '<div class="dc-empty"><p>' + esc(k('ui.dc-fl-cmp-none', 'Nothing delivered yet – nothing to compare.')) + '</p><button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-to-lev', 'Go to delivery')) + ' <i class="bi bi-chevron-right"></i></button></div>';
     var plan = !!hasPlan(p), got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }), miss = L.filter(function (l) { return !(l.files || []).length && (!l.st || l.st === 'missing'); }), lf = looseFiles(p);
     var P = [['got', plan ? k('ui.dc-fl-p-got', 'In the plan and delivered') : k('ui.dc-fl-p-got2', 'On the list and delivered'), got.length, 'ok'], ['miss', plan ? k('ui.dc-fl-p-miss', 'In the plan, but missing') : k('ui.dc-fl-p-miss2', 'On the list, but missing'), miss.length, 'no'], ['loose', plan ? k('ui.dc-fl-p-loose', 'Delivered, not in the plan') : k('ui.dc-fl-p-loose2', 'Delivered, not on the list'), lf.length, 'wa']];
@@ -928,6 +932,7 @@
       var l = f.line && lineOf(p, f.line);
       return '<li class="dc-frow' + (!f.line ? ' loose' : '') + (fsel && SEL.ids[f.id] ? ' picked' : '') + '"' + (fsel ? ' data-dcpick="' + esc(f.id) + '"' : '') + '><div class="dc-fh">' + (fsel ? selBox(f.id) : '') + (f.nf ? '<span class="dc-fn dc-nf"><i class="bi bi-list-ul"></i> <span data-noi18n>' + esc(f.name) + '</span></span><small class="muted">' + esc(k('ui.dc-in-fdv', 'In the FDV system')) + '</small>' : (renaming === f.id ? '<form class="dc-ren1" data-dcren1="' + esc(p.id) + ':' + esc(f.id) + '"><label class="dc-vh" for="dcr-' + esc(f.id) + '">' + esc(k('ui.dc-ren-label', 'New file name')) + '</label><input id="dcr-' + esc(f.id) + '" name="n" maxlength="160" value="' + esc(String(f.name).replace(/\.[a-z0-9]{2,5}$/i, '')) + '" placeholder="' + esc(k('ui.dc-ren-ph', 'e.g. 234 DA Vindu Skaara')) + '"><button type="submit" class="pill-btn sm">' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="text-btn" data-dcren0>' + esc(k('ui.cancel', 'Cancel')) + '</button></form>' :
           '<button type="button" class="text-btn dc-fn" data-dcview="' + esc(f.id) + '"><i class="bi bi-file-earmark"></i> <span data-noi18n>' + esc(f.name) + '</span></button><button type="button" class="icon-btn sm" data-dcren="' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-ren-btn', 'Give the file the right name')) + '" title="' + esc(k('ui.dc-ren-btn', 'Give the file the right name')) + '"><i class="bi bi-pencil"></i></button><small class="muted">' + esc(size(f.size || 0)) + '</small>')) +
+        (f.nf ? '' : '<button type="button" class="icon-btn sm" data-dcfdl="' + esc(f.id) + '" aria-label="' + esc(k('ui.dc-dl-file', 'Download the file')) + '" title="' + esc(k('ui.dc-dl-file', 'Download the file')) + '"><i class="bi bi-download"></i></button>') +
         '<button type="button" class="icon-btn sm" data-dcfdel="' + esc(f.id) + '" aria-label="' + esc(k('ui.delete', 'Delete')) + '"><i class="bi bi-trash3"></i></button></div>' +
         ((f.iss || []).length ? '<ul class="dc-iss">' + f.iss.map(function (x) { return '<li class="' + x[0] + '"><i class="bi bi-' + (x[0] === 'err' ? 'x-octagon' : 'exclamation-triangle') + '"></i> ' + esc(issueText(x, f)) + '</li>'; }).join('') + '</ul>' : '') +
         (l ? '<p class="dc-to"><i class="bi bi-arrow-return-right"></i> <b>' + esc(l.code) + '</b> <span data-noi18n>' + esc(lineTitle(l)) + '</span> · ' + esc(typeLabel(l)) + '</p>' :
@@ -991,10 +996,97 @@
       FR.map(function (x) { return '<tr' + (x.s.r === 2 ? ' class="dc-rp-ok"' : '') + '><td>' + esc(x.f.name) + '</td><td>' + esc(x.s.t) + '</td></tr>'; }).join('') + '</tbody></table>' : '<p>' + esc(k('ui.dc-rp-nofiles', 'No files delivered yet.')) + '</p>');
     return h;
   }
-  function reportTab(p) {
-    return '<div class="fdv-rbar"><span class="spacer"></span><button type="button" class="pill-btn ghost" data-dchand="' + esc(p.id) + '"><i class="bi bi-box-seam"></i> <span>' + esc(k('ui.dc-hand-btn', 'Handover package')) + '</span></button><button type="button" class="pill-btn ghost" data-dcxcol="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> <span>' + esc(k('ui.dc-x-btn', 'Excel with colours')) + '</span></button><button type="button" class="pill-btn" data-dcpdf="' + esc(p.id) + '"><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.fdv-make-pdf', 'Make PDF')) + '</span></button></div>' +
-      '<p class="fdv-pdfnote muted" hidden></p><article class="rp-doc rp-inline">' + report(p) + '</article>';
+  /* the report step (JP 2026-11-24 20:36–20:53): one "Download ▾" menu – the whole handover package at the top, or pick the
+     report, the document plan (your plan with colours, or Vedlegg 7 made from the delivery), the delivery list and the files
+     (choose which); the choices are kept per project. The preview switches between the report and the document plan. */
+  var rtab = 'rep', dlOpen = false, dlPickOpen = false, DLP = {};
+  function dlSel(pid) { try { var a = JSON.parse(localStorage.getItem('dash.dcDl') || '{}'); return a[pid] || { rep: 1, plan: 1 }; } catch (e) { return { rep: 1, plan: 1 }; } }
+  function dlSave(pid, v) { try { var a = JSON.parse(localStorage.getItem('dash.dcDl') || '{}'); a[pid] = v; localStorage.setItem('dash.dcDl', JSON.stringify(a)); } catch (e) {} }
+  function dlFiles(p) { var un = DLP[p.id] || {}; return (p.files || []).filter(function (f) { return !f.nf && !un[f.id]; }); }
+  function sttOf(st0) { return { ok: 'stt-ok', recv: 'stt-soon', cmt: 'stt-cmt', rej: 'stt-bad', missing: 'stt-bad', na: 'stt-na' }[st0] || 'stt-na'; }
+  function dlMenu(p) {
+    var sel = dlSel(p.id), F = (p.files || []).filter(function (f) { return !f.nf; }), nF = dlFiles(p).length, lines = (p.lines || []).length, n = ['rep', 'plan', 'list', 'files'].filter(function (x) { return sel[x] && (x !== 'plan' || lines) && (x !== 'files' || nF); }).length;
+    var it = function (key, icon, label, sub, extra, off) { return '<label class="dc-dlit' + (off ? ' off' : '') + '"><input type="checkbox" data-dcdls="' + key + '"' + (sel[key] && !off ? ' checked' : '') + (off ? ' disabled' : '') + '><i class="bi bi-' + icon + '"></i><span><b>' + esc(label) + '</b><small>' + esc(sub) + '</small>' + (extra || '') + '</span></label>'; };
+    return '<span class="dc-addm dc-dlm"><button type="button" class="pill-btn" data-dcdlm aria-expanded="' + dlOpen + '"><i class="bi bi-download"></i> ' + esc(k('ui.dc-dl', 'Download')) + ' <i class="bi bi-chevron-down"></i></button>' +
+      '<span class="dc-addlist dc-dllist" role="menu"' + (dlOpen ? '' : ' hidden') + '>' +
+      '<span class="dc-dlall"><i class="bi bi-box-seam"></i><span><b>' + esc(k('ui.dc-hand-btn', 'Handover package')) + '</b><small>' + esc(k('ui.dc-dl-all-s', 'Everything in one .zip: the report, the document plan, the delivery list and the approved files')) + '</small></span><button type="button" class="pill-btn sm" data-dchand="' + esc(p.id) + '"><span>' + esc(k('ui.dc-dl', 'Download')) + '</span></button></span>' +
+      '<small class="dc-dlor">' + esc(k('ui.dc-dl-or', '… or choose yourself:')) + '</small>' +
+      it('rep', 'file-earmark-pdf', k('ui.dc-hand-report', 'Report'), k('ui.dc-dl-rep-s', 'PDF – what you see below')) +
+      it('plan', 'file-earmark-excel', k('ui.dc-hand-plan', 'Document plan'), !lines ? k('ui.dc-dl-plan-none', 'No list yet – make it from the delivery first') : hasPlan(p) ? k('ui.dc-dl-plan-own', 'Your plan with colours (Excel)') : k('ui.dc-dl-plan-v7', 'Vedlegg 7 made from the delivery (Excel)'), '', !lines) +
+      it('list', 'list-ul', k('ui.dc-dl-list', 'Delivery list'), k('ui.dc-dl-list-s', 'Everything delivered, with status and new name (Excel)')) +
+      it('files', 'files', k('ui.dc-dl-files', 'The files'), (nF === F.length ? k('ui.dc-dl-files-all', 'All {n} – right names, sorted by NS 3451', { n: F.length }) : k('ui.dc-dl-files-n', '{a} of {n} – right names, sorted by NS 3451', { a: nF, n: F.length })), F.length ? '<button type="button" class="text-btn dc-dlpick" data-dcdlpick>' + esc(k('ui.dc-dl-pick', 'Choose files …')) + '</button>' : '', !F.length) +
+      '<span class="dc-dlgo"><button type="button" class="pill-btn ghost" data-dcdlgo="' + esc(p.id) + '"' + (n ? '' : ' disabled') + '>' + esc(k('ui.dc-dl-go', 'Download the chosen ({n})', { n: n })) + '</button></span></span></span>';
   }
+  function planTable(p) {
+    var L = (p.lines || []).slice().sort(lineOrder);
+    if (!L.length) return '<div class="dc-empty"><p>' + esc(k('ui.dc-cmp-nolist-h', 'This project has no document plan and no requirements. Make the list from what was delivered – then each document can be approved, and the report and Vedlegg 7 are made from it.')) + '</p>' +
+      ((p.files || []).length && can('import', gOf(p, 'dctl')) ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: looseFiles(p).length })) + '</button>' : '') + '</div>';
+    return '<p class="muted dc-tdhelp">' + esc(hasPlan(p) ? k('ui.dc-pv-own', 'Your document plan, coloured by status – the Excel looks the same.') : k('ui.dc-pv-v7', 'No document plan was uploaded – this is Vedlegg 7 made from the delivery.')) +
+      (hasPlan(p) ? ' <button type="button" class="text-btn" data-dcxcol="' + esc(p.id) + '">' + esc(k('ui.dc-pv-edit', 'See and change the Excel file')) + '</button>' : '') + '</p>' +
+      '<div class="dc-pvt-wrap"><table class="dc-pvt"><thead><tr><th>NS 3451</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th><th>' + esc(k('ui.dc-status', 'Status')) + '</th></tr></thead><tbody>' +
+      L.map(function (l) { return '<tr><td class="tnum">' + esc(l.code || '') + '</td><td>' + esc(lineTitle(l)) + '</td><td>' + esc(typeLabel(l) || '') + '</td><td data-noi18n>' + esc(l.planned || '') + '</td><td><span class="stt ' + sttOf(l.st || 'missing') + '">' + esc(stName(l.st || 'missing')) + '</span></td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function reportTab(p) {
+    return '<div class="fdv-rbar dc-rbar"><span class="spacer"></span>' + dlMenu(p) + '</div><p class="fdv-pdfnote muted" hidden></p>' +
+      '<div class="dc-pvtabs" role="tablist">' + [['rep', k('ui.dc-hand-report', 'Report')], ['plan', k('ui.dc-hand-plan', 'Document plan')]].map(function (x) { return '<button type="button" role="tab" data-dcrtab="' + x[0] + '" aria-selected="' + (rtab === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') +
+      '<button type="button" class="text-btn dc-pvone" data-dcdlone="' + esc(p.id) + '"' + (rtab === 'plan' && !(p.lines || []).length ? ' hidden' : '') + '><i class="bi bi-download"></i> ' + esc(k('ui.dc-dl-one', 'Download only this')) + '</button></div>' +
+      (rtab === 'plan' ? '<div class="dc-pvplan">' + planTable(p) + '</div>' : '<article class="rp-doc rp-inline">' + report(p) + '</article>') + (dlPickOpen ? dlPickPop(p) : '');
+  }
+  function dlPickPop(p) {
+    var F = (p.files || []).filter(function (f) { return !f.nf; }), un = DLP[p.id] || {}, G = {};
+    F.forEach(function (f) { var l = f.line && lineOf(p, f.line), c = String((l && l.code) || (parseName(f.name).code || '')).slice(0, 2), key = /^\d\d$/.test(c) ? c : '–'; (G[key] = G[key] || []).push(f); });
+    var keys = Object.keys(G).sort(function (a, b) { return a === '–' ? 1 : b === '–' ? -1 : a < b ? -1 : 1; }), nOn = F.filter(function (f) { return !un[f.id]; }).length;
+    return '<div class="dx-tov dc-dlpov" data-dcdlpov><div class="dx-tsheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dc-dl-pick-h', 'Choose files for the download')) + '"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-dl-pick-h', 'Choose files for the download')) + '</b></span><button type="button" class="icon-btn sm" data-dcdlpx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+      '<p class="muted dc-tdhelp">' + esc(k('ui.dc-dl-pick-n', '{a} of {n} chosen', { a: nOn, n: F.length })) + ' · <button type="button" class="text-btn" data-dcdlpall="1">' + esc(k('ui.all', 'All')) + '</button> · <button type="button" class="text-btn" data-dcdlpall="0">' + esc(k('ui.none', 'None')) + '</button></p>' +
+      keys.map(function (key) { var g = G[key], on = g.filter(function (f) { return !un[f.id]; }).length;
+        return '<div class="dc-tdg"><label class="dc-tdr dc-dlgh"><input type="checkbox" data-dcdlpg="' + key + '"' + (on === g.length ? ' checked' : '') + '><b>' + esc(key === '–' ? k('ui.dc-no-code', 'Without a code') : key + ' ' + (codeName(key) || '')) + '</b><small>' + esc(k('ui.dc-dl-pick-n', '{a} of {n} chosen', { a: on, n: g.length })) + '</small></label>' +
+          g.map(function (f) { return '<label class="dc-tdr dc-dlfr"><input type="checkbox" data-dcdlpf="' + esc(f.id) + '"' + (un[f.id] ? '' : ' checked') + '><span class="dc-tdn" title="' + esc(f.name) + '" data-noi18n>' + esc(midName(f.name)) + '</span><small class="tnum">' + esc(kb(f.size || 0)) + '</small></label>'; }).join('') + '</div>'; }).join('') +
+      '<div class="dc-freshbtns"><span class="dc-sp"></span><button type="button" class="pill-btn" data-dcdlpx>' + esc(k('ui.dc-dl-pick-ok', 'Use – {n} files', { n: nOn })) + '</button></div></div></div>';
+  }
+  /* what each choice becomes: [file name, bytes or Blob] */
+  function newNameOf(p, f) { var N = naming(); try { if (N && N.ready && N.ready(p, f)) return N.newName(p, f) || f.name; } catch (e) {} return f.name; }
+  function dlPart(p, key) {
+    var me = profile(), foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, k('ui.doc-control', 'Document control'), p.no, p.name].filter(Boolean).join('  ·  ');
+    if (key === 'rep') return window.FdvPdf && window.FdvPdf.html ? window.FdvPdf.html(report(p), foot, fileName(p, k('ui.dc-hand-report', 'Report'), '.pdf')).then(function (f) { return [[f.name, f]]; }) : Promise.resolve([]);
+    if (key === 'plan') { if (!(p.lines || []).length) return Promise.resolve([]); if (hasPlan(p)) return planXlsx(p).then(function (f) { return f ? [[fileName(p, k('ui.dc-hand-plan', 'Document plan'), '.xlsx'), f]] : []; }); return Promise.resolve([[fileName(p, 'Vedlegg 7 ' + k('ui.dc-hand-plan', 'Document plan'), '.xlsx'), new Blob([kravXlsxBby(p)])]]); }
+    if (key === 'list') return Promise.resolve([[fileName(p, k('ui.dc-dl-list', 'Delivery list'), '.xlsx'), new Blob([deliveryXlsx(p)])]]);
+    if (key === 'files') { var used = {}; return Promise.all(dlFiles(p).map(function (f) { return (getBlob(f.id) || Promise.resolve(null)).then(function (bl) { return bl || (HOST && f.tf ? teamBlob(f.id) : null); }).then(function (bl) { if (!bl) return null;
+        var l = f.line && lineOf(p, f.line), code = String((l && l.code) || parseName(newNameOf(p, f)).code || ''), dir = /^\d{3}/.test(code) ? safeName(code.slice(0, 3) + ' ' + (codeName(code.slice(0, 3)) || '')) : k('ui.dc-no-code', 'Without a code');
+        var path = dir + '/' + safeName(newNameOf(p, f)), p0 = path, i = 2; while (used[path.toLowerCase()]) path = p0.replace(/(\.[^.\/]+)?$/, ' (' + (i++) + ')$1'); used[path.toLowerCase()] = 1; return [path, bl]; }).catch(function () { return null; }); })).then(function (x) { return x.filter(Boolean); }); }
+    return Promise.resolve([]);
+  }
+  function deliveryXlsx(p) {
+    var rows = [[p.name + (p.no ? ' – ' + p.no : '')], [k('ui.dc-dl-list', 'Delivery list') + ' · ' + new Date().toLocaleDateString(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB')], [],
+      [k('ui.dc-dl-c-file', 'File as delivered'), k('ui.dc-dl-c-new', 'New name'), 'NS 3451', k('ui.dc-type', 'Document type'), k('ui.dc-status', 'Status'), k('ui.dc-dl-c-kb', 'Size (kB)'), k('ui.dc-dl-c-iss', 'Remarks')]];
+    (p.files || []).filter(function (f) { return !f.nf; }).forEach(function (f) { var l = f.line && lineOf(p, f.line);
+      rows.push([f.name, newNameOf(p, f), l ? String(l.code || '') : '', l ? (typeLabel(l) || '') : '', l ? stName(l.st || 'missing') : k('ui.dc-not-in-plan-short', 'Not in the document plan'), String(Math.max(1, Math.round((f.size || 0) / 1024))), (f.iss || []).map(function (x) { return issueText(x, f); }).join('; ')]); });
+    return rowsXlsx(k('ui.dc-dl-list', 'Delivery list'), rows, 3, [44, 44, 10, 26, 18, 10, 50]);
+  }
+  function rowsXlsx(name, rows, hdr, widths) {
+    var col = function (i) { return String.fromCharCode(65 + i); };
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>' + widths.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols><sheetData>' +
+      rows.map(function (r, i) { return '<row r="' + (i + 1) + '">' + r.map(function (v, j) { return v === '' || v == null ? '' : '<c r="' + col(j) + (i + 1) + '" t="inlineStr"' + (i === 0 || i === hdr ? ' s="1"' : '') + '><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>'; }).join('') + '</row>'; }).join('') + '</sheetData></worksheet>';
+    return zipStore([
+      ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+      ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEsc(String(name).slice(0, 31)) + '" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf fontId="0"/><xf fontId="1" applyFont="1"/></cellXfs></styleSheet>'],
+      ['xl/worksheets/sheet1.xml', sheet]]);
+  }
+  function dlOut(file) { if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(file); else { var a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); } }
+  function dlRun(p, keys, btn) {
+    if (btn) { btn.disabled = true; btn._t = btn.textContent; btn.textContent = k('ui.dc-dl-making', 'Making the files …'); }
+    var done = function () { if (btn) { btn.disabled = false; btn.textContent = btn._t; } };
+    return Promise.all(keys.map(function (x) { return dlPart(p, x).catch(function () { return []; }); })).then(function (parts) {
+      var all = [].concat.apply([], parts); done(); if (!all.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-dl-nothing', 'Nothing to download yet.'))); return; }
+      var one = all.length === 1 && keys.length === 1 && keys[0] !== 'files';
+      if (one) { var b0 = all[0][1]; dlOut(b0 instanceof File && b0.name === all[0][0] ? b0 : new File([b0], all[0][0], { type: b0.type || '' })); return; }
+      return Promise.all(all.map(function (x) { var b = x[1]; return (b.arrayBuffer ? b.arrayBuffer() : new Response(b).arrayBuffer()).then(function (ab) { return [x[0], new Uint8Array(ab)]; }); })).then(function (files) {
+        dlOut(new File([zipStore(files)], fileName(p, k('ui.docu', 'Documentation'), '.zip'), { type: 'application/zip' })); });
+    }, done);
+  }
+
 
   /* a redraw from elsewhere (a sync, another person's change) waits while you are in a field or an open list of a file or a popup –
      it used to close the list you were choosing from (JP 2026-11-17 12:54 "boxes close so fast"); what you do yourself draws at once */
@@ -1007,7 +1099,7 @@
   var tovDown = null;
   document.addEventListener('pointerdown', function (e) { tovDown = e.target; }, true);
   document.addEventListener('click', function (e) { var o = e.target; if (o && o.matches && o.matches('[data-dxtov]') && tovDown === o && xtool) { xtool = null; draw(); } });
-  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; if (addOpen) { addOpen = ''; draw(); } else if (freshPop && !document.querySelector('.dcn-ov, .xv')) { freshPop = null; draw(); } });   /* an open menu closes first */
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; if (dlPickOpen) { dlPickOpen = false; dlOpen = true; draw(); } else if (dlOpen) { dlOpen = false; draw(); } else if (addOpen) { addOpen = ''; draw(); } else if (freshPop && !document.querySelector('.dcn-ov, .xv')) { freshPop = null; draw(); } });   /* an open menu closes first */
   function dropOk(e) { var ty = e.dataTransfer && e.dataTransfer.types; if (!ty || [].indexOf.call(ty, 'Files') < 0) return null; var r = e.target.closest && e.target.closest('#wkDocCtl');
     if (!r || !open || (tab !== 'lev' && tab !== 'files') || e.target.closest('.dcn-ov, .dx-tov')) return null; var pr = proj(open); return pr && can('import', gOf(pr, 'dctl')) ? pr : null; }
   document.addEventListener('dragover', function (e) { if (!dropOk(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; document.documentElement.classList.add('dc-dragging'); });
@@ -1495,6 +1587,7 @@
     var nm = safeName([p.no, k('ui.dc-hand', 'Handover'), p.name].filter(Boolean).join(' ')) || 'Handover';
     var foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, k('ui.doc-control', 'Document control'), p.no, p.name].filter(Boolean).join('  ·  ');
     if (window.FdvPdf && window.FdvPdf.html) jobs.push(window.FdvPdf.html(report(p), foot, nm + '.pdf').then(function (file) { return file.arrayBuffer().then(function (ab) { out.push([uniq(k('ui.dc-hand-report', 'Report') + ' – ' + nm + '.pdf'), new Uint8Array(ab)]); }); }).catch(function () {}));
+    jobs.push(deliveryXlsx(p).arrayBuffer().then(function (ab) { out.push([uniq(k('ui.dc-dl-list', 'Delivery list') + ' – ' + nm + '.xlsx'), new Uint8Array(ab)]); }).catch(function () {}));   /* the delivery list too: the package is everything (JP 2026-11-24 20:51) */
     jobs.push(planXlsx(p, true).then(function (f) { return f && f.arrayBuffer().then(function (ab) { out.push([uniq(k('ui.dc-hand-plan', 'Document plan') + ' – ' + nm + '.xlsx'), new Uint8Array(ab)]); }); }).catch(function () {}));
     Promise.all(jobs).then(function () {
       var miss = lines.filter(function (l) { return l.st !== 'ok' && l.st !== 'na'; });
@@ -1599,7 +1692,7 @@
     return zipStore(parts);
   }
   /* ---------- the plan back as Excel, coloured by status (JP 2026-11-14): your own file when this device has it, else a new one ---------- */
-  var FILL = { missing: 'FFF4CCCC', rej: 'FFF4CCCC', recv: 'FFFFF2CC', cmt: 'FFFCE4D6', ok: 'FFD9EAD3', na: 'FFD9D9D9' };   /* grey 15 % – visible next to white rows (JP 22:17) */
+  var FILL = { missing: 'FFFFDFDC', rej: 'FFFFDFDC', recv: 'FFFFE7BC', cmt: 'FFF2DEFF', ok: 'FFC7FDE9', na: 'FFE8DFD6' };   /* Oslo kommune's light tints – red, yellow, purple, green, beige (JP 2026-11-24 20:36) */   /* grey 15 % – visible next to white rows (JP 22:17) */
   function colName(n) { var x = ''; while (n > 0) { var m = (n - 1) % 26; x = String.fromCharCode(65 + m) + x; n = Math.floor((n - 1) / 26); } return x; }
   function colNum(ref) { var m = String(ref || '').match(/^[A-Z]+/), n = 0; if (!m) return 0; for (var i = 0; i < m[0].length; i++) n = n * 26 + m[0].charCodeAt(i) - 64; return n; }
   /* what the check says on a line: its status, your comment and any file-name problems */
@@ -1999,6 +2092,15 @@
     if ((sb = e.target.closest('[data-dcaddm]'))) { addOpen = addOpen === sb.dataset.dcaddm ? '' : sb.dataset.dcaddm; draw(); return; }
     /* a choice that picks files keeps the menu (and its file field) until the files are chosen; anything else closes it */
     if (addOpen && !e.target.closest('.dc-addlist label')) { addOpen = ''; document.querySelectorAll('.dc-addlist').forEach(function (x) { x.hidden = true; }); document.querySelectorAll('[data-dcaddm]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); }); }
+    /* the report's Download menu, its file picker and the preview tabs (JP 2026-11-24 20:43–20:53) */
+    if (e.target.closest('[data-dcdlm]')) { dlOpen = !dlOpen; addOpen = ''; draw(); return; }
+    if ((sb = e.target.closest('[data-dcrtab]'))) { rtab = sb.dataset.dcrtab; draw(); return; }
+    if (e.target.closest('[data-dcdlpick]')) { e.preventDefault(); dlOpen = false; dlPickOpen = true; draw(); return; }
+    if (dlPickOpen && (e.target.closest('[data-dcdlpx]') || (e.target.matches && e.target.matches('[data-dcdlpov]')))) { dlPickOpen = false; dlOpen = true; draw(); return; }
+    if (dlPickOpen && (sb = e.target.closest('[data-dcdlpall]'))) { var pa = proj(open); if (pa) { var ua = DLP[pa.id] = {}; if (sb.dataset.dcdlpall === '0') (pa.files || []).forEach(function (f) { ua[f.id] = 1; }); } draw(); return; }
+    if ((sb = e.target.closest('[data-dcdlgo]'))) { var pg = proj(sb.dataset.dcdlgo), sg = dlSel(sb.dataset.dcdlgo); if (pg) { var keys = ['rep', 'plan', 'list', 'files'].filter(function (x) { return sg[x]; }); dlOpen = false; draw(); var nb = document.querySelector('[data-dcdlm]'); dlRun(pg, keys, null); } return; }
+    if ((sb = e.target.closest('[data-dcdlone]'))) { var po = proj(sb.dataset.dcdlone); if (po) dlRun(po, [rtab === 'plan' ? 'plan' : 'rep'], sb); return; }
+    if (dlOpen && !e.target.closest('.dc-dllist')) { dlOpen = false; draw(); }
     /* the naming popup for new files: open from the line, Not now, a click on the dark backdrop */
     if ((sb = e.target.closest('[data-dclinkopen]'))) { linkOpen = sb.dataset.dclinkopen; draw(); var ls = document.querySelector('select[data-dcflink="' + linkOpen + '"]'); if (ls) { ls.focus(); try { ls.showPicker && ls.showPicker(); } catch (er) {} } return; }
     if ((sb = e.target.closest('[data-dcfreshopen]'))) { freshPop = sb.dataset.dcfreshopen; freshF = sb.dataset.dcff || 'new'; freshStep = sb.classList.contains('dc-freshline') ? 1 : 2; freshHad = false; draw(); return; }
@@ -2168,7 +2270,7 @@
         p.lines = p.lines || []; looseFiles(p).forEach(function (f) { var q = parseName(f.name); if (!/^\d{3}/.test(q.code || '')) return; var id = uid() + mk++;
           p.lines.push({ id: id, code: q.code, sys: codeName(q.code) || '', type: '', t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '', planned: q.stem.slice(0, 160), st: 'recv', files: [f.id], fd: 1 }); f.line = id; });   /* fd: made from this file – it goes if the file is deleted */
         var r0 = kravOf(p); if (r0) (r0.lines || []).forEach(function (q) { var c3 = String(q.code).slice(0, 3); if (!p.lines.some(function (l) { return String(l.code).slice(0, 3) === c3 && String(q.t || '').indexOf((l.t || ' ').charAt(0)) >= 0; })) { p.lines.push({ id: uid() + mk++, code: q.code, sys: q.sys || lineTitle(q), type: q.type || '', t: q.t || '', planned: '', st: 'missing', files: [] }); } });
-      }); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: mk }))); draw(); return; }
+      }); toast('<i class="bi bi-' + (mk ? 'check2' : 'info-circle') + '"></i> ' + esc(mk ? k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: mk }) : k('ui.dc-mk-none', 'No file has an NS 3451 code yet – give the files their names first.'))); draw(); return; }
     if ((b = t.closest('[data-dcvx7]'))) { var pv = proj(b.dataset.dcvx7); if (!pv) return; var fv = new File([kravXlsxBby(pv)], fileName(pv, 'Dokumentplan', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fv); return; }
     if ((b = t.closest('[data-dcokall]'))) { if (!can(stAct('ok'), gOf(proj(b.dataset.dcokall), 'dctl'))) return; saveP(b.dataset.dcokall, function (p) { (p.lines || []).forEach(function (l) { if (l.st === 'recv') l.st = 'ok'; }); }); draw(); return; }
     if ((b = t.closest('[data-dctab]'))) { setTab(b.dataset.dctab); openLine = null; editing = false; draw(); return; }
@@ -2206,7 +2308,8 @@
         var allK = JSON.parse(JSON.stringify(Fe.tools().dckrav || [])), t9 = Fe.tools(); t9.dckrav = (t9.dckrav || []).filter(function (x) { return x.id !== rid; }); Fe.saveTools(t9); draw();
         toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dr-deleted', 'Requirements deleted')), function () { var t10 = Fe.tools(); t10.dckrav = allK; Fe.saveTools(t10); draw(); }); }); return;
     }
-    if ((b = t.closest('[data-dchand]'))) { handover(b); return; }
+    if ((b = t.closest('[data-dcfdl]'))) { var pf = proj(open), ff = pf && (pf.files || []).filter(function (x) { return x.id === b.dataset.dcfdl; })[0]; if (ff) getBlob(ff.id).then(function (bl) { return bl || (HOST && ff.tf ? teamBlob(ff.id) : null); }).then(function (bl) { if (bl) dlOut(new File([bl], newNameOf(pf, ff), { type: bl.type || '' })); else toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-dl-nofile', 'The file is not on this device.'))); }); return; }   /* one file, with its right name (JP 20:45) */
+    if ((b = t.closest('[data-dchand]'))) { handover(b); return; }   /* the menu stays until the package is made */
     if ((b = t.closest('[data-dcxcol]'))) {   /* Excel with colours: see it, change any cell, download (JP 21:47) */
       var px2 = proj(b.dataset.dcxcol); if (!px2 || b.disabled) return; b.disabled = true;
       Promise.all([planXlsx(px2, true), needXV().catch(function () { return null; })]).then(function (x) {
@@ -2270,6 +2373,9 @@
     if (t.matches('[data-dcreqpick]')) { useReq(t.value); draw(); return; }
     if (t.dataset.dctick) { ticks[t.dataset.dctick] = t.checked; updPick(); return; }
     if (t.dataset.dcxtick) { xoff[t.dataset.dcxtick] = !t.checked; updPick(); return; }
+    if (t.dataset.dcdls && open) { var sv = dlSel(open); sv[t.dataset.dcdls] = t.checked ? 1 : 0; dlSave(open, sv); draw(); return; }
+    if (t.dataset.dcdlpf && open) { var u1 = DLP[open] = DLP[open] || {}; if (t.checked) delete u1[t.dataset.dcdlpf]; else u1[t.dataset.dcdlpf] = 1; draw(); return; }
+    if (t.dataset.dcdlpg && open) { var pq = proj(open), u2 = DLP[open] = DLP[open] || {}; ((pq && pq.files) || []).forEach(function (f) { var l = f.line && lineOf(pq, f.line), c = String((l && l.code) || (parseName(f.name).code || '')).slice(0, 2), key = /^\d\d$/.test(c) ? c : '–'; if (key === t.dataset.dcdlpg) { if (t.checked) delete u2[f.id]; else u2[f.id] = 1; } }); draw(); return; }
     if (t.dataset.dcdpick) { var dq2 = t.dataset.dcdpick.split('|'); dupPick[dq2[0]] = dq2[1]; draw(); return; }   /* the file to keep in a duplicate group */
     if (t.dataset.dcnames && t.files && t.files[0]) { addOpen = ''; importNames(t.dataset.dcnames, t.files[0]); t.value = ''; return; }
     if (t.matches('[data-dcquick]')) { quick = t.checked; try { sessionStorage.setItem('dash.dcQuick', quick ? '1' : ''); } catch (e) {} openLine = null; draw(); return; }

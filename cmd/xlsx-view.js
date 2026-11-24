@@ -180,7 +180,7 @@
   }
 
   /* ---------- the view ---------- */
-  var SW = [['', 'ui.xv-nofill', 'No fill'], ['#D9EAD3', 'ui.xv-green', 'Green'], ['#FFF2CC', 'ui.xv-yellow', 'Yellow'], ['#FCE4D6', 'ui.xv-orange', 'Orange'], ['#F4CCCC', 'ui.xv-red', 'Red'], ['#D9D9D9', 'ui.xv-grey', 'Grey'], ['#DDEBF7', 'ui.xv-blue', 'Blue']];
+  var SW = [['', 'ui.xv-nofill', 'No fill'], ['#C7FDE9', 'ui.xv-green', 'Green'], ['#FFE7BC', 'ui.xv-yellow', 'Yellow'], ['#F2DEFF', 'ui.xv-orange', 'Orange'], ['#FFDFDC', 'ui.xv-red', 'Red'], ['#E8DFD6', 'ui.xv-grey', 'Grey'], ['#B3F5FF', 'ui.xv-blue', 'Blue']];   /* Oslo kommune's light tints, the same as the status fills (JP 2026-11-24) */
   function look(sh, X, edits, ref) {
     var c = sh.cells[ref], x = c ? X[c.s] || {} : {}, e = norm((edits[sh.path] || {})[ref]) || {};
     var v = 'v' in e ? e.v : c ? c.v : '', bg = 'bg' in e ? e.bg : x.bg, b = 'b' in e ? e.b : x.b, st = [];
