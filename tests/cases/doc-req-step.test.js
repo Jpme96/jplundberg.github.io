@@ -9,20 +9,22 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await go(p, 'work/', 2500);
   await p.evaluate(() => PageTabs.show('doc')); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dropen="k1"]').click()); await sl(500);
-  const c0 = await p.evaluate(() => ({ x: document.querySelectorAll('#wkDocReq [data-drldel]').length, add: !!document.querySelector('#wkDocReq form[data-dcaddl]'), pen: !!document.querySelector('#wkDocReq [data-drpen]'), send: !!document.querySelector('#wkDocReq [data-drsend]') }));
+  /* a list without a project becomes one and opens in step 1 Krav (JP 2026-11-24 18:37); Change the requirements shows the step */
+  await p.evaluate(() => { const b = document.querySelector('[data-dckin]'); b && b.click(); }); await sl(500);
+  const c0 = await p.evaluate(() => ({ x: document.querySelectorAll('[data-drldel]').length, add: !!document.querySelector('form[data-dcaddl]'), pen: !!document.querySelector('[data-drpen]'), send: !!document.querySelector('[data-drsend]') }));
   check(c0.x === 0 && !c0.add && c0.pen && c0.send, 'the list is calm: no × or add form until the pen is on; Send to the contractor is there ' + JSON.stringify(c0));
   await p.evaluate(() => document.querySelector('[data-drpen]').click()); await sl(300);
-  const c1 = await p.evaluate(() => ({ x: document.querySelectorAll('#wkDocReq [data-drldel]').length, add: !!document.querySelector('#wkDocReq form[data-dcaddl]'), on: document.querySelector('[data-drpen]').getAttribute('aria-pressed') }));
+  const c1 = await p.evaluate(() => ({ x: document.querySelectorAll('[data-drldel]').length, add: !!document.querySelector('form[data-dcaddl]'), on: document.querySelector('[data-drpen]').getAttribute('aria-pressed') }));
   check(c1.x === 3 && c1.add && c1.on === 'true', 'the pen shows × per line and the add form ' + JSON.stringify(c1));
   await p.evaluate(() => document.querySelector('[data-drpen]').click()); await sl(300);
   /* send */
   await p.evaluate(() => document.querySelector('[data-drsend]').click()); await sl(300);
   await p.evaluate(() => { const i = document.querySelector('form[data-drsendf] [name="to"]'); i.value = 'Made-up Sprinkler AS'; i.blur(); });
   await p.evaluate(() => { window.__shared = null; FdvPdf.share = f => { window.__shared = f.name; return Promise.resolve(); }; document.querySelector('form[data-drsendf] [data-drxlsx]').click(); }); await sl(500);
-  const s1 = await p.evaluate(() => ({ sent: Features.list('dckrav')[0].sent, file: window.__shared, line: (document.querySelector('#wkDocReq .dx-sent') || {}).textContent || '' }));
+  const s1 = await p.evaluate(() => ({ sent: Features.list('dckrav')[0].sent, file: window.__shared, line: (document.querySelector('.dx-sent') || {}).textContent || '' }));
   check(s1.sent && s1.sent.to === 'Made-up Sprinkler AS' && s1.sent.what === 'xlsx' && s1.sent.n === 3 && /\.xlsx$/.test(s1.file) && /Sent to Made-up Sprinkler AS/.test(s1.line), 'Send: the Excel is made and shared, and the project remembers who got what ' + JSON.stringify(s1));
   await p.evaluate(() => { const t = Features.tools(); t.dckrav[0].lines = t.dckrav[0].lines.slice(0, 2); Features.saveTools(t); }); await sl(500);
-  const s2 = await p.evaluate(() => ({ ch: !!document.querySelector('#wkDocReq .dx-sent.dx-ch'), t: (document.querySelector('#wkDocReq .dx-sent') || {}).textContent || '', btn: (document.querySelector('[data-drsend]') || {}).textContent }));
+  const s2 = await p.evaluate(() => ({ ch: !!document.querySelector('.dx-sent.dx-ch'), t: (document.querySelector('.dx-sent') || {}).textContent || '', btn: (document.querySelector('[data-drsend]') || {}).textContent }));
   check(s2.ch && /Changed after it was sent/.test(s2.t) && /Send again/.test(s2.btn), 'a change after sending shows "Changed after it was sent" and Send again ' + JSON.stringify(s2));
   /* "Som Boligbyggs vedlegg 7": the same list laid out like their document plan, saved for a look and read back as a plan */
   const bby = await p.evaluate(async () => { window.__bf = null; FdvPdf.share = f => { window.__bf = f; return Promise.resolve(); }; document.querySelector('[data-drsend]') && !document.querySelector('form[data-drsendf]') && document.querySelector('[data-drsend]').click(); await new Promise(r => setTimeout(r, 300));

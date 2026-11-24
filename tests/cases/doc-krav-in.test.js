@@ -45,10 +45,18 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await go(p, 'work/#dr=' + kid, 2000);
   const k5 = await p.evaluate(() => ({ hash: location.hash, tab: (document.querySelector('.dc-fsteps [aria-selected="true"]') || {}).dataset.dctab, old: !!document.querySelector('.dx-steps') }));
   check(k5.hash === '#dc=pk1' && k5.tab === 'krav' && !k5.old, 'the requirements of a project open in its Krav step ' + JSON.stringify(k5));
-  /* requirements without a project: their own page, step 2 "Project · Start the project" and a Start the project button */
+  /* requirements without a project become a project when opened: its Krav step with the list, no old three-step page (JP 18:37) */
   await go(p, 'work/#dr=kalone', 2000);
-  const k6 = await p.evaluate(() => ({ step: [...document.querySelectorAll('.dx-steps .dx-step')].map(b => b.innerText.replace(/\s+/g, ' ').trim()).join(' | '), btn: (document.querySelector('[data-drstart]') || {}).textContent || '' }));
-  check(/Project Start the project/.test(k6.step) && !/Received/.test(k6.step) && /Start the project/.test(k6.btn), 'requirements without a project: “Start the project”, no “Received” ' + JSON.stringify(k6));
+  const k6 = await p.evaluate(() => { const pr = Features.list('dctl').filter(x => x.krav === 'kalone'); return { n: pr.length, name: pr[0] && pr[0].name, lines: pr[0] && (pr[0].lines || []).length, hash: location.hash, tab: (document.querySelector('.dc-fsteps [aria-selected="true"]') || {}).dataset.dctab, old: !!document.querySelector('.dx-steps'), start: !!document.querySelector('[data-drstart]') }; });
+  check(k6.n === 1 && k6.name === 'Made-up requirements alone' && k6.lines === 1 && k6.hash === '#dc=' + (await p.evaluate(() => Features.list('dctl').filter(x => x.krav === 'kalone')[0].id)) && k6.tab === 'krav' && !k6.old && !k6.start, 'a list without a project becomes one and opens in Krav ' + JSON.stringify(k6));
+  await go(p, 'work/#dr=kalone', 1500);
+  check(await p.evaluate(() => Features.list('dctl').filter(x => x.krav === 'kalone').length === 1), 'opening it again makes no second project');
+  /* + New project: the form, then step 1 Krav on the picker (JP 18:37 "I thought it was already built like that") */
+  await go(p, 'work/', 2000); await p.evaluate(() => PageTabs.show('doc')); await sl(300);
+  await p.evaluate(() => document.querySelector('#wkDocCtl [data-dcnew]').click()); await sl(300);
+  await p.evaluate(() => { const f = document.querySelector('form[data-dcpform]'); f.name.value = 'Made-up new one'; f.requestSubmit(); }); await sl(800);
+  const k7 = await p.evaluate(() => ({ old: !!document.querySelector('[data-drnew], .dx-steps'), tab: (document.querySelector('.dc-fsteps [aria-selected="true"]') || {}).dataset.dctab, picker: !!document.querySelector('.dc-ptg [data-dcptype]'), imp: (document.querySelector('.dc-reqimp') || { className: 'text-btn' }).className, krav: !!(Features.list('dctl').filter(x => x.name === 'Made-up new one')[0] || {}).krav }));
+  check(!k7.old && k7.tab === 'krav' && k7.picker && k7.krav && /text-btn/.test(k7.imp), 'New project opens in step 1 Krav on the type picker; Import checklist is a quiet link ' + JSON.stringify(k7));
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
 })();
