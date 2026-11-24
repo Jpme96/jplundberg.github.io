@@ -629,7 +629,7 @@
     if (FLOW.indexOf(tab) < 0 && tab !== 'report') tab = (p.files || []).length ? 'cmp' : (p.lines || []).length || !kravOf(p) ? 'plan' : 'krav';   /* a project opens on the step that fits it, not the one you had open in another (JP 2026-11-23) */
     var L = p.lines || [], c = counts(L), F = p.files || [], r = kravOf(p), pc = planCheck(p), iss = flowIssues(p), loose = looseFiles(p).length;
     var got = L.filter(function (l) { return (l.files || []).length || (l.st && l.st !== 'missing'); }).length, miss = L.length - got;
-    var verdict = !F.length && !got ? ['ne', k('ui.dc-fl-wait', 'Waiting for the delivery')] : iss.length ? ['no', k('ui.dc-fl-not-done', 'Not complete · {n} to fix', { n: iss.length })] : c.recv ? ['wa', k('ui.dc-fl-waiting', '{n} waiting for approval', { n: c.recv })] : ['ok', k('ui.dc-fl-done', 'Complete')];
+    var verdict = !F.length && !got ? ['ne', k('ui.dc-fl-wait', 'Waiting for the delivery')] : !L.length ? ['wa', k('ui.dc-fl-nolist-v', 'No list to check against')] :   /* files but no plan or requirements: not "Complete" (live check 2026-11-25) */ iss.length ? ['no', k('ui.dc-fl-not-done', 'Not complete · {n} to fix', { n: iss.length })] : c.recv ? ['wa', k('ui.dc-fl-waiting', '{n} waiting for approval', { n: c.recv })] : ['ok', k('ui.dc-fl-done', 'Complete')];
     var subs = { krav: r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : req() ? req().name : k('ui.dc-fl-no-krav', 'No requirements yet'),
       plan: hasPlan(p) ? (pc.err + pc.gaps.length ? k('ui.dc-fl-plan-dev', 'Checked · {n} deviations', { n: pc.err + pc.gaps.length }) : k('ui.dc-fl-plan-ok', 'Checked · OK')) : p.noPlan ? k('ui.dc-fl-no-plan', 'No plan') : L.length ? k('ui.dc-fl-from-krav', 'From the requirements') : k('ui.dc-fl-not-imported', 'Not imported'),
       lev: F.length ? k('ui.dc-fl-n-files', '{n} delivered', { n: F.length }) : k('ui.dc-fl-none-yet', 'Nothing yet'),
@@ -879,7 +879,7 @@
      (a right name first), nothing removed until "Keep the chosen one", or all groups at once; 2 Gi navn – the naming cards for
      New / Name problems / All. Without duplicates it opens on Gi navn; solving the last group goes there by itself. */
   var freshStep = 1, freshHad = false, dupPick = {};
-  function midName(n) { n = String(n || ''); return n.length > 30 ? n.slice(0, 14) + '…' + n.slice(-15) : n;   /* the end shows: "… – Kopi.pdf" tells copies apart */ }
+  function midName(n) { n = String(n || ''); var m = (window.innerWidth || 800) > 720 ? 64 : 30; return n.length > m ? n.slice(0, Math.round(m / 2) - 1) + '…' + n.slice(-Math.round(m / 2)) : n; }   /* the end shows ("… – Kopi.pdf" tells copies apart), shortened only as much as the width needs */
   function dupBest(g) { var k0 = dupPick[g[0].h]; if (k0 && g.some(function (f) { return f.id === k0; })) return k0; return (g.filter(function (f) { return !(f.iss || []).length; })[0] || g[0]).id; }
   function tidyPop(p, F, NW, BADF, DG) {
     if (DG.length) freshHad = true;
@@ -975,7 +975,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '31cf40dfc1';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '0cd7ebb0e1';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };

@@ -1217,8 +1217,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function links() { return list('upl').filter(function (r) { return r.d.exp > Date.now() - 30 * 864e5; }).sort(function (a, b) { return b.d.exp - a.d.exp; }); }
   function filesHtml() {
     var fl = files(), by = {}, out = '';
-    if (rank() >= 1) out += '<div class="t-card t-noprint"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('fproj', S.fproj) + '</label><div class="t-acts2"><label class="t-btn">' + L('Add files', 'Legg til filer') + '<input type="file" multiple hidden data-fadd></label><label class="t-btn ghost">' + L('Take a photo', 'Ta et bilde') + '<input type="file" accept="image/*" capture="environment" hidden data-fadd></label></div>' +
-      '<button class="t-btn ghost wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button></div>';
+    if (rank() >= 1) out += '<div class="t-card t-noprint"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('fproj', S.fproj) + '</label><button class="t-btn wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button>' +   /* the link is what this page is about – the main button (live check 2026-11-25) */
+      '<div class="t-acts2"><label class="t-btn ghost">' + L('Add files', 'Legg til filer') + '<input type="file" multiple hidden data-fadd></label><label class="t-btn ghost">' + L('Take a photo', 'Ta et bilde') + '<input type="file" accept="image/*" capture="environment" hidden data-fadd></label></div></div>';
     /* Opplastinger shows what is live or waiting – no history (JP 2026-11-24 22:56): a project's link sends its files straight into the
        project's Levering; a link without a project keeps its files here until you rename and download them, put them in a project or just download them */
     var ls = links().filter(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = r.d.pid && projName(r.d.pid); return live || !hasP; });

@@ -211,7 +211,7 @@ body.dc-full #wkDocCtl { display: block !important; }
 .dc-warn { color: var(--orange); }
 .dc-link { width: 100%; font-size: 14px; }
 .dc-files li.dc-frow { color: inherit; font-size: inherit; padding: 9px 0; border-bottom: 1px solid rgba(var(--ink-rgb), .08); }
-.dc-files li.loose { border-left: 3px solid var(--orange); padding-left: 8px; }
+.dc-files li.loose { border-left: 3px solid rgb(var(--orange-rgb)); padding-left: 8px; }
 .dc-fh { display: flex; align-items: center; gap: 8px; }
 .dc-fh .dc-fn { flex: 1; font-size: 13.5px; }
 .dc-iss li { font-size: 12.5px; margin: 3px 0 0; color: var(--orange); }
@@ -362,7 +362,7 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .dcn-sw > input { flex: none; width: 18px; height: 18px; margin: 0; }
 .dcn-files { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .dcn-row { border: 1px solid rgba(var(--ink-rgb), .1); border-left: 3px solid var(--ok); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
-.dcn-row.dcn-warn { border-left-color: var(--warn); }
+.dcn-row.dcn-warn { border-left-color: rgb(var(--warn-rgb)); }
 .dcn-row.dcn-odd { border-left-color: var(--violet); }
 .dcn-g { display: grid; grid-template-columns: minmax(170px, 1.1fr) minmax(150px, 1fr) minmax(180px, 1.4fr) minmax(150px, .9fr); gap: 8px 12px; align-items: start; }
 .dcn-c, .dcn-fl { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 12px; color: var(--muted); }
@@ -488,7 +488,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-gs { display: block; margin-top: 2px; font-size: 12px; color: var(--blue); }
 .dcn-bno { margin: 8px 0; }
 .dcn-bno small { color: var(--muted); font-size: 12px; }
-.dcn-bno input.dcn-need { border-color: var(--warn); }
+.dcn-bno input.dcn-need { border-color: rgb(var(--warn-rgb)); }
 /* many files: one line per file until opened */
 .dcn-row.dcn-c { padding: 0; }
 .dcn-sumb { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 8px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
@@ -511,7 +511,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-rhead { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .dcn-rn { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .dcn-rn code { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dcn-bb { font-size: 11px; font-weight: 600; color: var(--blue); }
+.dcn-bb { font-size: 12px; font-weight: 600; color: var(--blue); }
 .dcn-ract { display: flex; gap: 2px; flex: none; }
 .dcn-bbl { margin-top: 10px; } .dcn-bbl > summary { cursor: pointer; font-size: 13.5px; color: var(--muted); margin-bottom: 6px; }
 .dcn-ed2 { padding: 4px 10px 12px; display: grid; gap: 8px; border-top: 1px dashed rgba(var(--ink-rgb), .12); }
@@ -869,7 +869,7 @@ html.dcn-modal { overflow: hidden; }
    with a head and three marked parts – Code and type · Name parts · New name – and clear space between the cards */
 .dcn-files { gap: 16px; }
 .dcn-row.dcn-card { padding: 0; gap: 0; background: var(--card, transparent); border: 1px solid rgba(var(--ink-rgb), .16); border-left: 4px solid var(--ok); border-radius: 12px; overflow: hidden; }
-.dcn-row.dcn-card.dcn-warn { border-left-color: var(--warn); }
+.dcn-row.dcn-card.dcn-warn { border-left-color: rgb(var(--warn-rgb)); }
 .dcn-row.dcn-card.dcn-odd { border-left-color: var(--violet); }
 .dcn-row.dcn-c { border-color: rgba(var(--ink-rgb), .16); border-left-width: 4px; border-radius: 12px; background: var(--card, transparent); }
 .dcn-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
@@ -884,7 +884,7 @@ html.dcn-modal { overflow: hidden; }
 .dcn-sec span { font-weight: 400; letter-spacing: 0; text-transform: none; }
 .dcn-s.dcn-part { border-top: 1px solid var(--line); padding-top: 14px; }
 .dcn-s.dcn-part > .dcn-sec { flex-basis: 100%; margin-bottom: 0; }
-.dcn-s .dcn-need { border-color: var(--warn); }
+.dcn-s .dcn-need { border-color: rgb(var(--warn-rgb)); }
 .dcn-new { background: rgba(var(--ink-rgb), .03); }
 .dcn-nb { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .dcn-nb .dcn-sug { flex: 1 1 320px; }
@@ -1027,3 +1027,4 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-dlgh b { flex: 1; font-weight: 600; }
 .dc-dlfr { padding-left: 32px; }
 .dc-addlist, .dc-dllist { background: var(--bg-solid, var(--card)); }   /* solid: the page must not show through the menu (Team's card colour is see-through) */
+.dc-freshov .dcn-flt { display: none; }   /* the popup has its own New / Name problems / All – one row of filters, not two (live check 2026-11-25) */

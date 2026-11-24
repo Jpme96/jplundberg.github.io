@@ -729,7 +729,7 @@ body.dc-full #wkDocCtl { display: block !important; }
 .dc-warn { color: var(--orange); }
 .dc-link { width: 100%; font-size: 14px; }
 .dc-files li.dc-frow { color: inherit; font-size: inherit; padding: 9px 0; border-bottom: 1px solid rgba(var(--ink-rgb), .08); }
-.dc-files li.loose { border-left: 3px solid var(--orange); padding-left: 8px; }
+.dc-files li.loose { border-left: 3px solid rgb(var(--orange-rgb)); padding-left: 8px; }
 .dc-fh { display: flex; align-items: center; gap: 8px; }
 .dc-fh .dc-fn { flex: 1; font-size: 13.5px; }
 .dc-iss li { font-size: 12.5px; margin: 3px 0 0; color: var(--orange); }
@@ -999,7 +999,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-gs { display: block; margin-top: 2px; font-size: 12px; color: var(--blue); }
 .dcn-bno { margin: 8px 0; }
 .dcn-bno small { color: var(--muted); font-size: 12px; }
-.dcn-bno input.dcn-need { border-color: var(--warn); }
+.dcn-bno input.dcn-need { border-color: rgb(var(--warn-rgb)); }
 .dcn-row.dcn-c { padding: 0; }
 .dcn-sumb { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 8px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .dcn-sumt { flex: 1; min-width: 0; display: grid; gap: 2px; }
@@ -1019,7 +1019,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-rhead { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
 .dcn-rn { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .dcn-rn code { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dcn-bb { font-size: 11px; font-weight: 600; color: var(--blue); }
+.dcn-bb { font-size: 12px; font-weight: 600; color: var(--blue); }
 .dcn-ract { display: flex; gap: 2px; flex: none; }
 .dcn-bbl { margin-top: 10px; }
 .dcn-bbl > summary { cursor: pointer; font-size: 13.5px; color: var(--muted); margin-bottom: 6px; }
@@ -1363,7 +1363,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-sec span { font-weight: 400; letter-spacing: 0; text-transform: none; }
 .dcn-s.dcn-part { border-top: 1px solid var(--line); padding-top: 14px; }
 .dcn-s.dcn-part > .dcn-sec { flex-basis: 100%; margin-bottom: 0; }
-.dcn-s .dcn-need { border-color: var(--warn); }
+.dcn-s .dcn-need { border-color: rgb(var(--warn-rgb)); }
 .dcn-new { background: rgba(var(--ink-rgb), .03); }
 .dcn-nb { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .dcn-nb .dcn-sug { flex: 1 1 320px; }
@@ -1511,6 +1511,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-dlgh b { flex: 1; font-weight: 600; }
 .dc-dlfr { padding-left: 32px; }
 .dc-addlist, .dc-dllist { background: var(--bg-solid, var(--card)); }
+.dc-freshov .dcn-flt { display: none; }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }
 .stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;

@@ -168,6 +168,7 @@ window.DC_NB = {
 "ui.dc-fl-no-krav": "Ingen krav ennå",
 "ui.dc-fl-no-plan": "Ingen plan",
 "ui.dc-fl-nodwg": "DWG mangler",
+"ui.dc-fl-nolist-v": "Ingen liste å sjekke mot",
 "ui.dc-fl-none-yet": "Ingenting ennå",
 "ui.dc-fl-nopdf": "PDF mangler",
 "ui.dc-fl-noplan": "Fortsett uten dokumentplan",

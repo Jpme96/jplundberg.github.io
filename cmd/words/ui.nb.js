@@ -957,6 +957,7 @@ I18N.add({
   "ui.dc-cmp-nolist": ["No list", "Ingen liste"],
   "ui.dc-mk-none": ["No file has an NS 3451 code yet – give the files their names first.", "Ingen filer har NS 3451-kode ennå – gi filene navn først."],
   "ui.dc-dl": ["Download", "Last ned"],
+  "ui.dc-fl-nolist-v": ["No list to check against", "Ingen liste å sjekke mot"],
   "ui.dc-link-in-w": ["{n} files came in from {w}", "{n} filer kom inn fra {w}"],
   "ui.dc-link-in": ["{n} files came in on the upload link", "{n} filer kom inn på opplastingslenken"],
   "ui.dx-ren-plan": ["Document plan (Vedlegg 7)", "Dokumentplan (Vedlegg 7)"],

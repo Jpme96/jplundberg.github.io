@@ -175,6 +175,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.evaluate(() => document.querySelector('.t-upl[data-upwait] [data-act=upproj]').click()); await sl(400);
   await own.evaluate(() => { const b2 = [...document.querySelectorAll('[data-act=upprojgo]')].find(x => /Testveien 9/.test(x.textContent)); b2 && b2.click(); });
   check(await until(own, () => (((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).some(f => /333 DV Sprinkler madeup\.pdf/.test(f.name) && f.nw), 20000), 'Put in a project: the file lands in that project\'s Levering, marked new');
+  check(await (async () => { for (let i = 0; i < 60; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + lid2 + ':')) return true; await sl(500); } return false; })(), 'and once it is shared in the project, the link\'s copy goes');
   await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(800);
   await con2.close();
 
