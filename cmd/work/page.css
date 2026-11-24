@@ -969,7 +969,7 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-sumbar .dc-gname { padding: 9px 14px; font-size: 14px; }
 .dc-badl { font: inherit; padding: 0; text-decoration: underline; }
 .dc-th { display: flex; align-items: center; gap: 8px; margin: 16px 0 6px; font-size: 15px; }
-.dc-tdup .dc-help { margin: 0 0 8px; }
+.dc-tdhelp { margin: 0 0 8px; font-size: 13px; }   /* not .dc-help: long help lines get clamped to one line */
 .dc-tdg { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 0 0 12px; }
 .dc-tdo { flex: 1 1 200px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(var(--ink-rgb), .16); border-radius: 10px; }
 .dc-tdo:hover { border-color: var(--ok); }
