@@ -21,7 +21,7 @@ a { color: var(--acc); }
 .t-screen { text-align: center; margin-top: 10vh; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .t-screen h1 { margin: 6px 0 0; font-size: 24px; color: var(--head); } .t-screen p { margin: 0; color: var(--muted); max-width: 360px; }
 .t-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; margin-top: 8px; text-align: left; }
-label.t-lbl { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--muted); font-weight: 500; }
+label.t-lbl, div.t-lbl { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--muted); font-weight: 500; }
 input, select, textarea { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: 11px 14px; font-size: 16px; outline: none; color: var(--ink); }
 textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
 input:focus, select:focus, textarea:focus { border-color: var(--acc); }
