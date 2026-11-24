@@ -44,6 +44,8 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('[data-dcdlpick]').click()); await sl(300);
   const pk = await p.evaluate(() => ({ pop: !!document.querySelector('.dc-dlpov'), boxes: document.querySelectorAll('.dc-dlpov [data-dcdlpf]').length }));
   check(pk.pop && pk.boxes === 3, 'Choose files opens a list of the files, by NS 3451 heading ' + JSON.stringify(pk));
+  const pkw = await p.evaluate(() => { const sh = document.querySelector('.dc-dlpov .dx-tsheet'), h = sh.querySelector('.dc-freshh').getBoundingClientRect(), r = sh.getBoundingClientRect(); return { side: sh.scrollWidth - sh.clientWidth, pad: Math.round(h.left - r.left) }; });
+  check(pkw.side <= 1 && pkw.pad >= 12, 'the file picker does not scroll sideways and has room at the edge (JP 21:43) ' + JSON.stringify(pkw));
   await p.evaluate(() => document.querySelector('.dc-dlpov [data-dcdlpall="0"]').click()); await sl(200);
   await p.click('.dc-dlpov [data-dcdlpf]'); await sl(200);
   await p.evaluate(() => document.querySelector('.dc-dlpov .dc-freshbtns [data-dcdlpx]').click()); await sl(300);
