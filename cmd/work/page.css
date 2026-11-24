@@ -385,7 +385,8 @@ html.xv-on, html.xv-on body { overflow: hidden; }
 .dcn-sug code { font-family: inherit; font-size: 15.5px; font-weight: 600; line-height: 1.35; padding: 8px 11px; border: 1px solid var(--line); background: var(--card, #fff); box-shadow: inset 3px 0 0 var(--accent); }
 .dcn-sug > span { font-size: 12.5px; }
 /* the name box and the buttons beside it on one line: same height, bottoms level (JP 2026-11-23 "not properly lined") */
-.dcn-sug code { min-height: 44px; box-sizing: border-box; display: flex; align-items: center; }
+.dcn-sug code { min-height: 44px; box-sizing: border-box; display: block; overflow-wrap: break-word; word-break: normal; }   /* normal text flow: the name wraps as one line of text, not as columns per part (JP 2026-11-24) */
+.dcn-sug code .dcn-gap { white-space: nowrap; }
 .dcn-sug + .dcn-b { align-self: flex-end; min-height: 44px; }
 .dx-dllist li.dx-dloff > span { opacity: .45; }
 .dx-dllist .dcn-pkc { flex: none; }
