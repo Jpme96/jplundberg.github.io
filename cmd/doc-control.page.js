@@ -1390,10 +1390,10 @@
       Object.keys(by[g]).sort().forEach(function (c) {
         var ls = by[g][c], n = Math.max(3, ls.length);
         for (var i = 0; i < n; i++) {
-          var l = ls[i], st = i ? 4 : 3, tp = l ? (l.t ? l.t.split('').map(function (x) { var q = TYPES.filter(function (y) { return y[0] === x; })[0]; return q ? q[1] : x; }).join(', ') : (l.type || l.name || '')) : '';
+          var l = ls[i], st = i ? 4 : 3,   /* column G: the line's planned name – a plan made from the delivery has the delivered names; requirements have none, so the contractor fills it in (JP 2026-11-24 09:34) */ tp = l ? (l.t ? l.t.split('').map(function (x) { var q = TYPES.filter(function (y) { return y[0] === x; })[0]; return q ? q[1] : x; }).join(', ') : (l.type || l.name || '')) : '';
           var note = l ? [l.name && l.t ? l.name : '', hintText(l), l.opt ? 'Hvis kontraktsfestet' : ''].filter(Boolean).join(' – ') : '';
-          rows.push(row(r, i ? [cell(r, 0, '', st), cell(r, 1, '', st), cell(r, 2, '', st), cell(r, 3, '', st), cell(r, 4, '', st), cell(r, 5, tp, st), cell(r, 6, '', st), cell(r, 7, note, st)]
-            : [cell(r, 0, g, st), cell(r, 1, bbyCode(c), st), cell(r, 2, lineTitle(ls[0]), st), cell(r, 3, G[1], st), cell(r, 4, FIRE.test(String(c).slice(0, 3)) ? 'Ja' : 'Nei', st), cell(r, 5, tp, st), cell(r, 6, '', st), cell(r, 7, note, st)]));
+          rows.push(row(r, i ? [cell(r, 0, '', st), cell(r, 1, '', st), cell(r, 2, '', st), cell(r, 3, '', st), cell(r, 4, '', st), cell(r, 5, tp, st), cell(r, 6, l ? l.planned || '' : '', st), cell(r, 7, note, st)]
+            : [cell(r, 0, g, st), cell(r, 1, bbyCode(c), st), cell(r, 2, lineTitle(ls[0]), st), cell(r, 3, G[1], st), cell(r, 4, FIRE.test(String(c).slice(0, 3)) ? 'Ja' : 'Nei', st), cell(r, 5, tp, st), cell(r, 6, l ? l.planned || '' : '', st), cell(r, 7, note, st)]));
           r++;
         }
       });

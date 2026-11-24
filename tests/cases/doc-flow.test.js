@@ -96,6 +96,9 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('[data-dcmkplan]').click()); await sl(500);
   const np = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), linked: r.files.filter(f => f.line).length, v7: !!document.querySelector('[data-dcvx7]') }; });
   check(np.lines === '234 A recv,234 E recv,261 E recv' && np.linked === 3 && np.v7, 'no plan: a plan is made from the delivered files, linked, ready as Vedlegg 7 ' + JSON.stringify(np));
+  /* the Vedlegg 7 from such a plan has the delivered names in Planlagt navngivning (JP 2026-11-24 09:34: it was empty) */
+  const v7 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-dcvx7]').click(); FdvPdf.share = old; if (!got) return ''; return new TextDecoder().decode(await got.arrayBuffer()); });
+  check(/234 SE Vindu madeup/.test(v7), 'the Vedlegg 7 made from the delivery fills Planlagt navngivning with the delivered names');
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();
