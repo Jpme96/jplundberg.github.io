@@ -210,7 +210,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     check(/^0 (av|of) 2/.test(pr.p) && !pr.main && pr.cards === 2, 'the new-files box says 0 of 2 have their new name, and Done is not the main button yet ' + JSON.stringify(pr));
     /* the delivered files are shared with the team (JP 2026-11-24 "files should be shareable"): each gets an encrypted copy in the team's
        storage (R2 in the test server), and a device without the file opens it from there */
-    const shared = await until(own, () => { const p = (DocHost.Fe.tools().dctl || []).filter(x => (x.files || []).some(f => /Tegning madeup 15/.test(f.name)))[0]; return !!p && p.files.filter(f => !f.nf).every(f => f.tf && f.tf.fid); }, 12000);
+    const shared = await until(own, () => { const p = (DocHost.Fe.tools().dctl || []).filter(x => (x.files || []).some(f => /Tegning madeup 15/.test(f.name)))[0]; return !!p && p.files.filter(f => !f.nf).every(f => f.tf && f.tf.fid); }, 25000);   /* sent one at a time – slower on a loaded runner */
     check(shared, 'each delivered file gets a copy in the team’s storage (tf on the file record)');
     const away = await own.evaluate(async () => { const p = (DocHost.Fe.tools().dctl || []).filter(x => (x.files || []).some(f => /Tegning madeup 15/.test(f.name)))[0], f = p.files.filter(x => /Tegning madeup 15/.test(x.name))[0];
       await new Promise(r => { const q = indexedDB.open('dash-dctl', 1); q.onsuccess = () => { const t = q.result.transaction('files', 'readwrite'); t.objectStore('files').delete(f.id); t.oncomplete = r; t.onerror = r; }; q.onerror = r; });

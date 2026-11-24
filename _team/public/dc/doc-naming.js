@@ -285,20 +285,27 @@
   }
   function pdfText(blob) {
     return blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (pdf) {
-      var n = Math.min(pdf.numPages, 40), pages = [], title = '', th = 0, chain = Promise.resolve();
-      for (var i = 1; i <= n; i++) (function (i) { chain = chain.then(function () { return pdf.getPage(i).then(function (pg) { return pg.getTextContent(); }).then(function (tc) {
+      var n = Math.min(pdf.numPages, 40), pages = [], title = '', th = 0, chain = Promise.resolve(), pw = 0, ph = 0;
+      for (var i = 1; i <= n; i++) (function (i) { chain = chain.then(function () { return pdf.getPage(i).then(function (pg) { if (i === 1) { var v = pg.getViewport({ scale: 1 }); pw = v.width; ph = v.height; } return pg.getTextContent(); }).then(function (tc) {
         var lines = [], cur = '', ly = null;
         tc.items.forEach(function (it) { if (!('str' in it)) return; var y = Math.round(it.transform[5]); if (ly !== null && Math.abs(y - ly) > 2) { lines.push(cur); cur = ''; } cur += (cur && !/\s$/.test(cur) ? ' ' : '') + it.str; ly = y; if (it.hasEOL) { lines.push(cur); cur = ''; ly = null; }
           if (i === 1) { var h = Math.abs(it.height || it.transform[3] || 0), s = it.str.trim(); if (s.length >= 3 && /[A-Za-zÆØÅæøå]/.test(s)) { if (h > th + 0.5) { th = h; title = s; } else if (Math.abs(h - th) <= 0.5 && title.length < 60 && title.indexOf(s) < 0) title += ' ' + s; } } });
         if (cur) lines.push(cur); pages.push(lines.map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(Boolean).join('\n'));
       }); }); })(i);
-      return chain.then(function () { return { n: pdf.numPages, pages: pages, title: title }; });
+      return chain.then(function () { return { n: pdf.numPages, pages: pages, title: title, w: pw, h: ph }; });
     });
   }
   function langOf(t) {
     var w = ' ' + t.replace(/[^a-zæøåäö]+/g, ' ') + ' ', sum = function (l) { return l.reduce(function (a, x) { return a + cnt(w, ' ' + x + ' '); }, 0); };
     var L = [['nb', sum(['og', 'ikke', 'skal', 'med', 'til', 'av', 'som', 'eller', 'må', 'ved'])], ['en', sum(['the', 'and', 'with', 'must', 'shall', 'of', 'or', 'to', 'be', 'is'])], ['sv', sum(['och', 'inte', 'ska', 'för', 'eller', 'med'])], ['de', sum(['und', 'die', 'der', 'nicht', 'mit', 'für', 'das'])]].sort(function (a, b) { return b[1] - a[1]; });
     return L[0][1] >= 5 ? L[0][0] : '';
+  }
+  /* a drawing sent as a PDF with an ordinary name (JP 2026-11-24): the title block gives it away – words like Tegningsnr., Målestokk, a scale 1:50,
+     Tegnet/Kontrollert av – on a landscape or large first page. Two signs at least, one of them strong; datasheets don't have these. */
+  function looksDrawn(r) {
+    var t = (r.pages[0] || '').toLowerCase(), strong = [/tegn(?:ings)?\.?\s*nr|tegningsnummer|drawing\s*(?:no|number|nr)/, /m[åa]lestokk|\bscale\b|\bm\s*1\s*:\s*\d{1,4}\b|\b1\s*:\s*(?:5|10|20|25|50|100|200|250|500|1000)\b/], weak = [/tegnet\s*(?:av)?|\bdrawn\b|\btegn\.\b/, /kontr(?:ollert)?\.?\s*(?:av)?|\bchecked\b|\bkontr\b/, /\brev(?:isjon)?\.?\b|\brevision\b/, /\bfag\b|\bdiscipline\b/, /oppdragsgiver|byggherre|\bclient\b/, /plan\s*\d|snitt|fasade|detalj|situasjonsplan|plantegning/];
+    var s1 = strong.filter(function (x) { return x.test(t); }).length, s2 = weak.filter(function (x) { return x.test(t); }).length, shape = r.w > r.h * 1.15 || Math.max(r.w, r.h) > 1150;
+    return s1 >= 1 && s1 + s2 >= 2 && shape;
   }
   function ccRun(pid, fid) {
     if (ccBusy[fid]) return; ccBusy[fid] = 1; draw();
@@ -312,12 +319,13 @@
       [].concat(TKW.SE, TKW.DA, TKW.DV, TKW.FB).forEach(function (e) { d = d.replace(new RegExp('\\S*' + e[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\S*', 'ig'), '');   /* the whole word: EU-samsvarserklæring goes, not just its middle */ });
       d = d.replace(/[-–:|]+/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 6).join(' ');
       var mm = /\b([A-ZÆØÅ][\wÆØÅæøå&.-]{1,25}(?:\s[A-ZÆØÅ][\wÆØÅæøå&.-]{1,25})?)\s(AS|ASA|AB|GmbH|Oy|A\/S|Ltd|Inc)\b/.exec(all); if (mm && d.toLowerCase().indexOf(mm[1].toLowerCase()) < 0) d = (d ? d + ' ' : '') + mm[1];
-      ccText[fid] = all.slice(0, 1500);
+      ccText[fid] = all.slice(0, 1500); var dw = looksDrawn(r);
       var cc = { at: today(), pg: r.n, ch: chars, t: st ? [st.k, why(st, 't')] : null, c: sc ? [sc.k, why(sc, 't')] : null, ca: !sc && co.length > 1 ? co.slice(0, 2).map(function (x) { return [x.k, why(x, 't')]; }) : null, tt: ty.slice(0, 3).map(function (x) { return x.k; }), cs: co.slice(0, 3).map(function (x) { return x.k; }), d: d.slice(0, 80),
         lang: chars > 200 ? langOf(low) : '', mk: ['Bruker', 'Drift', 'Prosjekt'].filter(function (w) { return new RegExp('(^|[^A-Za-zæøå])' + w + '([^a-zæøå]|$)').test(all); }), w: [] };
       if (chars < 40 * Math.min(r.n, 40)) cc.w.push(chars ? 'little' : 'notext');
       saveP(pid, function (p) {
         var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.cc = cc;
+        if (dw && !f.nk && fkind(f) === 'doc') { f.p.kind = 'drawing'; f.kdw = 1; }   /* found to be a drawing – it gets the drawing rule and is kept out of bulk changes; "Type fil" still decides */
         var weak = k('ui.dcn-closest', 'closest match in the text – check it');
         if (!f.p.code) { var lc = learnedFor(f.orig || f.name);   /* your earlier choices first, then a clear match in the text; close calls are two options to choose from */
           if (lc) { f.p.code = lc.k; f.sg = Object.assign({}, f.sg, { c: whyL(lc) }); }
@@ -325,7 +333,7 @@
           else if (cc.ca) f.sg = Object.assign({}, f.sg, { alt: cc.ca });
           else if (cc.cs.length) { f.p.code = cc.cs[0]; f.sg = Object.assign({}, f.sg, { c: weak }); }
           if (f.p.code && f.sg && f.sg.alt) delete f.sg.alt; }
-        if (!f.p.abbr && (cc.t || cc.tt.length)) { f.p.abbr = cc.t ? cc.t[0] : cc.tt[0]; f.sg = Object.assign({}, f.sg, { t: cc.t ? cc.t[1] : weak }); }
+        if (!f.p.abbr && fkind(f) === 'doc' && (cc.t || cc.tt.length)) { f.p.abbr = cc.t ? cc.t[0] : cc.tt[0]; f.sg = Object.assign({}, f.sg, { t: cc.t ? cc.t[1] : weak }); }
         if (cc.d && splitStem(f.name) !== nbuild(p, f).plain) { f.nv = Object.assign({}, f.nv, { desc: mergeDesc(nval(p, f, { k: 'desc' }), cc.d) }); }
         relink(p, f);
       });
@@ -462,6 +470,7 @@
     if (l) tags.push(tag('var(--ok)', k('ui.dcn-on-line', 'On line {c}', { c: l.code + (f.p.abbr ? ' ' + f.p.abbr : '') })));
     else if (f.p.code && !f.nf && !p.tool) { tags.push(tag('var(--violet)', k('ui.dcn-not-plan', 'Not in the plan'))); if (lvl === 'ok') lvl = 'odd'; }
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) tags.push(tag('var(--blue)', k('ui.dcn-suggested', 'Suggested – check it')));
+    if (f.kdw && kd === 'drawing' && !f.nk) tags.push(tag('var(--blue)', k('ui.dcn-kdw', 'Recognised as a drawing from the PDF')));
     /* the card (JP 2026-11-24, from the preview): a head with the file, then Code and type · Name parts · New name, each marked;
        what's missing is said once – on the head and on the button – and an empty field has an orange edge */
     var gaps = b.miss.filter(function (x) { return x !== 'code' && x !== 'type'; }), same = !b.miss.length && b.plain === splitStem(f.name);
@@ -624,12 +633,19 @@
   function pkFix(p) { if (pkP !== cur()) { PKS = {}; pkP = cur(); } var have = {}; (p.files || []).forEach(function (f) { have[f.id] = 1; }); Object.keys(PKS).forEach(function (id) { if (!have[id]) delete PKS[id]; }); }
   function pkSet(ids, on) { if (pkP !== cur()) { PKS = {}; pkP = cur(); } ids.forEach(function (id) { if (on) PKS[id] = 1; else delete PKS[id]; }); }
   function picked() { var p = proj(cur()) || {}; pkFix(p); return (p.files || []).filter(function (f) { return PKS[f.id]; }).map(function (f) { return f.id; }); }
+  /* choose by kind (JP 2026-11-24 "the danger is the tegning also get named"): Documents (n) · Drawings (n) · Photos (n), shown when the list has more than one kind */
+  function kindChips(G) { var c = { doc: 0, drawing: 0, photo: 0 }; G.forEach(function (f) { if (!f.nf) c[fkind(f)]++; }); if ((c.doc ? 1 : 0) + (c.drawing ? 1 : 0) + (c.photo ? 1 : 0) < 2) return '';
+    return [['doc', k('ui.dcn-pk-docs', 'Documents ({n})', { n: c.doc })], ['drawing', k('ui.dcn-pk-dwgs', 'Drawings ({n})', { n: c.drawing })], ['photo', k('ui.dcn-pk-pics', 'Photos ({n})', { n: c.photo })]].filter(function (x) { return c[x[0]]; }).map(function (x) { return '<button type="button" class="dc-chip" data-dcnpks="kind:' + x[0] + '">' + esc(x[1]) + '</button>'; }).join(''); }
   function bulkPop(kind) {
     var p = proj(cur()); if (!p) return; var F = (p.files || []).filter(function (f) { return PKS[f.id] && !f.nf; }); if (!F.length) return;
     var old = document.querySelector('.dcn-bulk'); if (old) old.remove();
-    var docs = kind === 'type' ? F.filter(function (f) { return fkind(f) === 'doc'; }) : F;
+    /* drawings and photos stay out of code and name changes unless you take them in (JP 2026-11-24); a type is only for documents; removing takes all */
+    var odd = F.filter(function (f) { return fkind(f) !== 'doc'; }), inc = false, nDw = odd.filter(function (f) { return fkind(f) === 'drawing'; }).length, nPh = odd.length - nDw;
+    var docsOf = function () { return kind === 'type' || ((kind === 'code' || kind === 'name') && !inc) ? F.filter(function (f) { return fkind(f) === 'doc'; }) : F; }, docs = docsOf();
     var own = kind === 'code' ? docs.filter(function (f) { return f.p.code && !(f.sg && f.sg.c); }) : kind === 'type' ? docs.filter(function (f) { return f.p.abbr && !(f.sg && f.sg.t); }) : [];
-    var ready = kind === 'name' ? F.filter(function (f) { var b = nbuild(p, f); return !b.miss.length && b.plain + ext(f.orig || f.name) !== f.name; }) : [];
+    var readyOf = function () { return kind === 'name' ? docs.filter(function (f) { var b = nbuild(p, f); return !b.miss.length && b.plain + ext(f.orig || f.name) !== f.name; }) : []; }, ready = readyOf();
+    var oddBox = function () { if ((kind !== 'code' && kind !== 'name') || !odd.length) return ''; var w = [nDw ? k(nDw === 1 ? 'ui.dcn-bk-dw1' : 'ui.dcn-bk-dwn', nDw === 1 ? '1 drawing' : '{n} drawings', { n: nDw }) : '', nPh ? k(nPh === 1 ? 'ui.dcn-bk-ph1' : 'ui.dcn-bk-phn', nPh === 1 ? '1 photo' : '{n} photos', { n: nPh }) : ''].filter(Boolean).join(k('ui.dcn-and', ' and '));
+      return '<label class="dcn-bkown dcn-bkodd"><input type="checkbox" data-bkodd' + (inc ? ' checked' : '') + '><span><b>' + esc(k('ui.dcn-bk-odd', '{w} are among them – left out', { w: w })) + '</b><small>' + esc(k('ui.dcn-bk-odd-in', 'Take them in too – they keep their own naming rule')) + '</small></span></label>'; };
     var val = '', over = false, ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dcn-bulk';
     var title = { code: k('ui.dcn-bk-code-t', 'Change the code for {n} files', { n: F.length }), type: k('ui.dcn-bk-type-t', 'Change the type for {n} files', { n: F.length }), name: k('ui.dcn-bk-name-t', 'Use the new name on {n} files', { n: F.length }), rm: k('ui.dcn-bk-rm-t', 'Remove {n} files from the list', { n: F.length }) }[kind];
     var names = function (L) { return esc(L.slice(0, 3).map(function (f) { return f.name; }).join(' · ')) + (L.length > 3 ? ' ' + esc(k('ui.dcn-bk-more', 'and {n} more', { n: L.length - 3 })) : ''); };
@@ -641,10 +657,11 @@
       if (kind === 'code' || kind === 'type') {
         h += '<div class="dcn-bkbox">' + (val ? '<b>' + esc(k('ui.dcn-bk-get', 'These {n} get {v}:', { n: tgt.length, v: label })) + '</b><span>' + names(tgt) + '</span>' : '<span class="muted">' + esc(kind === 'code' ? k('ui.dcn-bk-pickc', 'Choose the code first.') : k('ui.dcn-bk-pickt', 'Choose the type first.')) + '</span>') +
           '<small class="muted">' + esc(kind === 'code' ? k('ui.dcn-bk-only-c', 'Only the code changes – the type and the description stay as they are.') : k('ui.dcn-bk-only-t', 'Only the type changes – the code and the description stay as they are.')) + (kind === 'type' && docs.length < F.length ? ' ' + esc(k('ui.dcn-bk-notdoc', '{n} are photos or drawings and are left out.', { n: F.length - docs.length })) : '') + '</small></div>';
+        h += oddBox();
         if (own.length) h += '<label class="dcn-bkown"><input type="checkbox" data-bkover' + (over ? ' checked' : '') + '><span><b>' + esc(k('ui.dcn-bk-own', '{n} have one you set yourself', { n: own.length })) + '</b><small>' + esc(k('ui.dcn-bk-over', 'Overwrite them too ({v})', { v: own.slice(0, 4).map(function (f) { return kind === 'code' ? f.p.code : f.p.abbr; }).join(', ') + (own.length > 4 ? ' …' : '') })) + '</small></span></label>';
         h += '<div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo' + (val && tgt.length ? '' : ' disabled') + '>' + esc(val ? k('ui.dcn-bk-go', 'Set {v} on {n} files', { v: val, n: tgt.length }) : k('ui.dcn-bk-go0', 'Set it')) + '</button></div>';
       }
-      if (kind === 'name') h += '<div class="dcn-bkbox"><b>' + esc(k('ui.dcn-bk-name', '{r} of the {n} are ready and get the new name.', { r: ready.length, n: F.length })) + '</b>' + (ready.length ? '<span>' + names(ready) + '</span>' : '') + (F.length > ready.length ? '<small class="muted">' + esc(k('ui.dcn-bk-name-no', 'The others still miss something, or already have it.')) + '</small>' : '') + '</div><div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo' + (ready.length ? '' : ' disabled') + '>' + esc(k('ui.dcn-bk-name-go', 'Rename {n}', { n: ready.length })) + '</button></div>';
+      if (kind === 'name') h += oddBox() + '<div class="dcn-bkbox"><b>' + esc(k('ui.dcn-bk-name', '{r} of the {n} are ready and get the new name.', { r: ready.length, n: docs.length })) + '</b>' + (ready.length ? '<span>' + names(ready) + '</span>' : '') + (docs.length > ready.length ? '<small class="muted">' + esc(k('ui.dcn-bk-name-no', 'The others still miss something, or already have it.')) + '</small>' : '') + '</div><div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo' + (ready.length ? '' : ' disabled') + '>' + esc(k('ui.dcn-bk-name-go', 'Rename {n}', { n: ready.length })) + '</button></div>';
       if (kind === 'rm') h += '<div class="dcn-bkbox"><span>' + names(F) + '</span><small class="muted">' + esc(k('ui.dcn-bk-rm', 'They only leave this list and the download – the files on your computer are not touched.')) + '</small></div><div class="dcn-b dcn-bkbtns"><button type="button" class="dc-chip" data-bkx>' + esc(k('ui.cancel', 'Cancel')) + '</button><button type="button" class="pill-btn" data-bkgo>' + esc(k('ui.dcn-bk-rm-go', 'Remove {n}', { n: F.length })) + '</button></div>';
       ov.innerHTML = h + '</div>';
     };
@@ -652,7 +669,7 @@
     var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
     var ek = function (e) { if (e.key === 'Escape' && !document.querySelector('.dcn-cpk')) { e.stopPropagation(); close(); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
-    ov.addEventListener('change', function (e) { if (e.target.matches('[data-bksel]')) { val = /^\s*([0-9A-Za-z.]+)/.exec(e.target.value || '') ? /^\s*([0-9A-Za-z.]+)/.exec(e.target.value)[1] : ''; render(); } else if (e.target.matches('[data-bkover]')) { over = e.target.checked; render(); } });
+    ov.addEventListener('change', function (e) { if (e.target.matches('[data-bksel]')) { val = /^\s*([0-9A-Za-z.]+)/.exec(e.target.value || '') ? /^\s*([0-9A-Za-z.]+)/.exec(e.target.value)[1] : ''; render(); } else if (e.target.matches('[data-bkover]')) { over = e.target.checked; render(); } else if (e.target.matches('[data-bkodd]')) { inc = e.target.checked; docs = docsOf(); ready = readyOf(); own = kind === 'code' ? docs.filter(function (f) { return f.p.code && !(f.sg && f.sg.c); }) : own; render(); } });
     ov.addEventListener('click', function (e) {
       var t = e.target;
       if ((t === ov && dn === ov) || t.closest('[data-bkx]')) { close(); return; }
@@ -696,10 +713,12 @@
     if (pick) { var nNo = F.filter(function (f) { return !f.nf && !f.p.code; }).length, nPk = pkN(), allOn = G.length && G.every(function (f) { return pkOn(f.id); });
       /* one box for all / none, with its words beside it (JP 2026-11-19 21:39: the box and "All" did the same) */
       h += '<div class="dcn-pkh"><label class="dcn-pkc dcn-pkall"><input type="checkbox" data-dcnpkall' + (allOn ? ' checked' : '') + '><span>' + esc(k('ui.dcn-pk-all-n', 'Select all ({n})', { n: G.length })) + '</span></label>' +
-        (nNo ? '<button type="button" class="dc-chip" data-dcnpks="nocode">' + esc(k('ui.dcn-pk-nocode2', 'Only those without a code ({n})', { n: nNo })) + '</button>' : '') + '</div>'; }
+        (nNo ? '<button type="button" class="dc-chip" data-dcnpks="nocode">' + esc(k('ui.dcn-pk-nocode2', 'Only those without a code ({n})', { n: nNo })) + '</button>' : '') + kindChips(G) + '</div>'; }
     h += '<ul class="dcn-files' + (pick ? '' : ' dcn-nopk') + '">' + G.map(function (f) { return nrow(p, f, many); }).join('') + '</ul>' + (many && !G.length ? '<p class="muted">' + esc(k('ui.dcn-f-none', 'None here.')) + '</p>' : '');
     nopk = false;
+    var pkOdd = pick && pkN() ? (p.files || []).filter(function (f) { return pkOn(f.id) && !f.nf && fkind(f) !== 'doc'; }) : [], pkDw = pkOdd.filter(function (f) { return fkind(f) === 'drawing'; }).length;
     if (pick && pkN()) h += '<div class="dcn-pkact" role="toolbar" aria-label="' + esc(k('ui.dcn-pk-bar', 'Selected files')) + '"><b>' + esc(k('ui.dcn-pk-n', '{n} selected', { n: pkN() })) + '</b>' +
+      (pkOdd.length ? '<span class="dcn-pkodd"><i class="bi bi-exclamation-circle"></i> ' + esc(pkDw ? k('ui.dcn-pk-dwin', 'incl. {n} drawings – left out unless you take them in', { n: pkDw }) : k('ui.dcn-pk-phin', 'incl. {n} photos – left out unless you take them in', { n: pkOdd.length })) + '</span>' : '') +
       '<button type="button" class="pill-btn" data-dcnpka="code">' + esc(k('ui.dcn-pk-code', 'Change code')) + '</button><button type="button" class="dc-chip" data-dcnpka="type">' + esc(k('ui.dcn-pk-type', 'Change type')) + '</button>' +
       '<button type="button" class="dc-chip" data-dcnpka="name">' + esc(k('ui.dcn-pk-name', 'Use the new name')) + '</button>' + (p.tool ? '<button type="button" class="dc-chip" data-dcnpka="rm">' + esc(k('ui.dcn-pk-rm', 'Remove from the list')) + '</button>' : '') +
       '<button type="button" class="icon-btn" data-dcnpks="none" aria-label="' + esc(k('ui.dcn-pk-clear', 'Clear the selection')) + '"><i class="bi bi-x-lg"></i></button></div>';
@@ -784,6 +803,7 @@
         if (!ac) { fa.querySelector('[data-dcnoc]').focus(); return; } saveP(cur(), function (p) { addOwn(p, ak, ac, am); }); unfocus(); draw(); return; }
       if (t.closest('[data-dcnall]')) { suggestAll(cur()); return; }
       if ((b = t.closest('[data-dcnpks]'))) { var pp = proj(cur()) || {}, FF = (pp.files || []).filter(function (f) { return !f.nf; }), wk = b.dataset.dcnpks; pkFix(pp);
+        if (wk.indexOf('kind:') === 0) { var kk = wk.slice(5); PKS = {}; pkSet((nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF).filter(function (f) { return fkind(f) === kk; }).map(function (f) { return f.id; }), true); draw(); return; }   /* only that kind – the rest is unticked */
         if (wk === 'none') PKS = {}; else pkSet((wk === 'nocode' ? FF.filter(function (f) { return !f.p.code; }) : (nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF)).map(function (f) { return f.id; }), true); draw(); return; }
       if ((b = t.closest('[data-dcnpka]'))) { bulkPop(b.dataset.dcnpka); return; }
       if ((b = t.closest('[data-dcnexp]'))) { nfo = b.dataset.dcnexp; draw(); return; }

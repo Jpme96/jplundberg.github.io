@@ -236,6 +236,7 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
   opacity: .6;
 }
 .del:hover { opacity: 1; color: var(--danger); }
+.removing { opacity: 0; transform: translateX(24px); }
 .links.editing .remove { display: grid; }
 .note {
   display: flex;
@@ -1363,3 +1364,4 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-card .dcn-head .dcn-open { font-size: 13px; }
 .dcn-row.dcn-card > .dc-iss, .dcn-row.dcn-card > .dcn-why, .dcn-row.dcn-card > .dcn-cc, .dcn-lk summary { font-size: 13px; }
 .dc-nofile { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.dcn-pkodd { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--warn); }
