@@ -532,7 +532,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '760cac34e215';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'e4d89969582e';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -743,7 +743,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var xs = all.filter(function (a) { return f === 'done' ? a.d.done : !a.d.done && (f === 'all' || a.d.owner === S.me.email); }).sort(f === 'done' ? function (a, b) { return (b.d.doneAt || 0) - (a.d.doneAt || 0); } : byDue);
     var out = head(L('Actions', 'Oppgaver'), L(all.filter(function (a) { return !a.d.done; }).length + ' open in the team', all.filter(function (a) { return !a.d.done; }).length + ' åpne i teamet'));
     out += '<div class="t-pick t-noprint" role="group">' + [['mine', L('Mine', 'Mine')], ['all', L('Everyone', 'Alle')], ['done', L('Done', 'Ferdige')]].map(function (o) { return '<label><input type="radio" name="af" data-filter="' + o[0] + '"' + (f === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
-    if (rank() >= 1) out += '<button class="t-btn ghost wide" type="button" data-act="newAction">' + ic('plus') + L('New action', 'Ny oppgave') + '</button><p></p>';
+    if (rank() >= 1) out += '<button class="t-btn wide" type="button" data-act="newAction">' + ic('plus') + L('New action', 'Ny oppgave') + '</button><p></p>';
     out += xs.length ? actionList(xs, true) : '<p class="t-empty">' + L('Nothing here.', 'Ingenting her.') + '</p>';
     return out;
   }
@@ -897,6 +897,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       : tab === 'team' ?
         '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
         palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() +
+        (S.me.isOwner ? '<p class="t-h">' + L('From /cmd', 'Fra /cmd') + '</p><div class="t-setrow"><span><b>' + L('Import from /cmd', 'Importer fra /cmd') + '</b><small>' + L('A project or all your lists, sent from /cmd (Work → Documentation → Send to Team)', 'Et prosjekt eller alle listene dine, sendt fra /cmd (Jobb → Dokumentasjon → Send til Team)') + '</small></span><button class="t-btn ghost sm" type="button" id="dcImport" data-act="dcImportPick">' + L('Choose file', 'Velg fil') + '</button><input type="file" accept=".json,application/json" data-dcimport hidden></div>' : '') +
         '<p class="t-h">' + L('Backup', 'Sikkerhetskopi') + '</p><div class="t-setrow"><span><b>' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div>'
       : '<p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
         '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
@@ -984,9 +985,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var DT = dtabsOn(); if (DT.length && !DT.some(function (t) { return t[0] === S.dtab; })) S.dtab = DT[0][0];
     var out = '<div class="t-dhead">' + head(L('Documentation', 'Dokumentasjon'), L('Documentation for each project – requirements, document plan, delivery, comparison and final check. The same tools as in /cmd.', 'Dokumentasjon per prosjekt – krav, dokumentplan, levering, sammenligning og sluttkontroll. De samme verktøyene som i /cmd.'));
     out += '<div class="t-pick t-noprint" role="group">' + DT.map(function (t) { return [t[0], L(t[1], t[2])]; }).map(function (o) { return '<label><input type="radio" name="dtab" data-dtab="' + o[0] + '"' + (S.dtab === o[0] ? ' checked' : '') + '>' + o[1] + '</label>'; }).join('') + '</div><p></p>';
-    /* Import from /cmd: always one small fold (JP 13:48 – the page was heavy; 2026-11-17 20:11 – less scrolling) */
-    var dHas = DFe.list('dctl').length + DFe.list('dckrav').length > 0;
-    if (rank() >= 1) out += (dHas || true) ? '<details class="t-imp t-noprint"><summary>' + L('Import from /cmd', 'Importer fra /cmd') + '</summary>' + '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document requirements → Move to Team takes all your lists, checklists and project types in one file; a single project: open it → Send to Team. Files for the whole team go under Files.', 'I /cmd: Jobb → Dokumentkrav → Flytt til Team tar med alle listene, sjekklistene og prosjekttypene i én fil; ett prosjekt: åpne det → Send til Team. Filer for hele teamet legges under Filer.') + '</p>' + '</details>' : '<label class="t-btn ghost wide t-noprint" id="dcImport">' + L('Import from /cmd', 'Importer fra /cmd') + '<input type="file" accept=".json,application/json" data-dcimport hidden></label><p class="t-small t-noprint">' + L('In /cmd: Work → Document requirements → Move to Team takes all your lists, checklists and project types in one file; a single project: open it → Send to Team. Files for the whole team go under Files.', 'I /cmd: Jobb → Dokumentkrav → Flytt til Team tar med alle listene, sjekklistene og prosjekttypene i én fil; ett prosjekt: åpne det → Send til Team. Filer for hele teamet legges under Filer.') + '</p>';
+    /* Import from /cmd lives in Settings → Backup, for the owner only (review 19) */
     out += '</div>';
     out += '<div class="dc-host"><section class="card kit-card kit-wide dc-card" id="wkDocCtl"' + (S.dtab === 'doc' ? '' : ' hidden') + '><p class="t-empty">' + L('Loading …', 'Laster …') + '</p></section>' +
       '<section class="card kit-card kit-wide dc-card dc-gone" id="wkDocReq"' + (S.dtab === 'doc' ? '' : ' hidden') + '></section></div>' +
@@ -1179,6 +1178,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (await putRec('insp', id, d, L('Note on ', 'Notat på ') + d.name)) draw(); else busy(f, false);
   }
   function importDoc(file) {
+    try { closeSheet(); } catch (x) {}   /* chosen in Settings (review 19) */
     var fr = new FileReader();
     fr.onload = function () {
       var j = null; try { j = JSON.parse(fr.result); } catch (x) {}
@@ -1595,6 +1595,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
+    if (a === 'dcImportPick') { var fi = document.querySelector('input[data-dcimport]'); if (fi) fi.click(); return; }
     if (a === 'settab') { S.setTab = t.dataset.settab; settingsSheet(); return; }
     if (a === 'pal') { if (rank() < 3) return; var pid = t.dataset.pal; if (await putRec('cfg', 'cfgpalette', { p: pid }, L('Team colours', 'Teamets farger'))) { palSync(); if (S.sheet) settingsSheet(); draw(); } return; }
     if (a === 'clockIn') return clockIn();

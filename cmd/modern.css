@@ -516,3 +516,9 @@ li.dn .mh-tx { color: var(--muted); text-decoration: line-through; }
   .modern .fp-hero .fp-kicker, .modern .fp-hero > p.muted:not(.fp-live) { display: none; }
   .modern .fp-hero h1 { font-size: 26px; }
 }
+/* phone: the avatar's pen sits on the figure's corner, not on the speech bubble (review 30) */
+@media (max-width: 899px) { .mhero.has-av .av-home .av-edit { right: auto !important; left: 70px !important; top: 0 !important; } }
+/* the shopping list's buttons go under the title when there is no room beside its count (review 31, longer in Norwegian) */
+#shop .card-head { flex-wrap: wrap; row-gap: 6px; }
+#shop .card-head h2 { white-space: nowrap; flex: none; }
+#shop .card-head .head-actions { margin-left: auto; }

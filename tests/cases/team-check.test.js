@@ -2,6 +2,7 @@
    every page, each step of a project and the pop-ups, at PC and phone width. Made-up data only. */
 const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs'); const http = require('http');
 const puppeteer = require('puppeteer'); const { check, done } = require('../lib/check'); const os = require('os');
+const impOpen = async (pg) => { await pg.waitForSelector('[data-act=settings]', { timeout: 20000 }); await pg.evaluate(() => { const s = document.querySelector('[data-act=settings]'); if (s) s.click(); }); await pg.waitForSelector('[data-settab=team]', { timeout: 20000 }); await pg.evaluate(() => document.querySelector('[data-settab=team]').click()); await pg.waitForSelector('input[data-dcimport]', { timeout: 20000 }); };   /* the import is in Settings → The team (review 19) */
 const sl = ms => new Promise(r => setTimeout(r, ms));
 const TPORT = (+process.env.PORT || 8770) + 430, T = 'http://localhost:' + TPORT + '/';
 const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'team-server.mjs')], { env: Object.assign({}, process.env, { TPORT: String(TPORT) }), stdio: ['ignore', 'pipe', 'inherit'] });
@@ -49,7 +50,7 @@ const PJ = path.join(fs.mkdtempSync(path.join(require('os').tmpdir(), 'tck-')), 
   await own.click('button[type=submit]'); await until(own, () => !!document.querySelector('.t-tabs'), 20000);
   const L = [['234','E','234 DA Vindu madeup'],['234','BC','234 DV Vindu madeup'],['261','E','261 DA Takstein madeup'],['111','E','111 DA Leiekontrakt madeup']];
   fs.writeFileSync(PJ, JSON.stringify({ team: 'dctl', p: { name: 'Vogts gate 10 (oppdiktet) med et ganske langt prosjektnavn', no: '10', planName: 'Dokumentplan.xlsx', lines: L.map((x, i) => ({ id: 'l' + i, code: x[0], t: x[1], planned: x[2], st: 'missing' })) } }));
-  await own.goto(T + '#docs'); await own.waitForSelector('input[data-dcimport]'); await (await own.$('input[data-dcimport]')).uploadFile(PJ); await until(own, () => location.hash.startsWith('#dc='), 15000); await sl(1200);
+  await own.goto(T + '#docs'); await impOpen(own); await (await own.$('input[data-dcimport]')).uploadFile(PJ); await until(own, () => location.hash.startsWith('#dc='), 15000); await sl(1200);
   /* files in the project, two with the same content, so Levering, the tidy-up popup and its duplicates are checked too (JP 2026-11-24 19:49) */
   const dc0 = await own.evaluate(() => location.hash.slice(4));
   await own.evaluate(() => { const b = document.querySelector('.dc-fsteps [data-dctab="lev"]'); if (b) b.click(); }); await until(own, () => !!document.querySelector('.dc-drop input[data-dcfiles]'), 8000);

@@ -129,7 +129,7 @@
     }
     h += '</ol>' + (doneTop.length ? '<p class="pl-done"><i class="bi bi-check2-circle"></i> Done today: ' + doneTop.map(function (x) { return esc(x.text); }).join(' · ') + '</p>' : '') + '</section>';
     /* tasks to pick from */
-    h += '<section class="pl-sec"><h3><i class="bi bi-list-check"></i> <span data-t="ui.tasks">Tasks</span></h3><form class="pl-add" id="plAdd"><input id="plNew" placeholder="New task – it goes straight into your top 3" data-t-placeholder="ui.new-task-it-goes-straight-into-your-top" autocomplete="off" enterkeyhint="done"><button class="pill-btn" type="submit" aria-label="Add task" data-t-aria-label="ui.add-task"><i class="bi bi-plus-lg"></i></button></form>' +
+    h += '<section class="pl-sec"><h3><i class="bi bi-list-check"></i> <span data-t="ui.tasks">Tasks</span></h3><form class="pl-add" id="plAdd"><input id="plNew" placeholder="New task for your top 3" data-t-placeholder="ui.new-task-it-goes-straight-into-your-top" autocomplete="off" enterkeyhint="done"><button class="pill-btn" type="submit" aria-label="Add task" data-t-aria-label="ui.add-task"><i class="bi bi-plus-lg"></i></button></form>' +
       (cands.length ? '<ul class="pl-cands">' + cands.slice(0, 8).map(function (t) {
         var late = t.due && t.due < dkey(now), due = t.due === dkey(now);
         return '<li><button type="button" data-pltop="' + esc(t.id) + '" data-on="1"' + (tops.length >= 3 ? ' disabled' : '') + '><i class="bi bi-plus-circle"></i><span>' + esc(t.text) + '</span>' +

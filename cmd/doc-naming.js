@@ -793,7 +793,9 @@
       return '<optgroup label="' + esc(k('ui.dcn-ready', 'Ready-made')) + '">' + R.filter(function (r) { return r.b; }).map(o).join('') + '</optgroup>' + (own.length ? '<optgroup label="' + esc(k('ui.dcn-own', 'Your rules')) + '">' + own.map(o).join('') + '</optgroup>' : ''); };
     var KINDS = [['doc', 'ui.dcn-use-doc', 'Documents'], ['photo', 'ui.dcn-use-photo', 'Photos'], ['drawing', 'ui.dcn-use-dwg', 'Drawings']];
     var h = '<details class="dcn-rules"' + (nopen ? ' open' : '') + ' data-dcnrules><summary><i class="bi bi-sliders"></i> <b>' + esc(p.tool ? k('ui.dcn-rules-tool', 'Naming rules') : k('ui.dcn-rules', 'Naming rules for this project')) + '</b><small>' +
-      esc(KINDS.map(function (x) { var r = nrule(p, use[x[0]] || NDEF[x[0]]); return k(x[1], x[2]) + ': ' + (r ? rname(r) : '–'); }).join(' · ')) + '</small></summary>';
+      esc((function () {   /* "Documents: Documents" said nothing once the rules got neutral names (review 22): only rules that differ from their kind */
+        var bits = KINDS.map(function (x) { var r = nrule(p, use[x[0]] || NDEF[x[0]]), kn = k(x[1], x[2]), rn = r ? rname(r) : '–'; return rn === kn ? '' : kn + ': ' + rn; }).filter(Boolean);
+        return bits.length ? bits.join(' · ') : k('ui.dcn-rules-std', 'The ready-made rules for documents, photos and drawings'); })()) + '</small></summary>';
     h += '<p class="dcn-h">' + esc(k('ui.dcn-used-for', 'Used for')) + '</p><div class="dcn-usegrid">' + KINDS.map(function (x) { return '<label><span>' + esc(k(x[1], x[2])) + '</span><select data-dcnuse-k="' + x[0] + '">' + opts(use[x[0]] || NDEF[x[0]]) + '</select></label>'; }).join('') + '</div>';
     var row = function (r) {
       var on = sel && sel.id === r.id, ex = exName(p, r);

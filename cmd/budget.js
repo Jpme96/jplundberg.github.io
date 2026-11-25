@@ -448,9 +448,9 @@ window.Accts = (function () {
   }
   /* the accounts you have, the first time: salary, credit card, bills account, savings, fund, a second credit card */
   var STARTER = [
-    { id: 'salary', kind: 'salary', name: 'Lønnskonto' }, { id: 'credit', kind: 'credit', name: 'Kredittkort' }, { id: 'card', kind: 'card', name: 'Regningskonto' },
-    { id: 'acsav', kind: 'savings', name: 'Sparekonto' }, { id: 'acfund', kind: 'fund', name: 'Fondskonto' }, { id: 'acbn', kind: 'credit', name: 'Bank Norwegian' }
-  ];
+    { id: 'salary', kind: 'salary', name: 'Lønnskonto', en: 'Salary account' }, { id: 'credit', kind: 'credit', name: 'Kredittkort', en: 'Credit card' }, { id: 'card', kind: 'card', name: 'Regningskonto', en: 'Bills account' },
+    { id: 'acsav', kind: 'savings', name: 'Sparekonto', en: 'Savings account' }, { id: 'acfund', kind: 'fund', name: 'Fondskonto', en: 'Fund account' }, { id: 'acbn', kind: 'credit', name: 'Bank Norwegian' }
+  ].map(function (a) { var nb = !window.I18N || I18N.lang === 'nb'; return { id: a.id, kind: a.kind, name: nb || !a.en ? a.name : a.en }; });   /* the names you start with in your own language (review 25) */
   function kind(d, id) { var a = get(d, id); return a ? a.kind : null; }
   return { KINDS: KINDS, list: list, get: get, kind: kind, money: money, STARTER: STARTER };
 })();

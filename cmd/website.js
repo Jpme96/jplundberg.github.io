@@ -289,17 +289,18 @@
       $('sumAnnounce').textContent = $('sumSections').textContent = $('sumFeatured').textContent = $('sumCourses').textContent = $('sumProgress').textContent = $('sumCv').textContent = problem === 'setup' ? 'Needs GitHub connection' : '–';
       return;
     }
-    $('sumAnnounce').textContent = (s.announcement.on ? 'On' : 'Off') + mark;
+    var K = I18N.k;   /* the summaries in Norwegian too (review 24) */
+    $('sumAnnounce').textContent = (s.announcement.on ? K('ui.ws-on', 'On') : K('ui.ws-off', 'Off')) + mark;
     var on = s.sections.filter(function (x) { return x.on; }).length;
-    $('sumSections').textContent = on + ' of ' + s.sections.length + ' sections shown' + mark;
-    var f = [s.featured.article && 'article', s.featured.project && 'project'].filter(Boolean);
-    $('sumFeatured').textContent = (f.length ? 'Pinned ' + f.join(' and ') : 'Newest first') + mark;
+    $('sumSections').textContent = K('ui.ws-sections', '{n} of {t} sections shown', { n: on, t: s.sections.length }) + mark;
+    var fa = !!s.featured.article, fp = !!s.featured.project;
+    $('sumFeatured').textContent = (fa && fp ? K('ui.ws-pin-both', 'Pinned article and project') : fa ? K('ui.ws-pin-art', 'Pinned article') : fp ? K('ui.ws-pin-proj', 'Pinned project') : K('ui.ws-newest', 'Newest first')) + mark;
     var nc = (s.courses || []).length, ncv = (s.courses || []).filter(function (c) { return c.cv; }).length;
-    $('sumCourses').textContent = (nc ? nc + ' on the site · ' + ncv + ' in the CV' : 'None published') + mark;
+    $('sumCourses').textContent = (nc ? K('ui.ws-courses', '{n} on the site · {c} in the CV', { n: nc, c: ncv }) : K('ui.ws-none-pub', 'None published')) + mark;
     var ng = (s.goals || []).length;
-    $('sumProgress').textContent = (ng ? ng + ' goal' + (ng === 1 ? '' : 's') + ' published' : 'None published') + mark;
+    $('sumProgress').textContent = (ng ? (ng === 1 ? K('ui.ws-goal1', '1 goal published') : K('ui.ws-goals', '{n} goals published', { n: ng })) : K('ui.ws-none-pub', 'None published')) + mark;
     var ne = s.experience ? (s.experience.en || []).length : 0;
-    $('sumCv').textContent = (s.cv && s.cv.on ? 'On · jplundberg.com/cv' : 'Off') + (ne ? ' · ' + ne + ' jobs' : '') + mark;
+    $('sumCv').textContent = (s.cv && s.cv.on ? K('ui.ws-on', 'On') + ' · jplundberg.com/cv' : K('ui.ws-off', 'Off')) + (ne ? ' · ' + K('ui.ws-jobs', '{n} jobs', { n: ne }) : '') + mark;
   }
 
   /* ---------- edits ---------- */

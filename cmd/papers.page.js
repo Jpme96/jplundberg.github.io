@@ -17,7 +17,7 @@
   var IS_PAGE = /\/cmd\/papers\/$/.test(location.pathname.replace(/index\.html$/, ''));
   var DATEK = [['expires', I18N.k('ui.expires', 'Expires')], ['renews', I18N.k('ui.renews', 'Renews')], ['ends', I18N.k('ui.ends-or-notice-by', 'Ends or notice by')], ['review', I18N.k('ui.look-at-it-again', 'Look at it again')]];
   var COMMON = [
-    ['Samboerkontrakt', 'home', ''], [I18N.k('ui.pa-c-purchase-contract', 'Purchase contract (kjøpekontrakt)'), 'home', ''], [I18N.k('ui.pa-c-take-over', 'Take-over protocol (overtakelsesprotokoll)'), 'home', ''],
+    [I18N.k('ui.pa-c-cohab', 'Cohabitation agreement (samboerkontrakt)'), 'home', ''], [I18N.k('ui.pa-c-purchase-contract', 'Purchase contract (kjøpekontrakt)'), 'home', ''], [I18N.k('ui.pa-c-take-over', 'Take-over protocol (overtakelsesprotokoll)'), 'home', ''],
     [I18N.k('ui.pa-c-home-insurance', 'Home insurance (innbo)'), 'insurance', 'renews'], [I18N.k('ui.pa-c-mortgage', 'Mortgage agreement'), 'loan', ''], [I18N.k('ui.pa-c-work-contract', 'Work contract'), 'work', ''],
     [I18N.k('ui.pa-c-car-insurance', 'Car insurance'), 'insurance', 'renews'], [I18N.k('ui.pa-c-travel-insurance', 'Travel insurance'), 'insurance', 'renews'], [I18N.k('ui.pa-c-tax-return', 'Tax return (skattemelding)'), 'tax', ''], [I18N.k('ui.pa-c-will', 'Will or power of attorney'), 'other', '']];
   function delF(id) { if (window.FileSync) window.FileSync.del(id); return db().then(function (d) { d.transaction('files', 'readwrite').objectStore('files').delete(id); }).catch(function () {}); }
@@ -95,8 +95,8 @@
     },
     onDelete: function (it) { (it.files || []).forEach(function (f) { delF(f.id); }); setTimeout(loadHere, 50); } };
   var FORMS = {
-    home: { sub: 'Samboerkontrakt, purchase contract, take-over protocol', ph: 'e.g. Samboerkontrakt', f: {
-      who: { label: 'With', ph: 'Your partner, the seller, the bank …' }, signed: { label: 'Signed' }, date: { label: 'Look at it again', help: 'Optional – e.g. when to update the samboerkontrakt' }, lead: {}, link: { label: 'Belongs to' }, notes: { help: 'Where the signed original is, what you agreed …' } }, dk: 'review' },
+    home: { sub: I18N.k('ui.pa-home-sub', 'Cohabitation agreement (samboerkontrakt), purchase contract, take-over protocol'), ph: I18N.k('ui.pa-home-ph', 'e.g. Cohabitation agreement'), f: {
+      who: { label: 'With', ph: I18N.k('ui.pa-with-ph', 'Your partner, the seller, the bank …') }, signed: { label: 'Signed' }, date: { label: 'Look at it again', help: I18N.k('ui.pa-again-help', 'Optional – e.g. when to update the cohabitation agreement') }, lead: {}, link: { label: 'Belongs to' }, notes: { help: 'Where the signed original is, what you agreed …' } }, dk: 'review' },
     contract: { sub: 'Phone, power, rent, gym, subscriptions', ph: 'e.g. Phone subscription', f: {
       who: { label: 'Company', ph: 'Telia, Tibber …' }, ref: { label: 'Customer no.' }, signed: { label: 'Signed' }, date: { label: 'Ends or notice by', help: 'The last day to cancel, or when it runs out' }, every: {}, lead: {}, cost: {}, notes: { help: 'Notice period, binding time, what’s included …' } }, dk: 'ends' },
     insurance: { sub: 'Home contents, travel, life, accident', ph: 'e.g. Home insurance (innbo)', f: {

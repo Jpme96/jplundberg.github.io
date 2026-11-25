@@ -19,7 +19,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   });
   check(!/Tomorrow – Ring madeup/.test(ev), 'the evening line never calls a task picked for today "tomorrow" ' + JSON.stringify(ev));
   /* Papers: the "With" example names no partner */
-  const ph = await p.evaluate(async () => (await (await fetch('/cmd/papers.page.js')).text()).match(/ph: '[^']*the seller[^']*'/) + '');
+  const ph = await p.evaluate(async () => (t => /Iago/.test(t) ? 'Iago' : (t.match(/'[^']*the seller, the bank[^']*'/) + ''))(await (await fetch('/cmd/papers.page.js')).text()));
   check(/seller/.test(ph) && !/Iago/.test(ph), 'Papers asks who it is with without naming anyone ' + JSON.stringify(ph));
   /* a plan read before "Rømningsplan" was a known type word: read again, no "Unknown document type" */
   await p.evaluate(() => { const t = Features.tools(); t.dctl = [{ id: 'rvp1', name: 'Made-up review', planName: 'Made-up plan.xlsx', planFile: true, files: [], lines: [{ id: 'rl1', code: '172', type: 'Rømningsplan', t: '', planned: '172 Rømningsplan madeup', st: 'missing', files: [] }] }]; Features.set('fdv', true); Features.saveTools(t); });
@@ -55,6 +55,20 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const nx = await p.evaluate(() => { const c = JSON.parse(localStorage.getItem('dash.calendar') || '{}'); c.events = (c.events || []).concat([{ id: 'evmadeup', title: 'Madeup weekly swim', date: '2025-01-06', start: '18:00', dur: 3600000, repeat: 'weekly' }]); localStorage.setItem('dash.calendar', JSON.stringify(c));
     const r = (window.SearchIndex() || []).find(x => x.t === 'Madeup weekly swim'); const t = new Date(); t.setHours(0, 0, 0, 0); const d = r && (r.h.match(/#d=(\d{4}-\d{2}-\d{2})/) || [])[1]; return { h: r && r.h, ok: !!d && new Date(d + 'T12:00') >= t }; });
   check(nx.ok, 'a repeating event found in search opens on its next day ' + JSON.stringify(nx));
+  /* the need card: an arrow, the type said once, code order (review 21) */
+  await go(p, 'work/#dc=kq1', 2500);
+  await p.evaluate(() => { try { PageTabs.show('doc'); } catch (e) {} }); await sl(300);
+  await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="plan"]'); if (s) s.click(); }); await sl(500);
+  const nc = await p.evaluate(() => { const d = document.querySelector('.dc-flow details.dc-need'); if (!d) return null; d.open = true; const arrow = getComputedStyle(d.querySelector('summary'), '::after').content; const rows = [...d.querySelectorAll('li')].map(li => ({ c: li.querySelector('.dc-code').textContent, b: li.querySelector('.dc-lx b').textContent, s: (li.querySelector('.dc-lx small') || {}).textContent || '' })); return { arrow, rows: rows.slice(0, 40) }; });
+  if (nc) { check(nc.arrow && nc.arrow !== 'none', 'the need card shows it opens');
+    check(nc.rows.every(r => !r.s || r.b.indexOf(r.s) < 0), 'the type is not repeated in the title ' + JSON.stringify(nc.rows.slice(0, 3)));
+    check(nc.rows.every((r, i, a) => !i || a[i - 1].c <= r.c), 'the suggestions are in code order'); }
+  /* phone: the avatar pen is off the bubble, Calendar has its title (review 30, 33) */
+  await go(p, '', 2500);
+  const pen = await p.evaluate(() => { const x = document.querySelector('#avHome .av-edit'), y = document.querySelector('#avHome .av-say'); if (!x || !y) return 'none'; const r = x.getBoundingClientRect(), q = y.getBoundingClientRect(); return r.right <= q.left || q.right <= r.left || r.bottom <= q.top || q.bottom <= r.top; });
+  check(pen === true || pen === 'none', 'the avatar pen does not cover the speech bubble ' + pen);
+  await go(p, 'calendar/', 2000);
+  check(await p.evaluate(() => { const h = document.querySelector('.cl-hero h1'); return !!h && getComputedStyle(h).display !== 'none' && h.getBoundingClientRect().height > 0; }), 'Calendar shows its page title on a phone');
   /* Finances' late redraw after leaving (its worker answered on People/House): no error */
   await go(p, 'finance/', 1500);
   await p.evaluate(() => { const a = document.querySelector('a[href="/cmd/people/"]'); if (a) a.click(); }); await sl(2500);

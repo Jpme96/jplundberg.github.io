@@ -154,7 +154,7 @@
     empty: I18N.k('ui.tap-clock-in-when-you-start-clock-out-wh', 'Tap “Clock in” when you start, “Clock out” when you leave. Holidays and flex days off go in with “Add day”.'),
     afterRender: function (el) {
       var c = flexCfg();
-      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', ',') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work" data-t="ui.change"><span data-t="ui.change">Change</span></a></p>' +
+      el.querySelector('.kit-card').insertAdjacentHTML('beforeend', '<p class="kit-foot">Normal day ' + String(c.norm).replace('.', I18N.lang === 'nb' ? ',' : '.') + ' h · ' + c.vacation + ' holiday days a year · <a href="/cmd/?settings=work" data-t="ui.change"><span data-t="ui.change">Change</span></a></p>' +
         '<div class="fr-bar"><span class="muted"><i class="bi bi-file-earmark-text"></i> <span data-t="ui.monthly-report">Monthly report</span></span><select class="fr-month" aria-label="Month for the report" data-t-aria-label="ui.month-for-the-report">' + reportMonths() + '</select>' +
         '<button type="button" class="text-btn" data-frcsv data-t="ui.csv"><span data-t="ui.csv">CSV</span></button><button type="button" class="text-btn" data-frpdf data-t="ui.pdf"><span data-t="ui.pdf">PDF</span></button></div>');
     },
@@ -223,7 +223,7 @@
       'table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #ddd}th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#555}td.n{text-align:right;font-variant-numeric:tabular-nums}' +
       '.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}.sum div{border:1px solid #ddd;border-radius:8px;padding:10px}.sum b{display:block;font-size:18px}.sum span{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.04em}' +
       '.tip{color:#555;font-size:12px;margin-top:24px}.wrap{overflow-x:auto}@media (max-width:600px){body{margin:20px auto}th,td{padding:5px 4px;font-size:12px}.sum b{font-size:16px}}@media print{.tip{display:none}body{margin:0 auto}}</style></head><body>' +
-      '<h1>Flex time – ' + esc(r.name) + '</h1><p class="s">' + esc(me.name || 'John Paul Lundberg') + (me.employer ? ' · ' + esc(me.employer) : '') + ' · normal day ' + String(r.norm).replace('.', ',') + ' h</p>' +
+      '<h1>Flex time – ' + esc(r.name) + '</h1><p class="s">' + esc(me.name || '') + (me.employer ? ' · ' + esc(me.employer) : '') + ' · normal day ' + String(r.norm).replace('.', ',') + ' h</p>' +
       '<div class="sum"><div><span>Worked</span><b>' + hmPlain(r.total) + '</b>' + r.days + ' days</div><div><span>Flex this month</span><b>' + (r.delta > 0 ? '+' : '') + hmPlain(r.delta) + '</b>balance ' + (r.balance > 0 ? '+' : '') + hmPlain(r.balance) + '</div>' +
       '<div><span>Days off</span><b>' + r.vacation + '</b>holiday · ' + r.sick + ' sick · ' + r.flexoff + ' flex</div></div>' +
       '<div class="wrap"><table><thead><tr><th data-t="ui.date"><span data-t="ui.date">Date</span></th><th data-t="ui.type"><span data-t="ui.type">Type</span></th><th data-t="ui.in"><span data-t="ui.in">In</span></th><th data-t="ui.out"><span data-t="ui.out">Out</span></th><th class="n" data-t="ui.break"><span data-t="ui.break">Break</span></th><th class="n">Worked</th><th data-t="ui.note"><span data-t="ui.note">Note</span></th></tr></thead><tbody>' +

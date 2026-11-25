@@ -5,6 +5,7 @@
 const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs'); const http = require('http');
 const puppeteer = require('puppeteer');
 const { check, done } = require('../lib/check');
+const impOpen = async (pg) => { await pg.waitForSelector('[data-act=settings]', { timeout: 20000 }); await pg.evaluate(() => { const s = document.querySelector('[data-act=settings]'); if (s) s.click(); }); await pg.waitForSelector('[data-settab=team]', { timeout: 20000 }); await pg.evaluate(() => document.querySelector('[data-settab=team]').click()); await pg.waitForSelector('input[data-dcimport]', { timeout: 20000 }); };   /* the import is in Settings → The team (review 19) */
 const sl = ms => new Promise(r => setTimeout(r, ms));
 const TPORT = (+process.env.PORT || 8770) + 400, U = 'http://localhost:' + TPORT + '/';
 const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'team-server.mjs')], { env: Object.assign({}, process.env, { TPORT: String(TPORT) }), stdio: ['ignore', 'pipe', 'inherit'] });
@@ -152,14 +153,14 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => !!document.querySelector('#wkDocCtl [data-drnew]'), 20000), 'Documents opens Documentation (the same code as /cmd)');
   check(await until(own, () => !!document.querySelector('#wkDocCtl .dx-tools [data-dxtool="plan"]') && !document.querySelector('[data-dtab="req"]')), 'one Documentation choice with the plan check on top (JP 2026-11-16)');
   check(await own.evaluate(() => { const r = document.getElementById('wkDocReq'); return !r || r.offsetHeight === 0; }), 'no empty Requirements card under the list (JP 2026-11-17 19:49)');
-  const inp = await own.$('input[data-dcimport]'); await inp.uploadFile(tmpf);
+  await impOpen(own); const inp = await own.$('input[data-dcimport]'); await inp.uploadFile(tmpf);
   check(await until(own, () => /School rehab SECRET-DC/.test(document.body.innerText) && /^#dc=/.test(location.hash), 15000), 'a project sent from /cmd is imported and opened');
   check(await own.evaluate(() => { const p = DocHost.Fe.list('dctl')[0]; return p.lines.length === 3 && !(p.files || []).length && p.lines.every(l => !(l.files || []).length) && p.id !== 'cmd1'; }), 'with its lines, without the files (they stay on the device), as a new project');
   await word(own, 'Document control in Team');
   /* a requirements list from /cmd lands under Document requirements */
   const tmpr = path.join(__dirname, '..', '.tmp', 'team-req-' + process.pid + '.json');
   fs.writeFileSync(tmpr, JSON.stringify({ team: 'dckrav', v: 1, p: { id: 'r1', name: 'Facade requirements SECRET-REQ', made: '2026-11-14T09:00:00Z', lines: [{ id: 'q1', code: '231', sys: 'Outer walls', t: 'A', st: 'missing' }] } }));
-  await own.goto(U + '#docs'); await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
+  await own.goto(U + '#docs'); await own.reload(); await impOpen(own);
   await (await own.$('input[data-dcimport]')).uploadFile(tmpr);
   check(await until(own, () => /^#dr=/.test(location.hash) && !document.getElementById('wkDocReq').hidden && /Facade requirements SECRET-REQ/.test(document.getElementById('wkDocReq').innerText), 15000), 'a requirements list sent from /cmd opens under Document requirements');
   check(await own.evaluate(() => DocHost.Fe.list('dckrav').length === 1 && DocHost.Fe.list('dctl').length === 1), 'next to the project, kept apart');
@@ -169,7 +170,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const bundle = { team: 'dcbundle', v: 1, krav: [{ id: 'k1', name: 'Made-up school SECRET-B1', lines: [{ id: 'x1', code: '330', t: 'A', sys: 'Fire' }] }, { id: 'k2', name: 'Made-up hall SECRET-B2', lines: [] }],
     dcreq: { name: 'Made-up client list', codes: { '330': { t: 'AH' } } }, dcreqs: [], dctypes: [{ id: 'own1', name: 'Made-up type', codes: ['330'] }] };
   fs.writeFileSync(tmpb, JSON.stringify(bundle));
-  await own.goto(U + '#docs'); await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
+  await own.goto(U + '#docs'); await own.reload(); await impOpen(own);
   await (await own.$('input[data-dcimport]')).uploadFile(tmpb);
   check(await until(own, () => DocHost.Fe.list('dckrav').length === 3, 15000), 'the bundle brings every list along');
   const bt = await own.evaluate(() => { const t = DocHost.Fe.tools(); return { types: (t.dctypes || []).map(x => x.name).join(), req: !!(t.dcreq && t.dcreq.codes && t.dcreq.codes['330']) }; });
@@ -181,7 +182,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.goto(U + '#docs'); await kari.reload(); await sl(2500);
   check(await until(kari, () => !!(window.DocHost && DocHost.LP.ownMap()['412'] === 'Made-up wiring name'), 20000), 'and a colleague sees them');
   bundle.krav[0].lines.push({ id: 'x2', code: '330', t: 'H', sys: 'Fire' }); fs.writeFileSync(tmpb, JSON.stringify(bundle));
-  await own.reload(); await own.waitForSelector('input[data-dcimport]', { timeout: 20000 });
+  await own.reload(); await impOpen(own);
   await (await own.$('input[data-dcimport]')).uploadFile(tmpb);
   check(await until(own, () => { const l = DocHost.Fe.list('dckrav'); return l.length === 3 && (l.find(x => /SECRET-B1/.test(x.name)) || { lines: [] }).lines.length === 2; }, 15000), 'imported again, a list is updated, not doubled');
   /* a new list made in Team: the project, then the systems (the same flow as /cmd) */
@@ -448,7 +449,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => !document.getElementById('tWait'), 15000), 'when the line is back it is sent');
   check(await kari.evaluate(() => fetch('/api/recs').then(r => r.json()).then(j => j.recs.length)) > 0 && JSON.parse((await raw('/__mem')).body).some(([k, v]) => k.startsWith('r:') && v.k === 'action' && v.by === 'owner@x.no' && v.seq), 'and the server has it');
   /* a building inspection shared from /cmd (JP 23:46): imported, shown (cleaned), the team adds notes */
-  await own.goto(U + '#docs'); await own.waitForSelector('input[data-dcimport]');
+  await own.goto(U + '#docs'); await impOpen(own);
   await own.evaluate(() => { const j = { team: 'insp', v: 1, r: { name: 'Made-up block A', no: 'R-1', date: '2026-11-10', address: 'Made-up street 1' }, html: '<h1>Made-up block A</h1><p class="rp-addr">MARK-SECRET-INSP</p><script>window.__bad = 1</script><img src="x" onerror="window.__bad = 2">' };
     const inp = document.querySelector('input[data-dcimport]'), dt = new DataTransfer(); dt.items.add(new File([JSON.stringify(j)], 'insp.json', { type: 'application/json' })); inp.files = dt.files; inp.dispatchEvent(new Event('change', { bubbles: true })); });
   check(await until(own, () => /^#in=/.test(location.hash) && /MARK-SECRET-INSP/.test(document.body.innerText), 15000), 'an inspection from /cmd is imported and shown');

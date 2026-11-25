@@ -4,6 +4,7 @@
 const { spawn } = require('child_process'); const path = require('path'); const fs = require('fs'); const http = require('http'); const os = require('os');
 const puppeteer = require('puppeteer');
 const { check, done } = require('../lib/check');
+const impOpen = async (pg) => { await pg.waitForSelector('[data-act=settings]', { timeout: 20000 }); await pg.evaluate(() => { const s = document.querySelector('[data-act=settings]'); if (s) s.click(); }); await pg.waitForSelector('[data-settab=team]', { timeout: 20000 }); await pg.evaluate(() => document.querySelector('[data-settab=team]').click()); await pg.waitForSelector('input[data-dcimport]', { timeout: 20000 }); };   /* the import is in Settings → The team (review 19) */
 const sl = ms => new Promise(r => setTimeout(r, ms));
 const TPORT = (+process.env.PORT || 8770) + 410, T = 'http://localhost:' + TPORT + '/', SITE = 'http://localhost:' + (process.env.PORT || 8770) + '/';
 const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'team-server.mjs')], { env: Object.assign({}, process.env, { TPORT: String(TPORT) }), stdio: ['ignore', 'pipe', 'inherit'] });
@@ -31,7 +32,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(own, () => !!document.querySelector('.t-tabs'), 20000), 'the owner is in the app');
   const proj = path.join(tmp, 'p.json');
   fs.writeFileSync(proj, JSON.stringify({ team: 'dctl', p: { name: 'Testveien 9', no: '9', lines: [{ id: 'a1', code: '223', name: 'Plan', st: 'ok' }, { id: 'a2', code: '231', name: 'Section', st: 'missing', due: '2026-01-05' }, { id: 'a3', code: '320', name: 'Pipes', st: 'recv' }] } }));
-  await own.goto(T + '#docs'); await own.waitForSelector('input[data-dcimport]');
+  await own.goto(T + '#docs'); await impOpen(own);
   await (await own.$('input[data-dcimport]')).uploadFile(proj);
   check(await until(own, () => /Imported/.test(document.body.innerText) || location.hash.startsWith('#dc='), 15000), 'a made-up project is imported');
   await sl(800);

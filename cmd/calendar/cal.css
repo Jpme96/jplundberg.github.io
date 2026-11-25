@@ -22,8 +22,7 @@
 .cl-new { height: 36px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; }
 .cl-views { justify-self: end; }
 @media (max-width: 759px) {
-  .cl-hero h1 { display: none; }
-  .cl-hero { padding-bottom: 4px; }
+  .cl-hero { padding-bottom: 4px; }   /* the title shows on phones too, like every other page (review 33) */
   .cl { padding-bottom: 70px; }
   .cl-bar { grid-template-columns: 1fr auto auto; }
   .cl-title { grid-column: 1; grid-row: 1; font-size: 24px; }

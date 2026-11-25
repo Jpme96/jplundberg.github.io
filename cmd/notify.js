@@ -110,9 +110,11 @@
       if (Fe && Fe.on && Fe.on('house')) { var bins = (Fe.list('hbins') || []).filter(function (b) { return window.HomeLife && HomeLife.nextPickup && HomeLife.nextPickup(b, tk) === tk; }).map(function (b) { return b.title; }); if (bins.length) ep.push(I18N.k('ui.eve-bins', 'Bins out: {b}', { b: bins.join(', ') })); }
       var dn = window.LifePlus && LifePlus.dinnerFor ? LifePlus.dinnerFor(tk) : null;
       if (dn && dn.text) ep.push(I18N.k('ui.eve-dinner', 'Dinner tomorrow: {d}', { d: dn.text }) + (dn.frz.length ? ' – ' + I18N.k('ui.eve-thaw', 'take {f} out of the freezer', { f: dn.frz.join(', ') }) : ''));
+      var nTom = ep.length;
       if (ei === 0 && Fe && Fe.on && (Fe.on('mood') || Fe.on('journal')) && !(Fe.list('journal') || []).some(function (j) { return j.date === ek && +j.mood; })) ep.push(I18N.k('ui.eve-mood', 'How was today? Tap to log your mood'));
       if (!ep.length) continue;
-      add('evening:' + ek, at(ek, 21, 0), I18N.k('ui.eve-title', 'Tomorrow'), ep.join(' · '), dn && dn.frz.length ? '/cmd/food/#lp-freezer' : '/cmd/?add=mood');
+      /* only the mood question = it's about today, not tomorrow (review 34) */
+      add('evening:' + ek, at(ek, 21, 0), nTom ? I18N.k('ui.eve-title', 'Tomorrow') : I18N.k('ui.eve-title-today', 'Today'), ep.join(' · '), dn && dn.frz.length ? '/cmd/food/#lp-freezer' : '/cmd/?add=mood');
     }
     /* rain on a day, from the forecast the dashboard last fetched (dash.weather, hourly from 2026-11-22) */
     function rainFrom(k) {

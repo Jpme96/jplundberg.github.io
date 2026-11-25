@@ -1081,3 +1081,10 @@ html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { anima
 .dcn-sugm { margin: 8px 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-card, 12px); }
 .dcn-sugm p { margin: 0 0 6px; } .dcn-sugm ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .dcn-sugm li { display: grid; gap: 2px; } .dcn-sugm small { color: var(--muted); }
+/* the quick "Approved" on a comparison row is a button, not a bar across the row (review 20) */
+.dc-frow2 > .dc-qb { flex: 0 0 auto; padding: 6px 12px; }
+/* the need card shows it can open (review 21) */
+.dc-need > summary { list-style: none; }
+.dc-need > summary::-webkit-details-marker { display: none; }
+.dc-need > summary::after { content: ''; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform var(--dur-1, .15s); flex: none; }
+.dc-need[open] > summary::after { transform: rotate(45deg); }

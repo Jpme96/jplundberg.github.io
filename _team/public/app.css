@@ -356,3 +356,4 @@ html.tz-wide { --sn-pad: 208px; }
 .t-edsheet .t-form > .t-btns:has(> [type="submit"]), .t-edsheet .t-form > [type="submit"] { position: sticky; bottom: 0; z-index: 2; background: var(--bg); box-shadow: 0 -10px 12px -8px var(--bg); }
 .t-edsheet .t-form > .t-btns:has(> [type="submit"]) { padding: 10px 0; margin-bottom: 0; }
 .t-edsheet .t-form > [type="submit"] { margin-bottom: 0; }
+.t-setrow > .t-btn, .t-setrow > label.t-btn { align-self: center; flex: none; }   /* a long hint beside it never stretches the button (review 19) */

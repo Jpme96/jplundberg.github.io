@@ -595,7 +595,7 @@
       ? '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-in-team', 'Document requirements are in Team now')) + '</b><small>' + esc(k('ui.dr-in-team-s', 'Make and change lists there – the whole team uses the same ones')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>' +
         (kravs().length ? '<p class="muted dc-help">' + esc(k('ui.dr-old-copies', 'Your old copies here (not updated):')) + ' <button type="button" class="text-btn" data-drmove>' + esc(k('ui.dr-move-again', 'Make the file for Team again')) + '</button></p>' : '')
       : '<div class="dc-teamlink dr-move"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-move-h', 'Use Document requirements in Team')) + '</b><small>' + esc(k('ui.dr-move-s', 'Everyone works on the same lists, client checklists and project types. One file takes all of yours there.')) + '</small></span><button type="button" class="pill-btn" data-drmove>' + esc(k('ui.dr-move', 'Move to Team')) + '</button></div>';
-    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(k('ui.docu', 'Documentation')) + '</h2>' + (adding || radding || !can('newp') ? '' : '<div class="head-actions"><button type="button" class="text-btn" ' + (moved || flowOn() ? 'data-dcnew' : 'data-drnew') + '><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-new', 'New project')) + '</button></div>') + '</div>' + body;
+    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(HOST ? k('ui.dc-projects', 'Projects') : k('ui.docu', 'Documentation')) + '</h2>'   /* Team's page is already called Documentation (review 18) */ + (adding || radding || !can('newp') ? '' : '<div class="head-actions"><button type="button" class="text-btn" ' + (moved || flowOn() ? 'data-dcnew' : 'data-drnew') + '><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-new', 'New project')) + '</button></div>') + '</div>' + body;
   }
   /* ---------- the new project flow (JP 2026-11-23, a test – on only where switched on): five steps in the order the work goes:
      Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll. It is a view on the same project: the plan reading, the
@@ -1006,7 +1006,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '4041c96ee5';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = 'c474d285ea';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; }, projects: function () { return projects(); } };
@@ -1571,10 +1571,11 @@
     var have = {}, codes = {}; (lines || []).forEach(function (l) { var c3 = String(l.code || '').slice(0, 3); if (!/^\d{3}$/.test(c3)) return; codes[c3] = 1; (have[c3] = have[c3] || {}); String(l.t || '').split('').forEach(function (x) { have[c3][x] = 1; }); });
     var C = Object.keys(codes); if (!C.length) return null;
     var best = null; PTYPES.forEach(function (t) { if (t[3] === '*' || t[0] === 'one') return; var tc = t[3].split(' '), hit = tc.filter(function (c) { return codes[c]; }).length; if (hit >= 2 && (!best || hit > best.h || (hit === best.h && tc.length < best.n))) best = { t: t, h: hit, n: tc.length }; });
-    var r = req(), out = [], seen = {}, add = function (c3, t, ti) { var key = c3 + t; if (seen[key] || (have[c3] && have[c3][t]) || (skip && skip[key])) return; seen[key] = 1; out.push({ code: c3, t: t, title: ti || ((codeName(c3) || c3) + ' – ' + typeName(t)) }); };
+    var r = req(), out = [], seen = {}, add = function (c3, t, ti) { var key = c3 + t; if (seen[key] || (have[c3] && have[c3][t]) || (skip && skip[key])) return; seen[key] = 1; out.push({ code: c3, t: t, title: ti || codeName(c3) || c3 }); };
     C.sort().forEach(function (c3) { var q = r && r.codes[c3], T = q ? (q.opt ? '' : q.t || '') : (/^1/.test(c3) ? ONEX[c3] || '' : defTypes(c3)); String(T).split('').forEach(function (t) { add(c3, t); }); });
     if (best && XTRA[best.t[0]]) XTRA[best.t[0]].forEach(function (x) { if (x && x[0]) add(String(x[0]).slice(0, 3), x[1], I18N.lang === 'nb' ? x[2] : x[3]); });
     var grp = {}; C.forEach(function (c3) { var g = c3.slice(0, 2), n = codeName(g); if (n && !/^1/.test(g)) grp[g] = g + ' ' + n.toLowerCase(); });
+    out.sort(function (a, b) { return a.code.localeCompare(b.code) || a.t.localeCompare(b.t); });   /* the project kind's extras in code order too (review 21) */
     return { items: out.slice(0, 40), like: best ? (I18N.lang === 'nb' ? best.t[2] : best.t[1]) : '', from: Object.keys(grp).sort().slice(0, 5).map(function (g) { return grp[g]; }) };
   }
   /* a line of your own – a document the contractor's plan forgot (JP 2026-11-25 16:25); also when the list came from the requirements (review 11) */
