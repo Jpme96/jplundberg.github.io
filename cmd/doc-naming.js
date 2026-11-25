@@ -6,6 +6,7 @@
    (p.nrules own rules, p.nuse the rule per kind of file), so Team keeps them in the project.
    doc-control.page.js loads this file (cmd and Team's copy) and hands it its helpers with DocNaming.use(api). */
 (function () {
+  function zoomOf() { var z = parseFloat(getComputedStyle(document.documentElement).zoom); return z > 0 ? z : 1; }   /* Team on a PC scales the page (CSS zoom): mouse and box positions come in screen px, lengths are set in page px */
   "use strict";
   var I, esc, k, toast, uid, saveP, proj, draw, getBlob, lineOf, unlink, bestLine, parseName, pairs, issueText, linkOpts, codeName, lineTitle, ABBR, TEG, FAG, PAIR, today, pad, LP, HOST;
   /* defaults until a host sets them up, so the PDF viewer also works on its own (Team's Files tab, 2026-11-23) */
@@ -307,7 +308,7 @@
     var z = 1, MIN = 1, MAX = 4, again = null;
     function set(nz, cx, cy) {
       nz = Math.max(MIN, Math.min(MAX, nz)); if (Math.abs(nz - z) < .001) return;
-      var r = box.getBoundingClientRect(), px = (cx == null ? r.width / 2 : cx - r.left), py = (cy == null ? r.height / 2 : cy - r.top);
+      var r = box.getBoundingClientRect(), zq = zoomOf(), px = (cx == null ? r.width / 2 : cx - r.left) / zq, py = (cy == null ? r.height / 2 : cy - r.top) / zq;
       var ax = (box.scrollLeft + px) / z, ay = (box.scrollTop + py) / z;
       z = nz; wrap.__z = z; box.classList.toggle('dx-zin', z > 1.01);
       pages.forEach(function (p) { p.c.style.width = Math.round(p.w * z) + 'px'; });

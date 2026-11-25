@@ -26,7 +26,8 @@ const AUDIT = () => {
     Object.values(rows).forEach(g => { if (g.length < 2) return; const hs = g.map(x => x[0].height), cs2 = g.map(x => x[0].top + x[0].height / 2); if (Math.max(...hs) - Math.min(...hs) > 6 || Math.max(...cs2) - Math.min(...cs2) > 3) out.rows.push(name(c) + ' heights ' + hs.map(Math.round).join('/') + ' centers ' + cs2.map(Math.round).join('/')); }); });
   /* three button kinds (JP 2026-11-24 19:49 "some buttons were gigantic, some small"): main and ghost 44 px with 12 px corners, small 36 px with 10 px, chips at most 36 px */
   out.sizes = [];
-  [...document.querySelectorAll('.pill-btn, .t-btn, .dc-chip')].filter(vis).forEach(b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b), rad = parseFloat(cs.borderTopLeftRadius), sm = b.classList.contains('sm'), chip = b.classList.contains('dc-chip');
+  const zq = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;   /* Team's PC size scales the page – sizes are checked in page px */
+  [...document.querySelectorAll('.pill-btn, .t-btn, .dc-chip')].filter(vis).forEach(b => { const r0 = b.getBoundingClientRect(), r = { height: r0.height / zq }, cs = getComputedStyle(b), rad = parseFloat(cs.borderTopLeftRadius), sm = b.classList.contains('sm'), chip = b.classList.contains('dc-chip');
     const ok = chip ? r.height <= 37 : sm ? r.height >= 33 && r.height <= 40 && rad === 10 : r.height >= 41 && rad === 12;
     if (!ok) out.sizes.push(name(b) + ' ' + Math.round(r.height) + 'px r' + rad); });
   const bodyF = getComputedStyle(document.body).fontFamily.split(',')[0].trim();

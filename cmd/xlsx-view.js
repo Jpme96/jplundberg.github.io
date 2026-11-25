@@ -9,6 +9,7 @@
                                    from Excel), bold, fill colours, Download
    Z = { zipEntries, inflate, packAll } from Document control (the zip is read and written without a library). */
 (function () {
+  function zoomOf() { var z = parseFloat(getComputedStyle(document.documentElement).zoom); return z > 0 ? z : 1; }   /* Team on a PC scales the page (CSS zoom): mouse and box positions come in screen px, lengths are set in page px */
   'use strict';
   if (window.XlsxView) return;
   function k(key, en, o) { return window.I18N && I18N.k ? I18N.k(key, en, o) : en; }
@@ -345,7 +346,7 @@
     /* Ctrl/⌘ + wheel (and a trackpad pinch) zooms towards the mouse, not the corner; Shift + wheel goes side to side – a Windows mouse
        has no sideways wheel (JP 2026-11-24 21:55) */
     grid.addEventListener('wheel', function (e) {
-      if (e.ctrlKey || e.metaKey) { e.preventDefault(); var r = grid.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, z0 = zoom, cx = grid.scrollLeft + x, cy = grid.scrollTop + y;
+      if (e.ctrlKey || e.metaKey) { e.preventDefault(); var r = grid.getBoundingClientRect(), zq = zoomOf(), x = (e.clientX - r.left) / zq, y = (e.clientY - r.top) / zq, z0 = zoom, cx = grid.scrollLeft + x, cy = grid.scrollTop + y;
         stepZoom(e.deltaY < 0 ? 1 : -1); var q = zoom / z0; if (q !== 1) { grid.scrollLeft = cx * q - x; grid.scrollTop = cy * q - y; } return; }
       if (e.shiftKey && !e.deltaX && e.deltaY && grid.scrollWidth > grid.clientWidth) { e.preventDefault(); grid.scrollLeft += e.deltaY; }
     }, { passive: false });
@@ -371,7 +372,7 @@
       }
       if (a === 'bold') { var b = !look(sh(), book.X, edits, A).b; change(refs().map(function (r) { return { ref: r, e: { b: b } }; })); showSel(); return; }
       if (a === 'clear') { change(refs().map(function (r) { return { ref: r, e: { v: '' } }; })); showSel(); return; }
-      if (a === 'fill') { if (sw.hidden) { var rb = box.querySelector('[data-xv="fill"]').getBoundingClientRect(); sw.style.top = Math.round(rb.bottom + 6) + 'px'; sw.style.left = Math.round(Math.max(8, Math.min(innerWidth - 290, rb.left - 8))) + 'px'; } sw.hidden = !sw.hidden; return; }   /* fixed, so the scrolling toolbar doesn't cut it off */
+      if (a === 'fill') { if (sw.hidden) { var rb = box.querySelector('[data-xv="fill"]').getBoundingClientRect(), zq = zoomOf(); sw.style.top = Math.round(rb.bottom / zq + 6) + 'px'; sw.style.left = Math.round(Math.max(8, Math.min(innerWidth / zq - 290, rb.left / zq - 8))) + 'px'; } sw.hidden = !sw.hidden; return; }   /* fixed, so the scrolling toolbar doesn't cut it off */
       if (a === 'copy') { var t = copyText(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { flash(k('ui.xv-copied', 'Copied')); }, function () { flash(k('ui.xv-no-clip', 'The browser did not allow it – use Ctrl+C / Ctrl+V')); }); return; }
       if (a === 'paste') { (navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject()).then(pasteText, function () { flash(k('ui.xv-no-clip', 'The browser did not allow it – use Ctrl+C / Ctrl+V')); }); }
     }

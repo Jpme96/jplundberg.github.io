@@ -496,6 +496,17 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(own, () => !document.querySelector('.t-tabs [data-go="docs"]')), 'all three off: Documents leaves the menu');
   for (const k of ['doc', 'insp', 'files']) { await own.evaluate(x => { const i = document.querySelector('input[data-dtoff="' + x + '"]'); if (i && !i.checked) i.click(); }, k); await sl(1200); }
   check(await until(own, () => !!document.querySelector('.t-tabs [data-go="docs"]')), 'and back on again');
+  /* size on a PC (JP 2026-11-25): a mouse on a wide screen scales the whole page; a phone keeps its size; Liten / Stor / As on a phone per device */
+  { const zPhone = await own.evaluate(() => parseFloat(getComputedStyle(document.documentElement).zoom));
+    await own.setViewport({ width: 1440, height: 900, isMobile: false, hasTouch: false }); await own.goto(U + '#overview'); await own.waitForSelector('.t-tabs'); const pc = own;
+    const z = async () => pc.evaluate(() => parseFloat(getComputedStyle(document.documentElement).zoom));
+    const z0 = await z();
+    await pc.evaluate(() => { localStorage.setItem('team.size', 's'); window.__teamSize(); }); const zs = await z();
+    await pc.evaluate(() => { localStorage.setItem('team.size', 'x'); window.__teamSize(); }); const zx = await z();
+    await pc.evaluate(() => { localStorage.setItem('team.size', 'n'); window.__teamSize(); });
+    await pc.click('[data-go="actions"]'); const went = await until(pc, () => /#actions/.test(location.hash), 4000);
+    check(Math.abs(z0 - .875) < .01 && zPhone === 1 && Math.abs(zs - .8) < .01 && zx === 1 && went, 'a PC with a mouse gets the compact size (Normal), a phone keeps its own; Small and As on a phone work, and clicks land where they should ' + JSON.stringify({ z0, zPhone, zs, zx, went }));
+    await own.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true }); await own.goto(U + '#overview'); await sl(800); }
   check(!errs.length, 'no page errors or CSP violations ' + errs.join(' | ').slice(0, 400));
   srv.kill();
   await done(b);

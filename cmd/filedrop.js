@@ -179,7 +179,7 @@
     hideTip(); style();
     tipEl = document.createElement('div'); tipEl.className = 'tap-tip'; tipEl.setAttribute('role', 'status'); tipEl.textContent = txt;
     document.body.appendChild(tipEl);
-    var r = el.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight, vw = document.documentElement.clientWidth;
+    var q = parseFloat(getComputedStyle(document.documentElement).zoom) || 1, b = el.getBoundingClientRect(), r = { left: b.left / q, top: b.top / q, bottom: b.bottom / q, width: b.width / q }, w = tipEl.offsetWidth, h = tipEl.offsetHeight, vw = innerWidth / q;   /* Team zooms on a PC */
     var x = Math.max(12, Math.min(vw - w - 12, r.left + r.width / 2 - w / 2)), y = r.top - h - 8;
     if (y < 8) y = r.bottom + 8;
     tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
