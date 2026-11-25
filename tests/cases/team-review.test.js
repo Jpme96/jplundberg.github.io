@@ -106,6 +106,14 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const st = await stranger.evaluate(() => { const s = document.querySelector('.t-screen'), r = s.getBoundingClientRect(); return { mid: Math.round((r.left + r.right) / 2), w: innerWidth, btn: !!document.querySelector('.t-screen [data-act=signout]') }; });
   check(Math.abs(st.mid - st.w / 2) < 40 && st.btn, 'not in the team: the message is in the middle, with "Sign in with another e-mail" ' + JSON.stringify(st));
   await stranger.close();
+  /* the sign-in runs out while Team is open: it says so and offers to sign in again (JP 2026-11-25 22:37 – it looked open, nothing reached the server) */
+  await own.setCookie({ name: 'noauth', value: '1', domain: 'localhost', path: '/' });
+  await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); }); await sl(400);
+  await own.evaluate(() => { const b = document.querySelector('[data-settab=acct]'); if (b) b.click(); }); await sl(800);
+  const ab2 = await own.evaluate(() => { const b = document.getElementById('tAuthBar'); return b ? { t: b.textContent, btn: !!b.querySelector('[data-act=signin]') } : null; });
+  check(ab2 && /sign-in has run out/.test(ab2.t) && ab2.btn, 'a run-out sign-in is said, with "Sign in again" ' + JSON.stringify(ab2));
+  await own.deleteCookie({ name: 'noauth', domain: 'localhost', path: '/' });
+  await own.evaluate(() => { const b = document.getElementById('tAuthBar'); if (b) b.remove(); const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); }); await sl(300);
   /* deleting asks with a button that says Delete (review 17) */
   await own.goto(T + '#m=' + mid); await own.waitForSelector('[data-act=edit]');
   await own.evaluate(() => { window.__askBtn = ''; const c = window.Ask.confirm; window.Ask.confirm = (m, o) => { window.__askBtn = (o && o.ok) || 'OK'; return c.call(window.Ask, m, o); }; });

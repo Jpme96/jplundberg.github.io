@@ -161,10 +161,23 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (opt.body !== undefined) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
     return fetch('/api/' + path, init).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if (!r.ok) { var er = new Error(j.error || ('HTTP ' + r.status)); er.status = r.status; er.data = j; throw er; }
+        if (!r.ok) { if (r.status === 401 && S.me) authGone(); var er = new Error(j.error || ('HTTP ' + r.status)); er.status = r.status; er.data = j; throw er; }
         return j;
       });
-    }, function () { var er = new Error('offline'); er.offline = true; throw er; });
+    }, function () { var er = new Error('offline'); er.offline = true; authProbe(); throw er; });
+  }
+  /* a request that "fails" with signal is usually Cloudflare's sign-in having run out: it sends every call to the e-mail page,
+     and Team looked open (its saved copy) while nothing reached the server (JP 2026-11-25 22:37). Ask once in a while; if so, say it */
+  var authAt = 0;
+  function authProbe() {
+    if (!navigator.onLine || Date.now() - authAt < 30000) return; authAt = Date.now();
+    fetch('/api/me', { headers: { 'x-team': '1' }, credentials: 'same-origin', cache: 'no-store', redirect: 'manual' }).then(function (r) { if (r.type === 'opaqueredirect' || r.status === 401) authGone(); }, function () {});
+  }
+  function authGone() {
+    if (document.getElementById('tAuthBar')) return;
+    var b = document.createElement('div'); b.id = 'tAuthBar'; b.className = 't-authbar'; b.setAttribute('role', 'alert');
+    b.innerHTML = '<span>' + L('Your sign-in has run out – nothing reaches the server until you sign in again.', 'Innloggingen har gått ut – ingenting når serveren før du logger inn igjen.') + '</span><button class="t-btn sm" type="button" data-act="signin">' + L('Sign in again', 'Logg inn igjen') + '</button>';
+    document.body.appendChild(b);
   }
   function failMsg(e) {
     if (e && e.offline) return navigator.onLine ? L('Could not reach Team. Reload the page to sign in again.', 'Fikk ikke kontakt med Team. Last inn siden på nytt for å logge inn igjen.') : L('No connection – nothing was saved.', 'Ingen forbindelse – ingenting ble lagret.');
@@ -544,7 +557,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '33137d8c0899';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'a5ecd05fe705';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -1661,6 +1674,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
     if (a === 'signout') { e.preventDefault(); return signOut(); }
+    if (a === 'signin') { location.href = '/?signin=' + Date.now() + location.hash; return; }
     if (a === 'dcImportPick') { var fi = document.querySelector('input[data-dcimport]'); if (fi) fi.click(); return; }
     if (a === 'settab') { S.setTab = t.dataset.settab; settingsSheet(); return; }
     if (a === 'pal') { if (rank() < 3) return; var pid = t.dataset.pal; if (await putRec('cfg', 'cfgpalette', { p: pid }, L('Team colours', 'Teamets farger'))) { palSync(); if (S.sheet) settingsSheet(); draw(); } return; }

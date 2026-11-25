@@ -1,6 +1,6 @@
 /* Team's service worker: opens without signal (the app's own files are kept here; the data is in IndexedDB, still encrypted)
    and shows push notifications when Team is closed. /api is never cached. */
-var CACHE = 'team-shell-1';
+var CACHE = 'team-shell-2';
 var SHELL = ['/', '/app.js', '/app.css', '/manifest.webmanifest', '/icon-192.png', '/icon-180.png',
   '/dc/doc-control.js', '/dc/xlsx-view.js', '/dc/paged-pdf.js', '/dc/ns.js', '/dc/words.js', '/dc/dc.css', '/dc/bi/bi.css'];
 self.addEventListener('install', function (e) {
@@ -17,7 +17,7 @@ self.addEventListener('fetch', function (e) {
   e.respondWith(fetch(r).then(function (res) {
     if (res.ok && res.type === 'basic' && !res.redirected) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put(key, copy); }); }
     return res;
-  }).catch(function () { return caches.match(key).then(function (m) { return m || caches.match('/') || Response.error(); }); }));
+  }).catch(function () { return caches.match(key).then(function (m) { return m || (r.mode === 'navigate' ? caches.match('/') : null) || Response.error(); }); }));   /* only a page falls back to the app – a file (version.txt) never gets the page instead (2026-11-25) */
 });
 self.addEventListener('push', function (e) {
   var d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) {}
