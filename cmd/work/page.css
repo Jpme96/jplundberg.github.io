@@ -1053,3 +1053,5 @@ html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { anima
 @media (prefers-reduced-motion: reduce) { .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; } }
 /* the upload line stays in one place at the bottom instead of pushing the page down and up (JP 2026-11-25 "the entire page shakes") */
 .dc-sharing { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 96px); transform: translateX(-50%); z-index: 30; margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--card-solid, var(--bg)); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); font-size: 13.5px; white-space: nowrap; pointer-events: none; }
+
+.dx-wait { display: flex; align-items: center; gap: 8px; padding: 28px 4px; color: var(--muted); font-size: 15px; }

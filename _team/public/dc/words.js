@@ -796,6 +796,7 @@ window.DC_NB = {
 "ui.dx-recv": "{a} av {b} mottatt",
 "ui.dx-ren-dl4": "Last ned …",
 "ui.dx-ren-fail": "Klarte ikke å pakke filene – prøv færre om gangen.",
+"ui.dx-ren-fetch": "Henter filene fra lenken …",
 "ui.dx-ren-help2": "Velg filene eller én .zip. Hver fil får foreslått NS 3451-kode og dokumenttype ut fra navnet og – for PDF – teksten; navnereglene (dokumenter, bilder, tegninger) lager det nye navnet. Sjekk, rett, og last dem ned med nye navn. Ingenting lagres eller sendes.",
 "ui.dx-ren-loading": "Laster filnavngivingen …",
 "ui.dx-ren-plan": "Dokumentplan (Vedlegg 7)",

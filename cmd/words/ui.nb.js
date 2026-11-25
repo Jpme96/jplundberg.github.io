@@ -4221,6 +4221,7 @@ I18N.add({
   "ui.dx-drop-help": ["PDFs, drawings (.dwg), Office files, photos – or one .zip. Nothing is uploaded; everything stays on this device.", "PDF-er, tegninger (.dwg), Office-filer, bilder – eller én .zip. Ingenting lastes opp; alt blir på denne enheten."],
   "ui.dx-fv-loading": ["Opening …", "Åpner …"],
   "ui.dx-fv-share": ["Share", "Del"],
+  "ui.dx-ren-fetch": ["Fetching the files from the link …", "Henter filene fra lenken …"],
   "ui.dcn-pick-floor": ["Choose floor", "Velg etasje"],
   "ui.dcn-pick-disc": ["Choose discipline", "Velg fag"],
   "ui.dcn-pick-dtype": ["Choose drawing type", "Velg tegningstype"],

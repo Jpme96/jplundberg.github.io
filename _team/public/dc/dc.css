@@ -1541,6 +1541,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
   .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; }
 }
 .dc-sharing { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 96px); transform: translateX(-50%); z-index: 30; margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--card-solid, var(--bg)); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); font-size: 13.5px; white-space: nowrap; pointer-events: none; }
+.dx-wait { display: flex; align-items: center; gap: 8px; padding: 28px 4px; color: var(--muted); font-size: 15px; }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }
 .stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;

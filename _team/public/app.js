@@ -1567,15 +1567,16 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       draw(); undoToast(L('The files are deleted', 'Filene er slettet'), function () { clearTimeout(S.upWipe[wl]); delete S.upWipe[wl]; draw(); }); return; }
     if (a === 'upkeep') { t.disabled = true; await keepUploads([t.dataset.fid]); return; }
     /* a link without a project (JP 2026-11-24 22:51): rename and download, put in a project, or download as they are – then they are gone here */
-    if (a === 'upren' || a === 'upzip') { var ur = links().filter(function (x) { return x.d.lid === t.dataset.lid; })[0]; if (!ur) return; t.disabled = true;
+    if (a === 'upren') { var urn = links().filter(function (x) { return x.d.lid === t.dataset.lid; })[0]; if (!urn) return; t.disabled = true;
+      /* the naming popup opens at once, with "Fetching the files …" while they come (JP 2026-11-25 "each popup has a different opening time") */
+      try { var fetchP = linkFiles(urn); await docsReady(); var tries = 0; await new Promise(function (res) { (function go2() { if ((window.DocTools && window.DocTools.renHere) || ++tries > 60) return res(); setTimeout(go2, 100); })(); });
+        if (!window.DocTools || !window.DocTools.renHere) { toast(L('Could not open the naming – try again.', 'Klarte ikke å åpne navngivingen – prøv igjen.')); t.disabled = false; return; }
+        var gotP = fetchP.then(function (ufs) { if (!ufs.length) toast(L('Could not fetch the files – try again.', 'Klarte ikke å hente filene – prøv igjen.')); return ufs; });
+        t.disabled = false; await window.DocTools.renHere(gotP); } catch (x) { toast(failMsg(x)); } t.disabled = false; return; }
+    if (a === 'upzip') { var ur = links().filter(function (x) { return x.d.lid === t.dataset.lid; })[0]; if (!ur) return; t.disabled = true;
       try { var ufs = await linkFiles(ur); await docsReady();
-        if (a === 'upzip') { var parts = []; for (var ui = 0; ui < ufs.length; ui++) parts.push([ufs[ui].name, new Uint8Array(await ufs[ui].arrayBuffer())]);
-          saveFile(new File([window.DocTools.zip(parts)], (ur.d.label || L('Upload link', 'Opplastingslenke')).replace(/[\\/:*?"<>|]+/g, '-') + '.zip', { type: 'application/zip' })); await upDone(ur.d.lid, ufs.map(function (f) { return f._upf; })); draw(); }
-        else { if (!ufs.length) { toast(L('Could not fetch the files – try again.', 'Klarte ikke å hente filene – prøv igjen.')); t.disabled = false; return; }
-          /* the naming popup opens right here over Opplastinger, with only the link's files (JP 2026-11-25 "it just doesn't pop up") */
-          var tries = 0; await new Promise(function (res) { (function go2() { if ((window.DocTools && window.DocTools.renHere) || ++tries > 60) return res(); setTimeout(go2, 150); })(); });
-          if (!window.DocTools || !window.DocTools.renHere) { toast(L('Could not open the naming – try again.', 'Klarte ikke å åpne navngivingen – prøv igjen.')); t.disabled = false; return; }
-          await window.DocTools.renHere(ufs); }
+        var parts = []; for (var ui = 0; ui < ufs.length; ui++) parts.push([ufs[ui].name, new Uint8Array(await ufs[ui].arrayBuffer())]);
+          saveFile(new File([window.DocTools.zip(parts)], (ur.d.label || L('Upload link', 'Opplastingslenke')).replace(/[\\/:*?"<>|]+/g, '-') + '.zip', { type: 'application/zip' })); await upDone(ur.d.lid, ufs.map(function (f) { return f._upf; })); draw();
       } catch (x) { toast(failMsg(x)); } t.disabled = false; return; }
     if (a === 'upproj') { var pr0 = projects();
       openSheet('<h2>' + L('Put in a project', 'Legg i prosjekt') + '</h2><p class="t-small">' + L('The files go into the project’s Levering, marked as new.', 'Filene legges i prosjektets Levering, merket som nye.') + '</p>' +

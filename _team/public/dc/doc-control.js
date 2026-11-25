@@ -448,7 +448,7 @@
     if (N) F.forEach(function (f) { if (f.orig && f.orig !== f.name) moved++; else if (N.ready(p, f)) ok++; });
     var h = '<section class="dx-panel dx-ren"><div class="dx-ph"><h3 class="fdv-h">' + esc(renHere ? k('ui.dx-ren-upl', 'Give names · {n} files from the upload link', { n: F.length }) : k('ui.dx-t-ren', 'Give files the right names')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
       '<p class="muted dc-help">' + esc(k('ui.dx-ren-help2', 'Pick the files or one .zip. Each file gets a suggested NS 3451 code and document type from its name and – for PDFs – its text; the naming rules (documents, photos, drawings) build the new name. Check, fix, then download them renamed. Nothing is saved or sent.')) + '</p>' +
-      (F.length ? '' : dropBox('data-dxrendrop', '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + '<input type="file" multiple data-dxrenf hidden></label>', '', k('ui.dx-drop-note', 'PDFs, photos, drawings – or one .zip. Nothing is saved or sent.')));
+      (F.length ? '' : TOOL.wait ? '<p class="dx-wait" role="status"><i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-fetch', 'Fetching the files from the link …')) + '</p>' : dropBox('data-dxrendrop', '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + '<input type="file" multiple data-dxrenf hidden></label>', '', k('ui.dx-drop-note', 'PDFs, photos, drawings – or one .zip. Nothing is saved or sent.')));
     if (!F.length) return h + '</section>';
     if (!N) return h + '<p class="muted">' + esc(k('ui.dx-ren-loading', 'Loading the file naming …')) + '</p></section>';
     var busy = N.busy(), DG = dupGroups(), dn = DG.reduce(function (a, g) { return a + g.length; }, 0);
@@ -541,7 +541,8 @@
   window.DocTools = {   /* for Team's Opplastinger: open the naming tool with files, pack files, make a project */
     ren: function (fs) { open = null; ropen = null; xtool = 'ren'; renHere = false; draw(); window.scrollTo(0, 0); return renAdd(fs); },
     /* Team's Opplastinger (JP 2026-11-25 "it just doesn't pop up"): the same naming popup, right over the page you are on, with only the link's files */
-    renHere: function (fs) { var p = toolP(); p.files = []; TOOL.blobs = {}; TOOL.upl = {}; xtool = 'ren'; renHere = true; draw(); return renAdd(fs).then(function () { draw(); }); },
+    renHere: function (fs) { var p = toolP(); p.files = []; TOOL.blobs = {}; TOOL.upl = {}; xtool = 'ren'; renHere = true; TOOL.wait = !!(fs && fs.then); draw();   /* a promise: the popup opens at once with "Fetching the files …" (JP 2026-11-25) */
+      return Promise.resolve(fs).then(function (L) { TOOL.wait = false; if (!L || !L.length) { draw(); return; } return renAdd(L).then(function () { draw(); }); }, function (e) { TOOL.wait = false; draw(); throw e; }); },
     zip: function (files) { return zipStore(files); },
     newProject: function (name) { var t = Fe.tools(), id = uid(); t.dctl = (t.dctl || []).concat([{ id: id, name: String(name || '').slice(0, 120), made: new Date().toISOString(), lines: [], files: [] }]); Fe.saveTools(t); return id; }
   };
