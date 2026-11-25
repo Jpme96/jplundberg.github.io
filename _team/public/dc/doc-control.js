@@ -1146,11 +1146,11 @@
     document.addEventListener('change', function (e) { if (e.target === SO) done(); }, true);
     document.addEventListener('focusout', function (e) { if (e.target === SO) done(); }, true); })();
   window.addEventListener('sel:done', function () { if (drawLater) { drawLater = false; draw(); } });
-  if (!HOST) (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {};
+  if (!HOST) (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
     var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
     var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
     new MutationObserver(function (ms) { ms.forEach(function (m) {
-      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (open[k] || (gone[k] && Date.now() - gone[k] < 600)) o.classList.add('ov-still'); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) o.classList.add('ov-still'); if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
     }); }).observe(document.body, { childList: true, subtree: true }); })();   /* the calm popup opening without replays – Team has its own for its whole page */
   function draw() {

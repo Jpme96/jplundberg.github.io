@@ -498,11 +498,11 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   /* a dropdown that is open is never redrawn under you (JP 2026-11-25 "boxes … do not keep themselves open"): from the press on a <select> until
      you pick, leave it or press Escape, a redraw waits and runs right after */
   /* a popup opens with a short fade once; when a redraw puts the same popup back it gets .ov-still, so the opening never replays (JP 2026-11-25) */
-  (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {};
+  (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
     var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
     var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
     new MutationObserver(function (ms) { ms.forEach(function (m) {
-      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (open[k] || (gone[k] && Date.now() - gone[k] < 600)) o.classList.add('ov-still'); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) o.classList.add('ov-still'); if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   var SELO = null, SELT = 0;
