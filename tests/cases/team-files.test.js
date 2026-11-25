@@ -58,10 +58,11 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(!/This week/.test(ov), 'Overview has no "This week" – it shows what needs doing (JP 2026-11-24 22:57)');
 
   /* a shared file: 2.4 MB in three encrypted chunks */
-  await own.goto(T + '#files'); await own.waitForSelector('input[data-fadd]');
-  const big = path.join(tmp, 'report.txt'), MARK = 'made-up-file-content-';
-  fs.writeFileSync(big, MARK.repeat(Math.ceil(2.4e6 / MARK.length)));
-  await (await own.$('input[data-fadd]')).uploadFile(big);
+  await own.goto(T + '#files'); await own.waitForSelector('[data-act=uplink]');
+  /* Opplastinger is only about links (JP 2026-11-25): no Add files, no Shared files while there are none */
+  check(await own.evaluate(() => !document.querySelector('input[data-fadd], select[name=fproj]') && !/Shared files|Delte filer/.test(document.body.innerText)), 'Opplastinger has no Add files, Take a photo or Shared files');
+  const MARK = 'made-up-file-content-';
+  await own.evaluate(m => window.__teamSendFile(new File([m.repeat(Math.ceil(2.4e6 / m.length))], 'report.txt', { type: 'text/plain' }), ''), MARK);
   check(await until(own, () => /report\.txt/.test(document.body.innerText), 30000), 'the file is listed under Shared files');
   const mem = (await raw('/__mem')).body, r2 = (await raw('/__r2')).body;
   check(/"t\/do-team\/f\/[a-f0-9]{32}\/2"/.test(r2) && !/"f:[a-f0-9]{32}:/.test(mem) && !/made-up-file-content|report\.txt/.test(mem + r2), 'the file’s three encrypted pieces are in R2 under the team’s prefix, none in the team’s database, and neither the content nor the name is readable');
@@ -135,7 +136,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   const cx = await own.evaluate(() => { const b = document.querySelector('.dx-fv [data-dxfvx]'); if (!b) return null; const c = getComputedStyle(b), r = b.getBoundingClientRect(), sh = b.closest('.dcn-sheet').getBoundingClientRect(); return { border: c.borderTopColor, bg: c.backgroundColor, gap: Math.round(sh.right - r.right) }; });
   check(cx && /rgba\(0, 0, 0, 0\)|transparent/.test(cx.border) && /rgba\(0, 0, 0, 0\)|transparent/.test(cx.bg) && cx.gap >= 0 && cx.gap <= 24, 'the close X has no circle and sits in the top corner ' + JSON.stringify(cx));
   await own.evaluate(() => { const x = document.querySelector('.dx-fv [data-dxfvx]'); if (x) x.click(); }); await sl(300);
-  await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(800);   /* back to an empty Levering for the steps below */
+  for (let i = 0; i < 6; i++) {   /* a late save from sharing the file can put it back – clear until it stays empty */
+    await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(1200);
+    if (await own.evaluate(() => !(((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).length)) break; }   /* back to an empty Levering for the steps below */
   await own.goto(T + '#files'); await sl(1200);
   /* switching the link off */
   /* remind the contractor: the card counts what is late and "Remind" makes a message with those items and the link */
@@ -193,7 +196,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.evaluate(() => { const b2 = [...document.querySelectorAll('[data-act=upprojgo]')].find(x => /Testveien 9/.test(x.textContent)); b2 && b2.click(); });
   check(await until(own, () => (((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).some(f => /333 DV Sprinkler madeup\.pdf/.test(f.name) && f.nw), 20000), 'Put in a project: the file lands in that project\'s Levering, marked new');
   check(await (async () => { for (let i = 0; i < 60; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + lid2 + ':')) return true; await sl(500); } return false; })(), 'and once it is shared in the project, the link\'s copy goes');
-  await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(800);
+  for (let i = 0; i < 6; i++) {   /* a late save from sharing the file can put it back – clear until it stays empty */
+    await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(1200);
+    if (await own.evaluate(() => !(((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).length)) break; }
   /* Switch off keeps the files (JP 2026-11-25 "Slå av deletes everything"); Delete the files asks, has Undo, and only then deletes */
   const lid3 = await (async () => { await own.goto(T + '#files'); await sl(600); await own.click('[data-act=uplink]'); await own.waitForSelector('form[data-form=uplink]'); await own.select('select[name=pid]', ''); await own.click('form[data-form=uplink] button[type=submit]'); await own.waitForSelector('#invLink'); return own.$eval('#invLink', e => e.value); })();
   await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); c && c.click(); }); await sl(300);

@@ -1229,14 +1229,16 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function links() { return list('upl').filter(function (r) { return r.d.exp > Date.now() - 30 * 864e5; }).sort(function (a, b) { return b.d.exp - a.d.exp; }); }
   function filesHtml() {
     var fl = files(), by = {}, out = '';
-    if (rank() >= 1) out += '<div class="t-card t-noprint"><label class="t-lbl">' + L('Project', 'Prosjekt') + projPick('fproj', S.fproj) + '</label><button class="t-btn wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button>' +   /* the link is what this page is about – the main button (live check 2026-11-25) */
-      '<div class="t-acts2"><label class="t-btn ghost">' + L('Add files', 'Legg til filer') + '<input type="file" multiple hidden data-fadd></label><label class="t-btn ghost">' + L('Take a photo', 'Ta et bilde') + '<input type="file" accept="image/*" capture="environment" hidden data-fadd></label></div></div>';
+    /* Opplastinger is only about links (JP 2026-11-25 08:49): the link button; Add files / Take a photo and Shared files went –
+       project files live in Levering, contractors' files come on links. Shared files made before still show below until deleted. */
+    if (rank() >= 1) out += '<div class="t-card t-noprint"><button class="t-btn wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button></div>';
     /* Opplastinger shows what is live or waiting – no history (JP 2026-11-24 22:56): a project's link sends its files straight into the
        project's Levering; a link without a project keeps its files here until you rename and download them, put them in a project or just download them */
     var ls = links().filter(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = r.d.pid && projName(r.d.pid); return live || !hasP; });
     ls = ls.filter(function (r) { return !(S.upWipe && S.upWipe[r.d.lid]); });   /* "Slett filene" waits out its Undo time hidden */
     /* the card (JP 2026-11-25): what acts on the link (Remind, Copy, Switch off – or Delete the files once it is off) sits small next to the title;
        what acts on the files (Name and download, Put in a project) at the bottom; each file has its own eye and download */
+    if (!ls.length) out += '<p class="t-empty">' + L('No upload links right now. Send one to a contractor: files for a project go straight into its Levering, others wait here.', 'Ingen opplastingslenker nå. Send en til en entreprenør: filer til et prosjekt legges rett i Levering, andre venter her.') + '</p>';
     if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = !!(r.d.pid && projName(r.d.pid));
       var top = live ? remindBtn(r) + '<button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button>' + (rank() >= 1 ? '<button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button>' : '')
         : (!hasP && rank() >= 1 ? '<button class="t-btn sm ghost t-danger" type="button" data-act="upwipe" data-id="' + esc(r.id) + '" hidden>' + L('Delete the files', 'Slett filene') + '</button>' : '');
@@ -1244,8 +1246,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         '<p class="t-small">' + esc((live ? L('Works until ', 'Virker til ') + fmtTime(r.d.exp) : L('Switched off – nobody can send more', 'Slått av – ingen kan sende mer')) + ' · ' + (hasP ? L('files go straight into the project', 'filene legges rett i prosjektet') : L('no project', 'uten prosjekt'))) + '</p>' + (live ? lateLine(r) : '') +
         (hasP ? '<p class="t-small"><a href="#dc=' + esc(r.d.pid) + '">' + L('Open the project', 'Åpne prosjektet') + '</a></p>' : '<ul class="t-list" data-ups="' + esc(r.d.lid) + '"><li class="t-small">' + esc(L('Looking for files …', 'Ser etter filer …')) + '</li></ul><div class="t-upacts" data-upacts="' + esc(r.d.lid) + '" hidden></div>') + '</div>'; }).join('');
     fl.forEach(function (r) { var k = r.d.pid || ''; (by[k] = by[k] || []).push(r); });
+    if (!fl.length) return out;
     out += '<p class="t-h"><span>' + L('Shared files', 'Delte filer') + '</span><span>' + fl.length + '</span></p>';
-    if (!fl.length) return out + '<p class="t-empty">' + L('No files yet. Files here are encrypted and shared with the team.', 'Ingen filer ennå. Filer her er kryptert og delt med teamet.') + '</p>';
     Object.keys(by).sort(function (a, b) { return (projName(a) || '~').localeCompare(projName(b) || '~'); }).forEach(function (k) {
       out += '<p class="t-sub">' + esc(projName(k) || L('No project', 'Uten prosjekt')) + '</p><ul class="t-list">' + by[k].map(function (r) {
         return '<li><button class="t-row" type="button" data-act="fopen" data-id="' + esc(r.id) + '"><span class="grow"><span>' + esc(r.d.name) + '</span><small>' + esc([fsize(r.d.size), r.d.from ? (r.d.who ? L('from ', 'fra ') + r.d.who : L('from the upload link', 'fra opplastingslenken')) : nameOf(r.by), fmtTime(r.d.at || r.t)].filter(Boolean).join(' · ')) + '</small></span></button>' + (rank() >= 1 ? '<button class="t-icon" type="button" data-act="fdel" data-id="' + esc(r.id) + '" aria-label="' + esc(L('Delete', 'Slett')) + '">×</button>' : '') + '</li>';
@@ -1325,6 +1327,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }
   }
   window.__pushNeeds = pushNeeds;
+  window.__teamSendFile = function (f, pid) { return sendFile(f, pid || '').then(function (r) { draw(); return r; }); };   /* tests only: Opplastinger has no Add files any more – the file storage is still tested through this */
   /* remind the contractor (2026-11-21, JP): on a live link with a project, what is late (deadline passed, still missing or
      sent back) is counted on the card, and "Remind" makes a short message with those items and the link – shared from the
      phone (Mail, SMS, Teams …) or copied. Nothing is sent by the server. */
