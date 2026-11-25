@@ -257,18 +257,21 @@
       var b = e.target.closest('[data-dxz]'); if (!b) return; var k2 = b.dataset.dxz; set(k2 === 'in' ? z * 1.4 : k2 === 'out' ? z / 1.4 : 1); }); }
     return { set: set, get: function () { return z; } };
   }
-  function view(blob, name) {
+  function view(blob, name, opt) {
+    opt = opt || {};   /* opt.sub: a small line under the name; opt.share: a Share button when the device can share files (Team's files, JP 2026-11-25) */
     var old = document.querySelector('.dx-fv'); if (old) old.remove();
     var url = URL.createObjectURL(blob), e0 = ext(name), pdf = e0 === '.pdf' || blob.type === 'application/pdf', img = /^\.(jpe?g|png|gif|webp|heic|heif|bmp|svg)$/.test(e0) || /^image\//.test(blob.type), txt = /^\.(txt|csv|tsv|xml|json|md)$/.test(e0);
+    var shareFile = null; try { shareFile = blob instanceof File && blob.name === name ? blob : new File([blob], name, { type: blob.type || (pdf ? 'application/pdf' : '') }); } catch (x) {}
+    var canShare = !!(opt.share && shareFile && navigator.share && navigator.canShare && navigator.canShare({ files: [shareFile] }));
     var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dx-fv';
-    ov.innerHTML = '<div class="dcn-sheet dx-fvs" role="dialog" aria-modal="true" aria-label="' + esc(name) + '"><div class="dcn-shead"><b data-noi18n>' + esc(name) + '</b><span class="dcn-b"><a class="pill-btn sm ghost" href="' + url + '" download="' + esc(name) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</a>' +
+    ov.innerHTML = '<div class="dcn-sheet dx-fvs" role="dialog" aria-modal="true" aria-label="' + esc(name) + '"><div class="dcn-shead"><span class="dx-fvt"><b data-noi18n>' + esc(name) + '</b>' + (opt.sub ? '<small class="muted" data-noi18n>' + esc(opt.sub) + '</small>' : '') + '</span><span class="dcn-b">' + (canShare ? '<button type="button" class="pill-btn sm ghost" data-dxfvsh><i class="bi bi-box-arrow-up"></i> ' + esc(k('ui.dx-fv-share', 'Share')) + '</button>' : '') + '<a class="pill-btn sm ghost" href="' + url + '" download="' + esc(name) + '"><i class="bi bi-download"></i> ' + esc(k('ui.download', 'Download')) + '</a>' +
       '<button type="button" class="icon-btn" data-dxfvx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></span></div>' +
       '<div class="dx-fvzb" hidden><button type="button" class="icon-btn" data-dxz="out" aria-label="' + esc(k('ui.zoom-out', 'Zoom out')) + '"><i class="bi bi-dash-lg"></i></button><button type="button" class="pill-btn sm ghost" data-dxz="fit" data-dxzl>100%</button><button type="button" class="icon-btn" data-dxz="in" aria-label="' + esc(k('ui.zoom-in', 'Zoom in')) + '"><i class="bi bi-plus-lg"></i></button></div><div class="dx-fvb">' +
       (img ? '<img src="' + url + '" alt="">' : pdf || txt ? '<p class="muted">' + esc(k('ui.dx-fv-loading', 'Opening …')) + '</p>' : '<p class="muted">' + esc(k('ui.dx-fv-none', 'No preview for this kind of file – download it to open it.')) + '</p>') + '</div></div>';
     var close = function () { ov.remove(); URL.revokeObjectURL(url); document.removeEventListener('keydown', ek, true); document.documentElement.classList.remove('dcn-modal'); };
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
-    ov.addEventListener('click', function (e) { if ((e.target === ov && dn === ov) || e.target.closest('[data-dxfvx]')) close(); });
+    ov.addEventListener('click', function (e) { if ((e.target === ov && dn === ov) || e.target.closest('[data-dxfvx]')) close(); if (e.target.closest('[data-dxfvsh]')) navigator.share({ files: [shareFile] }).catch(function () {}); });
     document.addEventListener('keydown', ek, true); document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
     var body = ov.querySelector('.dx-fvb'), bt = ov.querySelector('[data-dxfvx]'); if (bt) bt.focus();
     if (txt) blob.text().then(function (t) { var pre = document.createElement('pre'); pre.textContent = t.slice(0, 200000); body.innerHTML = ''; body.appendChild(pre); });

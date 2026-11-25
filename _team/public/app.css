@@ -119,6 +119,17 @@ a.t-icon { text-decoration: none; }
 .t-acts2 > .t-btn { flex: 1 1 140px; }
 .t-sub { margin: 14px 4px 6px; font-size: 13px; color: var(--muted, #9aa0aa); font-weight: 600; }
 .t-upl h2 { margin-bottom: 2px; }
+/* the upload link card (JP 2026-11-25): link buttons small beside the title, file buttons at the bottom, an eye and a download per file */
+.t-uph { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.t-uph h2 { margin: 6px 0 2px; }
+.t-uphb { display: flex; gap: 8px; flex-wrap: wrap; }
+.t-uprow { gap: 6px !important; padding-right: 8px !important; }
+.t-icon.t-icsm { width: 40px; height: 40px; border-radius: 10px; background: none; color: var(--muted); }
+.t-icon.t-icsm:hover { background: var(--card); color: var(--ink); }
+.t-icon.t-icsm svg { width: 20px; height: 20px; }
+.t-upacts { margin-top: 12px; }
+.t-upall { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; }
+.t-upall svg { width: 16px; height: 16px; }
 .t-switch { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line, rgba(255,255,255,.1)); border-bottom: 1px solid var(--line, rgba(255,255,255,.1)); margin: 8px 0 12px; }
 .t-switch > span { flex: 1; display: grid; gap: 2px; }
 .t-switch small { color: var(--muted, #9aa0aa); font-size: 12px; }

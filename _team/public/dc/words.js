@@ -726,6 +726,7 @@ window.DC_NB = {
 "ui.dx-fv-loading": "Åpner …",
 "ui.dx-fv-more": "Viser de første {n} av {t} sidene – last ned for resten.",
 "ui.dx-fv-none": "Ingen forhåndsvisning for denne filtypen – last den ned for å åpne den.",
+"ui.dx-fv-share": "Del",
 "ui.dx-have-plan": "Har du allerede entreprenørens dokumentplan?",
 "ui.dx-krav": "Krav",
 "ui.dx-last": "Til slutt",

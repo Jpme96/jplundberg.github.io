@@ -69,9 +69,9 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(own, () => window.__blobs.some(x => x && x.size > 2.3e6), 20000), 'opening it brings back the whole file');
   const back = await own.evaluate(() => { const f = window.__blobs.filter(x => x && x.size > 2.3e6).pop(); return f.text().then(t => t.slice(0, 42) + '|' + f.size + '|' + f.name); });
   check(back.startsWith('made-up-file-content-made-up-file-content-') && back.endsWith('|report.txt'), 'and it is the same file (' + back.split('|').slice(1).join(' ') + ')');
-  check(await until(own, () => /made-up-file-content/.test((document.querySelector('#prevBox pre') || {}).textContent || ''), 10000), 'a text file is shown right in Team, no download needed');
-  check(await own.evaluate(() => !!document.querySelector('[data-act=fdl]') && !document.querySelector('[data-act=fdl]').disabled), 'with Download beside it');
-  await own.evaluate(() => document.querySelector('[data-act=close]').click()); await sl(300);
+  check(await until(own, () => /made-up-file-content/.test((document.querySelector('.dx-fv pre') || {}).textContent || ''), 10000), 'a text file is shown right in Team, straight in the viewer – no download needed');
+  check(await own.evaluate(() => !!document.querySelector('.dx-fv a[download="report.txt"]') && /fra|from|kB|MB/.test(document.querySelector('.dx-fv .dx-fvt small').textContent)), 'with Download in its top bar and the size and sender under the name');
+  await own.evaluate(() => document.querySelector('.dx-fv [data-dxfvx]').click()); await sl(300);
 
   /* an upload link, used by a contractor on the real /upload/ page (no account, no Team sign-in) */
   await own.click('[data-act=uplink]'); await own.waitForSelector('form[data-form=uplink]');
@@ -156,7 +156,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.click('[data-act=uplink]'); await own.waitForSelector('form[data-form=uplink]');
   await own.select('select[name=pid]', '');
   await own.click('form[data-form=uplink] button[type=submit]'); await own.waitForSelector('#invLink');
-  const link2 = await own.$eval('#invLink', e => e.value), lid2 = link2.split('#')[1].split('.')[1];
+  let link2 = await own.$eval('#invLink', e => e.value); const lid2 = link2.split('#')[1].split('.')[1];
   await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); c && c.click(); }); await sl(300);
   const con2 = await (await b.createBrowserContext()).newPage();
   await con2.setRequestInterception(true);
@@ -166,6 +166,21 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   await own.goto(T + '#overview'); await own.goto(T + '#files');
   check(await until(own, () => { const c = document.querySelector('.t-upl[data-upwait]'); return !!c && /332 DV Ror madeup\.pdf/.test(c.textContent) && !!c.querySelector('[data-act=upren]') && !!c.querySelector('[data-act=upproj]') && !!c.querySelector('[data-act=upzip]'); }, 15000), 'it waits on the link\'s card with Name and download, Put in a project and Download as they are');
   await own.evaluate(() => { window.__dlNames = []; const oc = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) { window.__dlNames.push(this.download); return; } return oc.call(this); }; });
+  /* the card (JP 2026-11-25): the link's buttons beside the title, an eye and a download on each file, every button styled */
+  const card = await own.evaluate(() => { const c = document.querySelector('.t-upl[data-upwait]'), row = c.querySelector('.t-uprow');
+    return { head: !!c.querySelector('.t-uphb [data-act=upcopy]') && !!c.querySelector('.t-uphb [data-act=upoff]'), eye: !!(row && row.querySelector('[data-act=upopen].t-icon')), dl: !!(row && row.querySelector('[data-act=updl1]')),
+      plain: [...c.querySelectorAll('button')].filter(x => !x.closest('[hidden]') && !/t-btn|t-icon|t-row/.test(x.className)).map(x => x.textContent) }; });
+  check(card.head && card.eye && card.dl && !card.plain.length, 'the link card: Copy and Switch off beside the title, an eye and a download per file, no unstyled button ' + JSON.stringify(card));
+  await own.evaluate(() => document.querySelector('.t-upl[data-upwait] [data-act=updl1]').click());
+  check(await until(own, () => window.__dlNames.includes('332 DV Ror madeup.pdf'), 15000), 'the download on a row gives just that one file');
+  await own.evaluate(() => document.querySelector('.t-upl[data-upwait] .t-icon[data-act=upopen]').click());
+  check(await until(own, () => { const v = document.querySelector('.dx-fv'); return !!v && /332 DV Ror madeup\.pdf/.test(v.textContent) && !!v.querySelector('a[download]') && !document.getElementById('prevBox'); }, 15000), 'the eye opens the file straight in the viewer (Download in its top bar, no box in between)');
+  await own.evaluate(() => { const x = document.querySelector('.dx-fv [data-dxfvx]'); x && x.click(); }); await sl(300);
+  await own.evaluate(() => document.querySelector('.t-upl[data-upwait] [data-act=upren]').click());
+  check(await until(own, () => /332 DV Ror madeup/.test((document.getElementById('wkDocCtl') || {}).innerText || '') && !!document.querySelector('#wkDocCtl .dx-panel, #wkDocCtl [data-dxtool].on, #wkDocCtl .dx-tsheet, .dx-tsheet'), 15000), 'Name and download opens the naming tool with the link\'s files');
+  await own.evaluate(() => { const c = document.querySelector('[data-dxtool]'); const x = [...document.querySelectorAll('[data-dxtool]')].find(b => /Lukk|Close/.test(b.textContent)); x && x.click(); });
+  await own.goto(T + '#overview'); await own.goto(T + '#files');
+  await until(own, () => !!document.querySelector('.t-upl[data-upwait] [data-act=upzip]') && !document.querySelector('.t-upl[data-upwait] [data-act=upzip]').closest('[hidden]'), 15000);
   await own.evaluate(() => document.querySelector('.t-upl[data-upwait] [data-act=upzip]').click());
   check(await until(own, () => window.__dlNames.some(n => /\.zip$/.test(n)), 15000), 'Download as they are gives one .zip');
   check(await (async () => { for (let i = 0; i < 30; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + lid2 + ':')) return true; await sl(400); } return false; })(), 'and the files are gone from the link afterwards');
@@ -177,6 +192,28 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
   check(await until(own, () => (((DocHost.Fe.tools().dctl || []).find(x => /Testveien 9/.test(x.name)) || {}).files || []).some(f => /333 DV Sprinkler madeup\.pdf/.test(f.name) && f.nw), 20000), 'Put in a project: the file lands in that project\'s Levering, marked new');
   check(await (async () => { for (let i = 0; i < 60; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + lid2 + ':')) return true; await sl(500); } return false; })(), 'and once it is shared in the project, the link\'s copy goes');
   await own.evaluate(() => { const t = DocHost.Fe.tools(); (t.dctl || []).forEach(x => { if (/Testveien 9/.test(x.name)) x.files = []; }); DocHost.Fe.saveTools(t); }); await sl(800);
+  /* Switch off keeps the files (JP 2026-11-25 "Slå av deletes everything"); Delete the files asks, has Undo, and only then deletes */
+  const lid3 = await (async () => { await own.goto(T + '#files'); await sl(600); await own.click('[data-act=uplink]'); await own.waitForSelector('form[data-form=uplink]'); await own.select('select[name=pid]', ''); await own.click('form[data-form=uplink] button[type=submit]'); await own.waitForSelector('#invLink'); return own.$eval('#invLink', e => e.value); })();
+  await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); c && c.click(); }); await sl(300);
+  const l3 = lid3.split('#')[1].split('.')[1];
+  { const prev = link2; link2 = lid3; await con2.goto('about:blank'); check(await send2('334 DV Ventil madeup.pdf', '%PDF-1.4 made-up valve ' + 'v'.repeat(700)), 'a file on a third link without a project'); link2 = prev; }
+  await own.goto(T + '#overview'); await own.goto(T + '#files');
+  const c3 = '.t-upl[data-lid="' + l3 + '"]';
+  await until(own, s3 => { const c = document.querySelector(s3); return !!c && /334 DV Ventil/.test(c.textContent); }, 15000, c3);
+  await own.evaluate(s3 => document.querySelector(s3 + ' [data-act=upoff]').click(), c3); await sl(300);
+  await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); }); await sl(1500);
+  check(await until(own, s3 => { const c = document.querySelector(s3); return !!c && /334 DV Ventil/.test(c.textContent) && /Switched off|Slått av/.test(c.textContent) && !!c.querySelector('[data-act=upwipe]:not([hidden])') && !c.querySelector('[data-act=upoff]'); }, 15000, c3), 'Switch off: the card stays with its files, now with Delete the files');
+  check((await raw('/__mem')).body.includes('"uf:' + l3 + ':'), 'and the files are still on the server');
+  await own.evaluate(s3 => document.querySelector(s3 + ' [data-act=upwipe]').click(), c3); await sl(300);
+  await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); }); await sl(500);
+  check(await own.evaluate(s3 => !document.querySelector(s3) && !!document.querySelector('#toast .t-undo'), c3), 'Delete the files: the card goes and the toast offers Undo');
+  await own.evaluate(() => document.querySelector('#toast .t-undo').click()); await sl(400);
+  check(await until(own, s3 => { const c = document.querySelector(s3); return !!c && /334 DV Ventil/.test(c.textContent); }, 10000, c3), 'Undo brings the card and its files back');
+  await sl(9000);
+  check((await raw('/__mem')).body.includes('"uf:' + l3 + ':'), 'after Undo nothing is deleted');
+  await own.evaluate(s3 => document.querySelector(s3 + ' [data-act=upwipe]').click(), c3); await sl(300);
+  await own.evaluate(() => { const ok = document.querySelector('.ask-ov .ask-ok'); ok && ok.click(); });
+  check(await (async () => { for (let i = 0; i < 40; i++) { if (!(await raw('/__mem')).body.includes('"uf:' + l3 + ':')) return true; await sl(500); } return false; })(), 'without Undo the files are deleted once the Undo time is over');
   await con2.close();
 
   /* push when Team is closed: the switch in Settings stores this device's subscription for the team */
