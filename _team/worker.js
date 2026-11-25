@@ -112,8 +112,13 @@ export default {
 /* ---------- Cloudflare Access: the login length (owner setting) ---------- */
 const ACCESS_LEN = ['1h', '8h', '24h', '72h', '168h', '336h', '720h'];
 async function accessCfg(env, host, put) {
-  const base = 'https://api.cloudflare.com/client/v4/accounts/' + encodeURIComponent(env.CF_ACCOUNT_ID) + '/access/';
-  const cf = async (path, opt) => { const r = await fetch(base + path, Object.assign({ headers: { authorization: 'Bearer ' + env.CF_API_TOKEN, 'content-type': 'application/json' } }, opt || {}));
+  /* a pasted secret often brings a space, a line break or quotes along – "Invalid header value" (JP 2026-11-25 22:57) */
+  const clean = v => String(v || '').trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '');
+  const tok = clean(env.CF_API_TOKEN), acct = clean(env.CF_ACCOUNT_ID);
+  if (!/^[\w-]{20,}$/.test(tok)) throw new Error('CF_API_TOKEN looks wrong – paste it again');
+  if (!/^[a-f0-9]{32}$/.test(acct)) throw new Error('CF_ACCOUNT_ID looks wrong – 32 letters and digits');
+  const base = 'https://api.cloudflare.com/client/v4/accounts/' + acct + '/access/';
+  const cf = async (path, opt) => { const r = await fetch(base + path, Object.assign({ headers: { authorization: 'Bearer ' + tok, 'content-type': 'application/json' } }, opt || {}));
     const j = await r.json().catch(() => ({})); if (!r.ok || j.success === false) throw new Error((j.errors && j.errors[0] && j.errors[0].message) || ('Cloudflare ' + r.status)); return j.result; };
   const apps = await cf('apps?per_page=100'), app = (apps || []).filter(a => String(a.domain || '').replace(/\/.*$/, '') === host)[0];
   if (!app) throw new Error('no Access application for ' + host);
