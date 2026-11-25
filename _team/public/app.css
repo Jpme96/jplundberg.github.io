@@ -380,3 +380,10 @@ html.tz-wide .t-btn.wide[data-act="newMeeting"], html.tz-wide .t-btn.wide[data-a
 /* Team's tab above already says Projects: the card's own title is only for screen readers (live review 2026-11-25) */
 .dc-host .card-head h2.dc-h2-tab { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .dc-host .card-head:has(h2.dc-h2-tab) { justify-content: flex-end; }
+/* screens without the side menu (sign-in, unlock, "not in this team") stand in the middle of the window – the room kept
+   for the menu pushed them to the right (JP 2026-11-25 22:01) */
+@media (min-width: 1000px) { #app:has(> .t-screen) { margin-left: auto; margin-right: auto; } }
+html.tz-wide #app:has(> .t-screen) { margin-left: auto; margin-right: auto; }
+.t-screen .t-alt { margin-top: 10px; }
+.t-locknote { color: var(--warn, #b26b00); font-weight: 600; }
+.t-setrow select[data-lockmin], .t-setrow select[data-acclen] { flex: none; width: auto; min-width: 9em; }

@@ -252,13 +252,22 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (S.newTeam && me.isOwner) return screenSetup(true);
     if (!me.team) return me.isOwner ? screenSetup() : screen('<h1>' + L('No team yet', 'Ingen team ennå') + '</h1><p>' + L('The team has not been set up yet.', 'Teamet er ikke satt opp ennå.') + '</p>');
     if (me.member) {
+      var over = idleOver(); if (over) { S.lockedAfter = over; try { await kclear(); } catch (x) {} }   /* unused for longer than the team allows: the passcode again */
       if (!(await loadKeys())) return screenUnlock();
       try { sessionStorage.removeItem('team.join'); } catch (e) {}
       return startApp();
     }
     if (me.pending) return screenWaiting();
     if (joinCode()) return screenJoin();
-    screen('<h1>' + esc(me.team.name) + '</h1><p>' + L('You are signed in as ', 'Du er logget inn som ') + '<b>' + esc(me.email) + '</b>.</p><p>' + L('You are not in this team. Ask an admin for an invite link.', 'Du er ikke med i dette teamet. Be en admin om en invitasjonslenke.') + '</p>');
+    screen('<h1>' + esc(me.team.name) + '</h1><p>' + L('You are signed in as ', 'Du er logget inn som ') + '<b>' + esc(me.email) + '</b>.</p><p>' + L('You are not in this team. Ask an admin for an invite link.', 'Du er ikke med i dette teamet. Be en admin om en invitasjonslenke.') + '</p><button class="t-btn ghost t-alt" type="button" data-act="signout">' + L('Sign in with another e-mail', 'Logg inn med en annen e-post') + '</button>');
+  }
+  /* out of this address and the account's login both, so the e-mail page comes back and another e-mail can be tried (JP 2026-11-25 22:01) */
+  async function signOut() {
+    var u = ''; try { u = (await api('signout')).u || ''; } catch (x) {}
+    try { await kclear(); } catch (x) {}
+    try { await fetch('/cdn-cgi/access/logout', { credentials: 'same-origin', redirect: 'manual', cache: 'no-store' }); } catch (x) {}
+    try { localStorage.setItem('team.signedout', String(Date.now())); } catch (x) {}
+    location.href = /^https:\/\/[\w.-]+\.cloudflareaccess\.com\/cdn-cgi\/access\/logout$/.test(u) ? u : '/cdn-cgi/access/logout';
   }
   function screen(html) { stopPoll(); $app.innerHTML = '<div class="t-screen">' + html + '</div>'; if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 250); }
   function passFields() {
@@ -295,7 +304,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   function teamsBack() { return S.teams.length > 1 ? '<div class="t-top"><button class="t-back" type="button" data-act="teams">' + ic('back') + L('Your teams', 'Teamene dine') + '</button></div>' : ''; }
   function screenUnlock() {
-    screen(teamsBack() + '<p class="t-small">' + esc(S.me.team.name) + '</p><h1>' + L('Unlock Team on this device', 'Lås opp Team på denne enheten') + '</h1><p>' + L('Type your Team passcode once. After that this device remembers it.', 'Skriv inn Team-koden din én gang. Etter det husker denne enheten den.') + '</p>' +
+    var la = S.lockedAfter ? (LOCKS.filter(function (o) { return o[0] === S.lockedAfter; })[0] || null) : null;
+    screen(teamsBack() + '<p class="t-small">' + esc(S.me.team.name) + '</p><h1>' + L('Unlock Team on this device', 'Lås opp Team på denne enheten') + '</h1>' + (la ? '<p class="t-locknote">' + L('Locked after ' + la[1] + ' without use – the team asks for the passcode again.', 'Låst etter ' + la[2] + ' uten bruk – teamet ber om koden igjen.') + '</p>' : '') + '<p>' + L('Type your Team passcode once. After that this device remembers it.', 'Skriv inn Team-koden din én gang. Etter det husker denne enheten den.') + '</p>' +
       '<form class="t-form" data-form="unlock"><label class="t-lbl">' + L('Passcode', 'Kode') + '<input name="pass" type="password" autocomplete="current-password" required></label>' +
       '<p class="t-err" id="err"></p><button class="t-btn wide" type="submit">' + L('Unlock', 'Lås opp') + '</button>' +
       '<p class="t-small">' + L('Forgot it? An admin can remove you and send a new invite.', 'Glemt den? En admin kan fjerne deg og sende en ny invitasjon.') + '</p></form>');
@@ -334,6 +344,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     try {
       var priv = await openPriv(S.me.member.priv, f.pass.value, false);
       await kclear(); await kset('email', S.me.email); await kset('priv', priv);
+      try { localStorage.setItem('team.act.' + S.tid, String(Date.now())); } catch (x) {} S.lockedAfter = 0;
       if (await loadKeys()) return startApp();
       busy(f, false); setErr(L('Your key for the team is missing. Ask an admin.', 'Nøkkelen din til teamet mangler. Spør en admin.'));
     } catch (e) { busy(f, false); setErr(e && e.status ? failMsg(e) : L('Wrong passcode.', 'Feil kode.')); }
@@ -343,7 +354,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
 
   /* ---------- the app ---------- */
   async function startApp() {
-    document.documentElement.classList.add('unlocked'); waitChip(); flush().catch(function () {});
+    document.documentElement.classList.add('unlocked'); S.unlocked = true; actAt = 0; usedNow(); waitChip(); flush().catch(function () {});
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
     try { await Promise.all([pull(true), loadMembers(), loadAccess()]); S.offline = false; }
     catch (e) {
@@ -533,7 +544,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '9483cc937cdc';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '33137d8c0899';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -559,8 +570,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function draw() {
     palSync();
     if (!S.me || !S.me.member) return;
+    if (S.unlocked === false) return;   /* locked after a while without use: the unlock screen stays */
     if (selOpen()) { S.drawLater = true; return; }
-    S.stale = false;
+    S.stale = false; lockKeep();   /* the team's lock time, kept for the next start (read before the keys are opened) */
     clearTimeout(S.needsT); S.needsT = setTimeout(pushNeeds, 2500);   /* the contractors' lists follow the project */
     var h = location.hash.slice(1), body;
     if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? (({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.edit.from] || viewMeetings)() : viewMeeting(S.edit.id)) +   /* the page you were on stays behind the new meeting – it changed to Møter and flickered (JP 2026-11-25) */ '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
@@ -894,6 +906,27 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
 
   /* Settings: three tabs – You, The team (admins), Account – one thing per row, so it is calm (JP 2026-11-23 "clean the settings") */
+  /* the owner: how often the e-mail code is asked – one length for all of work.jplundberg.com (and the account's other logins),
+     set in Cloudflare by the Worker (/api/cflogin) – JP 2026-11-25 22:01 */
+  var ACCLEN = [['1h', '1 hour', '1 time'], ['8h', '8 hours', '8 timer'], ['24h', '1 day', '1 dag'], ['72h', '3 days', '3 dager'], ['168h', '1 week', '1 uke'], ['336h', '2 weeks', '2 uker'], ['720h', '30 days', '30 dager']];
+  async function fillAccess() {
+    var box = document.getElementById('accessBox'); if (!box) return;
+    box.innerHTML = '<p class="t-small">' + L('Reading the e-mail login …', 'Leser e-postinnloggingen …') + '</p>';
+    var r = null; try { r = await api('cflogin'); } catch (e) { r = { error: (e && e.message) || 'error' }; }
+    box = document.getElementById('accessBox'); if (!box) return;
+    var head = '<p class="t-h">' + L('E-mail login', 'E-postinnlogging') + '</p>';
+    if (r && r.set === false) { box.innerHTML = head + '<p class="t-small">' + L('Not set up yet: add the secrets CF_API_TOKEN and CF_ACCOUNT_ID to the Team Worker in Cloudflare (Settings → Variables and secrets).', 'Ikke satt opp ennå: legg til hemmelighetene CF_API_TOKEN og CF_ACCOUNT_ID på Team-workeren i Cloudflare (Settings → Variables and secrets).') + '</p>'; return; }
+    if (!r || r.error) { box.innerHTML = head + '<p class="t-small t-err">' + esc(L('Cloudflare did not answer: ', 'Cloudflare svarte ikke: ') + ((r && r.error) || '')) + '</p>'; return; }
+    var cur = r.app === r.org ? r.app : '';
+    box.innerHTML = head + '<div class="t-setrow"><span><b>' + L('Ask for the e-mail code again after', 'Be om e-postkoden igjen etter') + '</b><small>' + L('For everyone on work.jplundberg.com – all teams – and your own e-mail login to jplundberg.com.', 'For alle på work.jplundberg.com – alle team – og din egen e-postinnlogging på jplundberg.com.') + (r.pol ? ' ' + L('A rule in Cloudflare has its own length and wins over this.', 'En regel i Cloudflare har sin egen lengde og går foran denne.') : '') + '</small></span>' +
+      '<select data-acclen aria-label="' + esc(L('Ask for the e-mail code again after', 'Be om e-postkoden igjen etter')) + '">' + (cur ? '' : '<option value="" selected>' + esc(L('Mixed (' + r.app + ' / ' + r.org + ')', 'Blandet (' + r.app + ' / ' + r.org + ')')) + '</option>') + ACCLEN.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + L(o[1], o[2]) + '</option>'; }).join('') + '</select></div>';
+  }
+  async function setAccess(d) {
+    if (!d) return; toast(L('Saving in Cloudflare …', 'Lagrer i Cloudflare …'));
+    try { var r = await api('cflogin', { method: 'PUT', body: { d: d } }); if (r && r.ok) toast(L('Saved – new logins follow it', 'Lagret – nye innlogginger følger den')); else throw new Error((r && r.error) || ''); }
+    catch (e) { toast(L('Not saved: ', 'Ikke lagret: ') + ((e && e.message) || '')); }
+    fillAccess();
+  }
   function settingsSheet() {
     var adm = rank() >= 3, tabs = [['you', L('You', 'Deg')]].concat(adm ? [['team', L('The team', 'Teamet')]] : []).concat([['acct', L('Account', 'Konto')]]);
     var tab = tabs.some(function (x) { return x[0] === S.setTab; }) ? S.setTab : 'you', nOn = ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })());
@@ -905,17 +938,18 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<label class="t-switch t-inline"><span><b>' + L('Notifications while Team is open', 'Varsler mens Team er åpent') + '</b><small>' + L('On this device', 'På denne enheten') + '</small></span><input type="checkbox" data-act="notify"' + (nOn ? ' checked' : '') + '></label>'
       : tab === 'team' ?
         '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
-        palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() +
+        palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() + lockAdmin() +
         (S.me.isOwner ? '<p class="t-h">' + L('From /cmd', 'Fra /cmd') + '</p><div class="t-setrow"><span><b>' + L('Import from /cmd', 'Importer fra /cmd') + '</b><small>' + L('A project or all your lists, sent from /cmd (Work → Documentation → Send to Team)', 'Et prosjekt eller alle listene dine, sendt fra /cmd (Jobb → Dokumentasjon → Send til Team)') + '</small></span><button class="t-btn ghost sm" type="button" id="dcImport" data-act="dcImportPick">' + L('Choose file', 'Velg fil') + '</button><input type="file" accept=".json,application/json" data-dcimport hidden></div>' : '') +
         '<p class="t-h">' + L('Backup', 'Sikkerhetskopi') + '</p><div class="t-setrow"><span><b>' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div>'
-      : '<p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
-        '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
+      : (S.me.isOwner ? '<div id="accessBox" class="t-accbox"></div>' : '') + '<p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
+        '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout" data-act="signout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
         (S.me.isOwner ? '<button class="t-btn ghost sm t-danger t-setdel" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
       '<p class="t-small t-setfoot">' + L('What you write here is encrypted on your device before it is saved. The server only sees names, emails, roles and times.', 'Det du skriver her, krypteres på enheten din før det lagres. Serveren ser bare navn, e-post, roller og tidspunkter.') + '</p>';
     openSheet('<h2>' + L('Settings', 'Innstillinger') + '</h2>' +
       '<div class="t-settabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" class="t-settab' + (x[0] === tab ? ' on' : '') + '" aria-selected="' + (x[0] === tab) + '" data-act="settab" data-settab="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<div class="t-setbody">' + body + '</div>' +
       '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>', 'set');
+    if (tab === 'acct' && S.me.isOwner) fillAccess();
   }
   /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
   function renameSheet() {
@@ -1551,6 +1585,28 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     return '<label class="t-switch"><span><b>' + L('New project flow', 'Ny prosjektflyt') + '</b><small>' + (on ? L('On – projects go Requirements → Document plan → Delivery → Comparison → Final check.', 'På – prosjektene går Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll.') : L('Off – projects show the old view (Requirements, Received, Report).', 'Av – prosjektene viser den gamle visningen (Krav, Mottak, Rapport).')) + '</small></span><input type="checkbox" data-flowteam' + (on ? ' checked' : '') + '></label>';
   }
   async function flowSet(on) { if (await putRec('cfg', 'cfgprojflow', { on: !!on }, L('Project flow', 'Prosjektflyt'))) { if (S.sheet) settingsSheet(); draw(); } }
+  /* ---------- lock after a while without use (JP 2026-11-25 22:01) ----------
+     An admin picks per team how long a device may sit unused before the Team passcode is needed again (cfg record cfgidlelock,
+     kind cfg – only admins write it, checked by the Worker). Each device keeps the choice and the time it was last used in
+     localStorage per team; past the limit it forgets its keys for that team (kclear) and shows the unlock screen. "Never" is
+     how it always was: the device remembers the passcode. */
+  var LOCKS = [[0, 'Never', 'Aldri'], [15, '15 minutes', '15 minutter'], [60, '1 hour', '1 time'], [240, '4 hours', '4 timer'], [480, '8 hours', '8 timer'], [1440, '1 day', '1 dag'], [10080, '7 days', '7 dager']];
+  function lockMin() { var r = S.recs && S.recs.cfgidlelock; if (r && !r.del && r.d) return Math.max(0, +r.d.m || 0); try { return +localStorage.getItem('team.idle.' + S.tid) || 0; } catch (e) { return 0; } }
+  function lockKeep() { try { localStorage.setItem('team.idle.' + S.tid, String(lockMin())); } catch (e) {} }
+  var actAt = 0;
+  function usedNow() { var n = Date.now(); if (n - actAt < 20000 || !S.unlocked) return; actAt = n; try { localStorage.setItem('team.act.' + S.tid, String(n)); } catch (e) {} }
+  function idleOver() { var m = 0, a = 0; try { m = +localStorage.getItem('team.idle.' + S.tid) || 0; a = +localStorage.getItem('team.act.' + S.tid) || 0; } catch (e) {} return m > 0 && a > 0 && Date.now() - a > m * 60000 ? m : 0; }
+  async function lockIdle() { var m = idleOver(); if (!m || !S.unlocked) return; S.unlocked = false; S.lockedAfter = m; try { await kclear(); } catch (e) {} if (S.sheet) closeSheet(); stopPoll(); screenUnlock(); }
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, usedNow, { passive: true, capture: true }); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) lockIdle(); });
+  setInterval(lockIdle, 30000);
+  function lockAdmin() {
+    if (rank() < 3) return '';
+    var m = lockMin();
+    return '<p class="t-h">' + L('Passcode', 'Kode') + '</p><div class="t-setrow"><span><b>' + L('Ask for the passcode again after', 'Be om koden igjen etter') + '</b><small>' + L('How long a device can sit unused before the Team passcode is needed again. For everyone in this team.', 'Hvor lenge en enhet kan stå ubrukt før Team-koden trengs igjen. For alle i dette teamet.') + '</small></span>' +
+      '<select data-lockmin aria-label="' + esc(L('Ask for the passcode again after', 'Be om koden igjen etter')) + '">' + LOCKS.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === m ? ' selected' : '') + '>' + L(o[1], o[2]) + '</option>'; }).join('') + '</select></div>';
+  }
+  async function lockSet(m) { if (await putRec('cfg', 'cfgidlelock', { m: m }, L('Passcode lock', 'Kodelås'))) { try { localStorage.setItem('team.idle.' + S.tid, String(m)); } catch (e) {} if (S.sheet) settingsSheet(); toast(L('Saved for everyone in the team', 'Lagret for alle i teamet')); } }
   function clockAdmin() {
     if (rank() < 3) return '';
     var c = clockCfg();
@@ -1604,6 +1660,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'reload') return location.reload();
     if (a === 'close') return closeSheet();
     if (a === 'settings') return settingsSheet();
+    if (a === 'signout') { e.preventDefault(); return signOut(); }
     if (a === 'dcImportPick') { var fi = document.querySelector('input[data-dcimport]'); if (fi) fi.click(); return; }
     if (a === 'settab') { S.setTab = t.dataset.settab; settingsSheet(); return; }
     if (a === 'pal') { if (rank() < 3) return; var pid = t.dataset.pal; if (await putRec('cfg', 'cfgpalette', { p: pid }, L('Team colours', 'Teamets farger'))) { palSync(); if (S.sheet) settingsSheet(); draw(); } return; }
@@ -1691,6 +1748,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (t.dataset.accpp && S.accEdit) { var ap = t.dataset.accpp.split('|'), o = S.accEdit.pp[ap[0]] || (S.accEdit.pp[ap[0]] = {}); if (t.value) o[ap[1]] = t.value; else delete o[ap[1]]; if (!Object.keys(o).length) delete S.accEdit.pp[ap[0]]; S.accOpen = true; draw(); return; }
     if (t.hasAttribute('data-dtoff')) return dtabsSet(t.dataset.dtoff, t.checked);
     if (t.hasAttribute('data-clockteam')) return clockSet({ on: t.checked });
+    if (t.hasAttribute('data-lockmin')) return lockSet(+t.value || 0);
+    if (t.hasAttribute('data-acclen')) return setAccess(t.value);
     if (t.hasAttribute('data-flowteam')) return flowSet(t.checked);
     if (t.dataset.clockm) return clockSet({ who: t.dataset.clockm, allow: t.checked });
     if (t.hasAttribute('data-push')) { setPush(t.checked).then(function () { t.checked = pushOn(); }); return; }

@@ -82,6 +82,18 @@ export default {
       if (id !== 'team') await dir.fetch(new Request('https://team/dir/del?id=' + id, { method: 'POST', headers: h }));
       return json({ ok: true });
     }
+    /* how often the e-mail code is asked (JP 2026-11-25 22:01, owner only): the Access app's own session and the account's
+       login session together decide it, so both are set to the same length. Needs two secrets in the Cloudflare dashboard:
+       CF_API_TOKEN (Access: Apps and Policies – Edit, Access: Organizations – Edit) and CF_ACCOUNT_ID. Never in the repo. */
+    /* signing out of both: this address and the account's own login – otherwise Cloudflare signs the same e-mail straight back in
+       and you can't try another (JP 2026-11-25 22:01) */
+    if (url.pathname === '/api/signout') return json({ u: String(env.TEAM_DOMAIN).trim().replace(/\/+$/, '') + '/cdn-cgi/access/logout' });
+    if (url.pathname === '/api/cflogin') {
+      if (email !== owner) return json({ error: 'only the owner' }, 403);
+      if (!env.CF_API_TOKEN || !env.CF_ACCOUNT_ID) return json({ set: false });
+      try { return json(await accessCfg(env, url.hostname, request.method === 'PUT' ? await request.json().catch(() => ({})) : null)); }
+      catch (e) { return json({ set: true, error: String(e && e.message || e).slice(0, 200) }, 502); }
+    }
     /* the app's error lines (masked in the app and again here; never who it was) – kept in 'dir' for 21 days */
     if (url.pathname === '/api/errlog' && request.method === 'POST') {
       const eb = await request.text(); if (eb.length > 40000) return json({ error: 'too big' }, 413);
@@ -96,6 +108,30 @@ export default {
     return stub.fetch(new Request('https://team' + url.pathname + url.search, { method: request.method, headers: h, body }));
   }
 };
+
+/* ---------- Cloudflare Access: the login length (owner setting) ---------- */
+const ACCESS_LEN = ['1h', '8h', '24h', '72h', '168h', '336h', '720h'];
+async function accessCfg(env, host, put) {
+  const base = 'https://api.cloudflare.com/client/v4/accounts/' + encodeURIComponent(env.CF_ACCOUNT_ID) + '/access/';
+  const cf = async (path, opt) => { const r = await fetch(base + path, Object.assign({ headers: { authorization: 'Bearer ' + env.CF_API_TOKEN, 'content-type': 'application/json' } }, opt || {}));
+    const j = await r.json().catch(() => ({})); if (!r.ok || j.success === false) throw new Error((j.errors && j.errors[0] && j.errors[0].message) || ('Cloudflare ' + r.status)); return j.result; };
+  const apps = await cf('apps?per_page=100'), app = (apps || []).filter(a => String(a.domain || '').replace(/\/.*$/, '') === host)[0];
+  if (!app) throw new Error('no Access application for ' + host);
+  if (put) {
+    const d = String(put.d || ''); if (ACCESS_LEN.indexOf(d) < 0) throw new Error('bad length');
+    const org = await cf('organizations');
+    const o2 = Object.assign({}, org, { session_duration: d }); ['created_at', 'updated_at'].forEach(k => delete o2[k]);
+    await cf('organizations', { method: 'PUT', body: JSON.stringify(o2) });
+    const a2 = Object.assign({}, app, { session_duration: d }); ['id', 'aud', 'created_at', 'updated_at', 'uid'].forEach(k => delete a2[k]);
+    if (Array.isArray(app.policies)) a2.policies = app.policies.map(p => ({ id: p.id, precedence: p.precedence }));
+    await cf('apps/' + app.id, { method: 'PUT', body: JSON.stringify(a2) });
+    return { set: true, ok: true, d: d };
+  }
+  const org = await cf('organizations');
+  /* a policy with its own length wins over the app's: say so, then the owner knows why a change doesn't show */
+  const pol = (app.policies || []).some(p => p.session_duration && p.session_duration !== app.session_duration);
+  return { set: true, app: app.session_duration || '24h', org: org.session_duration || '24h', pol: pol, choices: ACCESS_LEN };
+}
 
 /* ---------- the team's storage: one Durable Object, so every change is in order and never lost ---------- */
 export class TeamStore {

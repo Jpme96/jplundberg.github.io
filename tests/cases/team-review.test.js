@@ -81,6 +81,31 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const bw = await big.evaluate(() => { const b = document.querySelector('[data-act=newMeeting]'); return { b: Math.round(b.getBoundingClientRect().width), p: Math.round(b.parentElement.getBoundingClientRect().width) }; });
   check(bw.b < bw.p * 0.6, 'New meeting is a button, not a bar across a big screen ' + JSON.stringify(bw));
   await big.close();
+  /* JP 2026-11-25 22:01: an admin sets how long a device may sit unused; past it the passcode again (nobody loses access) */
+  await own.evaluate(() => { location.hash = '#overview'; }); await sl(800);
+  await own.waitForSelector('[data-act=settings]'); await own.evaluate(() => document.querySelector('[data-act=settings]').click());
+  await own.waitForSelector('[data-settab=team]', { timeout: 10000 }); await own.evaluate(() => document.querySelector('[data-settab=team]').click()); await sl(500);
+  const hasLock = await own.evaluate(() => { const s = document.querySelector('select[data-lockmin]'); if (!s) return false; s.value = '15'; s.dispatchEvent(new Event('change', { bubbles: true })); return true; }); await sl(1500);
+  check(hasLock && await own.evaluate(() => localStorage.getItem('team.idle.' + (localStorage.getItem('team.cur') || 'team')) === '15'), 'an admin sets "ask for the passcode again after 15 minutes" for the team');
+  await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); });
+  await own.evaluate(() => { const t = localStorage.getItem('team.cur') || 'team'; localStorage.setItem('team.act.' + t, String(Date.now() - 20 * 60000)); document.dispatchEvent(new Event('visibilitychange')); }); await sl(1200);
+  const lk = await own.evaluate(() => ({ form: !!document.querySelector('form[data-form=unlock]'), note: (document.querySelector('.t-locknote') || {}).textContent || '' }));
+  check(lk.form && /15 minutes/.test(lk.note), 'unused for longer: Team asks for the passcode again and says why ' + JSON.stringify(lk));
+  await own.type('form[data-form=unlock] input[name=pass]', 'owner-pass-1'); await own.click('form[data-form=unlock] button[type=submit]');
+  check(await until(own, () => !!document.querySelector('.t-tabs'), 15000), 'the passcode opens it again – same team, same role');
+  await own.reload(); check(await until(own, () => !!document.querySelector('.t-tabs'), 15000), 'used just now: a reload opens without the passcode');
+  /* the owner's e-mail login setting: says what is missing until the Cloudflare secrets are added */
+  await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); }); await sl(400);
+  await own.evaluate(() => { const b = document.querySelector('[data-settab=acct]'); if (b) b.click(); }); await sl(1200);
+  check(await own.evaluate(() => /CF_API_TOKEN/.test((document.getElementById('accessBox') || {}).textContent || '')), 'the owner sees the e-mail login setting (not set up here)');
+  await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); });
+  /* someone signed in with an e-mail that isn't in the team: the message in the middle, and a way to try another e-mail */
+  const stranger = await (await b.createBrowserContext()).newPage(); await stranger.setViewport({ width: 1500, height: 900 });
+  await stranger.setCookie({ name: 'who', value: 'wrong%40madeup.no', domain: 'localhost', path: '/' });
+  await stranger.goto(T); await until(stranger, () => /not in this team|ikke med i dette teamet/.test(document.body.innerText), 15000);
+  const st = await stranger.evaluate(() => { const s = document.querySelector('.t-screen'), r = s.getBoundingClientRect(); return { mid: Math.round((r.left + r.right) / 2), w: innerWidth, btn: !!document.querySelector('.t-screen [data-act=signout]') }; });
+  check(Math.abs(st.mid - st.w / 2) < 40 && st.btn, 'not in the team: the message is in the middle, with "Sign in with another e-mail" ' + JSON.stringify(st));
+  await stranger.close();
   /* deleting asks with a button that says Delete (review 17) */
   await own.goto(T + '#m=' + mid); await own.waitForSelector('[data-act=edit]');
   await own.evaluate(() => { window.__askBtn = ''; const c = window.Ask.confirm; window.Ask.confirm = (m, o) => { window.__askBtn = (o && o.ok) || 'OK'; return c.call(window.Ask, m, o); }; });
