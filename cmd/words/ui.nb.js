@@ -4221,6 +4221,7 @@ I18N.add({
   "ui.dx-drop-help": ["PDFs, drawings (.dwg), Office files, photos – or one .zip. Nothing is uploaded; everything stays on this device.", "PDF-er, tegninger (.dwg), Office-filer, bilder – eller én .zip. Ingenting lastes opp; alt blir på denne enheten."],
   "ui.dx-fv-loading": ["Opening …", "Åpner …"],
   "ui.dx-fv-share": ["Share", "Del"],
+  "ui.dx-ren-upl": ["Give names · {n} files from the upload link", "Gi navn · {n} filer fra opplastingslenken"],
   "ui.dx-fv-none": ["No preview for this kind of file – download it to open it.", "Ingen forhåndsvisning for denne filtypen – last den ned for å åpne den."],
   "ui.dx-fv-more": ["Showing the first {n} of {t} pages – download for the rest.", "Viser de første {n} av {t} sidene – last ned for resten."],
   "ui.dx-fv-bad": ["Could not show this PDF – download it to open it.", "Kunne ikke vise denne PDF-en – last den ned for å åpne den."],

@@ -375,7 +375,7 @@
   /* Give files the right names (JP 2026-11-16 20:43 – "we had an automatic namer earlier"): the files sit in a project of their own that
      only lives here (`TOOL.p`, never saved), so the file naming – suggestions from the name and the PDF's text, the naming rules for
      documents, photos and drawings – works on them as it does in Received; you download them renamed as a .zip */
-  var TOOL = { p: null, blobs: {}, upl: {} };   /* upl: a file that came on an upload link → [link, file] – the link's copy goes once it is downloaded */
+  var TOOL = { p: null, blobs: {}, upl: {} }, renHere = false;   /* renHere: the naming popup opened from Team's Opplastinger – it is moved out to the page you are on (#dcPopHold) */   /* upl: a file that came on an upload link → [link, file] – the link's copy goes once it is downloaded */
   /* the tool's own rules, codes and building number stay on this device between visits (localStorage – no files, no names of files) */
   var TKEY = 'dcn.tool';
   function toolKeep() { var p = TOOL.p; try { localStorage.setItem(TKEY, JSON.stringify({ nrules: p.nrules, nuse: p.nuse, ncodes: p.ncodes, bid: p.bid, pid: p.pid, pname: p.pname, no: p.no })); } catch (e) {} }
@@ -444,7 +444,7 @@
   function renPanel() {
     var N = naming(), p = toolP(), F = p.files, ok = 0, moved = 0;
     if (N) F.forEach(function (f) { if (f.orig && f.orig !== f.name) moved++; else if (N.ready(p, f)) ok++; });
-    var h = '<section class="dx-panel dx-ren"><div class="dx-ph"><h3 class="fdv-h">' + esc(k('ui.dx-t-ren', 'Give files the right names')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
+    var h = '<section class="dx-panel dx-ren"><div class="dx-ph"><h3 class="fdv-h">' + esc(renHere ? k('ui.dx-ren-upl', 'Give names · {n} files from the upload link', { n: F.length }) : k('ui.dx-t-ren', 'Give files the right names')) + '</h3><button type="button" class="icon-btn sm" data-dxtool="" aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
       '<p class="muted dc-help">' + esc(k('ui.dx-ren-help2', 'Pick the files or one .zip. Each file gets a suggested NS 3451 code and document type from its name and – for PDFs – its text; the naming rules (documents, photos, drawings) build the new name. Check, fix, then download them renamed. Nothing is saved or sent.')) + '</p>' +
       (F.length ? '' : dropBox('data-dxrendrop', '<label class="pill-btn dc-file"><i class="bi bi-upload"></i> ' + esc(k('ui.dc-pick-files', 'Choose files')) + '<input type="file" multiple data-dxrenf hidden></label>', '', k('ui.dx-drop-note', 'PDFs, photos, drawings – or one .zip. Nothing is saved or sent.')));
     if (!F.length) return h + '</section>';
@@ -536,7 +536,9 @@
     dlOut(new File([kravXlsxBby(pl)], 'Vedlegg 7 ' + k('ui.dc-hand-plan', 'Document plan') + ' ' + today() + '.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); toolUpDone(p.files);
   }
   window.DocTools = {   /* for Team's Opplastinger: open the naming tool with files, pack files, make a project */
-    ren: function (fs) { open = null; ropen = null; xtool = 'ren'; draw(); window.scrollTo(0, 0); return renAdd(fs); },
+    ren: function (fs) { open = null; ropen = null; xtool = 'ren'; renHere = false; draw(); window.scrollTo(0, 0); return renAdd(fs); },
+    /* Team's Opplastinger (JP 2026-11-25 "it just doesn't pop up"): the same naming popup, right over the page you are on, with only the link's files */
+    renHere: function (fs) { var p = toolP(); p.files = []; TOOL.blobs = {}; TOOL.upl = {}; xtool = 'ren'; renHere = true; draw(); return renAdd(fs).then(function () { draw(); }); },
     zip: function (files) { return zipStore(files); },
     newProject: function (name) { var t = Fe.tools(), id = uid(); t.dctl = (t.dctl || []).concat([{ id: id, name: String(name || '').slice(0, 120), made: new Date().toISOString(), lines: [], files: [] }]); Fe.saveTools(t); return id; }
   };
@@ -975,7 +977,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = 'a23ecf4371';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '285d14d63a';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; } };
@@ -1140,7 +1142,7 @@
     if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
     lastDraw = now;
-    var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
+    var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae) || (document.getElementById('dcPopHold') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
     if (!open && ropen && flowOn()) { var rq0 = krav(ropen), cq0 = rq0 && ctlOf(rq0); if (!cq0 && rq0 && can('newp')) { cq0 = proj(projFromKrav(rq0)); if (cq0 && !(rq0.lines || []).length) { open = cq0.id; kinOpen(cq0); open = null; } }   /* a list without a project becomes one: in the five steps every list is a project (JP 18:37) */
       if (cq0) { var kk = kin, kr = ropen; open = cq0.id; setTab('krav'); if (kk) { kin = kk; ropen = kr; } try { history.replaceState({ dc: cq0.id, from: 'list' }, '', location.pathname + location.search + '#dc=' + cq0.id); } catch (e) {} } }   /* a project's requirements live in its step 1 (JP 2026-11-24) */
     var p = open && proj(open);
@@ -1153,7 +1155,11 @@
     el.classList.toggle('dc-gone', !!rp && !!er);
     var ts0 = el.querySelector('.dx-tsheet'), tsTop = ts0 ? ts0.scrollTop : 0;
     el.innerHTML = p ? full(p) : rp && er ? '' : home();
-    var ts1 = el.querySelector('.dx-tsheet'); if (ts1 && tsTop) ts1.scrollTop = tsTop;   /* a redraw keeps the popup where you were */
+    var hold = document.getElementById('dcPopHold'), hs0 = hold && hold.querySelector('.dx-tsheet'); if (hs0) tsTop = hs0.scrollTop || tsTop;
+    if (renHere && xtool !== 'ren') renHere = false;
+    if (renHere) { if (!hold) { hold = document.createElement('div'); hold.id = 'dcPopHold'; hold.className = 'dc-host'; document.body.appendChild(hold); } var mv = el.querySelector('.dx-tov'); hold.innerHTML = ''; if (mv) hold.appendChild(mv); if (window.I18N && I18N.apply) try { I18N.apply(hold); } catch (e) {} }
+    else if (hold && hold.firstChild) hold.innerHTML = '';
+    var ts1 = el.querySelector('.dx-tsheet') || (hold && hold.querySelector('.dx-tsheet')); if (ts1 && tsTop) ts1.scrollTop = tsTop;   /* a redraw keeps the popup where you were */
     document.documentElement.classList.toggle('dcn-modal', !!ts1 || !!document.querySelector('.dcn-ov'));
     if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
     clampHelp(el);
@@ -2199,7 +2205,7 @@
       toast('<i class="bi bi-people"></i> ' + esc(k('ui.dc-sent-team', 'Saved. In Team: Documents → Import from /cmd.')) + ' <a href="https://work.jplundberg.com/#docs">' + esc(k('ui.open-team', 'Open Team')) + '</a>');
       return;
     }
-    var b, t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov')) return;
+    var b, t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov, #dcPopHold')) return;
     if (t.closest('[data-drnew]')) { radding = true; draw(); var i0 = document.querySelector('[data-drform] input'); if (i0) i0.focus(); return; }
     if (t.closest('[data-drcancel]')) { radding = false; draw(); return; }
     if ((b = t.closest('[data-dropen]'))) { rgo(b.dataset.dropen); return; }
@@ -2404,7 +2410,7 @@
   document.addEventListener('dragleave', function (e) { var pp = e.target.closest && e.target.closest('.dx-plans'); if (pp && !pp.contains(e.relatedTarget)) pp.classList.remove('dx-dragon'); });
   document.addEventListener('drop', function (e) { var r = e.target.closest && e.target.closest('.dx-ren'); if (!r || (e.target.closest && e.target.closest('.dx-drop'))) return; e.preventDefault(); r.classList.remove('dx-dragon'); var fl = [].slice.call((e.dataTransfer && e.dataTransfer.files) || []); if (fl.length) renAdd(fl); });
   document.addEventListener('change', function (e) {
-    var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov')) return;
+    var t = e.target; if (!t.closest || !t.closest('#wkDocCtl, #wkDocReq, .dcn-ov, #dcPopHold')) return;
     if (t.hasAttribute('data-dctfrom') && tform) { tformRead(); var fr = tformFrom(t.value); tform.from = t.value; tform.codes = fr.codes; tform.x = fr.x; blurIn(); draw(); return; }
     if (t.dataset.dctc && tform) { if (t.checked) tform.codes[t.dataset.dctc] = 1; else delete tform.codes[t.dataset.dctc]; var cn = document.querySelector('[data-dctn]'); if (cn) cn.textContent = k('ui.dx-n-picked', '{n} picked', { n: Object.keys(tform.codes).length }); var dd = t.closest('details'), sp = dd && dd.querySelector('.dc-pn'); if (sp) sp.textContent = dd.querySelectorAll('[data-dctc]:checked').length || ''; return; }
     if (t.hasAttribute('data-dxrenf')) { var fl = [].slice.call(t.files || []); t.value = ''; addOpen = ''; if (fl.length) renAdd(fl); return; }

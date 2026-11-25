@@ -1536,9 +1536,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         if (a === 'upzip') { var parts = []; for (var ui = 0; ui < ufs.length; ui++) parts.push([ufs[ui].name, new Uint8Array(await ufs[ui].arrayBuffer())]);
           saveFile(new File([window.DocTools.zip(parts)], (ur.d.label || L('Upload link', 'Opplastingslenke')).replace(/[\\/:*?"<>|]+/g, '-') + '.zip', { type: 'application/zip' })); await upDone(ur.d.lid, ufs.map(function (f) { return f._upf; })); draw(); }
         else { if (!ufs.length) { toast(L('Could not fetch the files – try again.', 'Klarte ikke å hente filene – prøv igjen.')); t.disabled = false; return; }
-          S.dtab = 'doc'; if (location.hash !== '#docs') location.hash = '#docs'; draw();
-          /* wait until Documentation is really on screen (its scripts load the first time, and the hash change redraws) – a fixed 300 ms was too short on a real connection (JP 2026-11-25) */
-          var tries = 0; (function go2() { var host = document.getElementById('wkDocCtl'); if (window.DocTools && host && !host.hidden && host.childElementCount && location.hash === '#docs') { window.DocTools.ren(ufs); return; } if (++tries > 100) { toast(L('Could not open the naming tool – try again.', 'Klarte ikke å åpne navneverktøyet – prøv igjen.')); return; } setTimeout(go2, 150); })(); }
+          /* the naming popup opens right here over Opplastinger, with only the link's files (JP 2026-11-25 "it just doesn't pop up") */
+          var tries = 0; await new Promise(function (res) { (function go2() { if ((window.DocTools && window.DocTools.renHere) || ++tries > 60) return res(); setTimeout(go2, 150); })(); });
+          if (!window.DocTools || !window.DocTools.renHere) { toast(L('Could not open the naming – try again.', 'Klarte ikke å åpne navngivingen – prøv igjen.')); t.disabled = false; return; }
+          await window.DocTools.renHere(ufs); }
       } catch (x) { toast(failMsg(x)); } t.disabled = false; return; }
     if (a === 'upproj') { var pr0 = projects();
       openSheet('<h2>' + L('Put in a project', 'Legg i prosjekt') + '</h2><p class="t-small">' + L('The files go into the project’s Levering, marked as new.', 'Filene legges i prosjektets Levering, merket som nye.') + '</p>' +

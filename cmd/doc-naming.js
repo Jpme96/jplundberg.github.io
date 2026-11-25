@@ -595,7 +595,7 @@
   }
   /* the rule editor is a popup (JP 2026-11-17 "pop up a screen instead of … scroll all the way down"): drawn with the rules, then moved to <body> so no card clips it */
   function lift() { setTimeout(function () { var L = document.querySelectorAll('body > .dcn-ov.dcn-lifted'), F = [].filter.call(document.querySelectorAll('.dcn-ov'), function (x) { return x.parentNode !== document.body; });
-    if (!F.length && (nsel || nfo) && document.querySelector('#wkDocCtl .dcn-files, #wkDocCtl .dcn-rules')) return; [].forEach.call(L, function (x) { x.remove(); }); F.forEach(function (x) { x.classList.add('dcn-lifted'); document.body.appendChild(x); }); document.documentElement.classList.toggle('dcn-modal', !!F.length); }, 0); }
+    if (!F.length && (nsel || nfo) && document.querySelector('#wkDocCtl .dcn-files, #wkDocCtl .dcn-rules, #dcPopHold .dcn-files')) return; [].forEach.call(L, function (x) { x.remove(); }); F.forEach(function (x) { x.classList.add('dcn-lifted'); document.body.appendChild(x); }); document.documentElement.classList.toggle('dcn-modal', !!F.length); }, 0); }
   function editor(p, r) {
     var b = exName(p, r), seg = function (attr, list, cur) { return '<span class="dcn-seg" role="group">' + list.map(function (x) { return '<button type="button" ' + attr + '="' + esc(x[0]) + '" aria-pressed="' + (x[0] === cur) + '">' + esc(x[1]) + '</button>'; }).join('') + '</span>'; };
     var h = '<div class="dcn-ed2"><label class="dcn-fl"><span>' + esc(k('ui.dcn-rname', 'Rule name')) + '</span><input data-dcnr="n" value="' + esc(r.n) + '" maxlength="60"></label>' +
@@ -756,7 +756,7 @@
     on('keydown', function (e) { if (e.key !== 'Escape' || !document.querySelector('.dcn-ov')) return; if (nsel) { nsel = ''; npi = -1; draw(); } else if (nfo) { nfo = ''; draw(); } });
     /* naming events (the Files tab) */
     on('change', function (e) {
-      var t = e.target; if (!t.matches || !t.closest('#wkDocCtl, .dcn-ov')) return; var v = t.value, fid;
+      var t = e.target; if (!t.matches || !t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) return; var v = t.value, fid;
       if (v === '__own' && t.dataset.dcncode) { nown = t.dataset.dcncode + ':code'; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.matches && t.matches('[data-dcnpk]')) { pkSet([t.dataset.dcnpk], t.checked); draw(); return; }
       if (t.matches && t.matches('[data-dcnpkall]')) { var pq = proj(cur()) || {}, FQ = (pq.files || []).filter(function (f) { return !f.nf && (!nflt || fstate(pq, f) === nflt); }); pkSet(FQ.map(function (f) { return f.id; }), t.checked); draw(); return; }
@@ -778,7 +778,7 @@
     });
     on('toggle', function (e) { if (e.target.matches && e.target.matches('[data-dcnrules]')) nopen = e.target.open; }, true);
     on('click', function (e) {
-      var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov')) return;
+      var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) return;
       var fileOf = function (p, id) { return (p.files || []).filter(function (x) { return x.id === id; })[0]; };
       if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) rename(p, f, nb2.plain + ext(f.orig || f.name)); }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var nxf = PF[j + 1] || PF.filter(function (x) { return x.id !== id && fstate(proj(cur()), x) !== 'done'; })[0]; if (nxf) nfo = nxf.id; }   /* renamed – on to the next file */ draw(); return; }
       /* "Fill in floor and room first": takes you to the first empty field of that file (JP 2026-11-24) */

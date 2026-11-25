@@ -781,6 +781,7 @@ window.DC_NB = {
 "ui.dx-ren-plan": "Dokumentplan (Vedlegg 7)",
 "ui.dx-ren-plan-n": "Dokumentplan fra filene",
 "ui.dx-ren-reading": "leser PDF-ene …",
+"ui.dx-ren-upl": "Gi navn · {n} filer fra opplastingslenken",
 "ui.dx-ren-useall": "Bruk nytt navn på {n} klare",
 "ui.dx-ren-used": "{n} filer har fått nytt navn",
 "ui.dx-ren-zip": "Filer med nye navn",
