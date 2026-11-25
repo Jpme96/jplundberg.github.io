@@ -321,3 +321,14 @@ select[multiple] { background-image: none; padding-right: 14px; }
 .t-setbody .t-h { margin: 22px 0 4px; }
 .t-setbody .t-clockppl .t-switch { border-bottom: 0; padding: 8px 0; }
 .t-setbody .t-setbtns { margin-top: 12px; }
+
+/* calm opening for Team's own sheets and a soft fade between pages (JP 2026-11-25) – see the same rules for Documentation in dc.css */
+@keyframes t-ov-in { from { opacity: 0; } }
+@keyframes t-sh-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes t-view-in { from { opacity: 0; } }
+.t-sheetbg, .t-edov { animation: t-ov-in .18s ease-out both; }
+.t-sheetbg > .t-sheet, .t-edov > .t-edsheet { animation: t-sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
+#app.t-enter > :not(.t-tabs) { animation: t-view-in .2s ease-out both; }
+.ov-still, .ov-still > * { animation: none !important; }
+html, body { scrollbar-gutter: stable; }   /* a page that grows past the screen doesn't jump sideways when its scrollbar appears */
+@media (prefers-reduced-motion: reduce) { .t-sheetbg, .t-edov, .t-sheetbg > .t-sheet, .t-edov > .t-edsheet, #app.t-enter > :not(.t-tabs) { animation: none !important; } }

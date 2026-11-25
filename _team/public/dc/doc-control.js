@@ -980,7 +980,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '12f3698048';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '8376027311';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; }, projects: function () { return projects(); } };
@@ -1124,7 +1124,7 @@
   document.addEventListener('focusout', function () { if (drawLater) setTimeout(function () { if (drawLater && !busyField()) { drawLater = false; draw(); } }, 60); });
   /* redraws that come by themselves (each saved file, each finished check, a sync) are gathered: at most one every 0.8 s, the last one always
      comes – uploading many files made the page flicker (JP 2026-11-17 13:32); what you do yourself still draws at once */
-  var lastDraw = 0, drawT = 0;
+  var lastDraw = 0, drawT = 0; var VKEY = null, VKT = 0;
   var tovDown = null;
   document.addEventListener('pointerdown', function (e) { tovDown = e.target; }, true);
   document.addEventListener('click', function (e) { var o = e.target; if (o && o.matches && o.matches('[data-dxtov]') && tovDown === o && xtool) { xtool = null; draw(); } });
@@ -1138,9 +1138,24 @@
   document.addEventListener('drop', function (e) { document.documentElement.classList.remove('dc-dragging'); var pr = dropOk(e); if (!pr) return; e.preventDefault(); var fl = [].slice.call(e.dataTransfer.files || []); if (fl.length) { addOpen = ''; importFiles(pr.id, fl); } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && xtool && document.querySelector('[data-dxtov]') && !document.querySelector('.dcn-ov, .xv')) { xtool = null; draw(); } });
   ['pointerdown', 'click', 'keydown', 'change', 'input', 'drop'].forEach(function (ev) { document.addEventListener(ev, function () { window.__dcUser = Date.now(); }, true); });
+  /* an open dropdown is never redrawn under you (JP 2026-11-25): Team has the tracker (window.__selOpen); in /cmd this page keeps its own */
+  if (!HOST) (function () { var SO = null, ST = 0, done = function () { if (!SO) return; SO = null; setTimeout(function () { window.dispatchEvent(new Event('sel:done')); }, 30); };
+    window.__selOpen = function () { return !!(SO && SO.isConnected && document.activeElement === SO && Date.now() - ST < 30000); };
+    document.addEventListener('pointerdown', function (e) { var sl = e.target && e.target.closest && e.target.closest('select'); if (sl) { SO = sl; ST = Date.now(); } else done(); }, true);
+    document.addEventListener('keydown', function (e) { var t = e.target; if (t && t.tagName === 'SELECT' && /^( |Enter|ArrowDown|ArrowUp|F4)$/.test(e.key)) { SO = t; ST = Date.now(); } else if (e.key === 'Escape' || e.key === 'Tab') done(); }, true);
+    document.addEventListener('change', function (e) { if (e.target === SO) done(); }, true);
+    document.addEventListener('focusout', function (e) { if (e.target === SO) done(); }, true); })();
+  window.addEventListener('sel:done', function () { if (drawLater) { drawLater = false; draw(); } });
+  if (!HOST) (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {};
+    var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
+    var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
+    new MutationObserver(function (ms) { ms.forEach(function (m) {
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (open[k] || (gone[k] && Date.now() - gone[k] < 600)) o.classList.add('ov-still'); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
+    }); }).observe(document.body, { childList: true, subtree: true }); })();   /* the calm popup opening without replays – Team has its own for its whole page */
   function draw() {
     var el = document.getElementById('wkDocCtl'); if (!el) return;
-    if (busyField()) { drawLater = true; return; }
+    if (busyField() || (window.__selOpen && window.__selOpen())) { drawLater = true; return; }
     var now = Date.now(), mine = now - (window.__dcUser || 0) < 400;
     if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
@@ -1158,6 +1173,9 @@
     el.classList.toggle('dc-gone', !!rp && !!er);
     var ts0 = el.querySelector('.dx-tsheet'), tsTop = ts0 ? ts0.scrollTop : 0;
     el.innerHTML = p ? full(p) : rp && er ? '' : home();
+    var vk = (p ? p.id + '|' + tab + '|' + !!kin : '') + '|' + (rp ? rp.id : '');   /* a project, a step or the list: the new view fades in (JP 2026-11-25) */
+    if (VKEY !== null && VKEY !== vk) { el.classList.remove('dc-enter'); void el.offsetWidth; el.classList.add('dc-enter'); clearTimeout(VKT); VKT = setTimeout(function () { el.classList.remove('dc-enter'); }, 400); }
+    VKEY = vk;
     var hold = document.getElementById('dcPopHold'), hs0 = hold && hold.querySelector('.dx-tsheet'); if (hs0) tsTop = hs0.scrollTop || tsTop;
     if (renHere && xtool !== 'ren') renHere = false;
     if (renHere) { if (!hold) { hold = document.createElement('div'); hold.id = 'dcPopHold'; hold.className = 'dc-host'; document.body.appendChild(hold); } var mv = el.querySelector('.dx-tov'); hold.innerHTML = ''; if (mv) hold.appendChild(mv); if (window.I18N && I18N.apply) try { I18N.apply(hold); } catch (e) {} }

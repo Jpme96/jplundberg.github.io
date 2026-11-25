@@ -313,6 +313,12 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     await own.type('.dcn-codes [data-cdnc]', 'ZZ9'); await own.click('.dcn-codes [data-cdadd]'); await sl(1200);
     check(await own.evaluate(() => /ZZ9/.test(JSON.stringify(DocHost.codes.m().type || [])) && !/ZZ9/.test(JSON.stringify(DocHost.codes.t().type || []))), 'it lands in your own list, not the team\'s');
     await own.evaluate(() => { DocHost.codes.can = window.__canC; const x = document.querySelector('.dcn-codes [data-cdx]'); x && x.click(); }); await sl(300);
+    /* an open dropdown is never redrawn under you, and a popup that is drawn again doesn't replay its opening (JP 2026-11-25) */
+    const keep = await own.evaluate(async () => { const s0 = document.querySelector('select[data-dcntype]'); s0.focus(); s0.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); await new Promise(r => setTimeout(r, 900));
+      window.dispatchEvent(new Event('tools:change')); await new Promise(r => setTimeout(r, 1200)); const same = s0.isConnected; s0.blur(); await new Promise(r => setTimeout(r, 1200)); return { same, open: window.__selOpen() }; });
+    check(keep.same && !keep.open, 'a redraw waits while a dropdown is open, and runs once you leave it ' + JSON.stringify(keep));
+    const anim = await own.evaluate(async () => { const o = document.querySelector('.dc-freshov'); const before = !!o; window.dispatchEvent(new Event('tools:change')); await new Promise(r => setTimeout(r, 1200)); const o2 = document.querySelector('.dc-freshov'); return { before, again: !!o2, still: !!o2 && (o2 === o || o2.classList.contains('ov-still')) }; });
+    check(anim.before && anim.again && anim.still, 'the tidy-up popup drawn again keeps still – its opening does not replay ' + JSON.stringify(anim));
     await own.keyboard.press('Escape'); await sl(500);   /* Escape closes the file card; the tidy-up popup stays (JP 2026-11-25) */
     check(await until(own, () => !document.querySelector('.dcn-ov') && !!document.querySelector('.dc-freshov'), 4000), 'closing leaves the tidy-up popup as it was ' + await own.evaluate(() => [...document.querySelectorAll('.dcn-ov')].map(x => x.className).join('|') + ' fresh=' + !!document.querySelector('.dc-freshov')));
     /* the delivered files are shared with the team (JP 2026-11-24 "files should be shareable"): each gets an encrypted copy in the team's

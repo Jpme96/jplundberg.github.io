@@ -495,9 +495,28 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       return '<button type="button" class="t-pal" role="radio" aria-checked="' + (id === cur) + '" data-act="pal" data-pal="' + id + '"><span class="t-palsw" style="background:' + sw + '"></span>' + esc(name) + '</button>'; }).join('') +
       '</div><p class="t-small">' + L('Everyone in the team sees these colours. Built from Oslo kommune\'s colour palette.', 'Alle i teamet ser disse fargene. Laget ut fra Oslo kommunes fargepalett.') + '</p>';
   }
+  /* a dropdown that is open is never redrawn under you (JP 2026-11-25 "boxes … do not keep themselves open"): from the press on a <select> until
+     you pick, leave it or press Escape, a redraw waits and runs right after */
+  /* a popup opens with a short fade once; when a redraw puts the same popup back it gets .ov-still, so the opening never replays (JP 2026-11-25) */
+  (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {};
+    var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
+    var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
+    new MutationObserver(function (ms) { ms.forEach(function (m) {
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (open[k] || (gone[k] && Date.now() - gone[k] < 600)) o.classList.add('ov-still'); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
+    }); }).observe(document.body, { childList: true, subtree: true }); })();
+  var SELO = null, SELT = 0;
+  function selOpen() { return !!(SELO && SELO.isConnected && document.activeElement === SELO && Date.now() - SELT < 30000); }
+  window.__selOpen = selOpen;
+  function selDone() { if (!SELO) return; SELO = null; setTimeout(function () { if (S.drawLater) { S.drawLater = false; draw(); } window.dispatchEvent(new Event('sel:done')); }, 30); }
+  document.addEventListener('pointerdown', function (e) { var sl = e.target && e.target.closest && e.target.closest('select'); if (sl) { SELO = sl; SELT = Date.now(); } else if (SELO) selDone(); }, true);
+  document.addEventListener('keydown', function (e) { var t = e.target; if (t && t.tagName === 'SELECT' && /^( |Enter|ArrowDown|ArrowUp|F4)$/.test(e.key)) { SELO = t; SELT = Date.now(); } else if (SELO && (e.key === 'Escape' || e.key === 'Tab')) selDone(); }, true);
+  document.addEventListener('change', function (e) { if (e.target === SELO) selDone(); }, true);
+  document.addEventListener('focusout', function (e) { if (e.target === SELO) selDone(); }, true);
   function draw() {
     palSync();
     if (!S.me || !S.me.member) return;
+    if (selOpen()) { S.drawLater = true; return; }
     S.stale = false;
     clearTimeout(S.needsT); S.needsT = setTimeout(pushNeeds, 2500);   /* the contractors' lists follow the project */
     var h = location.hash.slice(1), body;
@@ -513,7 +532,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
     }).join('') + '</nav>';
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
-    S.lastHtml = html; $app.innerHTML = html; try { if (S.me && S.me.team && S.me.team.name) localStorage.setItem('team.lastName', S.me.team.name); } catch (e) {} if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
+    var keepC = document.getElementById('wkDocCtl'), keepR = document.getElementById('wkDocReq'), vkey = h + '|' + tab + '|' + (S.dtab || '') + '|' + !!S.edit;
+    if (keepC && !keepC.childElementCount) keepC = null; if (keepR && !keepR.childElementCount) keepR = null;
+    S.lastHtml = html; $app.innerHTML = html;
+    /* Documentation keeps its own page (and an open popup or dropdown in it) when Team redraws around it – it was rebuilt from "Loading …" each time */
+    [[keepC, 'wkDocCtl'], [keepR, 'wkDocReq']].forEach(function (x) { var nu = x[0] && document.getElementById(x[1]); if (nu && nu !== x[0]) { x[0].hidden = nu.hidden; nu.replaceWith(x[0]); } });
+    /* a new page or tab fades in (short and calm; off with reduced motion) */
+    if (S.vkey && S.vkey !== vkey) { $app.classList.remove('t-enter'); void $app.offsetWidth; $app.classList.add('t-enter'); clearTimeout(S.enterT); S.enterT = setTimeout(function () { $app.classList.remove('t-enter'); }, 400); }
+    S.vkey = vkey; try { if (S.me && S.me.team && S.me.team.name) localStorage.setItem('team.lastName', S.me.team.name); } catch (e) {} if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
     document.documentElement.classList.toggle('t-modal', !!S.edit);
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }

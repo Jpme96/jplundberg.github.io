@@ -117,7 +117,7 @@ const BUDGET_KB = { total: 1732 };   /* 2026-11-23: NS 3456 group headings (grou
 /* 2026-11-23: PDF viewer zoom (doc-naming.js, ~2 kB, loaded with Documentation) */
 /* 2026-11-23: NS 3456 group headings (group 1) in the NS table */
 /* 2026-11-23: Papers keeps any file type (icons per kind) */
-const PAGE_KB = { 'index.html': 1457, 'admin/index.html': 1371, 'calendar/index.html': 1299, 'finance/index.html': 1732, 'food/index.html': 1391, 'goals/index.html': 1320, 'habits/index.html': 1365, 'house/index.html': 1664, 'papers/index.html': 1340, 'people/index.html': 1390, 'travel/index.html': 1445, 'wish/index.html': 1403, 'work/index.html': 1475 };
+const PAGE_KB = { 'index.html': 1457, 'admin/index.html': 1371, 'calendar/index.html': 1299, 'finance/index.html': 1732, 'food/index.html': 1391, 'goals/index.html': 1320, 'habits/index.html': 1365, 'house/index.html': 1664, 'papers/index.html': 1340, 'people/index.html': 1390, 'travel/index.html': 1447, 'wish/index.html': 1403, 'work/index.html': 1477 };   /* 2026-11-25: +2 kB travel and work – the document types from JP's Coda, the own-code words and the calm popups (no redraw under an open dropdown) */
 const pages = ['index.html'].concat(fs.readdirSync(ROOT).filter(d => fs.existsSync(path.join(ROOT, d, 'index.html')) && d !== 'home').map(d => d + '/index.html'));
 let worst = 0;
 for (const pg of pages) {

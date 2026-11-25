@@ -70,7 +70,8 @@
     inp.dispatchEvent(new Event('change', { bubbles: true }));
     return true;
   }
-  var CSS = '.fdz-ov{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}' +
+  var CSS = '@keyframes fdz-in{from{opacity:0}}.fdz-ov{animation:fdz-in .18s ease-out}@media (prefers-reduced-motion:reduce){.fdz-ov{animation:none}}' +
+    '.fdz-ov{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}' +
     '.fdz-sh{width:min(620px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--bg-solid,var(--bg,#0e0f11));color:var(--text,var(--ink,#e7e7ea));border:1px solid var(--line,rgba(255,255,255,.1));border-radius:18px;padding:16px 18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.45);box-sizing:border-box;font-family:inherit}' +
     '.fdz-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.fdz-hd b{font-size:18px}' +
     '.fdz-x{width:44px;height:44px;border-radius:50%;border:1px solid var(--line,rgba(255,255,255,.12));background:none;color:inherit;font-size:20px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}' +

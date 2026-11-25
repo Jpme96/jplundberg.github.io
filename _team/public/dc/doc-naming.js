@@ -294,7 +294,8 @@
   function pdfLib() {
     var base = HOST || window.PAGED_PDF_VENDOR === '/dc/vendor/' ? '/dc/vendor/' : '/cmd/vendor/';
     var load = function (src) { return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('load')); }; document.head.appendChild(s); }); };
-    if (!PDFJS) PDFJS = (window.pdfjsLib ? Promise.resolve() : load(base + 'pdf.min.js?v=3.11.174')).then(function () { return window.pdfjsWorker ? 1 : load(base + 'pdf.worker.min.js?v=3.11.174'); }).then(function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js?v=3.11.174'; return window.pdfjsLib; });   /* the worker script loaded first = pdf.js runs it here (Team's strict CSP allows only its own scripts) */
+    /* pdf.js reads in a real background worker (same-origin – both CSPs allow it): reading PDFs on the page froze it for ~0.5 s per file (JP 2026-11-25 "it stutters") */
+    if (!PDFJS) PDFJS = (window.pdfjsLib ? Promise.resolve() : load(base + 'pdf.min.js?v=3.11.174')).then(function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js?v=3.11.174'; return window.pdfjsLib; });
     PDFJS.catch(function () { PDFJS = null; });
     return PDFJS;
   }

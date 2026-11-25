@@ -1039,3 +1039,17 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-dlfr { padding-left: 32px; }
 .dc-addlist, .dc-dllist { background: var(--bg-solid, var(--card)); }   /* solid: the page must not show through the menu (Team's card colour is see-through) */
 .dc-freshov .dcn-flt { display: none; }   /* the popup has its own New / Name problems / All – one row of filters, not two (live check 2026-11-25) */
+
+/* one calm opening for every popup (JP 2026-11-25 "add some animation … it feels too instant"): the backdrop fades, the sheet rises a little;
+   a popup that was already open and is only drawn again gets .ov-still (no replay); off with reduced motion and cmd's motion-off */
+@keyframes ov-in { from { opacity: 0; } }
+@keyframes sh-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes view-in { from { opacity: 0; } }   /* opacity only: a transform would move fixed popups inside for a moment */
+.dcn-ov, .dx-tov { animation: ov-in .18s ease-out both; }
+.dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
+.dc-enter > * { animation: view-in .2s ease-out both; }
+.ov-still, .ov-still > * { animation: none !important; }
+html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; } }
+/* the upload line stays in one place at the bottom instead of pushing the page down and up (JP 2026-11-25 "the entire page shakes") */
+.dc-sharing { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 96px); transform: translateX(-50%); z-index: 30; margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--card-solid, var(--bg)); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); font-size: 13.5px; white-space: nowrap; pointer-events: none; }
