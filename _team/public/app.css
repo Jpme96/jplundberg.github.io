@@ -336,3 +336,19 @@ html, body { scrollbar-gutter: stable; }   /* a page that grows past the screen 
 @media (prefers-reduced-motion: reduce) { .t-sheetbg, .t-edov, .t-sheetbg > .t-sheet, .t-edov > .t-edsheet, #app.t-enter > :not(.t-tabs) { animation: none !important; } }
 .t-upd { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 12px); transform: translateX(-50%); z-index: 2147482200; border: 0; border-radius: 999px; padding: 10px 18px; background: var(--acc); color: var(--acc-ink); font: inherit; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); cursor: pointer; }
 
+
+/* a laptop shown at 200 % is under 1000 px wide, so the media queries give it the tablet layout – but scaled down it has room for the
+   PC layout: html.tz-wide (set by __teamFit when the width divided by the zoom is 1000 px or more) gives it the side menu and the wide
+   column (JP 2026-11-25 18:37 – the step names were cut off) */
+html.tz-wide #app { max-width: 1200px; margin: 0 auto 0 232px; padding: 28px 32px 48px; }
+html.tz-wide .t-tabs { top: 0; bottom: 0; left: 0; right: auto; width: 208px; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 88px 12px 16px; border-top: 0; border-right: 1px solid var(--line); background: var(--bg); }
+html.tz-wide .t-tabs button { flex: 0 0 auto; max-width: none; width: 100%; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 44px; padding: 0 14px; font-size: 15px; }
+html.tz-wide .t-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
+html.tz-wide .t-col > .t-h:first-child { margin-top: 0; }
+html.tz-wide .t-toast { bottom: 24px; left: calc(50% + 104px); }
+html.tz-wide .t-screen p, html.tz-wide .t-form { max-width: 420px; }
+html.tz-wide .t-tcols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+html.tz-wide .t-tcols .t-inv { width: auto; display: inline-flex; padding: 0 22px; }
+html.tz-wide .t-tcols .t-col > .t-card:first-child, html.tz-wide .t-tcols .t-col > details:first-child { margin-top: 0; }
+html.tz-wide .t-edov, html.tz-wide .t-sheetbg, html.tz-wide .dcn-ov, html.tz-wide .dx-tov, html.tz-wide .fdz-ov { padding-left: calc(208px + 16px) !important; }
+html.tz-wide { --sn-pad: 208px; }

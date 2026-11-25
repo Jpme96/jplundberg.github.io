@@ -502,6 +502,10 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     const zPhone = await z();
     const at = async (w, h) => { await own.setViewport({ width: w, height: h, isMobile: false, hasTouch: false }); await sl(250); return z(); };
     const zMon = await at(1440, 900), zLap = await at(1280, 600), zTv = await at(3840, 2000), zMon2 = await at(1920, 950);
+    /* a laptop at 200 % (JP 2026-11-25 18:37): under 1000 px wide, but scaled down it gets the PC layout – side menu, wide column – not the tablet one */
+    const zL2 = await at(960, 443), lay = await own.evaluate(() => { const t = getComputedStyle(document.querySelector('.t-tabs')), a = document.getElementById('app').getBoundingClientRect(); return { wide: document.documentElement.classList.contains('tz-wide'), side: t.top === '0px' && t.bottom === '0px' && parseFloat(t.width) < 260, col: Math.round(a.width / (parseFloat(getComputedStyle(document.documentElement).zoom) || 1)) }; });
+    check(Math.abs(zL2 - .78) < .02 && lay.wide && lay.side && lay.col > 800, 'a laptop at 200 % (960 px) is scaled and gets the PC layout with the side menu, so step names have room ' + JSON.stringify({ zL2, lay }));
+    const zT = await at(820, 1180); check(zT === 1 && !(await own.evaluate(() => document.documentElement.classList.contains('tz-wide'))), 'a narrow window keeps its own size and layout');
     await own.click('[data-go="actions"]'); const went = await until(own, () => /#actions/.test(location.hash), 4000);
     const noSetting = await own.evaluate(() => !document.querySelector('[data-sizepick]'));
     check(zPhone === 1 && Math.abs(zMon - .86) < .02 && Math.abs(zLap - .78) < .02 && Math.abs(zTv - 1.5) < .02 && Math.abs(zMon2 - .9) < .02 && went && noSetting, 'Team scales itself to the window: phone as it is, a monitor a little smaller, a low laptop smaller, a big TV larger; clicks land right ' + JSON.stringify({ zPhone, zMon, zLap, zTv, zMon2, went }));

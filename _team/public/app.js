@@ -33,7 +33,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
 (function () { var de = document.documentElement, mq = window.matchMedia ? matchMedia('(pointer: coarse)') : null, raf = 0;
   function fit() { raf = 0; var w = window.innerWidth, h = window.innerHeight, z = 1;
     if (!(mq && mq.matches) && w >= 900) z = Math.max(.78, Math.min(1.5, Math.min(w / 1500, h / 1050)));   /* .78 at the least – text never below about 12.5 px */
-    z = Math.round(z * 100) / 100; var v = z === 1 ? '' : String(z); if (!de.__pdf && de.style.zoom !== v) de.style.zoom = v; }
+    z = Math.round(z * 100) / 100; var v = z === 1 ? '' : String(z); if (!de.__pdf && de.style.zoom !== v) de.style.zoom = v;
+    de.classList.toggle('tz-wide', z < 1 && w < 1000 && w / z >= 1000); }   /* room for the PC layout once scaled (JP 2026-11-25 18:37) */
   fit(); window.addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(fit); }); if (mq && mq.addEventListener) mq.addEventListener('change', fit);
   window.__teamFit = fit; })();
 (function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
@@ -528,7 +529,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'a124a9e44396';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'b030ee2449e9';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
