@@ -529,7 +529,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'b030ee2449e9';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'b8b3a9e58f20';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -623,14 +623,16 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     return out;
   }
   function viewOverview() {
-    var t = today(), ms = meetings();
-    var next = ms.filter(function (m) { return m.d.date >= t; }).sort(function (a, b) { return (a.d.date + a.d.from).localeCompare(b.d.date + b.d.from); })[0] || ms[0];
+    var t = today(), ms = meetings(), nd = new Date(), hm = ('0' + nd.getHours()).slice(-2) + ':' + ('0' + nd.getMinutes()).slice(-2);
+    /* a meeting that has ended today is not "next" (JP 2026-11-25 review: 09:00 still shown at 19:30) */
+    var ahead = function (m) { return m.d.date > t || (m.d.date === t && (m.d.to || m.d.from || '23:59') >= hm); };
+    var next = ms.filter(ahead).sort(function (a, b) { return (a.d.date + (a.d.from || '')).localeCompare(b.d.date + (b.d.from || '')); })[0] || ms[0];
     var mine = actions().filter(function (a) { return !a.d.done && a.d.owner === S.me.email; }).sort(byDue);
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
     out += welcomeCard();
     out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard();   /* "Denne uka" is gone – Oversikt shows what needs doing (JP 2026-11-24 22:57) */
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
-    out += '<p class="t-h">' + (next && next.d.date >= t ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
+    out += '<p class="t-h">' + (next && ahead(next) ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
     out += '<p class="t-h"><span>' + L('My open actions', 'Mine åpne oppgaver') + '</span><span>' + mine.length + '</span></p>';
     out += mine.length ? actionList(mine) : '<p class="t-empty">' + L('Nothing open for you.', 'Ingenting åpent for deg.') + '</p>';

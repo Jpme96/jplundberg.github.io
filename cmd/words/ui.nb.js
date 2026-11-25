@@ -4221,6 +4221,7 @@ I18N.add({
   "ui.dx-drop-help": ["PDFs, drawings (.dwg), Office files, photos – or one .zip. Nothing is uploaded; everything stays on this device.", "PDF-er, tegninger (.dwg), Office-filer, bilder – eller én .zip. Ingenting lastes opp; alt blir på denne enheten."],
   "ui.dx-fv-loading": ["Opening …", "Åpner …"],
   "ui.dx-fv-share": ["Share", "Del"],
+  "ui.dc-summary-gaps": ["Also required by the project, but not in the document plan: {n}.", "I tillegg krevd av prosjektet, men ikke i dokumentplanen: {n}."],
   "ui.dc-need-like": ["Looks like: {t}", "Ligner på: {t}"],
   "ui.dc-need-from": ["From {g}", "Ut fra {g}"],
   "ui.dc-need-t": ["Usual for this project, but not in the plan", "Vanlig for dette prosjektet, men ikke i planen"],

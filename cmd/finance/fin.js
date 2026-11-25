@@ -171,6 +171,7 @@
   /* ================= render ================= */
   function render() {
     if (!D) return;
+    if (!document.getElementById('fpTop')) return;   /* the spending index comes back from its worker after you left Finances (instant page changes): nothing to draw (errlog 2026-11-25, People/House) */
     document.querySelectorAll('[data-period]').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.period === period));
     });

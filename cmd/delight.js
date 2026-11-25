@@ -341,7 +341,10 @@
           if (ev) next = (ev.allDay ? '' : pad(ev.start.getHours()) + ':' + pad(ev.start.getMinutes()) + ' ') + ev.title;
         }
       } catch (e) {}
-      if (!next) { var tt = todos.filter(function (t) { return !t.done && (t.due === tk || t.today); })[0]; if (tt) next = tt.text; }
+      if (!next) { var tt = todos.filter(function (t) { return !t.done && t.due === tk; })[0]; if (tt) next = tt.text; }
+      /* a task picked for TODAY's top 3 is still today's, not tomorrow's (JP 2026-11-25 review) */
+      var open3 = todos.filter(function (t) { return !t.done && t.today && t.due !== tk; }).length;
+      if (open3) got.push(open3 + L(open3 === 1 ? ' top task still open' : ' top tasks still open', open3 === 1 ? ' toppoppgave fortsatt åpen' : ' toppoppgaver fortsatt åpne'));
       txt = '<b>' + L('Today', 'I dag') + '</b> – ' + (got.length ? esc(joinAnd(got)) : L('a quiet one', 'en rolig dag')) + '. ' + (next ? '<b>' + L('Tomorrow', 'I morgen') + '</b> – <span data-noi18n>' + esc(next) + '</span>.' : L('Nothing planned for tomorrow yet.', 'Ingenting planlagt i morgen ennå.'));
     }
     if (!txt) { if (el) el.remove(); return; }

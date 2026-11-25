@@ -134,6 +134,7 @@ html.modern .card > .card-head .head-actions > .icon-btn.icon-btn { width: 36px;
 .mb-who small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 500; white-space: nowrap; }
 .mb-acts { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: none; }
 .mb-acts > .icon-btn, .mb-acts > .sr-btn, .mb-acts > a.icon-btn { width: 38px; height: 38px; position: static; }
+.mb-acts > .nt-btn { position: relative; }   /* the bell keeps its red count on it (JP 2026-11-25 review: it flew to the screen's corner) */
 .mb-acts .qa-fab, .mb-acts [data-quick] { position: static; }
 .modern .top-bar:empty, .modern .fp-top:empty { display: none; }
 .modern .fp-top { min-height: 0; }

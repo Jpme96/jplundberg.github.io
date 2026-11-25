@@ -521,7 +521,7 @@ export class TeamStore {
     return json({ ok: true, on: true });
   }
   async nudge(by, me, team, kinds) {
-    kinds = (kinds || []).filter(k => k !== 'clk' && k !== 'cfg' && k !== 'mine'); if (!kinds.length) return;   /* clocking in and settings are no news for the others */
+    kinds = (kinds || []).filter(k => k !== 'clk' && k !== 'cfg' && k !== 'mine' && k !== 'lrn'); if (!kinds.length) return;   /* clocking in, settings and someone's own lists or learning are no news for the others */
     const subs = await this.s.list({ prefix: 'p:' }); if (!subs.size) return;
     const v = await this.vapid(), what = Array.from(new Set((kinds || []).map(k => ({ meeting: 'meeting', action: 'action', note: 'note', insp: 'inspection', file: 'file', upl: 'upload' })[k] || (/^dc/.test(k || '') ? 'document' : '')).filter(Boolean)));
     const body = (me && me.name ? me.name : 'Someone') + ' · ' + (what.length ? what.join(', ') : 'a change');

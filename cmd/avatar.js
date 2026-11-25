@@ -322,9 +322,13 @@
       idle();
     }, 9000 + Math.random() * 6000);
   })();
+  var avNextAt = 0;
   document.addEventListener('click', function (e) {
     if (!e.target.closest('[data-avnext]')) return;
-    idx++; drawHome();
+    /* one redraw at a time, and a slow device (old Firefox on a Mac froze here, 13–14 Nov 2026) gets a pause after a slow draw */
+    var now = Date.now(); if (now < avNextAt) return;
+    idx++; var t0 = performance.now(); drawHome(); var took = performance.now() - t0;
+    avNextAt = Date.now() + (took > 400 ? Math.min(4000, took * 4) : 250);
     var f = document.querySelector('#avHome .av-fig'); if (f) { f.classList.remove('hop'); void f.offsetWidth; f.classList.add('hop'); }
   });
 

@@ -96,7 +96,7 @@
     onDelete: function (it) { (it.files || []).forEach(function (f) { delF(f.id); }); setTimeout(loadHere, 50); } };
   var FORMS = {
     home: { sub: 'Samboerkontrakt, purchase contract, take-over protocol', ph: 'e.g. Samboerkontrakt', f: {
-      who: { label: 'With', ph: 'Iago, the seller, the bank …' }, signed: { label: 'Signed' }, date: { label: 'Look at it again', help: 'Optional – e.g. when to update the samboerkontrakt' }, lead: {}, link: { label: 'Belongs to' }, notes: { help: 'Where the signed original is, what you agreed …' } }, dk: 'review' },
+      who: { label: 'With', ph: 'Your partner, the seller, the bank …' }, signed: { label: 'Signed' }, date: { label: 'Look at it again', help: 'Optional – e.g. when to update the samboerkontrakt' }, lead: {}, link: { label: 'Belongs to' }, notes: { help: 'Where the signed original is, what you agreed …' } }, dk: 'review' },
     contract: { sub: 'Phone, power, rent, gym, subscriptions', ph: 'e.g. Phone subscription', f: {
       who: { label: 'Company', ph: 'Telia, Tibber …' }, ref: { label: 'Customer no.' }, signed: { label: 'Signed' }, date: { label: 'Ends or notice by', help: 'The last day to cancel, or when it runs out' }, every: {}, lead: {}, cost: {}, notes: { help: 'Notice period, binding time, what’s included …' } }, dk: 'ends' },
     insurance: { sub: 'Home contents, travel, life, accident', ph: 'e.g. Home insurance (innbo)', f: {

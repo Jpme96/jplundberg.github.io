@@ -611,6 +611,7 @@
      that the plan leaves out */
   function planCheck(p) {
     var R = req(), L = p.lines || [], have = { named: {} };
+    L.forEach(function (l) { if (!l.t && l.type) { var t0 = letters(l.type); if (t0) l.t = t0; } });   /* a plan read before a type word was known (Rømningsplan, 25 Nov) is read again – JP's own plans too */
     L.forEach(function (l) { var c3 = String(l.code).slice(0, 3); (have[c3] || (have[c3] = { t: '' })).t += l.t || ''; if (l.sys) have.named[c3] = 1; });
     var rows = L.map(function (l) { return { l: l, is: planIssues(l, R, have) }; }), gaps = [], r = kravOf(p);
     if (r) { var pt = {}; L.forEach(function (l) { var c = String(l.code).slice(0, 3); pt[c] = (pt[c] || '') + (l.t || ''); });
@@ -1021,7 +1022,9 @@
     var row = function (l) { return '<tr><td>' + esc(l.code) + '</td><td>' + esc(lineTitle(l)) + '</td><td>' + esc(typeLabel(l)) + '</td><td>' + esc(l.planned && !l.ex ? l.planned : '') + '</td></tr>'; };
     var h = '<header class="rp-head"><div><p class="rp-kick">' + esc(k('ui.doc-control', 'Document control')) + (p.trade ? ' · ' + esc(p.trade) : '') + '</p><h1>' + esc(p.name) + '</h1></div></header>' +
       '<table class="rp-cvt">' + [[k('ui.dc-project-no', 'Project no.'), p.no]].concat(siteRows(p), [[k('ui.dc-contractor', 'Contractor'), p.who], [k('ui.dc-due', 'Deadline'), fmt(p.due)], [k('ui.date', 'Date'), fmt(today())], [k('ui.dc-checked-by', 'Checked by'), [me.name, me.role].filter(Boolean).join(', ')], [k('ui.dc-plan', 'Document plan'), p.planName]]).filter(function (r) { return r[1]; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>';
-    h += '<h2>1 ' + esc(k('ui.dc-summary', 'Summary')) + '</h2><p>' + esc(k('ui.dc-summary-text', '{d} of {n} documents are approved or not relevant ({pc} %). Missing: {m}. Received, not yet checked: {r}. Not approved: {x}.', { d: c.done, n: c.all, pc: c.all ? Math.round(c.done / c.all * 100) : 0, m: c.missing, r: c.recv, x: c.rej })) + '</p>';
+    h += '<h2>1 ' + esc(k('ui.dc-summary', 'Summary')) + '</h2><p>' + esc(k('ui.dc-summary-text', '{d} of {n} documents are approved or not relevant ({pc} %). Missing: {m}. Received, not yet checked: {r}. Not approved: {x}.', { d: c.done, n: c.all, pc: c.all ? Math.round(c.done / c.all * 100) : 0, m: c.missing, r: c.recv, x: c.rej })) +
+      /* the requirements the plan doesn't cover count in the project's status – the report says so too, so the numbers agree (JP 2026-11-25 review) */
+      (function () { var gp = hasPlan(p) ? planCheck(p).gaps.length : 0; return gp ? ' ' + esc(k('ui.dc-summary-gaps', 'Also required by the project, but not in the document plan: {n}.', { n: gp })) : ''; })() + '</p>';
     var dst = dwStats(p), dwc = dwOf(p);
     if (dst.n) h += '<p>' + esc(k('ui.dc-rp-dw', 'Drawings: {b} of {n} delivered as PDF and DWG · only PDF: {p} · only DWG: {d}. Required: {r}.', { b: dst.both.length, n: dst.n, p: dst.pdf.length, d: dst.dwg.length, r: dwc ? dwName(dwc) : dwName('both') + ' (' + k('ui.dc-dw-assumed', 'assumed') + ')' })) + '</p>';
     var nc = function (v) { return '<td class="n">' + v + '</td>'; };

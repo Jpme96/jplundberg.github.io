@@ -236,7 +236,7 @@
     svg += payday ? sceneMe(150, 42, 60, 86, 'plain') : sceneMe(152, 42, 60, 86, state === 'neg' ? 'plain' : todPose('day'));
     var list = [];
     if (room > 0) list.push({ t: kr(left) + L(' left', ' igjen') + ' · ' + per.daysLeft + (per.daysLeft === 1 ? L(' day', ' dag') : L(' days', ' dager')), h: '#fin', late: left < 0 });
-    if (pace) list.push({ t: pace.ok ? L('On track', 'I rute') : L('Spending faster than planned', 'Bruker raskere enn planlagt'), h: '#fin', late: !pace.ok });
+    if (pace && !(room > 0 && left < 0)) list.push({ t: pace.ok ? L('On track', 'I rute') : L('Spending faster than planned', 'Bruker raskere enn planlagt'), h: '#fin', late: !pace.ok });   /* never "On track" next to a minus (JP 2026-11-25 review) */
     if (payday) list.push({ t: L('Payday today', 'Lønning i dag'), h: '#fin' });
     var dtp = null; try { var np2 = B.nextPayday && B.nextPayday(d); if (np2 && np2.days != null) dtp = np2.days; } catch (e) {}
     return { svg: svg, label: L('Your money jar', 'Pengekrukka di'), list: list, empty: L('Set up your budget to fill the jar.', 'Sett opp budsjettet for å fylle krukka.'),

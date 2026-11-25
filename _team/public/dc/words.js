@@ -397,6 +397,7 @@ window.DC_NB = {
 "ui.dc-st-rej": "Ikke godkjent – sendes i retur",
 "ui.dc-status": "Status",
 "ui.dc-summary": "Sammendrag",
+"ui.dc-summary-gaps": "I tillegg krevd av prosjektet, men ikke i dokumentplanen: {n}.",
 "ui.dc-summary-text": "{d} av {n} dokumenter er godkjent eller ikke relevante ({pc} %). Mangler: {m}. Mottatt, ikke kontrollert ennå: {r}. Ikke godkjent: {x}.",
 "ui.dc-system": "System",
 "ui.dc-tab-docs": "Dokumenter",
