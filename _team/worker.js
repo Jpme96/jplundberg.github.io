@@ -116,7 +116,9 @@ async function accessCfg(env, host, put) {
   /* a pasted secret often brings a space, a line break or quotes along – "Invalid header value" (JP 2026-11-25 22:57) */
   const clean = v => String(v || '').trim().replace(/^["']|["']$/g, '').replace(/\s+/g, '');
   const tok = clean(env.CF_API_TOKEN), acct = clean(env.CF_ACCOUNT_ID);
-  if (!/^[\w-]{20,}$/.test(tok)) throw new Error('CF_API_TOKEN looks wrong – paste it again');
+  /* Cloudflare's newer tokens (cfut_…) have more than letters and digits: only refuse what can't be a token at all, and say why */
+  if (/[^\x21-\x7e]/.test(tok)) throw new Error('CF_API_TOKEN has characters a token never has (hidden dots from a masked copy?) – copy it again');
+  if (tok.length < 20) throw new Error('CF_API_TOKEN is too short (' + tok.length + ' characters) – copy the whole token');
   if (!/^[a-f0-9]{32}$/.test(acct)) throw new Error('CF_ACCOUNT_ID looks wrong – 32 letters and digits');
   const base = 'https://api.cloudflare.com/client/v4/accounts/' + acct + '/access/';
   const cf = async (path, opt) => { const r = await fetch(base + path, Object.assign({ headers: { authorization: 'Bearer ' + tok, 'content-type': 'application/json' } }, opt || {}));
