@@ -1209,7 +1209,9 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 }
 .dx-panel .dc-chip, .dx-panel label.dc-chip { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; box-sizing: border-box; cursor: pointer; }
 .dx-panel .dc-facts { gap: 12px; }
-.dcn-ov, .dx-tov { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+@media (max-width: 699px) {
+  .dcn-ov, .dx-tov { -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+}
 .dx-part { font-size: 13px; font-weight: 500; color: var(--muted); }
 @media (min-width: 760px) {
   .xv { inset: 20px 20px 20px calc(var(--sn-pad, 0px) + 20px); border: 1px solid var(--line, rgba(255,255,255,.1)); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); padding: 0; }
@@ -1542,6 +1544,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 }
 .dc-sharing { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 96px); transform: translateX(-50%); z-index: 30; margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--card-solid, var(--bg)); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); font-size: 13.5px; white-space: nowrap; pointer-events: none; }
 .dx-wait { display: flex; align-items: center; gap: 8px; padding: 28px 4px; color: var(--muted); font-size: 15px; }
+#dcPopHold .dx-tsheet { height: min(900px, calc(100dvh - 32px)); }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }
 .stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;

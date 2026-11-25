@@ -505,6 +505,19 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) o.classList.add('ov-still'); if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
     }); }).observe(document.body, { childList: true, subtree: true }); })();
+  /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
+     again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
+  var BUILD = 'f236d90e92d4';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var VT = 0;
+  function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
+  function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
+    fetch('/version.txt', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) { v = String(v || '').trim(); if (!/^[0-9a-f]{12}$/.test(v) || v === BUILD) return;
+      var tried = ''; try { tried = sessionStorage.getItem('team.upd') || ''; } catch (e) {}
+      if (tried !== v && calmNow()) { try { sessionStorage.setItem('team.upd', v); } catch (e) {} location.reload(); return; }   /* once per new version, so it can never loop */
+      if (!document.getElementById('tUpd')) { var b = document.createElement('button'); b.id = 'tUpd'; b.type = 'button'; b.className = 't-upd'; b.textContent = L('New version – update', 'Ny versjon – oppdater'); b.onclick = function () { location.reload(); }; document.body.appendChild(b); } }, function () {}); }
+  window.__verCheck = function () { VT = 0; verCheck(); };
+  setTimeout(verCheck, 1500); setInterval(verCheck, 300000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) verCheck(); }); window.addEventListener('focus', verCheck);
   var SELO = null, SELT = 0;
   function selOpen() { return !!(SELO && SELO.isConnected && document.activeElement === SELO && Date.now() - SELT < 30000); }
   window.__selOpen = selOpen;
@@ -520,7 +533,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     S.stale = false;
     clearTimeout(S.needsT); S.needsT = setTimeout(pushNeeds, 2500);   /* the contractors' lists follow the project */
     var h = location.hash.slice(1), body;
-    if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? viewMeetings() : viewMeeting(S.edit.id)) + '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
+    if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? (({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.edit.from] || viewMeetings)() : viewMeeting(S.edit.id)) +   /* the page you were on stays behind the new meeting – it changed to Møter and flickered (JP 2026-11-25) */ '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
     else if (/^search=/.test(h)) body = viewSearch(decodeURIComponent(h.slice(7)));
     else if (/^in=/.test(h)) body = viewInsp(h.slice(3));
@@ -538,8 +551,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     /* Documentation keeps its own page (and an open popup or dropdown in it) when Team redraws around it – it was rebuilt from "Loading …" each time */
     [[keepC, 'wkDocCtl'], [keepR, 'wkDocReq']].forEach(function (x) { var nu = x[0] && document.getElementById(x[1]); if (nu && nu !== x[0]) { x[0].hidden = nu.hidden; nu.replaceWith(x[0]); } });
     /* a new page or tab fades in (short and calm; off with reduced motion) */
-    if (S.vkey && S.vkey !== vkey) { $app.classList.remove('t-enter'); void $app.offsetWidth; $app.classList.add('t-enter'); clearTimeout(S.enterT); S.enterT = setTimeout(function () { $app.classList.remove('t-enter'); }, 400); }
-    S.vkey = vkey; try { if (S.me && S.me.team && S.me.team.name) localStorage.setItem('team.lastName', S.me.team.name); } catch (e) {} if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
+    if (S.vkey && S.vkey !== vkey && !S.edit && !S.wasEdit) { $app.classList.remove('t-enter'); void $app.offsetWidth; $app.classList.add('t-enter'); clearTimeout(S.enterT); S.enterT = setTimeout(function () { $app.classList.remove('t-enter'); }, 400); }
+    S.vkey = vkey; S.wasEdit = !!S.edit; try { if (S.me && S.me.team && S.me.team.name) localStorage.setItem('team.lastName', S.me.team.name); } catch (e) {} if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
     document.documentElement.classList.toggle('t-modal', !!S.edit);
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
@@ -666,10 +679,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var r = await api('lock', { method: 'POST', body: { id: id, on: true } }).catch(function (e) { return e; });
     if (r instanceof Error) { toast(failMsg(r)); return; }
     var base = isNew ? { title: '', date: today(), from: '09:00', to: '10:00', att: [S.me.email], guests: '', agenda: '', decisions: '', notes: '' } : JSON.parse(JSON.stringify(S.recs[id].d));
-    S.edit = { id: id, isNew: !!isNew, d: base };
+    S.edit = { id: id, isNew: !!isNew, d: base, from: S.tab() };
     clearInterval(S.hb); S.hb = setInterval(function () { if (S.edit) api('lock', { method: 'POST', body: { id: S.edit.id, on: true } }).catch(function () {}); }, 30000);
     if (location.hash !== '#m=' + id) history.replaceState(null, '', '#m=' + id);
-    draw(); window.scrollTo(0, 0);
+    draw(); if (!isNew) window.scrollTo(0, 0);
   }
   function endEdit(quiet) { if (!S.edit) return; var id = S.edit.id; S.edit = null; clearInterval(S.hb); api('lock', { method: 'POST', body: { id: id, on: false } }).catch(function () {}); if (!quiet) draw(); }
   function viewEdit() {

@@ -92,6 +92,15 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await until(kari, () => !!document.querySelector('.t-tabs'), 15000), "Kari's phone opens the app by itself");
 
   /* --- a meeting with an action --- */
+  /* New meeting from Oversikt (JP 2026-11-25 "it flickers twice"): the editor opens over the page you were on, without the whole page fading */
+  { await own.goto(U + '#overview'); await own.waitForSelector('[data-act=newMeeting]');
+    await own.evaluate(() => { window.__fl = []; new MutationObserver(() => { const a = document.getElementById('app'); if (a.classList.contains('t-enter')) window.__fl.push('fade'); }).observe(document.getElementById('app'), { attributes: true, attributeFilter: ['class'] }); });
+    await own.click('[data-act=newMeeting]'); await own.waitForSelector('form[data-form=meeting]'); await sl(500);
+    const nm = await own.evaluate(() => ({ fade: window.__fl.length, behind: !!document.querySelector('#app .t-edov') && /Siste møte|Latest meeting/i.test(document.getElementById('app').innerText), ver: '' }));
+    nm.ver = await own.evaluate(async () => (await fetch('/version.txt', { cache: 'no-store' }).then(r => r.ok ? r.text() : '')).trim());
+    check(!nm.fade && nm.behind, 'New meeting opens over Oversikt, no page fade ' + JSON.stringify(nm));
+    check(/^[0-9a-f]{12}$/.test(nm.ver), 'the release has a version.txt that a tab compares with its own build (it reloads itself to a new one) ' + nm.ver);
+    await own.evaluate(() => { const c = document.querySelector('[data-act=cancelEdit]'); c && c.click(); }); await sl(400); }
   await own.goto(U + '#meetings'); await own.waitForSelector('[data-act=newMeeting]'); await own.click('[data-act=newMeeting]');
   await own.waitForSelector('form[data-form=meeting]');
   await own.type('input[name=title]', 'Weekly site meeting MARK-SECRET-1');

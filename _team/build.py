@@ -134,6 +134,31 @@ put('dc.css', '\n'.join(css) + '\n')
 put('bi/bi.css', rd(os.path.join(CMD, 'assets', 'bi', 'bi.css')))
 put('bi/bi.woff2', rd(os.path.join(CMD, 'assets', 'bi', 'bi.woff2'), True))
 
+# the build's fingerprint (JP 2026-11-25 – a tab ran old code after a release): app.js carries it in `var BUILD = '…'`
+# and /version.txt has the same; a tab whose BUILD differs from version.txt reloads itself when nothing is open
+import hashlib
+PUB = os.path.dirname(OUT)
+def _pubfiles():
+    L = []
+    for root, _, fs in os.walk(PUB):
+        for f in sorted(fs):
+            if f.endswith(('.js', '.css', '.html')) and f not in ('sw.js',) and root.find(os.sep + 'vendor') < 0:
+                L.append(os.path.join(root, f))
+    return sorted(L)
+_h = hashlib.sha256()
+for f in _pubfiles():
+    b = open(f, 'rb').read()
+    if f.endswith(os.sep + 'app.js'): b = re.sub(rb"var BUILD = '[0-9a-f]*';", b"var BUILD = '';", b)
+    _h.update(f[len(PUB):].encode() + b'\0' + b)
+_sig = _h.hexdigest()[:12]
+_app = os.path.join(PUB, 'app.js'); _a = io.open(_app, encoding='utf-8').read()
+_a2 = re.sub(r"var BUILD = '[0-9a-f]*';", "var BUILD = '%s';" % _sig, _a)
+for _rel, _data in (('app.js', _a2), ('version.txt', _sig + '\n')):
+    _p = os.path.join(PUB, _rel); _old = open(_p, 'rb').read() if os.path.exists(_p) else None
+    if _old != _data.encode('utf-8'):
+        if check: stale.append(_rel)
+        else: open(_p, 'wb').write(_data.encode('utf-8'))
+
 if check:
     if stale: print('Team copies out of date (run python3 _team/build.py):', ', '.join(stale)); sys.exit(1)
     print('Team copies up to date')
