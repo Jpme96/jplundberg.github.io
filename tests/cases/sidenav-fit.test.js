@@ -94,6 +94,6 @@ const { open, sl, go } = require('../lib/browser'); const { check, done } = requ
     const r = { left: Math.round(sh.getBoundingClientRect().left), bar: Math.round(bar.getBoundingClientRect().right), side: document.documentElement.classList.contains('side-nav'), blur: getComputedStyle(document.querySelector('.fdz-ov')).backdropFilter };
     document.querySelector('.fdz-ov [data-fdzx]').click(); return r; });
   check(!pop.side || pop.left >= pop.bar, 'a popup stays beside the side bar ' + JSON.stringify(pop));
-  check(/blur/.test(pop.blur || ''), 'a popup blurs what is behind it ' + JSON.stringify(pop));
+  check(!/blur/.test(pop.blur || ''), 'on a big screen a popup only darkens what is behind it – the blur made popups stutter there (JP 2026-11-25) ' + JSON.stringify(pop));
   await done(b);
 })();
