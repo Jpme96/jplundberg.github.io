@@ -497,15 +497,14 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   for (const k of ['doc', 'insp', 'files']) { await own.evaluate(x => { const i = document.querySelector('input[data-dtoff="' + x + '"]'); if (i && !i.checked) i.click(); }, k); await sl(1200); }
   check(await until(own, () => !!document.querySelector('.t-tabs [data-go="docs"]')), 'and back on again');
   /* size on a PC (JP 2026-11-25): a mouse on a wide screen scales the whole page; a phone keeps its size; Liten / Stor / As on a phone per device */
-  { const zPhone = await own.evaluate(() => parseFloat(getComputedStyle(document.documentElement).zoom));
-    await own.setViewport({ width: 1440, height: 900, isMobile: false, hasTouch: false }); await own.goto(U + '#overview'); await own.waitForSelector('.t-tabs'); const pc = own;
-    const z = async () => pc.evaluate(() => parseFloat(getComputedStyle(document.documentElement).zoom));
-    const z0 = await z();
-    await pc.evaluate(() => { localStorage.setItem('team.size', 's'); window.__teamSize(); }); const zs = await z();
-    await pc.evaluate(() => { localStorage.setItem('team.size', 'x'); window.__teamSize(); }); const zx = await z();
-    await pc.evaluate(() => { localStorage.setItem('team.size', 'n'); window.__teamSize(); });
-    await pc.click('[data-go="actions"]'); const went = await until(pc, () => /#actions/.test(location.hash), 4000);
-    check(Math.abs(z0 - .875) < .01 && zPhone === 1 && Math.abs(zs - .8) < .01 && zx === 1 && went, 'a PC with a mouse gets the compact size (Normal), a phone keeps its own; Small and As on a phone work, and clicks land where they should ' + JSON.stringify({ z0, zPhone, zs, zx, went }));
+  /* Team fits the screen by itself (JP 2026-11-25): the page is scaled from the window's size – phone as it is, a low laptop smaller, a big screen or TV larger – and follows a resize */
+  { const z = async () => own.evaluate(() => parseFloat(getComputedStyle(document.documentElement).zoom) || 1);
+    const zPhone = await z();
+    const at = async (w, h) => { await own.setViewport({ width: w, height: h, isMobile: false, hasTouch: false }); await sl(250); return z(); };
+    const zMon = await at(1440, 900), zLap = await at(1280, 600), zTv = await at(3840, 2000), zMon2 = await at(1920, 950);
+    await own.click('[data-go="actions"]'); const went = await until(own, () => /#actions/.test(location.hash), 4000);
+    const noSetting = await own.evaluate(() => !document.querySelector('[data-sizepick]'));
+    check(zPhone === 1 && Math.abs(zMon - .86) < .02 && Math.abs(zLap - .78) < .02 && Math.abs(zTv - 1.5) < .02 && Math.abs(zMon2 - .9) < .02 && went && noSetting, 'Team scales itself to the window: phone as it is, a monitor a little smaller, a low laptop smaller, a big TV larger; clicks land right ' + JSON.stringify({ zPhone, zMon, zLap, zTv, zMon2, went }));
     await own.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true }); await own.goto(U + '#overview'); await sl(800); }
   check(!errs.length, 'no page errors or CSP violations ' + errs.join(' | ').slice(0, 400));
   srv.kill();

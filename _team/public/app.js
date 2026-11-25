@@ -27,10 +27,15 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   if (!el._skip && !el.classList.contains('out')) { var left = SW_MIN - (Date.now() - (el._t0 || 0)); if (left > 0) { clearTimeout(el._wait); el._wait = setTimeout(window.__teamSwitchDone, left); return; } } if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 600) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 420); };   /* never left behind: a second call removes it */
 (function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); if (!n && !navigator.webdriver && !/[?&#](join|j)=/.test(location.href)) n = localStorage.getItem('team.lastName') || 'Team'; } catch (e) {}
   if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 12000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
-/* size on a PC (JP 2026-11-25 "the fonts are too big"): with a mouse on a wide screen the whole of Team is scaled as one (CSS zoom on <html>),
-   Normal by default; Liten / Normal / Stor per device under Settings. Phones and tablets (a finger) stay as they are. */
-(function () { function size() { var v = 'n'; try { v = localStorage.getItem('team.size') || 'n'; } catch (e) {} var h = document.documentElement; h.classList.remove('tz-s', 'tz-n', 'tz-l', 'tz-x'); h.classList.add('tz-' + (/^[snlx]$/.test(v) ? v : 'n')); }
-  size(); window.__teamSize = size; })();
+/* Team fits the screen by itself (JP 2026-11-25 14:52 "fully visible on every screen so I don't have to zoom", 14:53 "and a big tv"): unless a finger is
+   the pointer, the whole page is scaled as one (CSS zoom on <html>) from the window's width and height – a low laptop a step smaller, a monitor a little,
+   a big TV larger; it follows the window live. Phones, tablets and narrow windows keep today's size. No setting. */
+(function () { var de = document.documentElement, mq = window.matchMedia ? matchMedia('(pointer: coarse)') : null, raf = 0;
+  function fit() { raf = 0; var w = window.innerWidth, h = window.innerHeight, z = 1;
+    if (!(mq && mq.matches) && w >= 900) z = Math.max(.78, Math.min(1.5, Math.min(w / 1500, h / 1050)));   /* .78 at the least – text never below about 12.5 px */
+    z = Math.round(z * 100) / 100; var v = z === 1 ? '' : String(z); if (!de.__pdf && de.style.zoom !== v) de.style.zoom = v; }
+  fit(); window.addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(fit); }); if (mq && mq.addEventListener) mq.addEventListener('change', fit);
+  window.__teamFit = fit; })();
 (function () { function theme() { var t = 'light'; try { t = localStorage.getItem('team.theme') || 'light'; } catch (e) {} var dk = t === 'dark' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dk ? '#0e0f11' : '#f5f5f7'); }
   theme(); window.__teamTheme = theme;
@@ -511,7 +516,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '67b267c04f29';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'ab2c75eddc2b';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -867,7 +872,6 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var tab = tabs.some(function (x) { return x[0] === S.setTab; }) ? S.setTab : 'you', nOn = ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })());
     var body = tab === 'you' ?
       '<div class="t-set2">' +
-      '<label class="t-lbl">' + L('Size on a PC', 'Størrelse på PC') + '<select data-sizepick>' + [['s', L('Small', 'Liten')], ['n', L('Normal', 'Normal')], ['l', L('Large', 'Stor')], ['x', L('As on a phone (largest)', 'Som på mobil (størst)')]].map(function (o) { var cur = 'n'; try { cur = localStorage.getItem('team.size') || 'n'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select><small class="t-small">' + L('With a mouse on a wide screen – phones and tablets keep their size. Saved on this device.', 'Med mus på en bred skjerm – mobil og nettbrett beholder sin størrelse. Lagres på denne enheten.') + '</small></label>' +
       '<label class="t-lbl">' + L('Appearance', 'Utseende') + '<select data-themepick>' + [['light', L('Light', 'Lys')], ['dark', L('Dark', 'Mørk')], ['auto', L('Like the device', 'Som enheten')]].map(function (o) { var cur = 'light'; try { cur = localStorage.getItem('team.theme') || 'light'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' + '</div>' +
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
@@ -1000,7 +1004,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         fdel: function (tf) { if (rank() < 1 || !tf || !tf.fid) return Promise.resolve(); return api('fdel', { method: 'POST', body: { fid: tf.fid, n: tf.n } }).catch(function () {}); },
         uplink: function (pid) { if (rank() < 1) return; S.fproj = pid; uplinkSheet(); } };   /* Filer → "Entreprenøren har dem": the upload-link sheet with this project chosen */
       docsP = loadJs('/dc/ns.js').then(function () { return loadJs('/dc/words.js'); }).then(function () { return loadJs('/dc/paged-pdf.js'); }).then(function () {
-        window.FdvPdf = { html: function (h, f, n) { var de = document.documentElement, was = de.style.zoom; de.style.zoom = '1'; var back = function (x) { de.style.zoom = was; return x; }; return Promise.resolve().then(function () { return window.PagedPdf.html(h, f, n); }).then(back, function (e) { back(); throw e; }); }, share: function (f) { return window.PagedPdf.share(f); } };   /* the PDF is laid out at its real size, never through the PC zoom */
+        window.FdvPdf = { html: function (h, f, n) { var de = document.documentElement; de.__pdf = 1; de.style.zoom = '1'; var back = function (x) { de.__pdf = 0; de.style.zoom = ''; if (window.__teamFit) window.__teamFit(); return x; }; return Promise.resolve().then(function () { return window.PagedPdf.html(h, f, n); }).then(back, function (e) { back(); throw e; }); }, share: function (f) { return window.PagedPdf.share(f); } };   /* the PDF is laid out at its real size, never through the PC zoom */
         return loadJs('/dc/doc-control.js');
       }).catch(function (e) { docsP = null; toast(L('Could not load Documents. Try again.', 'Klarte ikke å laste Dokumenter. Prøv igjen.')); throw e; });
     }
@@ -1659,7 +1663,6 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (t.name === 'fproj') { S.fproj = t.value; return; }
     if (t.hasAttribute('data-fadd')) { var fs = Array.prototype.slice.call(t.files || []); t.value = ''; if (!fs.length) return; (async function () { var ok = 0; toast(L('Encrypting and sending …', 'Krypterer og sender …')); for (var i = 0; i < fs.length; i++) { try { if (await sendFile(fs[i], S.fproj || '')) ok++; } catch (x) { toast(failMsg(x)); break; } } if (ok) { toast(L(ok + (ok === 1 ? ' file shared' : ' files shared'), ok + (ok === 1 ? ' fil delt' : ' filer delt'))); draw(); } })(); return; }
     if (t.hasAttribute('data-dcimport')) { if (t.files && t.files[0]) importDoc(t.files[0]); t.value = ''; return; }
-    if (t.hasAttribute('data-sizepick')) { try { localStorage.setItem('team.size', t.value); } catch (x) {} if (window.__teamSize) window.__teamSize(); return; }
     if (t.hasAttribute('data-themepick')) { try { localStorage.setItem('team.theme', t.value); } catch (x) {} if (window.__teamTheme) window.__teamTheme(); return; }
     if (t.hasAttribute('data-lang')) { try { localStorage.setItem('team.lang', t.value); } catch (x) {} location.reload(); }
   });

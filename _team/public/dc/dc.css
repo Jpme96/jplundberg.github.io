@@ -1545,6 +1545,11 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-sharing { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 96px); transform: translateX(-50%); z-index: 30; margin: 0; padding: 9px 16px; border-radius: 999px; background: var(--card-solid, var(--bg)); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); font-size: 13.5px; white-space: nowrap; pointer-events: none; }
 .dx-wait { display: flex; align-items: center; gap: 8px; padding: 28px 4px; color: var(--muted); font-size: 15px; }
 #dcPopHold .dx-tsheet { height: min(900px, calc(100dvh - 32px)); }
+.dc-frow2.selm > .dc-fopen { position: relative; padding-left: 36px; }
+.dc-frow2.selm > .dc-fopen > .dc-ck { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); margin: 0; }
+.dc-frow2.picked { background: var(--accent-soft); border-radius: 10px; }
+.dc-fheadb { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; }
+.dc-gpick { margin: 4px 0 0; }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }
 .stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;

@@ -1057,3 +1057,10 @@ html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { anima
 .dx-wait { display: flex; align-items: center; gap: 8px; padding: 28px 4px; color: var(--muted); font-size: 15px; }
 
 #dcPopHold .dx-tsheet { height: min(900px, calc(100dvh - 32px)); }   /* Gi navn from Opplastinger keeps one size while the files come in and get their suggestions – nothing jumps (JP 2026-11-25) */
+
+/* picking several in Dokumentplan and Sammenligning (JP 2026-11-25) – the same look as in Dokumenter */
+.dc-frow2.selm > .dc-fopen { position: relative; padding-left: 36px; }
+.dc-frow2.selm > .dc-fopen > .dc-ck { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); margin: 0; }
+.dc-frow2.picked { background: var(--accent-soft); border-radius: 10px; }
+.dc-fheadb { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; }
+.dc-gpick { margin: 4px 0 0; }

@@ -336,5 +336,3 @@ html, body { scrollbar-gutter: stable; }   /* a page that grows past the screen 
 @media (prefers-reduced-motion: reduce) { .t-sheetbg, .t-edov, .t-sheetbg > .t-sheet, .t-edov > .t-edsheet, #app.t-enter > :not(.t-tabs) { animation: none !important; } }
 .t-upd { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 12px); transform: translateX(-50%); z-index: 2147482200; border: 0; border-radius: 999px; padding: 10px 18px; background: var(--acc); color: var(--acc-ink); font: inherit; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); cursor: pointer; }
 
-/* size on a PC (JP 2026-11-25): a mouse and a wide screen scale the whole page as one; a finger keeps today's size */
-@media (min-width: 900px) { @media not all and (pointer: coarse) { html.tz-s { zoom: .8; } html.tz-n { zoom: .875; } html.tz-l { zoom: .95; } } }   /* anything but a finger as the main pointer */
