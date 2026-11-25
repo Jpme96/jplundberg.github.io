@@ -158,6 +158,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function api(path, opt) {
     opt = opt || {};
     var init = { method: opt.method || 'GET', headers: { 'x-team': '1', 'x-tid': S.tid }, credentials: 'same-origin', cache: 'no-store' };
+    if (path === 'me' && joinCode()) init.headers['x-join'] = joinCode();   /* the invite shows which team you're joining */
     if (opt.body !== undefined) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
     return fetch('/api/' + path, init).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
@@ -272,7 +273,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }
     if (me.pending) return screenWaiting();
     if (joinCode()) return screenJoin();
-    screen('<h1>' + esc(me.team.name) + '</h1><p>' + L('You are signed in as ', 'Du er logget inn som ') + '<b>' + esc(me.email) + '</b>.</p><p>' + L('You are not in this team. Ask an admin for an invite link.', 'Du er ikke med i dette teamet. Be en admin om en invitasjonslenke.') + '</p><button class="t-btn ghost t-alt" type="button" data-act="signout">' + L('Sign in with another e-mail', 'Logg inn med en annen e-post') + '</button>');
+    screen('<h1>' + esc(me.team.name || 'Team') + '</h1><p>' + L('You are signed in as ', 'Du er logget inn som ') + '<b>' + esc(me.email) + '</b>.</p><p>' + L('You are not in this team. Ask an admin for an invite link.', 'Du er ikke med i dette teamet. Be en admin om en invitasjonslenke.') + '</p><button class="t-btn ghost t-alt" type="button" data-act="signout">' + L('Sign in with another e-mail', 'Logg inn med en annen e-post') + '</button>');
   }
   /* out of this address and the account's login both, so the e-mail page comes back and another e-mail can be tried (JP 2026-11-25 22:01) */
   async function signOut() {
@@ -557,7 +558,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'a5ecd05fe705';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '1f2b379eba34';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();

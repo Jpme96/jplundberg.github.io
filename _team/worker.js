@@ -54,6 +54,7 @@ export default {
     }
     const email = check.email.toLowerCase(), owner = String(env.OWNER).trim().toLowerCase();
     const h = new Headers({ 'content-type': 'application/json', 'x-email': email, 'x-owner': owner });
+    const xj = request.headers.get('x-join') || ''; if (/^[a-f0-9]{32}$/.test(xj)) h.set('x-join', xj);   /* an invite code: lets the invited see the team's name */
     /* more than one team: each team is its own Durable Object (its own members, invites, key and records).
        The first team keeps the name 'team'; a list of the others lives in the Durable Object 'dir'. */
     const dir = env.TEAM.get(env.TEAM.idFromName('dir'));
@@ -188,7 +189,7 @@ export class TeamStore {
     const rank = me ? ROLES.indexOf(me.role) : -1;
     const isAdmin = rank >= 3;
     try {
-      if (p === 'me' && m === 'GET') return this.meInfo(email, owner, team, me);
+      if (p === 'me' && m === 'GET') return this.meInfo(email, owner, team, me, request.headers.get('x-join') || '');
       if (p === 'setup' && m === 'POST') return this.setup(email, owner, team, b);
       if (!team) return json({ error: 'no team yet' }, 404);
       if (p === 'join' && m === 'POST') return this.join(email, me, b);
@@ -279,10 +280,15 @@ export class TeamStore {
 
   async touch(me) { const now = Date.now(); if (!me.seen || now - me.seen > 300e3) { me.seen = now; await this.s.put('m:' + me.email, me); } }
 
-  async meInfo(email, owner, team, me) {
+  async meInfo(email, owner, team, me, join) {
     const out = { email, isOwner: !!owner && email === owner, team: team ? { name: team.name, epoch: team.epoch } : null };
     if (me) { await this.touch(me); out.member = { name: me.name, role: me.role, pub: me.pub, priv: me.priv, keys: me.keys }; }
     else if (team) { const q = await this.s.get('q:' + email); if (q) out.pending = { name: q.name, at: q.at, pub: q.pub, priv: q.priv }; }
+    /* someone who isn't in the team, isn't waiting and has no live invite doesn't learn its name (JP 2026-11-25 23:14) */
+    if (team && !me && !out.pending && !out.isOwner) {
+      let ok = false; if (/^[a-f0-9]{32}$/.test(join)) { const inv = await this.s.get('i:' + await sha(join)); ok = !!inv && inv.exp >= Date.now(); }
+      if (!ok) out.team = { name: '', epoch: team.epoch };
+    }
     return json(out);
   }
 

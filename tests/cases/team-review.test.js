@@ -103,7 +103,8 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const stranger = await (await b.createBrowserContext()).newPage(); await stranger.setViewport({ width: 1500, height: 900 });
   await stranger.setCookie({ name: 'who', value: 'wrong%40madeup.no', domain: 'localhost', path: '/' });
   await stranger.goto(T); await until(stranger, () => /not in this team|ikke med i dette teamet/.test(document.body.innerText), 15000);
-  const st = await stranger.evaluate(() => { const s = document.querySelector('.t-screen'), r = s.getBoundingClientRect(); return { mid: Math.round((r.left + r.right) / 2), w: innerWidth, btn: !!document.querySelector('.t-screen [data-act=signout]') }; });
+  const st = await stranger.evaluate(() => { const s = document.querySelector('.t-screen'), r = s.getBoundingClientRect(); return { mid: Math.round((r.left + r.right) / 2), w: innerWidth, btn: !!document.querySelector('.t-screen [data-act=signout]'), name: /Clock team/.test(document.body.innerText) }; });
+  check(st.name === false, 'someone not in the team does not see its name');
   check(Math.abs(st.mid - st.w / 2) < 40 && st.btn, 'not in the team: the message is in the middle, with "Sign in with another e-mail" ' + JSON.stringify(st));
   await stranger.close();
   /* the sign-in runs out while Team is open: it says so and offers to sign in again (JP 2026-11-25 22:37 – it looked open, nothing reached the server) */
