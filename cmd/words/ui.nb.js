@@ -4221,6 +4221,8 @@ I18N.add({
   "ui.dx-drop-help": ["PDFs, drawings (.dwg), Office files, photos – or one .zip. Nothing is uploaded; everything stays on this device.", "PDF-er, tegninger (.dwg), Office-filer, bilder – eller én .zip. Ingenting lastes opp; alt blir på denne enheten."],
   "ui.dx-fv-loading": ["Opening …", "Åpner …"],
   "ui.dx-fv-share": ["Share", "Del"],
+  "ui.dcn-fag-bld": ["Per building", "Per bygning"],
+  "ui.dcn-fag-all": ["The whole property (general drawings)", "Hele forvaltningsenheten (generelle tegninger)"],
   "ui.dcn-codes-team": ["The team’s codes", "Teamets koder"],
   "ui.dcn-codes-mine": ["My codes", "Mine koder"],
   "ui.dcn-codes-edit": ["Edit own codes …", "Rediger egne koder …"],

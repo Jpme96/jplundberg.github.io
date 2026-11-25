@@ -515,6 +515,8 @@ window.DC_NB = {
 "ui.dcn-f-none": "Ingen her.",
 "ui.dcn-f-ready": "Klare {n}",
 "ui.dcn-f-todo": "Må fylles ut {n}",
+"ui.dcn-fag-all": "Hele forvaltningsenheten (generelle tegninger)",
+"ui.dcn-fag-bld": "Per bygning",
 "ui.dcn-fill": "Fyll inn: {w}",
 "ui.dcn-fill-first": "Fyll inn {w} først",
 "ui.dcn-follows": "Navnet følger regelen",
