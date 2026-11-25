@@ -102,7 +102,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)); const d = li.querySelector('[data-dcnv$=":disc"]'); d.value = '__own'; d.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(300);
   await p.evaluate(() => { const f = document.querySelector('.dcn-fpop [data-dcnownf]'); f.querySelector('[data-dcnoc]').value = 'E2'; f.querySelector('[data-dcnom]').value = 'Made-up power'; f.querySelector('[data-dcnosave]').click(); }); await sl(300);
   const oc = await p.evaluate(async () => { const li = (await R(/Rørplan sprinkler/)), d = li.querySelector('[data-dcnv$=":disc"]');
-    return { sel: d.selectedOptions[0].textContent, grp: d.selectedOptions[0].parentNode.label, sug: li.querySelector('.dcn-sug code').textContent, kept: /E2/.test(localStorage.getItem('dcn.tool') || '') }; });
+    return { sel: d.selectedOptions[0].textContent, grp: d.selectedOptions[0].parentNode.label, sug: li.querySelector('.dcn-sug code').textContent, kept: /E2/.test(JSON.stringify(Features.tools().dcncodes || {})) };   /* own codes: one list in your tools, synced (JP 2026-11-25) */ });
   check(oc.sel === 'E2 – Made-up power' && oc.grp === 'Your codes' && /-E2-332-/.test(oc.sug) && oc.kept, 'an own code is picked from the list, used in the name and kept for later ' + JSON.stringify(oc));
   /* naming rules (JP 22:00 "lackluster … messy with a lot of rules"): used for, your rules, Boligbygg's folded away, an editor built from parts */
   await p.evaluate(() => { document.querySelector('.dx-ren details.dcn-rules').open = true; document.querySelector('.dx-ren [data-dcnnew]').click(); }); await sl(300);
@@ -224,7 +224,7 @@ fs.writeFileSync(lone, '%PDF made up 4');
   /* Start over clears the list and the box for a new import (JP 2026-11-23) */
   await p.evaluate(() => document.querySelector('[data-dxfdvclr]').click()); await sl(250);
   check(await p.evaluate(() => !document.querySelector('.dx-flist') && !document.querySelector('.dx-sum') && document.querySelector('form[data-dxfdv] textarea').value === ''), 'Start over clears the checked names');
-  check(await p.evaluate(b => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; delete t.fdvlearn; return JSON.stringify(t).length === b; }, before), 'the tools saved nothing (but the NS code names you imported)');
+  check(await p.evaluate(b => { const t = Object.assign({}, Features.tools()); delete t.fdvcodes; delete t.fdvlearn; delete t.dcncodes; return JSON.stringify(t).length === b; }, before), 'the tools saved nothing (but the NS code names you imported and your own codes)');
   /* duplicates: only the same content is grouped, nothing goes by itself, a person picks (JP 2026-11-19) */
   await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); await sl(300);
   await p.evaluate(() => { const c = document.querySelector('[data-dxrenclr]'); if (c) { c.click(); c.click(); } }); await sl(300);

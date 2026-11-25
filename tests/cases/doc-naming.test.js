@@ -68,7 +68,7 @@ const named = path.join(dir, '442 DA taklampe korridor.pdf'); fs.writeFileSync(n
   /* change the code by hand: the box empties while picking (JP 11:54), and the file moves */
   /* the code is a dropdown grouped by the main parts, like the other choices (JP 2026-11-17 07:22), with your own code / free text last */
   await op(fid);
-  const empt = await p.evaluate(id => { const s = document.querySelector('[data-dcncode="' + id + '"]'); return s.tagName === 'SELECT' && s.querySelectorAll('optgroup').length >= 3 && !!s.querySelector('option[value="542"]') && s.options[s.options.length - 1].value === '__own' ? '' : 'no'; }, fid);
+  const empt = await p.evaluate(id => { const s = document.querySelector('[data-dcncode="' + id + '"]'); return s.tagName === 'SELECT' && s.querySelectorAll('optgroup').length >= 3 && !!s.querySelector('option[value="542"]') && s.options[s.options.length - 2].value === '__own' && s.options[s.options.length - 1].value === '__ownedit' ? '' : 'no'; }, fid);
   await p.evaluate(id => { const i = document.querySelector('[data-dcncode="' + id + '"]'); i.value = '542'; i.dispatchEvent(new Event('change', { bubbles: true })); }, fid); await sl(400);
   const moved = await p.evaluate(id => { const r = Features.list('dctl')[0], f = r.files.find(x => x.id === id); return { code: f.p.code, line: f.line, l1: r.lines[0].files.length }; }, fid);
   check(empt === '' && moved.code === '542' && moved.l1 === 0, 'the code is a grouped dropdown, and a new code takes the file off the old line ' + JSON.stringify({ empt, moved }));

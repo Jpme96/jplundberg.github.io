@@ -1050,6 +1050,18 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-ownf > b { width: 100%; font-size: 13px; }
 .dcn-ownf input:not([type]), .dcn-oadd input { flex: 1 1 140px; min-width: 0; }
 .dcn-oc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
+.dcn-ov.dcn-codes { z-index: 125; }
+.dcn-cds { width: min(560px, 100%); max-height: calc(100dvh - 32px); overflow: auto; }
+.dcn-cdh { display: flex; flex-direction: column; gap: 2px; margin: 14px 0 6px; }
+.dcn-cdh small { font-size: 12.5px; }
+.dcn-cdl { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; }
+.dcn-cdr { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 6px 4px 12px; border-top: 1px solid var(--line); }
+.dcn-cdr:first-child { border-top: 0; }
+.dcn-cdt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dcn-cdt small { font-size: 12.5px; }
+.dcn-cdr.ed { flex-wrap: wrap; padding: 8px 10px; }
+.dcn-cdr.ed input, .dcn-cdadd input { flex: 1 1 140px; min-width: 0; height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: inherit; font: inherit; font-size: 16px; }
+.dcn-cdadd { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .dcn-oc > span { font-size: 12px; color: var(--muted); width: 100%; }
 .dcn-ochip { font-size: 13px; gap: 4px; }
 .dcn-ochip button { border: 0; background: none; color: var(--muted); padding: 0 2px; cursor: pointer; }

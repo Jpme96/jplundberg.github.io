@@ -8,12 +8,12 @@
    email), ORIGIN (https://work.jplundberg.com). */
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
-const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl|clk|cfg)$/;   /* clk = one clock-in/out (Phase G, 2026-11-15: anyone in the team clocks themselves, only their own), cfg = team settings only admins write (cfgclock: clocking on/off for the team and per person) */   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
+const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl|clk|cfg|mine)$/;   /* clk = one clock-in/out (Phase G, 2026-11-15: anyone in the team clocks themselves, only their own), cfg = team settings only admins write (cfgclock: clocking on/off for the team and per person) */   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
 const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/, GID = /^[a-z0-9]{4,40}$/;
 /* Access (JP 2026-11-16, Documentation): who may do what. ACTS = the lowest role each action needs by default (today's rules);
    an admin can change them, and give a person another role – or none – on one project. A project is a group id (g) the app
    puts on its records, so the Worker never needs to read them. Admins and the owner always have everything. */
-const ACTS = { newp: 'edit', delp: 'admin', edit: 'edit', send: 'edit', import: 'edit', na: 'edit', approve: 'approve', types: 'admin', rules: 'admin' };
+const ACTS = { newp: 'edit', delp: 'admin', edit: 'edit', send: 'edit', import: 'edit', na: 'edit', approve: 'approve', types: 'admin', rules: 'admin', codes: 'admin' };   /* codes: the team's code template in file naming (JP 2026-11-25) */
 const PROLES = ['none'].concat(['read', 'edit', 'approve', 'admin']);
 const MAXREC = 900000, MAXLOG = 2000, LOCKMS = 90000, MAXBATCH = 600;
 const TTL = { '15m': 15 * 60e3, '1d': 864e5, '7d': 7 * 864e5 };
@@ -162,7 +162,7 @@ export class TeamStore {
       /* older Documentation records get their project's group id once (an admin's device knows it; the Worker can't read them) */
       if (p === 'gtag' && m === 'POST') { if (!isAdmin) return json({ error: 'admins only' }, 403); let n = 0; for (const id of Object.keys(b.g || {}).slice(0, 20000)) { const g = b.g[id]; if (!ID.test(id) || typeof g !== 'string' || !GID.test(g)) continue; const r = await this.s.get('r:' + id); if (r && !r.g && /^(dcp|dcl|dcf|dce)$/.test(r.k)) { r.g = g; await this.s.put('r:' + id, r); n++; } } return json({ ok: true, n }); }
       if (p === 'recs' && m === 'GET') return this.recs(url, team, email, me, acc);
-      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk' && !elev) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b, acc); }
+      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk' && b.k !== 'mine' && !elev) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b, acc); }
       if (p === 'batch' && m === 'PUT') { if (rank < 1 && !elev) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b, acc); }
       if (p === 'lock' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.lock(email, b); }
       if (p === 'log' && m === 'GET') return this.logList(url);
@@ -395,9 +395,11 @@ export class TeamStore {
       const role = this.roleIn(me, acc, /^(dcp|dcl|dcf|dce)$/.test(b.k) ? g : '');
       if (role === 'none') return { error: 'no access', status: 403 };
       if (act && ROLES.indexOf(role) < ROLES.indexOf(acc.m[act] || ACTS[act])) return { error: 'your role does not allow this', status: 403 };
-      if (!act && b.k !== 'clk' && ROLES.indexOf(role) < 1) return { error: 'read only', status: 403 };
+      if (!act && b.k !== 'clk' && b.k !== 'mine' && ROLES.indexOf(role) < 1) return { error: 'read only', status: 403 };
     }
-    if (b.k === 'cfg' && rk < 3) return { error: 'admins only', status: 403 };                         /* team settings: admins */
+    /* the naming code template (cfgncodes) follows the access matrix's "codes" (admin by default); other settings: admins */
+    if (b.k === 'cfg' && rk < 3 && !(b.id === 'cfgncodes' && acc && ROLES.indexOf(this.roleIn(me, acc, '')) >= ROLES.indexOf(acc.m.codes || ACTS.codes))) return { error: 'admins only', status: 403 };
+    if (b.k === 'mine' && old && old.by !== email) return { error: 'not yours', status: 403 };   /* a person's own code list: only they write it (JP 2026-11-25) */                         /* team settings: admins */
     if (b.k === 'clk' && old && old.by !== email && rk < 3) return { error: 'not yours', status: 403 };  /* your own clock entries: only you (and admins, to fix a forgotten one) */
     if ((old ? old.v : 0) !== (b.v | 0)) return { error: 'changed meanwhile', rec: old, status: 409 };
     if (old) await this.s.put('h:' + b.id + ':' + old.v, old);   /* history: nothing is truly gone */
@@ -511,7 +513,7 @@ export class TeamStore {
     return json({ ok: true, on: true });
   }
   async nudge(by, me, team, kinds) {
-    kinds = (kinds || []).filter(k => k !== 'clk' && k !== 'cfg'); if (!kinds.length) return;   /* clocking in and settings are no news for the others */
+    kinds = (kinds || []).filter(k => k !== 'clk' && k !== 'cfg' && k !== 'mine'); if (!kinds.length) return;   /* clocking in and settings are no news for the others */
     const subs = await this.s.list({ prefix: 'p:' }); if (!subs.size) return;
     const v = await this.vapid(), what = Array.from(new Set((kinds || []).map(k => ({ meeting: 'meeting', action: 'action', note: 'note', insp: 'inspection', file: 'file', upl: 'upload' })[k] || (/^dc/.test(k || '') ? 'document' : '')).filter(Boolean)));
     const body = (me && me.name ? me.name : 'Someone') + ' · ' + (what.length ? what.join(', ') : 'a change');

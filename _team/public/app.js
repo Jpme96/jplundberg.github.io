@@ -127,6 +127,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function rid() { return [].map.call(crypto.getRandomValues(new Uint8Array(10)), function (b) { return ('0' + b.toString(36)).slice(-2); }).join('').slice(0, 16); }
   function lines(s) { return String(s || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }
   function nMembers(n) { return n === 1 ? L('1 member', '1 medlem') : L(n + ' members', n + ' medlemmer'); }
+  /* the id of your own code list: the same on every device, from your e-mail (FNV-1a, two halves) */
+  function mineId() { var e = String((S.me && S.me.email) || '').toLowerCase(), a = 0x811c9dc5, b = 0x01000193 ^ 0x5bd1e995; for (var i = 0; i < e.length; i++) { a = Math.imul(a ^ e.charCodeAt(i), 0x01000193) >>> 0; b = Math.imul(b ^ e.charCodeAt(i), 0x5bd1e995) >>> 0; } return 'mn' + ('0000000' + a.toString(16)).slice(-8) + ('0000000' + b.toString(16)).slice(-8); }
   function rank() { return S.me && S.me.member ? ROLES.indexOf(S.me.member.role) : -1; }
   function nameOf(em) { if (!em) return '—'; if (S.me && em === S.me.email) return L('You', 'Deg'); for (var i = 0; i < S.members.length; i++) if (S.members[i].email === em) return S.members[i].name; return em.split('@')[0]; }
   var toastT = 0;
@@ -376,7 +378,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   var ACTS = [['newp', 'New projects', 'Lage nye prosjekter', 'edit'], ['delp', 'Delete projects', 'Slette prosjekter', 'admin'], ['edit', 'Choose types and change the list', 'Velge typer og endre listen', 'edit'],
     ['send', 'Send requirements to the contractor', 'Sende krav til entreprenør', 'edit'], ['import', 'Import delivered files', 'Importere leverte filer', 'edit'], ['na', 'Mark “Not relevant”', 'Merke «Ikke relevant»', 'edit'],
     ['approve', 'Approved / Not approved', 'Godkjent / Ikke godkjent', 'approve'],
-    ['types', 'Own project types', 'Egne prosjekttyper', 'admin'], ['rules', 'Client checklists and naming rules', 'Sjekklister og navneregler', 'admin']];
+    ['types', 'Own project types', 'Egne prosjekttyper', 'admin'], ['rules', 'Client checklists and naming rules', 'Sjekklister og navneregler', 'admin'],
+    ['codes', 'The team’s code list in file naming', 'Teamets kodeliste i navngiving', 'admin']];
   S.acc = { m: {}, pp: {}, tr: {} };
   async function loadAccess() { try { var j = await api('access'); S.acc = { m: j.m || {}, pp: j.pp || {}, tr: j.tr || {} }; } catch (e) {} }
   function accMin(a, A) { A = A || S.acc; var d = ACTS.filter(function (x) { return x[0] === a; })[0]; return (A.m && A.m[a]) || (d ? d[3] : 'edit'); }
@@ -933,10 +936,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       loadCss('/dc/bi/bi.css'); loadCss('/dc/dc.css');
       window.PAGED_PDF_VENDOR = '/dc/vendor/';
       window.I18N = { lang: nb ? 'nb' : 'en', k: function (key, en, o) { var t = (nb && window.DC_NB && window.DC_NB[key]) || en; if (o) t = t.replace(/\{(\w+)\}/g, function (m, x) { return o[x] != null ? o[x] : m; }); return t; }, apply: function () {} };
-      window.Quick = { toast: function (h) { toast(String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()); } };
+      window.Quick = { toast: function (h, undo) { var tx = String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); if (typeof undo === 'function') undoToast(tx, undo); else toast(tx); } };   /* Documentation's Undo reaches Team's toast (it was dropped before 2026-11-25) */
       window.PageTabs = { show: function () { S.dtab = 'doc'; showDtab(); } };
       window.DocHost = { Fe: DFe, LP: { nsName: nsName, ownMap: teamNs },
         /* NS code names for the whole team (JP 2026-11-17 09:37): one encrypted settings record (cfgnsnames), written by admins */
+        /* own codes in file naming (JP 2026-11-25): the team template (cfgncodes, the "codes" action – admin by default) and each person's own list (a 'mine' record only they write) */
+        codes: { t: function () { var r = S.recs.cfgncodes; return r && !r.del && r.d && r.d.c && typeof r.d.c === 'object' ? r.d.c : {}; }, mig: function () { var r = S.recs.cfgncodes; return !!(r && !r.del && r.d && r.d.mig); },
+          m: function () { var r = S.recs[mineId()]; return r && !r.del && r.d && r.d.c && typeof r.d.c === 'object' ? r.d.c : {}; }, can: function () { return canDo('codes'); }, mineOk: function () { return rank() >= 0; },
+          save: function (which, map) { return which === 't' ? putRec('cfg', 'cfgncodes', { c: map, mig: 1 }) : putRec('mine', mineId(), { c: map }); } },
         nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; for (var nk in d.m) if (d.m[nk] == null || d.m[nk] === '') delete d.m[nk];   /* null or empty removes a code */ return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); }, flowOn: function () { return flowCfgOn(); },
         uplinks: function (pid) { return links().filter(function (r) { return r.d && r.d.pid === pid && !r.d.off && r.d.exp > Date.now(); }).map(function (r) { return { id: r.id, exp: new Date(r.d.exp).toISOString().slice(0, 10) }; }); },
         uplinkOff: function (id) { upOff(id); },

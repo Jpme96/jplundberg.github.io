@@ -64,6 +64,24 @@ const { check, done } = require('../lib/check');
   const ks2 = await seen('kari@x.no');
   check(!ks2.includes(old.id) && ks2.includes(pA.id), 'a tagged old record follows its project; a record that has one keeps it');
   /* the server still never holds anything readable */
+  /* own codes in file naming (JP 2026-11-25): the team's template follows the "codes" action (admin by default); each person's own list only they write */
+  await call(OWNER, 'access', 'POST', { m: {}, pp: {}, tr: {} });
+  const tpl = { id: 'cfgncodes', k: 'cfg', e: 1, iv: B.iv, ct: B.ct, v: 0 };
+  const kt = await call('kari@x.no', 'batch', 'PUT', { recs: [tpl] });
+  check(kt.j.results[0].status === 403, 'Can edit may not change the team\'s code template by default ' + JSON.stringify(kt.j.results[0]));
+  const ot = await call(OWNER, 'batch', 'PUT', { recs: [tpl] });
+  check(ot.j.results[0].v === 1, 'an admin changes the template ' + JSON.stringify(ot.j.results[0]));
+  await call(OWNER, 'access', 'POST', { m: { codes: 'edit' }, pp: {}, tr: {} });
+  const kt2 = await call('kari@x.no', 'batch', 'PUT', { recs: [Object.assign({}, tpl, { v: 1 })] });
+  check(kt2.j.results[0].v === 2, 'with "codes" set to Can edit, Kari may change it ' + JSON.stringify(kt2.j.results[0]));
+  const ko = await call('kari@x.no', 'batch', 'PUT', { recs: [{ id: 'cfgclockxx', k: 'cfg', e: 1, iv: B.iv, ct: B.ct, v: 0 }] });
+  check(ko.j.results[0].status === 403, 'but no other team setting');
+  await call(OWNER, 'access', 'POST', { m: {}, pp: {}, tr: {} });
+  const km = { id: 'mnkari00000000001', k: 'mine', e: 1, iv: B.iv, ct: B.ct, v: 0 }, cm = { id: 'mncon000000000001', k: 'mine', e: 1, iv: B.iv, ct: B.ct, v: 0 };
+  const w1 = await call('kari@x.no', 'batch', 'PUT', { recs: [km] }), w2 = await call('con@x.no', 'rec', 'PUT', cm);
+  check(w1.j.results[0].v === 1 && w2.j.v === 1, 'everyone keeps their own code list, Can read too ' + JSON.stringify([w1.j.results[0], w2.j]));
+  const w3 = await call(OWNER, 'batch', 'PUT', { recs: [Object.assign({}, km, { v: 1 })] });
+  check(w3.j.results[0].status === 403, 'nobody else writes someone\'s own list, not even an admin ' + JSON.stringify(w3.j.results[0]));
   const all = JSON.stringify([...mem.entries()]);
   check(!/Made-up line|Made-up project/.test(all), 'the server never sees what was written');
   fs.rmSync(copy, { force: true });
