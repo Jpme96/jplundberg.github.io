@@ -137,6 +137,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function lines(s) { return String(s || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }
   function nMembers(n) { return n === 1 ? L('1 member', '1 medlem') : L(n + ' members', n + ' medlemmer'); }
   /* the id of your own code list: the same on every device, from your e-mail (FNV-1a, two halves) */
+  function lrnId() { return 'ln' + mineId().slice(2); }
   function mineId() { var e = String((S.me && S.me.email) || '').toLowerCase(), a = 0x811c9dc5, b = 0x01000193 ^ 0x5bd1e995; for (var i = 0; i < e.length; i++) { a = Math.imul(a ^ e.charCodeAt(i), 0x01000193) >>> 0; b = Math.imul(b ^ e.charCodeAt(i), 0x5bd1e995) >>> 0; } return 'mn' + ('0000000' + a.toString(16)).slice(-8) + ('0000000' + b.toString(16)).slice(-8); }
   function rank() { return S.me && S.me.member ? ROLES.indexOf(S.me.member.role) : -1; }
   function nameOf(em) { if (!em) return '—'; if (S.me && em === S.me.email) return L('You', 'Deg'); for (var i = 0; i < S.members.length; i++) if (S.members[i].email === em) return S.members[i].name; return em.split('@')[0]; }
@@ -381,6 +382,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     S.seq = j.seq; S.locks = j.locks || {};
     if (j.epoch !== S.me.team.epoch) S.me.team.epoch = j.epoch;
     if (!given) saveCache();
+    if (all && !given && rank() >= 3 && !S.tagged) { S.tagged = 1; setTimeout(function () { tagOld().catch(function () {}); }, 3000); }   /* an admin tags older files once */
   }
   /* ---------- access (JP 2026-11-16): what each role may do in Documentation, and someone's own role on one project. The Worker
      checks the same rules on every write and sends nobody a project they have no access to; this only draws the buttons. ---------- */
@@ -419,13 +421,22 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     h += '<div class="t-btns"><button class="t-btn ghost" type="button" data-act="accstd">' + L('Back to the standard', 'Tilbake til standard') + '</button><button class="t-btn" type="button" data-act="accsave"' + (dirty ? '' : ' disabled') + '>' + L('Save access', 'Lagre tilgang') + '</button></div></details>';
     return h;
   }
-  async function saveAccess() {
-    /* older records learn their project first, so the Worker can keep them from people without access */
-    var tags = {}, n = 0; Object.keys(S.recs).forEach(function (id) { var r = S.recs[id], raw = S.raw[id]; if (!r || r.del || !r.d || (raw && raw.g) || !/^(dcp|dcl)$/.test(r.k)) return; var g = '';
+  /* older records and file pieces learn their project once, so the Worker can keep them from people without access (files: JP 2026-11-25 16:42) */
+  async function tagOld() {
+    var tags = {}, fg = {}, n = 0; Object.keys(S.recs).forEach(function (id) { var r = S.recs[id], raw = S.raw[id]; if (!r || r.del || !r.d) return;
+      if (r.k === 'dcp' && r.d.key === 'dctl') (r.d.p.files || []).forEach(function (f) { if (f && f.tf && f.tf.fid) { fg[f.tf.fid] = gOfRaw(r.d.p.krav || r.d.p.id); n++; } });
+      if (r.k === 'file' && r.d.fid && r.d.pid) { var gf = gOfPid(r.d.pid); if (gf) { fg[r.d.fid] = gf; n++; if (!(raw && raw.g)) tags[id] = gf; } }
+      if ((raw && raw.g) || !/^(dcp|dcl)$/.test(r.k)) return; var g = '';
       if (r.k === 'dcp') g = gOfRaw(r.d.key === 'dctl' && r.d.p.krav ? r.d.p.krav : r.d.p.id); else { var pr = S.recs[drid('p', r.d.key, r.d.pid)]; g = gOfRaw(r.d.key === 'dctl' && pr && pr.d && pr.d.p.krav ? pr.d.p.krav : r.d.pid); }
       if (g) { tags[id] = g; n++; } });
-    if (n) await api('gtag', { method: 'POST', body: { g: tags } });
+    var done = {}; try { done = JSON.parse(localStorage.getItem('team.fgdone') || '{}') || {}; } catch (e) {}
+    Object.keys(fg).forEach(function (fid) { if (done[fid]) { delete fg[fid]; n--; } });
+    if (n > 0) { await api('gtag', { method: 'POST', body: { g: tags, f: fg } }); Object.keys(fg).forEach(function (fid) { done[fid] = 1; }); try { localStorage.setItem('team.fgdone', JSON.stringify(done)); } catch (e) {} }
     Object.keys(tags).forEach(function (id) { if (S.raw[id]) S.raw[id].g = tags[id]; });
+  }
+  async function saveAccess() {
+    /* older records learn their project first, so the Worker can keep them from people without access */
+    await tagOld();
     var j = await api('access', { method: 'POST', body: S.accEdit });
     S.acc = { m: j.m || {}, pp: j.pp || {}, tr: j.tr || {} }; S.accEdit = null; draw(); toast(L('Access saved', 'Tilgang lagret'));
   }
@@ -468,18 +479,19 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     } finally { flushing = false; }
   }
   window.addEventListener('online', function () { flush(); });
-  async function putRec(kind, id, data, sum) {
+  async function putRec(kind, id, data, sum, g) {
     var e = S.me.team.epoch, cur = S.recs[id];
     var s = await seal(data, id + '|' + kind + '|' + e, e);
     var sm = undefined;   /* no change log – nothing about the change is sent (JP 2026-11-24 22:57) */
     try {
-      var res = await api('rec', { method: 'PUT', body: { id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm } });
+      var body = { id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm }; if (g) body.g = g;
+      var res = await api('rec', { method: 'PUT', body: body });
       S.recs[id] = { id: id, k: kind, v: res.v, t: res.t, by: S.me.email, e: e, d: data };
       S.raw[id] = { id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: res.v, t: res.t, by: S.me.email, seq: res.seq }; saveCache();
       S.seq = Math.max(S.seq, res.seq - 1);
       return true;
     } catch (err) {
-      if (err.offline) { enqueue({ id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm }); S.recs[id] = Object.assign({}, cur || {}, { id: id, k: kind, by: S.me.email, e: e, d: data, del: 0, pending: 1 }); return true; }
+      if (err.offline) { enqueue(Object.assign({ id: id, k: kind, e: e, iv: s.iv, ct: s.ct, v: cur ? cur.v : 0, s: sm }, g ? { g: g } : {})); S.recs[id] = Object.assign({}, cur || {}, { id: id, k: kind, by: S.me.email, e: e, d: data, del: 0, pending: 1 }); return true; }
       if (err.status === 409) await pull(false).catch(function () {}); toast(failMsg(err)); return false;
     }
   }
@@ -516,7 +528,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'ab2c75eddc2b';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'a124a9e44396';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -992,6 +1004,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         codes: { t: function () { var r = S.recs.cfgncodes; return r && !r.del && r.d && r.d.c && typeof r.d.c === 'object' ? r.d.c : {}; }, mig: function () { var r = S.recs.cfgncodes; return !!(r && !r.del && r.d && r.d.mig); },
           m: function () { var r = S.recs[mineId()]; return r && !r.del && r.d && r.d.c && typeof r.d.c === 'object' ? r.d.c : {}; }, can: function () { return canDo('codes'); }, mineOk: function () { return rank() >= 0; },
           save: function (which, map) { return which === 't' ? putRec('cfg', 'cfgncodes', { c: map, mig: 1 }) : putRec('mine', mineId(), { c: map }); } },
+        /* the file suggestions that learn (JP 2026-11-25): your own votes (only you and admins get them), the team's finished rules (no counts) */
+        learn: { mine: function () { var r = S.recs[lrnId()]; return r && !r.del && r.d ? r.d.o || null : null; }, saveMine: function (o) { return putRec('lrn', lrnId(), { o: o }); },
+          rules: function () { var r = S.recs.cfglearn; return r && !r.del && r.d && r.d.r ? r.d.r : {}; }, saveRules: function (r) { return canDo('codes') ? putRec('cfg', 'cfglearn', { r: r }) : Promise.resolve(false); },
+          all: function () { var out = []; Object.keys(S.recs).forEach(function (id) { var r = S.recs[id]; if (r && !r.del && r.k === 'lrn' && r.d && r.d.o) out.push({ o: r.d.o, me: r.by === S.me.email }); }); return out; } },
         nsShared: true, nsCan: function () { return rank() >= 3; }, nsSave: function (m) { var d = m ? { m: Object.assign({}, teamNs(), m) } : { m: {} }; for (var nk in d.m) if (d.m[nk] == null || d.m[nk] === '') delete d.m[nk];   /* null or empty removes a code */ return putRec('cfg', 'cfgnsnames', d, L('NS code names', 'NS-kodenavn')).then(function (ok) { draw(); return ok; }); }, profile: function () { return { name: S.me.member.name, employer: S.me.team.name }; }, team: true, store: DStore, rank: function () { return rank(); }, can: function (a, raw) { return canDo(a, raw); }, flowOn: function () { return flowCfgOn(); },
         uplinks: function (pid) { return links().filter(function (r) { return r.d && r.d.pid === pid && !r.d.off && r.d.exp > Date.now(); }).map(function (r) { return { id: r.id, exp: new Date(r.d.exp).toISOString().slice(0, 10) }; }); },
         uplinkOff: function (id) { upOff(id); },
@@ -999,7 +1015,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         upDone: function (lid, fids) { return upDone(lid, fids); },
         linksOff: function (pid) { return linksOff(pid); },
         /* a project's delivered files, shared with the team (JP 2026-11-24): sent up encrypted, fetched on another device, removed with the file */
-        fup: function (blob) { if (rank() < 1 || !blob || blob.size > FMAX) return Promise.resolve(null); return sendChunks(blob).catch(function () { return null; }); },
+        fup: function (blob, raw) { var g = gOfRaw(raw || ''); if ((rank() < 1 && !(g && ROLES.indexOf(roleIn(g)) >= 1)) || !blob || blob.size > FMAX) return Promise.resolve(null); return sendChunks(blob, g).catch(function () { return null; }); },
         fget: function (tf, name, type) { return getFile({ fid: tf.fid, n: tf.n, e: tf.e, name: name, type: type }); },
         fdel: function (tf) { if (rank() < 1 || !tf || !tf.fid) return Promise.resolve(); return api('fdel', { method: 'POST', body: { fid: tf.fid, n: tf.n } }).catch(function () {}); },
         uplink: function (pid) { if (rank() < 1) return; S.fproj = pid; uplinkSheet(); } };   /* Filer → "Entreprenøren har dem": the upload-link sheet with this project chosen */
@@ -1216,19 +1232,21 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function projects() { return (docRO().dctl || []).map(function (p) { return { id: p.id, name: p.name }; }); }
   function projName(pid, key) { var t = docRO(); if (!t._names) { t._names = {}; (t.dckrav || []).forEach(function (p) { t._names['dckrav|' + p.id] = p.name + ' (' + L('requirements', 'krav') + ')'; }); (t.dctl || []).forEach(function (p) { t._names[p.id] = t._names['dctl|' + p.id] = p.name; }); } return t._names[key ? key + '|' + pid : pid] || ''; }
   /* the encrypted pieces of one file – shared files and, since 2026-11-24, a project's delivered files (DocHost.fup) */
-  async function sendChunks(file) {
+  /* a Documentation project's group id from its own id (requirements and their control project are one) */
+  function gOfPid(pid) { if (!pid) return ''; var raw = ''; Object.keys(S.recs).some(function (id) { var r = S.recs[id]; if (!r || r.del || r.k !== 'dcp' || !r.d || !r.d.p || r.d.p.id !== pid) return false; raw = r.d.key === 'dctl' && r.d.p.krav ? r.d.p.krav : r.d.p.id; return true; }); return gOfRaw(raw); }
+  async function sendChunks(file, g) {
     var e = S.me.team.epoch, fid = hexId(16), n = Math.max(1, Math.ceil(file.size / CHUNK));
     for (var i = 0; i < n; i++) {
       var part = new Uint8Array(await file.slice(i * CHUNK, (i + 1) * CHUNK).arrayBuffer()), iv = rnd(12);
       var ct = await C.encrypt({ name: 'AES-GCM', iv: iv, additionalData: TE.encode(fid + '|' + i + '|' + e) }, S.keys[e], part);
-      await api('fchunk', { method: 'PUT', body: { fid: fid, n: i, iv: b64(iv), ct: b64(ct) } });
+      await api('fchunk', { method: 'PUT', body: g ? { fid: fid, n: i, iv: b64(iv), ct: b64(ct), g: g } : { fid: fid, n: i, iv: b64(iv), ct: b64(ct) } });
     }
     return { fid: fid, n: n, e: e };
   }
   async function sendFile(file, pid) {
     if (file.size > FMAX) { toast(L('Too big (over 55 MB): ', 'For stor (over 55 MB): ') + file.name); return false; }
-    var c = await sendChunks(file), fid = c.fid, n = c.n, e = c.e;
-    return putRec('file', 'fl' + fid.slice(0, 20), { fid: fid, n: n, e: e, name: String(file.name || 'file').slice(0, 160), type: file.type || '', size: file.size, pid: pid || '', at: Date.now() }, L('File: ', 'Fil: ') + file.name);
+    var g = gOfPid(pid), c = await sendChunks(file, g), fid = c.fid, n = c.n, e = c.e;
+    return putRec('file', 'fl' + fid.slice(0, 20), { fid: fid, n: n, e: e, name: String(file.name || 'file').slice(0, 160), type: file.type || '', size: file.size, pid: pid || '', at: Date.now() }, L('File: ', 'Fil: ') + file.name, g);
   }
   async function getFile(d) {
     var parts = [], key = d.k ? await C.importKey('raw', ub64(d.k), 'AES-GCM', false, ['decrypt']) : S.keys[d.e];
@@ -1351,7 +1369,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   /* keep files from an upload link in the project's shared files – and tell the sender they were received */
   async function keepUploads(fids) {
     var done = [], lid = '';
-    for (var i = 0; i < fids.length; i++) { var uk = (S.upMeta || {})[fids[i]]; if (!uk) continue; lid = uk.lid; if (await putRec('file', 'fl' + uk.fid.slice(0, 20), uk, L('File: ', 'Fil: ') + uk.name)) done.push(uk.fid); }
+    for (var i = 0; i < fids.length; i++) { var uk = (S.upMeta || {})[fids[i]]; if (!uk) continue; lid = uk.lid; if (await putRec('file', 'fl' + uk.fid.slice(0, 20), uk, L('File: ', 'Fil: ') + uk.name, gOfPid(uk.pid))) done.push(uk.fid); }
     if (done.length) { api('upkept', { method: 'POST', body: { lid: lid, fids: done } }).catch(function () {}); toast(L(done.length === 1 ? 'Kept in the project files' : done.length + ' files kept in the project files', done.length === 1 ? 'Lagt i prosjektfilene' : done.length + ' filer lagt i prosjektfilene')); draw(); }
   }
   /* the contractor's live list (2026-11-21, JP): for every open upload link on a project, what is still missing or

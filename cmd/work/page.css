@@ -1064,3 +1064,20 @@ html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { anima
 .dc-frow2.picked { background: var(--accent-soft); border-radius: 10px; }
 .dc-fheadb { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 14px; }
 .dc-gpick { margin: 4px 0 0; }
+
+/* a line of your own in Dokumentplan (JP 2026-11-25) */
+.dc-addl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px 12px; margin: 10px 0 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-card, 12px); }
+.dc-addl label { display: grid; gap: 4px; font-size: var(--fs-s, .85rem); }
+.dc-addl label > span { color: var(--muted); }
+.dc-addl .dc-addlw, .dc-addl .dc-addlb { grid-column: 1 / -1; }
+.dc-addlb { display: flex; align-items: center; gap: 12px; margin: 0; flex-wrap: wrap; }
+.dc-addle { color: var(--danger); }
+
+/* "Usual for this project, but not in the plan" (JP 2026-11-25) – folded, in the plan's own look */
+.dc-need { margin: 14px 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-card, 12px); }
+.dc-need > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.dc-need > .dc-help { margin: 6px 0 2px; }
+.dc-needf { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 8px 0 0; }
+.dcn-sugm { margin: 8px 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-card, 12px); }
+.dcn-sugm p { margin: 0 0 6px; } .dcn-sugm ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.dcn-sugm li { display: grid; gap: 2px; } .dcn-sugm small { color: var(--muted); }

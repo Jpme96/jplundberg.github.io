@@ -40,7 +40,7 @@
     if (!out && /fdv|drift|vedlikehold/.test(low)) out = 'BC';
     if (!out && /samsvar|sluttkontroll|kontrollerkl/.test(low)) out = 'A';
     if (!out && /datablad|dataark|produktdata/.test(low)) out = 'E';
-    if (!out && /tegning|som bygget|as.?built/.test(low)) out = 'K';
+    if (!out && /tegning|som bygget|as.?built|rømningsplan|romningsplan|orienteringsplan|plantegning|situasjonsplan|escape plan|orientation plan/.test(low)) out = 'K';   /* Rømningsplan, Orienteringsplan (JP 2026-11-25) */
     return out;
   }
   /* the two letters after the code in a file name, and the NS 3456 types each fits */
@@ -235,6 +235,7 @@
   function teamBlob(id) { var f = HOST && HOST.fget && fileRec(id); if (!f || !f.tf) return Promise.resolve(null); return HOST.fget(f.tf, f.name, mime(f.name)).then(function (file) { if (file) putBlobLocal(id, file); return file || null; }).catch(function () { return null; }); }
   function tfIn(p, id) { var f = ((p || {}).files || []).filter(function (x) { return x.id === id; })[0]; return f && f.tf; }
   function dropFile(id, tf) { delBlob(id); if (tf && HOST && HOST.fdel) HOST.fdel(tf); }
+  var addOpen = '';   /* the project whose "Add line" form is open */
   var SHQ = {}, SHN = {}, SHT = {}, SHR = {}, shBusy = false, shList = [];   /* SHT: what this device sent up (put back if a sync drops it); SHR: tries per file */
   /* files from a project's upload link go straight into its Levering (JP 2026-11-24 22:46): fetched when the project is open, added as new
      files, and the copy on the link is removed once the project's own copy is shared with the team (UPD) */
@@ -248,7 +249,7 @@
     (function next() { var it = shList.shift(); if (!it) { shBusy = false; draw(); return; }
       var pid0 = it[0], id0 = it[1], done = function () { SHN[pid0] = Math.max(0, (SHN[pid0] || 1) - 1); next(); };
       var retry = function () { delete SHQ[id0]; SHR[id0] = (SHR[id0] || 0) + 1; if (SHR[id0] <= 3) setTimeout(function () { shareUp(pid0, [id0]); }, 4000 * SHR[id0]); };   /* a failed upload is tried again (a busy line), three times */
-      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl).then(function (tf) { if (!tf) { retry(); return; } SHT[id0] = tf; if (UPD[id0] && HOST.upDone) { HOST.upDone(UPD[id0][0], [UPD[id0][1]]); delete UPD[id0]; } saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
+      getBlobLocal(id0).then(function (bl) { var f = fileRec(id0); if (!bl || !f || f.tf) return null; return HOST.fup(bl, gOf(proj(pid0), 'dctl')).then(function (tf) { if (!tf) { retry(); return; } SHT[id0] = tf; if (UPD[id0] && HOST.upDone) { HOST.upDone(UPD[id0][0], [UPD[id0][1]]); delete UPD[id0]; } saveP(pid0, function (p) { var x = (p.files || []).filter(function (y) { return y.id === id0; })[0]; if (x && !x.tf) x.tf = tf; }); }); })
         .catch(retry).then(done); })();
     draw();
   }
@@ -455,8 +456,9 @@
     h += '<div class="dx-rsum"><span>' + (busy ? '<i class="bi bi-hourglass-split"></i> ' + esc(k('ui.dx-ren-reading', 'reading the PDFs …')) : '') + '</span>' +   /* the counts line went (JP 2026-11-19) – the filters below show them */
       '<span class="dx-rbtn"><input type="file" multiple data-dxrenf hidden>' + addMenu('ren', [addItem('upload', k('ui.dc-pick-files', 'Choose files'), k('ui.dx-add-more-s', 'More PDFs, photos or a .zip'), 'data-dxrenopen'),   /* opens the drop popup, as before (JP 07:50) */
         addItem('arrow-counterclockwise', k('ui.dx-clear', 'Start again'), k('ui.dx-clear-s', 'Empties the list'), 'data-dxrenclr')]) + (ok ? '<button type="button" class="pill-btn" data-dxrenuse><i class="bi bi-pencil"></i> ' + esc(k('ui.dx-ren-useall', 'Use the new name on {n} ready', { n: ok })) + '</button>' : '') +
-      '<button type="button" class="pill-btn ghost" data-dxrenplan><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dx-ren-plan', 'Document plan (Vedlegg 7)')) + '</button>' +
+      '<button type="button" class="pill-btn ghost" data-dxrenplan><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dx-ren-plan', 'Document plan (.xlsx)')) + '</button>' +
       '<button type="button" class="pill-btn dx-pri" data-dxrendl><i class="bi bi-download"></i> <span data-dxrenn>' + esc(F.length === 1 ? k('ui.dx-dl-go1', 'Download the file') : k('ui.dx-ren-dl4', 'Download …')) + '</span></button></span></div>';
+    h += needCard('__ren', needList('__ren'));
     return h + N.files(p, F) + '</section>';
   }
   /* a popup to drop files on, or pick them (JP 2026-11-17 07:50); the panel itself takes dropped files too */
@@ -490,9 +492,9 @@
     }); }, Promise.resolve()).then(function () { return Promise.all(got.map(function (g) { return fingerprint(g.blob).then(function (h) { g.h = h; }); })); }).then(function () {
       /* the content decides (JP 2026-11-19): the very same file added again (same name, same content) is skipped; files with the same content but another name stay, marked for a person to check */
       var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.h || f.size)] = 1; });
-      got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + (g.h || g.size); if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4);
+      var newIds = []; got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + (g.h || g.size); if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4); newIds.push(id);
         TOOL.blobs[id] = g.blob; if (g.upl) TOOL.upl[id] = g.upl; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, lm: fdate(g.blob), h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
-      draw(); var N = naming(); if (N) N.suggestAll('__ren').then(function () { draw(); });
+      draw(); var N = naming(); if (N) N.suggestAll('__ren', newIds).then(function () { draw(); });   /* only what came in now – a set is the files added together */
     });
   }
   /* what to download, shown before it happens (JP 2026-11-19): all, the selected ones or the finished ones – with the list of names; one file comes as itself, not a .zip */
@@ -533,9 +535,10 @@
   /* a document plan (Vedlegg 7) from the files in the tool: their codes, document types and new names (JP 2026-11-24 22:51) */
   function toolPlan() {
     var N = naming(), p = toolP(), mk = 0, pl = { name: k('ui.dx-ren-plan-n', 'Document plan from the files'), no: '', lines: [] };
+    TXL.forEach(function (l) { pl.lines.push(l); });
     p.files.forEach(function (f) { var q = parseName(N ? N.newName(p, f) : f.name); if (!/^\d{3}/.test(q.code || '')) return; pl.lines.push({ id: 'l' + (mk++), code: q.code, sys: codeName(q.code) || '', type: '', t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '', planned: q.stem.slice(0, 160), st: 'recv', files: [] }); });
     if (!pl.lines.length) { toast('<i class="bi bi-info-circle"></i> ' + esc(k('ui.dc-mk-none', 'No file has an NS 3451 code yet – give the files their names first.'))); return; }
-    dlOut(new File([kravXlsxBby(pl)], 'Vedlegg 7 ' + k('ui.dc-hand-plan', 'Document plan') + ' ' + today() + '.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); toolUpDone(p.files);
+    dlOut(new File([kravXlsxBby(pl)], k('ui.dc-hand-plan', 'Document plan') + ' ' + today() + '.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); toolUpDone(p.files);
   }
   window.DocTools = {   /* for Team's Opplastinger: open the naming tool with files, pack files, make a project */
     ren: function (fs) { open = null; ropen = null; xtool = 'ren'; renHere = false; draw(); window.scrollTo(0, 0); return renAdd(fs); },
@@ -678,13 +681,14 @@
   }
   function flowPlan(p, pc) {
     var L = p.lines || [], imp = '<input type="file" accept=".xlsx,.xlsm,.csv,.txt" data-dcplan="' + esc(p.id) + '" hidden>';
-    if (!hasPlan(p) && !L.length && !p.noPlan) return '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-imp-t', 'Import the contractor’s document plan')) + '</b><p class="muted">' + esc(k('ui.dc-fl-imp-h', 'Choose the filled-in Vedlegg 7 (.xlsx). Every tab is read and the plan is checked against the requirements right away.')) + '</p>' +
+    if (!hasPlan(p) && !L.length && !p.noPlan) return '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-imp-t', 'Import the contractor’s document plan')) + '</b><p class="muted">' + esc(k('ui.dc-fl-imp-h', 'Choose the filled-in document plan (.xlsx). Every tab is read and the plan is checked against the requirements right away.')) + '</p>' +
       '<label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label><button type="button" class="text-btn" data-dcnoplan="' + esc(p.id) + '">' + esc(k('ui.dc-fl-noplan', 'Continue without a document plan')) + '</button></div>';
     if (!hasPlan(p) && p.noPlan) {
-      var lf = looseFiles(p).length, h0 = '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-np-t', 'No document plan in this project')) + '</b><p class="muted">' + esc(k('ui.dc-fl-np-h', 'Team can fill one in from what is delivered – in the Vedlegg 7 layout, with what the requirements still miss as empty rows.')) + '</p>' +
+      var lf = looseFiles(p).length, h0 = '<div class="dc-empty"><b>' + esc(k('ui.dc-fl-np-t', 'No document plan in this project')) + '</b><p class="muted">' + esc(k('ui.dc-fl-np-h', 'Team can fill one in from what is delivered – as a document plan, with what the requirements still miss as empty rows.')) + '</p>' +
         (lf ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: lf })) + '</button>' : (L.length ? '' : '<button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-deliver-first', 'Deliver the documentation first')) + ' <i class="bi bi-chevron-right"></i></button>')) +
         '<label class="text-btn dc-file">' + esc(k('ui.dc-fl-have-plan', 'We got a plan after all – import it')) + imp + '</label></div>';
-      if (L.length) h0 += '<p class="dc-note">' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: L.length })) + '</p><div class="dc-facts"><button type="button" class="pill-btn" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7', 'Download as Vedlegg 7 (.xlsx)')) + '</button></div>';
+      if (L.length) h0 += '<p class="dc-note">' + esc(k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: L.length })) + '</p><div class="dc-facts"><button type="button" class="pill-btn" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7', 'Download document plan (.xlsx)')) + '</button></div>';
+      if (L.length && can('edit', gOf(p, 'dctl'))) h0 += needCard(p.id, L);
       return h0 + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
     }
     if (!hasPlan(p)) return '<p class="muted dc-help">' + esc(k('ui.dc-fl-plan-krav', 'The list was made from the requirements – no document plan from the contractor yet.')) + '</p><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label>' + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
@@ -696,20 +700,27 @@
       pc.gaps.map(function (g) { return flowRow(g.code, g.sys, k('ui.dc-fl-req-types', 'The project requires: {t}', { t: g.t.split('').map(typeName).join(', ') }), '<span class="dc-fpill dc-v-no">' + esc(k('ui.dc-fl-notplan', 'Not in the plan')) + '</span>'); }).join('') +
       bad.map(function (x) { shownP.push(x.l.id); return flowRow(x.l.code, (typeLabel(x.l) || '') + (x.l.planned ? ' – ' + x.l.planned : ''), x.is.err.concat(x.is.warn).join(' · '), '<span class="dc-fpill dc-v-' + (x.is.err.length ? 'no' : 'wa') + '">' + esc(x.is.err.length ? k('ui.dc-fl-error', 'Error') : k('ui.dc-fl-look', 'Look at it')) + '</span>', '', p, x.l, psel); }).join('') + '</ul>' +
       (!bad.length && !pc.gaps.length ? '<p class="dc-note"><i class="bi bi-check2-circle"></i> ' + esc(k('ui.dc-fl-plan-allok', 'The plan covers the requirements and the names follow the rules.')) + '</p>' : '') +
+      (ced ? needCard(p.id, L, needSkip(p.id)) : '') +
       /* the whole plan as it was imported, per NS group, folded (JP 2026-11-23 "I should be able to see what I uploaded") */
       '<h3 class="fdv-h">' + esc(k('ui.dc-fl-plan-all', 'The whole plan')) + '</h3>' + byGroup(L).map(function (g) {
         var key = 'p:' + p.id + ':' + g[0], op = !!gopen[key];
         return '<details class="dc-fold" data-dcg="' + esc(key) + '"' + (op ? ' open' : '') + '><summary class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + ' <small class="muted tnum">' + esc(k('ui.dc-n-docs', '{n} documents', { n: g[1].length })) + '</small></summary>' +
           (op ? (psel ? '<p class="dc-gpick"><button type="button" class="text-btn" data-dcselall="1" data-add="1" data-ids="' + esc(g[1].map(function (l) { return l.id; }).join(' ')) + '"><i class="bi bi-check2-square"></i> ' + esc(k('ui.dc-sel-grp', 'Select all in the group')) + '</button></p>' : '') +
-            '<ul class="dc-flist2">' + g[1].slice().sort(lineOrder).map(function (l) { if (shownP.indexOf(l.id) < 0) shownP.push(l.id); return flowRow(l.code, (typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + ' – ' + lineTitle(l), l.planned ? (l.ex ? k('ui.dc-example-name', 'Example name') + ': ' : '') + l.planned : '', l.st && l.st !== 'missing' ? chip(l.st) : '', '', p, l, psel); }).join('') + '</ul>' : '') + '</details>';
+            '<ul class="dc-flist2">' + g[1].slice().sort(lineOrder).map(function (l) { if (shownP.indexOf(l.id) < 0) shownP.push(l.id); return flowRow(l.code, (typeLabel(l) || k('ui.dc-documentation', 'Documentation')) + ' – ' + lineTitle(l), l.planned ? (l.ex ? k('ui.dc-example-name', 'Example name') + ': ' : '') + l.planned : '', (l.own ? '<span class="stt stt-plan">' + esc(k('ui.dc-own-line', 'Added by you')) + '</span> ' : '') + (l.st && l.st !== 'missing' ? chip(l.st) : ''), '', p, l, psel); }).join('') + '</ul>' : '') + '</details>';
       }).join('');
+    /* a line of your own – a document the contractor's plan forgot (JP 2026-11-25 16:25) */
+    if (ced && !psel) h += addOpen === p.id ? '<div class="dc-addl"><label><span>' + esc(k('ui.dc-addl-code', 'NS code')) + '</span><input data-dcalc inputmode="numeric" maxlength="6" placeholder="360"></label>' +
+      '<label><span>' + esc(k('ui.dc-sel-type', 'Document type')) + '</span><select data-dcalt><option value="">' + esc(k('ui.dcn-choose-type', 'Choose type')) + '</option>' + TYPES.map(function (t) { return '<option value="' + t[0] + '">' + esc(t[0] + ' – ' + typeName(t[0])) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="dc-addlw"><span>' + esc(k('ui.dc-addl-title', 'What the document is')) + '</span><input data-dcalx maxlength="160" placeholder="' + esc(k('ui.dc-addl-ph', 'e.g. Balancing report – ventilation')) + '"></label>' +
+      '<p class="dc-addlb"><button type="button" class="pill-btn" data-dcaddl="' + esc(p.id) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-addl-add', 'Add line')) + '</button><button type="button" class="text-btn" data-dcaddo="">' + esc(k('ui.cancel', 'Cancel')) + '</button><small class="dc-addle" hidden></small></p></div>'
+      : '<p class="dc-gpick"><button type="button" class="text-btn" data-dcaddo="' + esc(p.id) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-addl', 'Add line')) + '</button></p>';
     if (psel) h += selBar('pl', p.id, shownP, selActs(p, ['rm', 'na', 'type', 'due', 'who']));
     return h + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
   }
   function flowCmp(p, loose) {
     var L = p.lines || [], F = p.files || [];
     /* no plan and no requirements: nothing to compare against – say so, make the list from the delivery, or go on (JP 2026-11-24 20:42) */
-    if (F.length && !L.length) return '<div class="dc-empty"><b>' + esc(k('ui.dc-cmp-nolist-t', 'No list to compare against')) + '</b><p class="muted">' + esc(k('ui.dc-cmp-nolist-h', 'This project has no document plan and no requirements. Make the list from what was delivered – then each document can be approved, and the report and Vedlegg 7 are made from it.')) + '</p>' +
+    if (F.length && !L.length) return '<div class="dc-empty"><b>' + esc(k('ui.dc-cmp-nolist-t', 'No list to compare against')) + '</b><p class="muted">' + esc(k('ui.dc-cmp-nolist-h', 'This project has no document plan and no requirements. Make the list from what was delivered – then each document can be approved, and the report and the document plan are made from it.')) + '</p>' +
       (can('import', gOf(p, 'dctl')) ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: looseFiles(p).length })) + '</button>' : '') +
       '<button type="button" class="text-btn" data-dctab="end">' + esc(k('ui.dc-cmp-skip', 'Skip to the final check')) + ' <i class="bi bi-chevron-right"></i></button></div>';
     if (!F.length && !L.some(function (l) { return l.st && l.st !== 'missing'; })) return '<div class="dc-empty"><p>' + esc(k('ui.dc-fl-cmp-none', 'Nothing delivered yet – nothing to compare.')) + '</p><button type="button" class="pill-btn ghost" data-dctab="lev">' + esc(k('ui.dc-fl-to-lev', 'Go to delivery')) + ' <i class="bi bi-chevron-right"></i></button></div>';
@@ -991,7 +1002,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '43f42e482f';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '4041c96ee5';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; }, projects: function () { return projects(); } };
@@ -1052,16 +1063,16 @@
       '<span class="dc-dlall"><i class="bi bi-box-seam"></i><span><b>' + esc(k('ui.dc-hand-btn', 'Handover package')) + '</b><small>' + esc(k('ui.dc-dl-all-s', 'Everything in one .zip: the report, the document plan, the delivery list and the approved files')) + '</small></span><button type="button" class="pill-btn sm" data-dchand="' + esc(p.id) + '"><span>' + esc(k('ui.dc-dl', 'Download')) + '</span></button></span>' +
       '<small class="dc-dlor">' + esc(k('ui.dc-dl-or', '… or choose yourself:')) + '</small>' +
       it('rep', 'file-earmark-pdf', k('ui.dc-hand-report', 'Report'), k('ui.dc-dl-rep-s', 'PDF – what you see below')) +
-      it('plan', 'file-earmark-excel', k('ui.dc-hand-plan', 'Document plan'), !lines ? k('ui.dc-dl-plan-none', 'No list yet – make it from the delivery first') : hasPlan(p) ? k('ui.dc-dl-plan-own', 'Your plan with colours (Excel)') : k('ui.dc-dl-plan-v7', 'Vedlegg 7 made from the delivery (Excel)'), '', !lines) +
+      it('plan', 'file-earmark-excel', k('ui.dc-hand-plan', 'Document plan'), !lines ? k('ui.dc-dl-plan-none', 'No list yet – make it from the delivery first') : hasPlan(p) ? k('ui.dc-dl-plan-own', 'Your plan with colours (Excel)') : k('ui.dc-dl-plan-v7', 'Document plan made from the delivery (Excel)'), '', !lines) +
       it('list', 'list-ul', k('ui.dc-dl-list', 'Delivery list'), k('ui.dc-dl-list-s', 'Everything delivered, with status and new name (Excel)')) +
       it('files', 'files', k('ui.dc-dl-files', 'The files'), (nF === F.length ? k('ui.dc-dl-files-all', 'All {n} – right names, sorted by NS 3451', { n: F.length }) : k('ui.dc-dl-files-n', '{a} of {n} – right names, sorted by NS 3451', { a: nF, n: F.length })), F.length ? '<button type="button" class="text-btn dc-dlpick" data-dcdlpick>' + esc(k('ui.dc-dl-pick', 'Choose files …')) + '</button>' : '', !F.length) +
       '<span class="dc-dlgo"><button type="button" class="pill-btn ghost" data-dcdlgo="' + esc(p.id) + '"' + (n ? '' : ' disabled') + '>' + esc(k('ui.dc-dl-go', 'Download the chosen ({n})', { n: n })) + '</button></span></span></span>';
   }
   function planTable(p) {
     var L = (p.lines || []).slice().sort(lineOrder);
-    if (!L.length) return '<div class="dc-empty"><p>' + esc(k('ui.dc-cmp-nolist-h', 'This project has no document plan and no requirements. Make the list from what was delivered – then each document can be approved, and the report and Vedlegg 7 are made from it.')) + '</p>' +
+    if (!L.length) return '<div class="dc-empty"><p>' + esc(k('ui.dc-cmp-nolist-h', 'This project has no document plan and no requirements. Make the list from what was delivered – then each document can be approved, and the report and the document plan are made from it.')) + '</p>' +
       ((p.files || []).length && can('import', gOf(p, 'dctl')) ? '<button type="button" class="pill-btn" data-dcmkplan="' + esc(p.id) + '"><i class="bi bi-magic"></i> ' + esc(k('ui.dc-fl-mk', 'Make a document plan from the delivery ({n} files)', { n: looseFiles(p).length })) + '</button>' : '') + '</div>';
-    return '<p class="muted dc-tdhelp">' + esc(hasPlan(p) ? k('ui.dc-pv-own', 'Your document plan, coloured by status – the Excel looks the same.') : k('ui.dc-pv-v7', 'No document plan was uploaded – this is Vedlegg 7 made from the delivery.')) +
+    return '<p class="muted dc-tdhelp">' + esc(hasPlan(p) ? k('ui.dc-pv-own', 'Your document plan, coloured by status – the Excel looks the same.') : k('ui.dc-pv-v7', 'No document plan was uploaded – this one is made from the delivery.')) +
       (hasPlan(p) ? ' <button type="button" class="text-btn" data-dcxcol="' + esc(p.id) + '">' + esc(k('ui.dc-pv-edit', 'See and change the Excel file')) + '</button>' : '') + '</p>' +
       '<div class="dc-pvt-wrap"><table class="dc-pvt"><thead><tr><th>NS 3451</th><th>' + esc(k('ui.dc-system', 'System')) + '</th><th>' + esc(k('ui.dc-type', 'Document type')) + '</th><th>' + esc(k('ui.dc-planned-name', 'Planned name')) + '</th><th>' + esc(k('ui.dc-status', 'Status')) + '</th></tr></thead><tbody>' +
       L.map(function (l) { return '<tr><td class="tnum">' + esc(l.code || '') + '</td><td>' + esc(lineTitle(l)) + '</td><td>' + esc(typeLabel(l) || '') + '</td><td data-noi18n>' + esc(l.planned || '') + '</td><td><span class="stt ' + sttOf(l.st || 'missing') + '">' + esc(stName(l.st || 'missing')) + '</span></td></tr>'; }).join('') + '</tbody></table></div>';
@@ -1088,7 +1099,7 @@
   function dlPart(p, key) {
     var me = profile(), foot = [[me.name, me.role].filter(Boolean).join(', '), me.employer, k('ui.doc-control', 'Document control'), p.no, p.name].filter(Boolean).join('  ·  ');
     if (key === 'rep') return window.FdvPdf && window.FdvPdf.html ? window.FdvPdf.html(report(p), foot, fileName(p, k('ui.dc-hand-report', 'Report'), '.pdf')).then(function (f) { return [[f.name, f]]; }) : Promise.resolve([]);
-    if (key === 'plan') { if (!(p.lines || []).length) return Promise.resolve([]); if (hasPlan(p)) return planXlsx(p).then(function (f) { return f ? [[fileName(p, k('ui.dc-hand-plan', 'Document plan'), '.xlsx'), f]] : []; }); return Promise.resolve([[fileName(p, 'Vedlegg 7 ' + k('ui.dc-hand-plan', 'Document plan'), '.xlsx'), new Blob([kravXlsxBby(p)])]]); }
+    if (key === 'plan') { if (!(p.lines || []).length) return Promise.resolve([]); if (hasPlan(p)) return planXlsx(p).then(function (f) { return f ? [[fileName(p, k('ui.dc-hand-plan', 'Document plan'), '.xlsx'), f]] : []; }); return Promise.resolve([[fileName(p, k('ui.dc-hand-plan', 'Document plan'), '.xlsx'), new Blob([kravXlsxBby(p)])]]); }
     if (key === 'list') return Promise.resolve([[fileName(p, k('ui.dc-dl-list', 'Delivery list'), '.xlsx'), new Blob([deliveryXlsx(p)])]]);
     if (key === 'files') { var used = {}; return Promise.all(dlFiles(p).map(function (f) { return (getBlob(f.id) || Promise.resolve(null)).then(function (bl) { return bl || (HOST && f.tf ? teamBlob(f.id) : null); }).then(function (bl) { if (!bl) return null;
         var l = f.line && lineOf(p, f.line), code = String((l && l.code) || parseName(newNameOf(p, f)).code || ''), dir = /^\d{3}/.test(code) ? safeName(code.slice(0, 3) + ' ' + (codeName(code.slice(0, 3)) || '')) : k('ui.dc-no-code', 'Without a code');
@@ -1421,7 +1432,7 @@
     var r = req(), C = pickCodes(), keys = Object.keys(C).sort(), nbx = I18N.lang === 'nb';
     var h = '<div class="dc-pick">';
     h += r ? '<p class="muted dc-help">' + (reqs().length > 1 ? reqPick('data-dcreqpick', r.id) + ' ' : '') + esc(k('ui.dc-req-from', 'Checklist: {f} ({n} codes)', { f: r.name, n: keys.length })) + (can('rules') ? ' · <label class="text-btn dc-file">' + esc(k('ui.dc-req-replace', 'Replace')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label> · <label class="text-btn dc-file">' + esc(k('ui.dc-req-add', 'Another client’s checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreqadd hidden></label>' : '') + '</p>'
-      : '<p class="muted dc-help">' + esc(k('ui.dc-req-help', 'Import the client’s checklist once (e.g. Boligbygg’s Vedlegg 2 – which NS 3456 document types each NS 3451 code needs). Without it you get one line per code, without the types.')) + '</p>' + (can('rules') ? '<div class="dc-facts"><label class="text-btn dc-file dc-reqimp"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-req-import', 'Import checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></div>' : '');
+      : '<p class="muted dc-help">' + esc(k('ui.dc-req-help', 'Import the client’s checklist once (which NS 3456 document types each NS 3451 code needs). Without it you get one line per code, without the types.')) + '</p>' + (can('rules') ? '<div class="dc-facts"><label class="text-btn dc-file dc-reqimp"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-req-import', 'Import checklist')) + '<input type="file" accept=".xlsx,.xlsm,.csv" data-dcreq hidden></label></div>' : '');
     h += '<div class="dc-psum" data-dcpsum>' + sumHtml() + '</div>';
     h += '<input type="search" class="dc-q" data-dcpq placeholder="' + esc(k('ui.dc-search-types', 'Search a project type, code or system')) + '">';
     h += '<h3 class="fdv-h">' + esc(k('ui.dc-ptype', 'Project type')) + '</h3><div class="dc-ptg">' + typeGroups().map(function (g) {
@@ -1543,6 +1554,43 @@
       setTimeout(function () { var q = proj(pid); if (q && q.planName === p0.planName) return; if (q) { delBlob('plan:' + pid); delBlob('xedit:' + pid); delBlob('xedit:' + pid + ':new'); } }, 9000);   /* the file itself goes once the Undo time is over */
     });
   }
+  /* an approved line teaches the file suggestions double, "Not approved" weakens (JP 2026-11-25) – only when the naming module is here */
+  function stLearn(p, l) { if (p && l && window.DocNaming && window.DocNaming.approved && (l.st === 'ok' || l.st === 'rej')) try { window.DocNaming.approved(p, l, l.st === 'ok'); } catch (e) {} }
+  /* ---------- "What does the project need?" (JP 2026-11-25 17:04–17:15): from the codes it has (plan lines, or the codes on renamed files)
+     Team sees which systems the project covers and what kind of project it looks like (PTYPES), then compares with the client checklist
+     (the types each code needs – dcreq) or the built-in types per code, plus the documents that kind of project needs (XTRA). Only a
+     suggestion: a folded card, one tap adds a line marked "Added by you". No client names on screen. ---------- */
+  var NEEDO = {};
+  function needs(lines, skip) {
+    var have = {}, codes = {}; (lines || []).forEach(function (l) { var c3 = String(l.code || '').slice(0, 3); if (!/^\d{3}$/.test(c3)) return; codes[c3] = 1; (have[c3] = have[c3] || {}); String(l.t || '').split('').forEach(function (x) { have[c3][x] = 1; }); });
+    var C = Object.keys(codes); if (!C.length) return null;
+    var best = null; PTYPES.forEach(function (t) { if (t[3] === '*' || t[0] === 'one') return; var tc = t[3].split(' '), hit = tc.filter(function (c) { return codes[c]; }).length; if (hit >= 2 && (!best || hit > best.h || (hit === best.h && tc.length < best.n))) best = { t: t, h: hit, n: tc.length }; });
+    var r = req(), out = [], seen = {}, add = function (c3, t, ti) { var key = c3 + t; if (seen[key] || (have[c3] && have[c3][t]) || (skip && skip[key])) return; seen[key] = 1; out.push({ code: c3, t: t, title: ti || ((codeName(c3) || c3) + ' – ' + typeName(t)) }); };
+    C.sort().forEach(function (c3) { var q = r && r.codes[c3], T = q ? (q.opt ? '' : q.t || '') : (/^1/.test(c3) ? ONEX[c3] || '' : defTypes(c3)); String(T).split('').forEach(function (t) { add(c3, t); }); });
+    if (best && XTRA[best.t[0]]) XTRA[best.t[0]].forEach(function (x) { if (x && x[0]) add(String(x[0]).slice(0, 3), x[1], I18N.lang === 'nb' ? x[2] : x[3]); });
+    var grp = {}; C.forEach(function (c3) { var g = c3.slice(0, 2), n = codeName(g); if (n && !/^1/.test(g)) grp[g] = g + ' ' + n.toLowerCase(); });
+    return { items: out.slice(0, 40), like: best ? (I18N.lang === 'nb' ? best.t[2] : best.t[1]) : '', from: Object.keys(grp).sort().slice(0, 5).map(function (g) { return grp[g]; }) };
+  }
+  function needCard(where, lines, skip) {
+    var nd = needs(lines, skip); if (!nd || !nd.items.length) return '';
+    var op = !!NEEDO[where], sub = [nd.like ? k('ui.dc-need-like', 'Looks like: {t}', { t: nd.like }) : '', nd.from.length ? k('ui.dc-need-from', 'From {g}', { g: nd.from.join(', ') }) : ''].filter(Boolean).join(' · ');
+    return '<details class="dc-need"' + (op ? ' open' : '') + ' data-dcneed="' + esc(where) + '"><summary><b>' + esc(k('ui.dc-need-t', 'Usual for this project, but not in the plan')) + '</b> <span class="stt stt-plan tnum">' + nd.items.length + '</span></summary>' +
+      (sub ? '<p class="muted dc-help" data-noi18n>' + esc(sub) + '</p>' : '') + '<ul class="dc-flist2">' + nd.items.map(function (x) { return '<li class="dc-frow2"><b class="dc-code">' + esc(x.code) + '</b><span class="dc-lx"><b data-noi18n>' + esc(x.title) + '</b><small>' + esc(typeName(x.t)) + '</small></span><button type="button" class="text-btn" data-dcneedadd="' + esc(where + '|' + x.code + '|' + x.t) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-need-add', 'Add')) + '</button></li>'; }).join('') + '</ul>' +
+      '<p class="dc-needf"><button type="button" class="text-btn" data-dcneedall="' + esc(where) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-need-all', 'Add all {n}', { n: nd.items.length })) + '</button><small class="muted">' + esc(k('ui.dc-need-only', 'Only a suggestion')) + '</small></p></details>';
+  }
+  var TXL = [];   /* lines added in the naming tool – they go into its document plan download */
+  function needAdd(where, items) {
+    var mk = function (x) { return { id: uid() + 'n' + x.code + x.t, code: x.code, sys: x.title, type: '', t: x.t, planned: '', st: 'missing', files: [], cmt: '', own: 1 }; };
+    if (where === '__ren') { var keep0 = TXL.slice(); TXL = TXL.concat(items.map(mk)); draw(); toast('<i class="bi bi-plus-lg"></i> ' + esc(items.length === 1 ? k('ui.dc-need-done1', 'Added to the document plan') : k('ui.dc-need-done', '{n} added to the document plan', { n: items.length })), function () { TXL = keep0; draw(); }); return; }
+    var pr = proj(where); if (!pr || !can('edit', gOf(pr, 'dctl'))) return; var keep = JSON.parse(JSON.stringify(pr));
+    saveP(where, function (p) { p.lines = (p.lines || []).concat(items.map(mk)); rematch(p); }); draw();
+    toast('<i class="bi bi-plus-lg"></i> ' + esc(items.length === 1 ? k('ui.dc-need-done1', 'Added to the document plan') : k('ui.dc-need-done', '{n} added to the document plan', { n: items.length })), function () { var t9 = Fe.tools(); t9.dctl = (t9.dctl || []).map(function (x) { return x.id === keep.id ? keep : x; }); Fe.saveTools(t9); draw(); });
+  }
+  function needSkip(where) { var pr = where !== '__ren' && proj(where); if (!pr || !hasPlan(pr)) return null; var s0 = {}; (planCheck(pr).gaps || []).forEach(function (g) { String(g.t || '').split('').forEach(function (x) { s0[String(g.code).slice(0, 3) + x] = 1; }); }); return s0; }   /* what the requirements already ask for is shown above */
+  function needList(where) {
+    if (where === '__ren') { var N = naming(), p = toolP(); return (p.files || []).map(function (f) { var q = parseName(N ? N.newName(p, f) : f.name); return { code: q.code, t: q.kind === 'drawing' ? 'K' : ABBR[q.abbr] || '' }; }).concat(TXL); }
+    var pr = proj(where); return pr ? pr.lines || [] : [];
+  }
   function blurIn() { var a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); }
   /* the access matrix (Team, JP 2026-11-16): an action, on a project's group id – cmd is yours alone, so everything */
   function can(a, g) { return !HOST || !HOST.can || HOST.can(a, g); }
@@ -1561,7 +1609,7 @@
       '<label><span>' + esc(k('ui.dx-to', 'To')) + '</span><input name="to" maxlength="120" value="' + esc((p.sent || {}).to || '') + '" placeholder="' + esc(k('ui.dc-contractor-ph', 'Who delivers, e.g. the sprinkler contractor')) + '"></label>' +
       '<div class="dc-facts"><button type="button" class="pill-btn" data-drpdf><i class="bi bi-file-earmark-pdf"></i> <span>' + esc(k('ui.dx-send-pdf', 'PDF – the requirements')) + '</span></button>' +
       '<button type="button" class="pill-btn" data-drxlsx><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-xlsx', 'Excel – a document plan to fill in')) + '</button>' +
-      '<button type="button" class="pill-btn" data-drxbby><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-bby', 'Excel – like Boligbygg’s Vedlegg 7')) + '</button></div>' +
+      '<button type="button" class="pill-btn" data-drxbby><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dx-send-bby', 'Excel – as a document plan')) + '</button></div>' +
       '<p class="fdv-pdfnote muted" hidden></p><p class="muted dc-help">' + esc(k('ui.dx-send-help', 'Made on this device and shared from here (e-mail, Teams …) – nothing is sent from the server. The Excel is laid out like a document plan: the contractor fills in the planned names, and you check it with Check a document plan or import it in Received.')) + '</p>' +
       '<div class="dc-facts"><button type="button" class="text-btn" data-drsendx>' + esc(k('ui.close', 'Close')) + '</button></div></form>';
   }
@@ -2092,6 +2140,9 @@
       saveP(id, function (p) {
         var old = {}; (p.lines || []).forEach(function (l) { old[l.code + '|' + l.t + '|' + l.planned + '|' + l.type] = l; });
         res.lines.forEach(function (l) { var o = old[l.code + '|' + l.t + '|' + l.planned + '|' + l.type]; if (o) { kept++; l.id = o.id; l.st = o.st; l.cmt = o.cmt; l.files = o.files || []; } });
+        /* lines of your own stay; when the new plan has the same one (code + type), they become one and the mark goes (JP 2026-11-25) */
+        var have9 = {}; res.lines.forEach(function (l) { have9[l.code + '|' + l.t] = l; });
+        (p.lines || []).forEach(function (o) { if (!o.own) return; var m9 = have9[o.code + '|' + o.t]; if (m9) { if (!m9.files || !m9.files.length) { m9.id = o.id; m9.st = o.st; m9.cmt = o.cmt; m9.files = o.files || []; m9.due = o.due; m9.who = o.who; } } else res.lines.push(o); });
         var ids = {}; res.lines.forEach(function (l) { ids[l.id] = 1; });
         (p.files || []).forEach(function (f) { if (f.line && !ids[f.line]) f.line = ''; });
         p.lines = res.lines; p.planName = file.name.slice(0, 120); p.planAt = today(); p.planFile = true;
@@ -2224,7 +2275,7 @@
     if (SEL.k && (sb = e.target.closest('[data-dcselst]'))) {   /* the same status on every ticked line; "Not checked" puts each back to received or missing */
       var sv = sb.dataset.dcselst, ids1 = selIds(), pr1 = proj(open); if (!pr1 || !can(stAct(sv), gOf(pr1, 'dctl'))) return;
       var keep1 = JSON.parse(JSON.stringify(pr1));
-      saveP(open, function (p) { ids1.forEach(function (id) { var l = lineOf(p, id); if (l) l.st = sv === 'missing' ? ((l.files || []).length ? 'recv' : 'missing') : sv; }); });
+      saveP(open, function (p) { ids1.forEach(function (id) { var l = lineOf(p, id); if (l) { l.st = sv === 'missing' ? ((l.files || []).length ? 'recv' : 'missing') : sv; stLearn(p, l); } }); });
       SEL.ids = {}; draw();
       toast('<i class="bi bi-check2-all"></i> ' + esc(k('ui.dc-sel-st-done', '{n} lines: {s}', { n: ids1.length, s: sv === 'missing' ? k('ui.dc-sel-reset', 'Not checked') : stName(sv) })), function () { var t1 = Fe.tools(); t1.dctl = (t1.dctl || []).map(function (x) { return x.id === keep1.id ? keep1 : x; }); Fe.saveTools(t1); draw(); });
       return;
@@ -2238,6 +2289,15 @@
       return;
     }
     if ((sb = e.target.closest('[data-dcrmplan]'))) { rmPlan(sb.dataset.dcrmplan); return; }
+    if ((sb = e.target.closest('[data-dcneedadd]'))) { var q8 = sb.dataset.dcneedadd.split('|'), it8 = (needs(needList(q8[0]), needSkip(q8[0])) || { items: [] }).items.filter(function (x) { return x.code === q8[1] && x.t === q8[2]; }); if (it8.length) needAdd(q8[0], it8); return; }
+    if ((sb = e.target.closest('[data-dcneedall]'))) { var w8 = sb.dataset.dcneedall, a8 = (needs(needList(w8), needSkip(w8)) || { items: [] }).items; if (a8.length) needAdd(w8, a8); return; }
+    if ((sb = e.target.closest('.dc-need > summary'))) { var dn8 = sb.parentElement; setTimeout(function () { NEEDO[dn8.dataset.dcneed] = dn8.open; }, 0); return; }
+    if ((sb = e.target.closest('[data-dcaddo]'))) { addOpen = sb.dataset.dcaddo; draw(); if (addOpen) setTimeout(function () { var i = document.querySelector('[data-dcalc]'); if (i) i.focus(); }, 30); return; }
+    if ((sb = e.target.closest('[data-dcaddl]'))) { var box = sb.closest('.dc-addl'), c9 = String((box.querySelector('[data-dcalc]') || {}).value || '').trim(), t9 = (box.querySelector('[data-dcalt]') || {}).value || '', x9 = String((box.querySelector('[data-dcalx]') || {}).value || '').trim().slice(0, 160), er = box.querySelector('.dc-addle');
+      if (!/^\d{3,6}$/.test(c9) || !t9) { if (er) { er.hidden = false; er.textContent = k('ui.dc-addl-need', 'Write a code (3 digits or more) and choose a type'); } return; }
+      var pid9 = sb.dataset.dcaddl; if (!can('edit', gOf(proj(pid9), 'dctl'))) return;
+      saveP(pid9, function (p) { p.lines = (p.lines || []).concat([{ id: uid() + 'o', code: c9, sys: x9 || codeName(c9) || '', type: '', t: t9, planned: '', st: 'missing', files: [], cmt: '', own: 1 }]); rematch(p); });
+      addOpen = ''; draw(); toast('<i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-addl-done', 'Line {c} added', { c: c9 }))); return; }
     if (SEL.k && e.target.closest('[data-dcselfdel]') && !e.__sure) {   /* asked first (JP 2026-11-24 21:56) */
       var n2 = selIds().length; if (!n2) return; var ev2 = e;
       sure(k('ui.dc-sel-del-sure', 'Remove {n} files from the project? You can undo it right after.', { n: n2 })).then(function (ok) { if (ok) { ev2.__sure = 1; selDelFiles(); } }); return;
@@ -2365,7 +2425,7 @@
     if ((b = t.closest('[data-dxpldl]'))) { var pe = plList().filter(function (x) { return x.id === b.dataset.dxpldl; })[0]; if (pe) plFile(pe).then(function (f) { if (f) window.FdvPdf.share(f); }); return; }
     var pd = t.closest('[data-dxpldel]'); if (pd) { if (!pd.classList.contains('sure')) { pd.classList.add('sure'); pd.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-pl-sure', 'Delete the plan? Tap again')); setTimeout(function () { if (pd.isConnected) { pd.classList.remove('sure'); pd.innerHTML = '<i class="bi bi-trash3"></i> ' + esc(k('ui.delete', 'Delete')); } }, 4000); return; } plDel(pd.dataset.dxpldel); return; }
     var b0 = t.closest('[data-dxrenclr]'); if (b0) { if (!b0.classList.contains('sure')) { b0.classList.add('sure'); b0.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + esc(k('ui.dx-clear-sure', 'Remove all files? Tap again')); setTimeout(function () { if (b0.isConnected) { b0.classList.remove('sure'); b0.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> ' + esc(k('ui.dx-clear', 'Start again')); } }, 4000); return; }
-      TOOL = { p: null, blobs: {}, upl: {} }; draw(); return; }
+      TOOL = { p: null, blobs: {}, upl: {} }; TXL = []; draw(); return; }
     if (t.closest('[data-dxrenuse]')) { var N9 = naming(); if (N9) { var nn9 = N9.useAll('__ren'); toast('<i class="bi bi-check2"></i> ' + esc(k('ui.dx-ren-used', '{n} files have their new name', { n: nn9 }))); } return; }
     if (t.closest('[data-dxrenplan]')) { toolPlan(); return; }
     if ((b = t.closest('[data-dxrendl]'))) { if (b.disabled) return; if (toolP().files.length === 1) { b.disabled = true; renDownload().then(function () { b.disabled = false; }, function () { b.disabled = false; }); return; } dlPop(); return; }   /* more than one file: choose what to download first */
@@ -2399,13 +2459,13 @@
         var r0 = kravOf(p); if (r0) (r0.lines || []).forEach(function (q) { var c3 = String(q.code).slice(0, 3); if (!p.lines.some(function (l) { return String(l.code).slice(0, 3) === c3 && String(q.t || '').indexOf((l.t || ' ').charAt(0)) >= 0; })) { p.lines.push({ id: uid() + mk++, code: q.code, sys: q.sys || lineTitle(q), type: q.type || '', t: q.t || '', planned: '', st: 'missing', files: [] }); } });
       }); toast('<i class="bi bi-' + (mk ? 'check2' : 'info-circle') + '"></i> ' + esc(mk ? k('ui.dc-fl-made', '{n} lines made from the delivery.', { n: mk }) : k('ui.dc-mk-none', 'No file has an NS 3451 code yet – give the files their names first.'))); draw(); return; }
     if ((b = t.closest('[data-dcvx7]'))) { var pv = proj(b.dataset.dcvx7); if (!pv) return; var fv = new File([kravXlsxBby(pv)], fileName(pv, 'Dokumentplan', '.xlsx'), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); if (window.FdvPdf && window.FdvPdf.share) window.FdvPdf.share(fv); return; }
-    if ((b = t.closest('[data-dcokall]'))) { if (!can(stAct('ok'), gOf(proj(b.dataset.dcokall), 'dctl'))) return; saveP(b.dataset.dcokall, function (p) { (p.lines || []).forEach(function (l) { if (l.st === 'recv') l.st = 'ok'; }); }); draw(); return; }
+    if ((b = t.closest('[data-dcokall]'))) { if (!can(stAct('ok'), gOf(proj(b.dataset.dcokall), 'dctl'))) return; saveP(b.dataset.dcokall, function (p) { (p.lines || []).forEach(function (l) { if (l.st === 'recv') { l.st = 'ok'; stLearn(p, l); } }); }); draw(); return; }
     if ((b = t.closest('[data-dctab]'))) { setTab(b.dataset.dctab); openLine = null; editing = false; draw(); return; }
     if (t.closest('[data-dcedit]')) { editing = true; draw(); return; }
     if ((b = t.closest('[data-dcfilt]'))) { filt = b.dataset.dcfilt; if (tab !== 'docs') setTab('docs'); openLine = null; draw(); return; }
     if ((b = t.closest('[data-dcgrp]'))) { filt = 'g' + b.dataset.dcgrp; setTab('docs'); openLine = null; draw(); return; }
     if ((b = t.closest('[data-dcline]'))) { openLine = openLine === b.dataset.dcline ? null : b.dataset.dcline; draw(); return; }
-    if ((b = t.closest('[data-dcst]'))) { var s = b.dataset.dcst.split(':'), tg = b.hasAttribute('data-dctoggle'); if (!can(stAct(s[1]), gOf(proj(open), 'dctl'))) return; saveP(open, function (p) { var l = lineOf(p, s[0]); if (l) l.st = tg && l.st === s[1] ? ((l.files || []).length ? 'recv' : 'missing') : s[1]; }); draw(); return; }   /* a quick button tapped again undoes it */
+    if ((b = t.closest('[data-dcst]'))) { var s = b.dataset.dcst.split(':'), tg = b.hasAttribute('data-dctoggle'); if (!can(stAct(s[1]), gOf(proj(open), 'dctl'))) return; saveP(open, function (p) { var l = lineOf(p, s[0]); if (l) { l.st = tg && l.st === s[1] ? ((l.files || []).length ? 'recv' : 'missing') : s[1]; stLearn(p, l); } }); draw(); return; }   /* a quick button tapped again undoes it */
     if ((b = t.closest('[data-dcuplink]')) && HOST && HOST.uplink) { HOST.uplink(b.dataset.dcuplink); return; }
     if (t.closest('[data-dcaddopen]')) { addOpen = true; draw(); var ai = document.querySelector('form.dc-addl input[name=code]'); if (ai) ai.focus(); return; }
     if (t.closest('[data-dcpastebtn]')) { pasting = !pasting; draw(); var ta = document.querySelector('.dc-paste textarea'); if (ta) ta.focus(); return; }

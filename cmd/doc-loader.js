@@ -6,7 +6,7 @@
    It runs again on each visit to Work (instant page changes), like any page part. build.py writes DCP_V. */
 (function () {
   'use strict';
-  var DCP_V = '1f0adae246';
+  var DCP_V = 'af3e21d4d6';
   var done = false;
   function load() {
     if (done) return; done = true;

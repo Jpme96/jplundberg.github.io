@@ -63,6 +63,24 @@ const { check, done } = require('../lib/check');
   await call(OWNER, 'gtag', 'POST', { g: { [old.id]: 'gb0000002', [pA.id]: 'gb0000002' } });
   const ks2 = await seen('kari@x.no');
   check(!ks2.includes(old.id) && ks2.includes(pA.id), 'a tagged old record follows its project; a record that has one keeps it');
+  /* files follow their project too (JP 2026-11-25 16:42): the file record and its pieces never reach someone with no access */
+  const fidB = 'b'.repeat(32), fidOld = 'c'.repeat(32), fidT = 'd'.repeat(32);
+  check((await call(OWNER, 'fchunk', 'PUT', { fid: fidB, n: 0, iv: B.iv, ct: B.ct, g: 'gb0000002' })).s === 200, 'a project file\'s piece is sent with its project');
+  const fB = rec('file', 'gb0000002'); await call(OWNER, 'rec', 'PUT', fB);
+  check(!(await seen('kari@x.no')).includes(fB.id) && (await seen(OWNER)).includes(fB.id), 'the file record of project B never reaches Kari (no access), the owner gets it');
+  check((await call('kari@x.no', 'fchunk?fid=' + fidB + '&n=0')).s === 404 && (await call(OWNER, 'fchunk?fid=' + fidB + '&n=0')).s === 200, 'Kari can\'t download its pieces either; the owner can');
+  check((await call('kari@x.no', 'fchunk', 'PUT', { fid: fidT, n: 0, iv: B.iv, ct: B.ct, g: 'gb0000002' })).s === 403, 'Kari can\'t send a file to project B');
+  check((await call('con@x.no', 'fchunk', 'PUT', { fid: fidT, n: 0, iv: B.iv, ct: B.ct, g: 'ga0000001' })).s === 200 && (await call('con@x.no', 'fchunk', 'PUT', { fid: 'e'.repeat(32), n: 0, iv: B.iv, ct: B.ct })).s === 403, 'the contractor (Can read) sends files only to their own project');
+  await call(OWNER, 'fchunk', 'PUT', { fid: fidOld, n: 0, iv: B.iv, ct: B.ct });
+  check((await call('kari@x.no', 'fchunk?fid=' + fidOld + '&n=0')).s === 200, 'an older piece without a project is there for everyone (as before) …');
+  await call(OWNER, 'gtag', 'POST', { g: {}, f: { [fidOld]: 'gb0000002' } });
+  check((await call('kari@x.no', 'fchunk?fid=' + fidOld + '&n=0')).s === 404, '… until an admin\'s Team tags it with its project once');
+  /* the file suggestions' learning (JP 2026-11-25 16:34 "I don't want other people to see how much it learned"): someone's own votes reach only them and admins; the team's rules follow "codes" */
+  const lk = rec('lrn'); check((await call('con@x.no', 'rec', 'PUT', lk)).s === 200, 'anyone (Can read too) keeps their own learning votes');
+  check((await seen('con@x.no')).includes(lk.id) && !(await seen('kari@x.no')).includes(lk.id) && (await seen(OWNER)).includes(lk.id), '… which only they and the admins receive');
+  check((await call('kari@x.no', 'rec', 'PUT', Object.assign({}, lk, { v: 1 }))).s === 403, 'nobody else writes them');
+  const cl = Object.assign(rec('cfg'), { id: 'cfglearn' });
+  check((await call(OWNER, 'rec', 'PUT', cl)).s === 200 && (await call('con@x.no', 'rec', 'PUT', Object.assign({}, cl, { v: 1 }))).s === 403, 'the team\'s learned rules are written by whoever keeps the code template');
   /* the server still never holds anything readable */
   /* own codes in file naming (JP 2026-11-25): the team's template follows the "codes" action (admin by default); each person's own list only they write */
   await call(OWNER, 'access', 'POST', { m: {}, pp: {}, tr: {} });

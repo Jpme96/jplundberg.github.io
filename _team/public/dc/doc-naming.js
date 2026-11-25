@@ -150,9 +150,9 @@
   function partName(key) { var q = NPART[key]; return q ? k(q[0], q[1]) : key; }
   var NSEP = [[' ', 'ui.dcn-sep-space', 'Space'], ['-', 'ui.dcn-sep-hyphen', 'Hyphen -'], ['_', 'ui.dcn-sep-under', 'Underscore _'], ['–', 'ui.dcn-sep-dash', 'Dash –'], [' – ', 'ui.dcn-sep-sdash', 'Dash with spaces " – "'], ['', 'ui.dcn-sep-none', 'Nothing']];
   /* Boligbygg's three (FDVU spec 4.5.3, table 3 and tables 6–11) – built in, copied to make your own; no 30-character limit (JP) */
-  var NRULES = [{ id: 'bby-doc', b: 1, n: ['ui.dcn-r-doc', 'Boligbygg – documents'], sep: ' ', cs: 'keep', parts: [{ k: 'code' }, { k: 'type' }, { k: 'desc' }] },
-    { id: 'bby-photo', b: 1, n: ['ui.dcn-r-photo', 'Boligbygg – photos'], sep: '–', cs: 'keep', parts: [{ k: 'unit' }, { k: 'floor' }, { k: 'room' }, { k: 'free' }, { k: 'date', fmt: 'iso' }] },
-    { id: 'bby-dwg', b: 1, n: ['ui.dcn-r-dwg', 'Boligbygg – drawings as built'], sep: '-', cs: 'keep', parts: [{ k: 'bno' }, { k: 'floor' }, { k: 'disc' }, { k: 'code' }, { k: 'dtype' }, { k: 'run' }, { k: 'desc', pre: ' – ' }] }];
+  var NRULES = [{ id: 'bby-doc', b: 1, n: ['ui.dcn-r-doc', 'Documents'], sep: ' ', cs: 'keep', parts: [{ k: 'code' }, { k: 'type' }, { k: 'desc' }] },
+    { id: 'bby-photo', b: 1, n: ['ui.dcn-r-photo', 'Photos'], sep: '–', cs: 'keep', parts: [{ k: 'unit' }, { k: 'floor' }, { k: 'room' }, { k: 'free' }, { k: 'date', fmt: 'iso' }] },
+    { id: 'bby-dwg', b: 1, n: ['ui.dcn-r-dwg', 'Drawings as built'], sep: '-', cs: 'keep', parts: [{ k: 'bno' }, { k: 'floor' }, { k: 'disc' }, { k: 'code' }, { k: 'dtype' }, { k: 'run' }, { k: 'desc', pre: ' – ' }] }];
   var NDEF = { doc: 'bby-doc', photo: 'bby-photo', drawing: 'bby-dwg' };
   function nrules(p) { return NRULES.concat((p && p.nrules) || []); }
   function nrule(p, id) { return nrules(p).filter(function (r) { return r.id === id; })[0] || null; }
@@ -244,48 +244,167 @@
     NKW = {}; Object.keys(per).forEach(function (k3) { var L = Object.keys(per[k3]).filter(function (w) { return df[w] < 4; }).map(function (w) { return [w, 1]; });   /* a word from a name counts less than a hand-picked code word (fasade in “Fasade- og takvask” must not beat oljemaling – JP 2026-11-19) */ if (L.length) NKW[k3] = L; });
     NKWk = key; return NKW;
   }
-  /* learned codes: words from the file names you corrected → the code you chose. Team: one shared record (DStore 'nslearn'); cmd: your tools (synced); else this device */
-  var LKEY = 'dcn.nslearn', LRN = null, LRNat = 0;
-  var NOTW = /^(pdf|docx?|xlsx?|dwg|nor|nob|eng|tds|fdv|fdvu|datablad|teknisk|technical|data|sheet|produkt|product|dokument|document|versjon|version|norsk|english|final|ferdig|kopi|copy|scan|skann)$/;
-  function lrnWhere() { return HOST && HOST.team && HOST.store ? 'team' : !HOST && window.Features && window.Features.tools ? 'me' : 'here'; }
-  function lrnGet() {
+  /* ---------- suggestions that keep learning (JP 2026-11-25 16:28–16:56 "a system that learns and learns") ----------
+     Every finished file is a lesson: its clues (words of its name, the maker/product the PDF text gave, document words in any language,
+     the file type) → the code and type it ended with. A kept suggestion is a vote, a changed one weakens the old answer; an approved
+     line counts double, "Not approved" weakens. One vote is only a hint; a few make it the suggestion; old votes fade over a year.
+     Where it's kept: cmd – your tools (fdvlearn); Team – your own votes (an `lrn` record only you and admins receive) and the team's
+     finished rules (cfglearn: clue → code/type, no counts, made by whoever keeps the code template – JP). Only JP (canT) sees what it
+     learned and why; the others get the suggestion with a neutral reason. Rules only – never file names, text or files. */
+  var LKEY = 'dcn.nslearn', LRN = null, LRNt = null, LDAY = function () { return Math.floor(Date.now() / 864e5); };
+  var NOTW = /^(pdf|docx?|xlsx?|dwg|nor|nob|eng|tds|fdvu|teknisk|technical|data|sheet|produkt|product|dokument|document|versjon|version|norsk|english|final|ferdig|kopi|copy|scan|skann|sverige|norge|danmark|rev|side|page)$/;
+  /* the same document in Norwegian, Swedish, Danish and English, with or without æøå – one clue (JP 16:56) */
+  var SYN = [['#se', /samsvarserkl|samsvars?erkl|forsakran om overensstammelse|overensstemmelseserkl|overensstemmelse|declaration of conformity|eu.?declaration|konformitetserkl|\bdoc\b/],
+    ['#dop', /ytelseserkl|prestandadeklaration|ydeevnedeklaration|declaration of performance|\bdop\b/],
+    ['#mont', /monteringsanvisning|montageanvisning|monteringsvejledning|installasjonsveiledning|installationsanvisning|installation (manual|instructions?)|monteringsveiledning/],
+    ['#fdv', /\bfdv\b|drift og vedlikehold|driftsinstruks|vedlikeholdsinstruks|skotselanvisning|drift och underhall|drift og vedligehold|o&m|operation and maintenance|maintenance manual/],
+    ['#data', /produktdatablad|produktblad|datablad|datasheet|data sheet|tekniske? data|technical data|produktinformation|produktinformasjon/],
+    ['#bruk', /brukerveiledning|bruksanvisning|bruksanvisning|brugsanvisning|user manual|user guide|bruksveiledning/],
+    ['#tegn', /tegning|ritning|drawing|som bygget|as.?built|plantegning/], ['#gar', /garanti|warranty|guarantee/], ['#sert', /sertifikat|certifikat|certificate|intyg|attest/],
+    ['#test', /testrapport|testprotokoll|protokoll|innregulering|injustering|commissioning/], ['#brann', /brann|fire|brand/]];
+  function fold(t) { return String(t || '').toLowerCase().replace(/æ/g, 'ae').replace(/[øö]/g, 'o').replace(/[åä]/g, 'a').replace(/ü/g, 'u').replace(/é/g, 'e'); }
+  function stemW(w) { return w.length > 6 ? w.replace(/(erne|ene|ane|ene|er|ar|en|et|s)$/, '') : w; }
+  function lwords(name) { var seen = {}; return fold(name).replace(/\.[a-z0-9]{2,5}$/, '').split(/[^a-z]+/).filter(function (w) { if (w.length < 4 || NOTW.test(w) || STOPW.indexOf(' ' + w + ' ') >= 0) return false; w = stemW(w); if (seen[w]) return false; seen[w] = 1; return true; }).map(stemW).slice(0, 8); }
+  /* the clues of a file: [clue, kind] – n name word, d maker/product from the text, s document word (the file type says too little to count) */
+  function clues(f) {
+    var nm = f.orig || f.name, out = [], seen = {}, add = function (c, kd) { if (c && !seen[c]) { seen[c] = 1; out.push([c, kd]); } };
+    lwords(nm).forEach(function (w) { add(w, 'n'); });
+    if (f.cc && f.cc.d) lwords(f.cc.d).forEach(function (w) { add(w, 'd'); });
+    var txt = fold(nm + ' ' + (f.cc && f.cc.d || '') + ' ' + (ccText[f.id] || '').slice(0, 1500));
+    SYN.forEach(function (x) { if (x[1].test(txt)) add(x[0], 's'); });
+    return out.slice(0, 14);
+  }
+  function lrnWhere() { return HOST && HOST.learn ? 'team' : !HOST && window.Features && window.Features.tools ? 'me' : 'here'; }
+  function lNorm(o) {   /* older shape {w: {word: {code: n}}} → {w: {clue: {c, t, a}}} */
+    o = o && o.w ? o : { w: {} }; var d = LDAY();
+    Object.keys(o.w).forEach(function (x) { var e = o.w[x]; if (e && !e.c && !e.t) o.w[x] = { c: e, t: {}, a: d }; });
+    o.v = 2; o.k = o.k || 0; o.x = o.x || 0; o.cf = o.cf || {}; o.tr = o.tr || {}; return o;
+  }
+  function lrnGet() {   /* your own votes */
     var w = lrnWhere();
-    if (w === 'team') { if (!LRN || Date.now() - LRNat > 10000) { LRNat = Date.now(); LRN = LRN || { w: {} }; Promise.resolve(HOST.store.get('nslearn')).then(function (o) { if (o && o.w) LRN = o; }).catch(function () {}); } return LRN; }
+    if (w === 'team') { var m = HOST.learn.mine(); if (!LRN || LRN.__src !== m) { LRN = lNorm(m ? JSON.parse(JSON.stringify(m)) : null); Object.defineProperty(LRN, '__src', { value: m, enumerable: false }); } return LRN; }
     if (LRN) return LRN;
-    LRN = { w: {} };
-    try { if (w === 'me') { var t = window.Features.tools(); if (t.fdvlearn && t.fdvlearn.w) LRN = JSON.parse(JSON.stringify(t.fdvlearn)); } else { var o = JSON.parse(localStorage.getItem(LKEY) || 'null'); if (o && o.w) LRN = o; } } catch (e) {}
+    try { if (w === 'me') { var t = window.Features.tools(); LRN = lNorm(t.fdvlearn ? JSON.parse(JSON.stringify(t.fdvlearn)) : null); } else LRN = lNorm(JSON.parse(localStorage.getItem(LKEY) || 'null')); } catch (e) { LRN = lNorm(null); }
     return LRN;
   }
+  var lSaveT = 0;
   function lrnSave() {
-    var L = lrnGet(), W = Object.keys(L.w); if (W.length > 3000) W.slice(0, W.length - 3000).forEach(function (x) { delete L.w[x]; });
+    var L = lrnGet(), d = LDAY(), W = Object.keys(L.w);
+    W.forEach(function (x) { if (d - (L.w[x].a || d) > 365) delete L.w[x]; });   /* unused for a year: gone */
+    W = Object.keys(L.w); if (W.length > 3000) W.sort(function (a, b) { return (L.w[a].a || 0) - (L.w[b].a || 0); }).slice(0, W.length - 3000).forEach(function (x) { delete L.w[x]; });
     var w = lrnWhere();
-    if (w === 'team') { HOST.store.put('nslearn', L); return; }
-    if (w === 'me') { var Fe0 = window.Features, t = Fe0.tools(); t.fdvlearn = L; Fe0.saveTools(t); return; }
+    if (w === 'team') { clearTimeout(lSaveT); lSaveT = setTimeout(function () { Promise.resolve(HOST.learn.saveMine(JSON.parse(JSON.stringify(L)))).then(function () { teamRules(); }); }, 1500); return; }
+    if (w === 'me') { var Fe0 = window.Features, t = Fe0.tools(); t.fdvlearn = JSON.parse(JSON.stringify(L)); Fe0.saveTools(t); return; }
     try { localStorage.setItem(LKEY, JSON.stringify(L)); } catch (e) {}
   }
-  function lwords(name) { var seen = {}; return String(name || '').toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '').split(/[^a-zæøåäöü]+/).filter(function (w) { if (w.length < 4 || NOTW.test(w) || STOPW.indexOf(' ' + w + ' ') >= 0 || seen[w]) return false; seen[w] = 1; return true; }).slice(0, 8); }
-  function learn(f, code) {
-    if (!f || !/^\d{3}/.test(code || '')) return;
-    var L = lrnGet(); lwords(f.orig || f.name).forEach(function (w) { var e = L.w[w] = L.w[w] || {}; e[code] = (e[code] || 0) + 1; });
+  /* the team's finished rules – worked out on JP's device from everyone's votes (his count fully, the others' half) */
+  function teamRules() {
+    if (lrnWhere() !== 'team' || !canT() || !HOST.learn.all) return;
+    var tot = {}, d = LDAY();
+    HOST.learn.all().forEach(function (v) { var o = lNorm(JSON.parse(JSON.stringify(v.o || {}))), wt = v.me ? 1 : 0.5;
+      Object.keys(o.w).forEach(function (x) { var e = o.w[x], f = Math.pow(0.5, Math.max(0, d - (e.a || d)) / 365), T = tot[x] = tot[x] || { c: {}, t: {} };
+        ['c', 't'].forEach(function (q) { Object.keys(e[q] || {}).forEach(function (y) { T[q][y] = (T[q][y] || 0) + e[q][y] * wt * f; }); }); }); });
+    var r = {}; Object.keys(tot).forEach(function (x) { var c = top(tot[x].c), t = top(tot[x].t); if (c || t) r[x] = [c || '', t || '']; });
+    var cur0 = HOST.learn.rules() || {}; if (JSON.stringify(cur0) !== JSON.stringify(r)) HOST.learn.saveRules(r);
+  }
+  function top(m) { var o = Object.keys(m || {}).sort(function (a, b) { return m[b] - m[a]; }); return o.length && m[o[0]] >= 3 && (!o[1] || m[o[0]] >= m[o[1]] * 2) ? o[0] : ''; }
+  /* votes: the file's clues → its code and type (w: how much it counts; negative weakens) */
+  function vote(f, code, abbr, w) {
+    if (!f || fkind(f) === 'photo') return; var L = lrnGet(), d = LDAY(); w = w || 1;
+    clues(f).forEach(function (cl) { var e = L.w[cl[0]] = L.w[cl[0]] || { c: {}, t: {}, a: d };
+      if (d - (e.a || d) > 180) { ['c', 't'].forEach(function (q) { Object.keys(e[q]).forEach(function (y) { e[q][y] = e[q][y] / 2; }); }); }   /* old votes fade */
+      e.a = d;
+      if (/^\d{3}/.test(code || '')) { e.c[code] = Math.max(0, (e.c[code] || 0) + w); if (!e.c[code]) delete e.c[code]; }
+      if (abbr) { e.t[abbr] = Math.max(0, (e.t[abbr] || 0) + w); if (!e.t[abbr]) delete e.t[abbr]; } });
     lrnSave();
   }
-  function learnedFor(name) {
-    var L = lrnGet(), sc = {}, hit = {};
-    lwords(name).forEach(function (w) { var e = L.w[w]; if (!e) return; Object.keys(e).forEach(function (c) { sc[c] = (sc[c] || 0) + e[c]; if (!hit[c] || e[c] > hit[c][1]) hit[c] = [w, e[c]]; }); });
-    var o = Object.keys(sc).sort(function (a, b) { return sc[b] - sc[a]; });
-    if (!o.length || (o[1] && sc[o[0]] < sc[o[1]] * 2)) return null;
-    return { k: o[0], s: sc[o[0]], w: hit[o[0]][0] };
+  /* a finished file (its final name, or "Looks right"): a lesson; a suggestion kept or changed is counted for the self-check */
+  function teach(f, w) {
+    if (!f || !f.p || fkind(f) === 'photo') return; var L = lrnGet();
+    if (f.sgc) { if (f.sgc === f.p.code) { L.k++; trust(f.sgk, 1); } else { L.x++; trust(f.sgk, -1); } delete f.sgc; delete f.sgk; }
+    L.n = (L.n || 0) + 1; vote(f, f.p.code, f.p.abbr, w || 1);
   }
-  function whyL(x) { return k('ui.dcn-why-learned', 'learned from earlier choices (“{w}”)', { w: x.w }); }
+  function trust(kd, d) { if (!kd) return; var L = lrnGet(), t = L.tr[kd] = L.tr[kd] || [0, 0]; t[d > 0 ? 0 : 1]++; }
+  function trustOf(kd) { var t = lrnGet().tr[kd]; return t ? 0.5 + (t[0] + 1) / (t[0] + t[1] + 2) : 1; }
+  /* a code you changed: the old answer weakens and the pair is remembered (mix-ups become a choice next time) */
+  function learn(f, code) {
+    if (!f || !/^\d{3}/.test(code || '')) return; var L = lrnGet();
+    if (f.sgc && f.sgc !== code) { var pr = [f.sgc, code].sort().join('|'); L.cf[pr] = (L.cf[pr] || 0) + 1; vote(f, f.sgc, '', -1); L.x++; trust(f.sgk, -1); delete f.sgc; delete f.sgk; }
+    vote(f, code, '', 1);
+  }
+  function learnT(f, abbr) { if (f && abbr) vote(f, '', abbr, 1); }
+  /* what it has learned for a file: {k, s, w, hint, why} – own votes first (with their weight), then the team's rules */
+  function lScore(f, q) {
+    var L = lrnGet(), d = LDAY(), sc = {}, hit = {};
+    clues(f).forEach(function (cl) { var e = L.w[cl[0]]; if (!e || !e[q]) return; var fd = Math.pow(0.5, Math.max(0, d - (e.a || d)) / 365), tw = trustOf(cl[1]);
+      Object.keys(e[q]).forEach(function (y) { var v = e[q][y] * fd * tw; sc[y] = (sc[y] || 0) + v; if (!hit[y] || v > hit[y][1]) hit[y] = [cl[0], e[q][y]]; }); });
+    if (lrnWhere() === 'team') { var R = HOST.learn.rules() || {}; clues(f).forEach(function (cl) { var r = R[cl[0]], y = r && r[q === 'c' ? 0 : 1]; if (y) { sc[y] = (sc[y] || 0) + 3; if (!hit[y]) hit[y] = [cl[0], 3]; } }); }
+    var o = Object.keys(sc).sort(function (a, b) { return sc[b] - sc[a]; });
+    if (!o.length || sc[o[0]] < 0.9 || (o[1] && sc[o[0]] < sc[o[1]] * 2)) return null;
+    return { k: o[0], s: sc[o[0]], w: hit[o[0]][0], n: Math.round(hit[o[0]][1]), hint: hit[o[0]][1] < 1.8 };   /* chosen once: only a hint; twice or more: the suggestion */
+  }
+  function learnedFor(f) { return typeof f === 'string' ? lScore({ name: f, p: {} }, 'c') : lScore(f, 'c'); }
+  function learnedType(f) { return lScore(f, 't'); }
+  /* the reason shown: JP sees why (the clue and how often), everyone else a neutral line (JP 16:34, 16:56) */
+  function seeWhy() { return lrnWhere() !== 'team' || canT(); }
+  function whyL(x) { if (!seeWhy()) return k('ui.dcn-why-team', 'Suggested from the team’s template'); var w = String(x.w || '').charAt(0) === '#' ? x.w.slice(1) : x.w; return x.n > 1 ? k('ui.dcn-why-learned-n', 'chosen {n}× for “{w}”', { n: x.n, w: w }) : k('ui.dcn-why-learned', 'learned from earlier choices (“{w}”)', { w: w }); }
+  function whyHint(x) { return seeWhy() ? k('ui.dcn-why-last', 'chosen last time for “{w}”', { w: String(x.w).replace(/^#/, '') }) : k('ui.dcn-why-team', 'Suggested from the team’s template'); }
+  /* mix-ups: a code often swapped with another is offered side by side */
+  function mixFor(code) { var L = lrnGet(), out = ''; Object.keys(L.cf).forEach(function (pr) { var q = pr.split('|'); if (L.cf[pr] >= 2 && q.indexOf(code) >= 0) out = q[0] === code ? q[1] : q[0]; }); return out; }
+  /* a line in the project's plan the file fits (planned name or title) – the strongest suggestion after a code in the name */
+  function planMatch(p, f) {
+    if (!p || !p.lines || !p.lines.length) return null; var mine = {}, n0 = 0;
+    lwords((f.orig || f.name) + ' ' + (f.cc && f.cc.d || '')).forEach(function (w) { mine[w] = 1; n0++; }); if (n0 < 2) return null;
+    var best = null, second = 0;
+    p.lines.forEach(function (l) { if (!l.code || l.ex) return; var lw = lwords((l.planned || '') + ' ' + (l.sys || '')), hit = 0; lw.forEach(function (w) { if (mine[w]) hit++; }); if (!lw.length) return;
+      var sc = hit / Math.min(lw.length, n0); if (hit >= 2 && sc >= 0.5) { if (!best || sc > best.s) { second = best ? best.s : second; best = { l: l, s: sc }; } else if (sc > second) second = sc; } });
+    return best && best.s > second ? best.l : null;
+  }
+  function abbrOf(t) { if (!t) return ''; var A = ABBR || {}, o = Object.keys(A).filter(function (a) { return A[a] === t; })[0]; return o || Object.keys(A).filter(function (a) { return A[a] && A[a].indexOf(t.charAt(0)) >= 0; })[0] || ''; }
+  /* the head start: once, quietly, everything already finished teaches it (files with their final names, approved lines, imported plans) */
+  function headStart() {
+    if (lrnWhere() === 'team' && !canT()) return; var L = lrnGet(); if (L.hs) return; L.hs = 1;
+    var P = []; try { P = (I && I.projects ? I.projects() : []) || []; } catch (e) {}
+    P.forEach(function (p) { if (!p) return;
+      (p.files || []).forEach(function (f) { if (!f || !f.p || !f.p.code || fkind(f) === 'photo') return; var ln = f.line && (p.lines || []).filter(function (l) { return l.id === f.line; })[0];
+        if (f.orig || (ln && ln.st === 'ok')) { var c = clues(f), d = LDAY(); c.forEach(function (cl) { var e = L.w[cl[0]] = L.w[cl[0]] || { c: {}, t: {}, a: d }, w = ln && ln.st === 'ok' ? 2 : 1; e.c[f.p.code] = (e.c[f.p.code] || 0) + w; if (f.p.abbr) e.t[f.p.abbr] = (e.t[f.p.abbr] || 0) + w; }); L.n = (L.n || 0) + 1; } });
+      (p.lines || []).forEach(function (l) { if (!l.planned || l.ex || !/^\d{3}/.test(l.code || '')) return; var c = clues({ name: l.planned, p: {} }), d = LDAY(), ab = abbrOf(l.t); c.forEach(function (cl) { if (cl[1] === 'x') return; var e = L.w[cl[0]] = L.w[cl[0]] || { c: {}, t: {}, a: d }; e.c[l.code] = (e.c[l.code] || 0) + 1; if (ab) e.t[ab] = (e.t[ab] || 0) + 1; }); }); });
+    if (lrnWhere() === 'team' && HOST.store) Promise.resolve(HOST.store.get('nslearn')).then(function (o) { if (o && o.w) { var d = LDAY(); Object.keys(o.w).forEach(function (x) { var e = o.w[x]; if (!e || e.c) return; var c = L.w[fold(x)] = L.w[fold(x)] || { c: {}, t: {}, a: d }; Object.keys(e).forEach(function (y) { c.c[y] = (c.c[y] || 0) + e[y]; }); }); } lrnSave(); }).catch(function () { lrnSave(); });
+    else lrnSave();
+  }
+  /* an approved line teaches double; "Not approved" weakens what its files were given */
+  function approved(p, l, ok) { if (!p || !l) return; (l.files || []).forEach(function (id) { var f = (p.files || []).filter(function (x) { return x.id === id; })[0]; if (f && f.p && f.p.code) vote(f, f.p.code, f.p.abbr, ok ? 2 : -1); }); }
+  /* a set: files from the same delivery with the same maker/product get the code one of them has */
+  function sets(p, ids) {
+    if (!ids || ids.length < 2) return 0;   /* a set is files that came in together */
+    var F = (p.files || []).filter(function (f) { return !f.nf && fkind(f) !== 'photo' && ids.indexOf(f.id) >= 0; }), by = {};
+    F.forEach(function (f) { if (!f.p.code || (f.sg && f.sg.alt)) return; clues(f).forEach(function (cl) { if (cl[1] === 'd' || cl[1] === 'n') (by[cl[0]] = by[cl[0]] || {})[f.p.code] = 1; }); });
+    var n = 0; F.forEach(function (f) { if (f.p.code) return; var got = {};
+      clues(f).forEach(function (cl) { if ((cl[1] === 'd' || cl[1] === 'n') && by[cl[0]] && Object.keys(by[cl[0]]).length === 1) { var c = Object.keys(by[cl[0]])[0]; got[c] = (got[c] || 0) + 1; } });
+      var o = Object.keys(got).sort(function (a, b) { return got[b] - got[a]; }); if (o.length && got[o[0]] >= 2 && (!o[1] || got[o[0]] > got[o[1]])) { f.p.code = o[0]; f.sgc = o[0]; f.sgk = 'n'; f.sg = Object.assign({}, f.sg, { c: seeWhy() ? k('ui.dcn-why-set', 'the same set as the other files from this maker') : k('ui.dcn-why-team', 'Suggested from the team’s template') }); delete f.sg.alt; n++; } });
+    return n;
+  }
+  /* put a suggestion on a file: plan → learned → (the caller's keyword guess); returns true when it set the code */
+  function suggestLearned(p, f) {
+    if (f.p.code) return false;
+    var pl = planMatch(p, f); if (pl) { f.p.code = pl.code; f.sgc = pl.code; f.sgk = 'n'; if (!f.p.abbr && fkind(f) === 'doc') { var ab = abbrOf(pl.t); if (ab) f.p.abbr = ab; } f.sg = Object.assign({}, f.sg, { c: seeWhy() ? k('ui.dcn-why-plan', 'like line {c} in the plan', { c: pl.code }) : k('ui.dcn-why-team', 'Suggested from the team’s template') }); return true; }
+    var lc = learnedFor(f); if (!lc) return false;
+    var mx = mixFor(lc.k);
+    if (lc.hint || mx) { f.sg = Object.assign({}, f.sg, { alt: [[lc.k, lc.hint ? whyHint(lc) : whyL(lc)]].concat(mx ? [[mx, k('ui.dcn-why-mix', 'often chosen instead')]] : []) }); return false; }
+    f.p.code = lc.k; f.sgc = lc.k; f.sgk = 'n'; f.sg = Object.assign({}, f.sg, { c: whyL(lc) }); if (f.sg.alt) delete f.sg.alt; return true;
+  }
+  function suggestType(f) { if (f.p.abbr || fkind(f) !== 'doc') return false; var lt = learnedType(f); if (!lt || lt.hint) return false; f.p.abbr = lt.k; f.sg = Object.assign({}, f.sg, { t: whyL(lt) }); return true; }
   function strong(l) { return l[0] && l[0].s >= 5 && (!l[1] || l[0].s >= l[1].s * 1.5) ? l[0] : null; }
   function why(x, src) { var h = x.h[0]; return (src === 'n' ? k('ui.dcn-why-name', 'the file name has “{w}”', { w: h[0] }) : k('ui.dcn-why-text', 'found “{w}” {n}× in the text', { w: h[0], n: h[1] })) + (h[2] ? ' · ' + k('ui.dcn-why-p1', 'also on page 1') : ''); }
   /* a file without a code or type: guess from words in its name (marked as suggested until you say it looks right) */
-  function guessName(f) {
+  function guessName(f, p) {
     if (fkind(f) === 'photo') return; var low = String(f.p && f.p.stem || f.name).toLowerCase().replace(/[_]+/g, ' ');
-    if (!f.p.code) { var lc = learnedFor(f.orig || f.name), cs = lc ? [] : scoreCodes(low, ''), c = lc || strong(cs) || (cs[0] && (!cs[1] || cs[0].s >= cs[1].s * 2) ? cs[0] : null);
-      if (c) { f.p.code = c.k; f.sg = Object.assign({}, f.sg, { c: lc ? whyL(lc) : why(c, 'n') }); if (f.sg.alt) delete f.sg.alt; }
+    headStart();
+    /* the plan and what it has learned come first; then the words of the name (JP 2026-11-25) */
+    if (!f.p.code && !suggestLearned(p || (I && I.cur && proj(cur())), f) && !(f.sg && f.sg.alt)) { var cs = scoreCodes(low, ''), c = strong(cs) || (cs[0] && (!cs[1] || cs[0].s >= cs[1].s * 2) ? cs[0] : null);
+      if (c) { f.p.code = c.k; f.sgc = c.k; f.sgk = 'n'; f.sg = Object.assign({}, f.sg, { c: why(c, 'n') }); if (f.sg.alt) delete f.sg.alt; }
       else if (cs.length > 1) f.sg = Object.assign({}, f.sg, { alt: cs.slice(0, 2).map(function (x) { return [x.k, why(x, 'n')]; }) }); }
-    if (f.p.code && !f.p.abbr) { var t = scoreKw(TKW, low, '')[0]; if (t && t.s >= 3) { f.p.abbr = t.k; f.sg = Object.assign({}, f.sg, { t: why(t, 'n') }); } }
+    if (f.p.code && !f.p.abbr && !suggestType(f)) { var t = scoreKw(TKW, low, '')[0]; if (t && t.s >= 3) { f.p.abbr = t.k; f.sg = Object.assign({}, f.sg, { t: why(t, 'n') }); } }
   }
   /* keep every word of the file name, add only what the content adds (K200 EC is already in K200EC – JP 11:43) */
   function mergeDesc(a, b) { var sq = function (x) { return x.toLowerCase().replace(/[^a-z0-9æøå]+/g, ''); }, have = sq(a), add = []; String(b || '').split(/\s+/).forEach(function (w) { var q = sq(w); if (q && have.indexOf(q) < 0) { add.push(w); have += q; } }); return (a + ' ' + add.join(' ')).replace(/\s+/g, ' ').trim(); }
@@ -376,9 +495,9 @@
     }).catch(function () { body.innerHTML = '<p class="muted">' + esc(k('ui.dx-fv-bad', 'Could not show this PDF – download it to open it.')) + '</p>'; });
     return ov;
   }
-  function pdfText(blob) {
+  function pdfText(blob, upto) {
     return blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (pdf) {
-      var n = Math.min(pdf.numPages, 40), pages = [], title = '', th = 0, chain = Promise.resolve(), pw = 0, ph = 0;
+      var n = Math.min(pdf.numPages, upto || 40), pages = [], title = '', th = 0, chain = Promise.resolve(), pw = 0, ph = 0;
       for (var i = 1; i <= n; i++) (function (i) { chain = chain.then(function () { return pdf.getPage(i).then(function (pg) { if (i === 1) { var v = pg.getViewport({ scale: 1 }); pw = v.width; ph = v.height; } return pg.getTextContent(); }).then(function (tc) {
         var lines = [], cur = '', ly = null;
         tc.items.forEach(function (it) { if (!('str' in it)) return; var y = Math.round(it.transform[5]); if (ly !== null && Math.abs(y - ly) > 2) { lines.push(cur); cur = ''; } cur += (cur && !/\s$/.test(cur) ? ' ' : '') + it.str; ly = y; if (it.hasEOL) { lines.push(cur); cur = ''; ly = null; }
@@ -404,7 +523,11 @@
     if (ccBusy[fid]) return; ccBusy[fid] = 1; draw();
     getBlob(fid).then(function (bl) {
       if (!bl) throw { here: 1 };
-      return pdfText(bl);
+      /* pages 1–3 first – that is where the title, maker and kind of document are; the rest only when still unsure (JP 2026-11-25) */
+      return pdfText(bl, 3).then(function (r) { var low0 = r.pages.join('\n').toLowerCase(), f0 = (r.pages[0] || '').toLowerCase();
+        /* a scan (no text in it): read the picture of page 1, quietly – no word about scanning anywhere (JP 16:53 "it should be built in") */
+        if (low0.replace(/\s/g, '').length < 30) return ocrOk().then(function (ok) { return ok ? ocrPdf(bl).then(function (t) { if (!t) return r; var L0 = lrnGet(); L0.sc = (L0.sc || 0) + 1; return { n: r.n, pages: [t], title: '', w: r.w, h: r.h, ocr: 1 }; }, function () { return r; }) : r; });
+        if (r.n <= 3 || (strong(scoreKw(TKW, low0, f0)) && strong(scoreCodes(low0, f0)))) return r; return pdfText(bl, 40); });
     }).then(function (r) {
       var all = r.pages.join('\n'), low = all.toLowerCase(), first = (r.pages[0] || '').toLowerCase(), chars = all.replace(/\s/g, '').length;
       var ty = scoreKw(TKW, low, first), co = scoreCodes(low, first).filter(function (x) { return x.h.reduce(function (a, h) { return a + h[1]; }, 0) >= 2 || /^TFM/.test(x.h[0][0]); }), st = strong(ty), sc = strong(co);   /* a code from the text needs the word at least twice (or a TFM tag) – one mention in a long datasheet is not what the document is about */
@@ -415,18 +538,19 @@
       ccText[fid] = all.slice(0, 1500); var dw = looksDrawn(r);
       var cc = { at: today(), pg: r.n, ch: chars, t: st ? [st.k, why(st, 't')] : null, c: sc ? [sc.k, why(sc, 't')] : null, ca: !sc && co.length > 1 ? co.slice(0, 2).map(function (x) { return [x.k, why(x, 't')]; }) : null, tt: ty.slice(0, 3).map(function (x) { return x.k; }), cs: co.slice(0, 3).map(function (x) { return x.k; }), d: d.slice(0, 80),
         lang: chars > 200 ? langOf(low) : '', mk: ['Bruker', 'Drift', 'Prosjekt'].filter(function (w) { return new RegExp('(^|[^A-Za-zæøå])' + w + '([^a-zæøå]|$)').test(all); }), w: [] };
-      if (chars < 40 * Math.min(r.n, 40)) cc.w.push(chars ? 'little' : 'notext');
+      if (r.ocr) cc.o = 1; else if (chars < 40 * Math.max(1, r.pages.length)) cc.w.push(chars ? 'little' : 'notext');
       saveP(pid, function (p) {
         var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.cc = cc;
         if (dw && !f.nk && fkind(f) === 'doc') { f.p.kind = 'drawing'; f.kdw = 1; }   /* found to be a drawing – it gets the drawing rule and is kept out of bulk changes; "Type fil" still decides */
         var weak = k('ui.dcn-closest', 'closest match in the text – check it');
-        if (!f.p.code) { var lc = learnedFor(f.orig || f.name);   /* your earlier choices first, then a clear match in the text; close calls are two options to choose from */
-          if (lc) { f.p.code = lc.k; f.sg = Object.assign({}, f.sg, { c: whyL(lc) }); }
-          else if (cc.c) { f.p.code = cc.c[0]; f.sg = Object.assign({}, f.sg, { c: cc.c[1] }); }
+        if (!f.p.code) { f.cc = cc;   /* the plan and what it has learned first (now with the maker from the text), then a clear match in the text; close calls are two options to choose from */
+          if (suggestLearned(p, f) || (f.sg && f.sg.alt && f.sg.alt.length && !cc.c)) {}
+          else if (cc.c) { f.p.code = cc.c[0]; f.sgc = cc.c[0]; f.sgk = 'd'; f.sg = Object.assign({}, f.sg, { c: cc.c[1] }); }
           else if (cc.ca) f.sg = Object.assign({}, f.sg, { alt: cc.ca });
           else if (cc.cs.length) { f.p.code = cc.cs[0]; f.sg = Object.assign({}, f.sg, { c: weak }); }
           if (f.p.code && f.sg && f.sg.alt) delete f.sg.alt; }
-        if (!f.p.abbr && fkind(f) === 'doc' && (cc.t || cc.tt.length)) { f.p.abbr = cc.t ? cc.t[0] : cc.tt[0]; f.sg = Object.assign({}, f.sg, { t: cc.t ? cc.t[1] : weak }); }
+        if (!f.p.abbr && fkind(f) === 'doc' && suggestType(f)) {}
+        else if (!f.p.abbr && fkind(f) === 'doc' && (cc.t || cc.tt.length)) { f.p.abbr = cc.t ? cc.t[0] : cc.tt[0]; f.sg = Object.assign({}, f.sg, { t: cc.t ? cc.t[1] : weak }); }
         if (cc.d && splitStem(f.name) !== nbuild(p, f).plain) { f.nv = Object.assign({}, f.nv, { desc: mergeDesc(nval(p, f, { k: 'desc' }), cc.d) }); }
         relink(p, f);
       });
@@ -435,6 +559,45 @@
       if (code === 'here' || code === 'lib') toast('<i class="bi bi-info-circle"></i> ' + esc(code === 'here' ? k('ui.dc-file-elsewhere', 'The file is on the device it was imported on.') : k('ui.dcn-lib', 'The PDF reader could not be loaded – check the connection (it is fetched the first time).')));
       else saveP(pid, function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.cc = { at: today(), e: code }; });
     }).then(function () { delete ccBusy[fid]; drawBg(); });   /* a check finishing in the background must not close a list you have open */
+  }
+  /* ---------- scans: text recognition (tesseract.js, Norwegian + English) in a background worker, loaded the first time a scan turns up ---------- */
+  var OCRW = null, OCRQ = Promise.resolve();
+  function ocrBase() { return (HOST || window.PAGED_PDF_VENDOR === '/dc/vendor/' ? '/dc/vendor/' : '/cmd/vendor/') + 'ocr/'; }
+  function ocrOk() {   /* phones: only when the phone isn't saving power or data; otherwise the next PC that opens it reads it */
+    if (window.__noOcr) return Promise.resolve(false);
+    var phone = window.matchMedia && matchMedia('(pointer: coarse)').matches, c = navigator.connection;
+    if (!phone) return Promise.resolve(true); if (c && c.saveData) return Promise.resolve(false);
+    if (!navigator.getBattery) return Promise.resolve(true);
+    return navigator.getBattery().then(function (b) { return b.charging || b.level > 0.3; }, function () { return true; });
+  }
+  function simdOk() { try { return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])); } catch (e) { return false; } }
+  function ocrLib() {
+    if (OCRW) return OCRW; var base = ocrBase();
+    var load = function (src) { return new Promise(function (res, rej) { if (window.Tesseract) { res(); return; } var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('load')); }; document.head.appendChild(s); }); };
+    OCRW = load(base + 'tesseract.min.js?v=7.0.0').then(function () {
+      return window.Tesseract.createWorker(['nor', 'eng'], 1, { workerPath: base + 'worker.min.js?v=7.0.0', corePath: base + (simdOk() ? 'tesseract-core-simd-lstm.wasm.js' : 'tesseract-core-lstm.wasm.js'), langPath: base.replace(/\/$/, ''), workerBlobURL: false, gzip: true, logger: function () {}, errorHandler: function () {} });
+    });
+    OCRW.catch(function () { OCRW = null; });
+    return OCRW;
+  }
+  /* page 1 as a picture (grey, sensible sharpness): the top part first – title, maker, kind of document; the whole page only when that says too little */
+  function ocrPdf(bl) {
+    var job = OCRQ.then(function () {   /* one scan at a time */
+      return Promise.all([bl.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }), ocrLib()]).then(function (a) {
+        var pdf = a[0], w = a[1];
+        return pdf.getPage(1).then(function (pg) {
+          var v0 = pg.getViewport({ scale: 1 }), sc = Math.min(2.2, 1700 / Math.max(1, v0.width)), v = pg.getViewport({ scale: sc }), cv = document.createElement('canvas'); cv.width = Math.round(v.width); cv.height = Math.round(v.height);
+          var cx = cv.getContext('2d', { willReadFrequently: false }); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+          return pg.render({ canvasContext: cx, viewport: v }).promise.then(function () {
+            var part = function (frac) { var c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = Math.round(cv.height * frac); var x2 = c2.getContext('2d'); x2.filter = 'grayscale(1)'; x2.drawImage(cv, 0, 0); return c2; };
+            return w.recognize(part(0.45)).then(function (o) { var t = (o && o.data && o.data.text) || '';
+              if (t.replace(/\s/g, '').length > 120) return t;
+              return w.recognize(part(1)).then(function (o2) { return (o2 && o2.data && o2.data.text) || t; }); });
+          });
+        });
+      });
+    });
+    OCRQ = job.catch(function () {}); return job;
   }
   function splitStem(n) { return String(n).replace(/\.[a-z0-9]{2,5}$/i, ''); }
   /* after the code or type changed: the file goes to the plan line that fits it now */
@@ -570,7 +733,7 @@
        what's missing is said once – on the head and on the button – and an empty field has an orange edge */
     var gaps = b.miss.filter(function (x) { return x !== 'code' && x !== 'type'; }), same = !b.miss.length && b.plain === splitStem(f.name);
     if (gaps.length && lvl === 'ok') lvl = 'warn';
-    var stt = b.miss.length ? tag('var(--warn)', k(b.miss.length === 1 ? 'ui.dcn-miss1' : 'ui.dcn-missn', b.miss.length === 1 ? '1 field missing' : '{n} fields missing', { n: b.miss.length })) : same ? tag('var(--ok)', k('ui.dcn-follows', 'Name follows the rule')) : tag('var(--blue)', k('ui.dcn-ready', 'Ready'));
+    var stt = b.miss.length ? tag('var(--warn)', k(b.miss.length === 1 ? 'ui.dcn-miss1' : 'ui.dcn-missn', b.miss.length === 1 ? '1 field missing' : '{n} fields missing', { n: b.miss.length })) : same ? tag('var(--ok)', k('ui.dcn-follows', 'Name follows the rule')) : tag('var(--blue)', k('ui.dcn-ready', 'Ready-made'));
     var head = headLine || '<div class="dcn-head"><i class="bi bi-' + (kd === 'photo' ? 'image' : kd === 'drawing' ? 'rulers' : 'file-earmark-text') + '" aria-hidden="true"></i><span class="dcn-hn"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(kd === 'photo' ? k('ui.dcn-k-photo', 'Photo') : kd === 'drawing' ? k('ui.dcn-k-drawing', 'Drawing') : k('ui.dcn-k-doc', 'Document')) + (f.orig && f.orig !== f.name ? ' · <span data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</span>' : '') + '</small></span>' + stt +
       (f.nf ? '' : '<button type="button" class="pill-btn sm ghost dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</div>';
     var code = f.p.code ? f.p.code + ' ' + (codeName(f.p.code) || '') : '', seen = {};
@@ -605,7 +768,7 @@
     var c = f.cc, run = '<button type="button" class="text-btn" data-dcncc="' + esc(f.id) + '"><i class="bi bi-search"></i> ' + esc(c ? k('ui.dcn-cc-again', 'Check again') : k('ui.dcn-cc-run', 'Check the content')) + '</button>';
     if (ccBusy[f.id]) return '<div class="dcn-cc" aria-live="polite"><b>' + esc(k('ui.dcn-cc', 'Content check')) + '</b> <span class="muted">' + esc(k('ui.dcn-cc-reading', 'Reading the PDF on this device …')) + '</span></div>';
     if (!c) return '<div class="dcn-cc"><b>' + esc(k('ui.dcn-cc', 'Content check')) + '</b> <span class="muted">' + esc(k('ui.dcn-cc-help', 'Reads the PDF here to suggest code, type and description and to spot problems. Nothing is sent.')) + '</span> ' + run + '</div>';
-    if (c.e) return '<div class="dcn-cc"><b>' + esc(k('ui.dcn-cc', 'Content check')) + '</b> ' + tag('var(--warn)', k('ui.dcn-cc-bad', 'Could not read')) + '<p>' + esc({ locked: k('ui.dcn-cc-locked', 'The PDF is locked with a password, so its text can’t be read. Boligbygg needs open files.'), broken: k('ui.dcn-cc-broken', 'This doesn’t look like a working PDF – it may be damaged.') }[c.e] || k('ui.dcn-cc-read', 'The file could not be read.')) + '</p>' + run + '</div>';
+    if (c.e) return '<div class="dcn-cc"><b>' + esc(k('ui.dcn-cc', 'Content check')) + '</b> ' + tag('var(--warn)', k('ui.dcn-cc-bad', 'Could not read')) + '<p>' + esc({ locked: k('ui.dcn-cc-locked', 'The PDF is locked with a password, so its text can’t be read. Ask for an open file.'), broken: k('ui.dcn-cc-broken', 'This doesn’t look like a working PDF – it may be damaged.') }[c.e] || k('ui.dcn-cc-read', 'The file could not be read.')) + '</p>' + run + '</div>';
     var li = [], bad = c.w.length;
     c.w.forEach(function (w) { li.push('<li class="w">' + esc(w === 'notext' ? k('ui.dcn-cc-notext', 'No text found – the pages are probably scanned pictures, so nothing can be searched or checked.') : k('ui.dcn-cc-little', 'Very little text – it is probably scanned pictures.')) + '</li>'); });
     if (c.t) { var tm = f.p.abbr && f.p.abbr !== c.t[0]; bad = bad || tm; li.push('<li>' + esc(k('ui.dcn-cc-looks', 'Looks like {t}', { t: c.t[0] + ' · ' + catName(c.t[0]) })) + ' <span class="muted">(' + esc(c.t[1]) + ')</span>' + (tm ? ' <span class="w">' + esc(k('ui.dcn-cc-row-says', 'The row says {v}.', { v: f.p.abbr })) + '</span> <button type="button" class="text-btn" data-dcnuset="' + esc(f.id) + '">' + esc(k('ui.dcn-use-v', 'Use {v}', { v: c.t[0] })) + '</button>' : '') + '</li>'); }
@@ -628,7 +791,7 @@
     if (HOST && HOST.can && !HOST.can('rules')) return '';   /* in Team only those allowed «Sjekklister og navneregler» (admins by default) see and set the rules (JP 2026-11-23 "except me") */
     var use = p.nuse || {}, R = nrules(p), own = R.filter(function (r) { return !r.b; }), sel = nsel ? nrule(p, nsel) : null;
     var opts = function (cur) { var o = function (r) { return '<option value="' + esc(r.id) + '"' + (r.id === cur ? ' selected' : '') + '>' + esc(rname(r)) + '</option>'; };
-      return '<optgroup label="Boligbygg">' + R.filter(function (r) { return r.b; }).map(o).join('') + '</optgroup>' + (own.length ? '<optgroup label="' + esc(k('ui.dcn-own', 'Your rules')) + '">' + own.map(o).join('') + '</optgroup>' : ''); };
+      return '<optgroup label="' + esc(k('ui.dcn-ready', 'Ready-made')) + '">' + R.filter(function (r) { return r.b; }).map(o).join('') + '</optgroup>' + (own.length ? '<optgroup label="' + esc(k('ui.dcn-own', 'Your rules')) + '">' + own.map(o).join('') + '</optgroup>' : ''); };
     var KINDS = [['doc', 'ui.dcn-use-doc', 'Documents'], ['photo', 'ui.dcn-use-photo', 'Photos'], ['drawing', 'ui.dcn-use-dwg', 'Drawings']];
     var h = '<details class="dcn-rules"' + (nopen ? ' open' : '') + ' data-dcnrules><summary><i class="bi bi-sliders"></i> <b>' + esc(p.tool ? k('ui.dcn-rules-tool', 'Naming rules') : k('ui.dcn-rules', 'Naming rules for this project')) + '</b><small>' +
       esc(KINDS.map(function (x) { var r = nrule(p, use[x[0]] || NDEF[x[0]]); return k(x[1], x[2]) + ': ' + (r ? rname(r) : '–'); }).join(' · ')) + '</small></summary>';
@@ -642,10 +805,10 @@
     };
     h += '<div class="dcn-b dcn-newb"><button type="button" class="pill-btn" data-dcnnew><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dcn-new', 'New rule')) + '</button></div>' +
       '<p class="dcn-h">' + esc(k('ui.dcn-own', 'Your rules')) + ' <span class="muted">' + own.length + '</span></p>' +
-      (own.length ? '<ul class="dcn-rlist">' + own.map(row).join('') + '</ul>' : '<p class="muted dc-help">' + esc(k('ui.dcn-own-none', 'None yet – make one, or copy one of Boligbygg’s and change it.')) + '</p>') +
+      (own.length ? '<ul class="dcn-rlist">' + own.map(row).join('') + '</ul>' : '<p class="muted dc-help">' + esc(k('ui.dcn-own-none', 'None yet – make one, or copy a ready-made one and change it.')) + '</p>') +
       
       ownCodes(p) + lrnBox() +
-      '<details class="dcn-bbl"><summary>' + esc(k('ui.dcn-bb-rules', 'Boligbygg’s rules ({n}) – copy one to start from it', { n: R.length - own.length })) + '</summary><ul class="dcn-rlist">' + R.filter(function (r) { return r.b; }).map(row).join('') + '</ul></details>';
+      '<details class="dcn-bbl"><summary>' + esc(k('ui.dcn-bb-rules', 'Ready-made rules ({n}) – copy one to start from it', { n: R.length - own.length })) + '</summary><ul class="dcn-rlist">' + R.filter(function (r) { return r.b; }).map(row).join('') + '</ul></details>';
     if (sel && !sel.b) h += '</details><div class="dcn-ov dc-host" data-dcnov><div class="dcn-sheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dcn-edit', 'Change the rule')) + '"><div class="dcn-shead"><b>' + esc(rname(sel)) + '</b><button type="button" class="icon-btn" data-dcndone aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' + editor(p, sel) + '</div></div>';
     else h += '</details>';
     return h;
@@ -672,12 +835,17 @@
     var o = nsNames(); Object.keys(m).forEach(function (c) { o[c] = m[c]; }); try { localStorage.setItem(NSK, JSON.stringify(o)); } catch (e) {} done();
   }
   function nsClear() { if (nsWhere() === 'team') { Promise.resolve(HOST.nsSave(null)).then(function () { draw(); }); return; } try { localStorage.removeItem(NSK); } catch (e) {} draw(); }
+  /* "Learned from corrections" – only for JP (whoever keeps the code template); the others never see what it learned (JP 16:34, 16:56) */
   function lrnBox() {
-    var L = lrnGet(), W = Object.keys(L.w || {}), w = lrnWhere();
-    var best = function (x) { var e = L.w[x], c = Object.keys(e).sort(function (a, b) { return e[b] - e[a]; })[0]; return c; };
-    return '<details class="dcn-bbl dcn-lrn"><summary>' + esc(k('ui.dcn-lrn-t', 'Learned codes ({n})', { n: W.length })) + '</summary><p class="muted dc-help">' + esc(k('ui.dcn-lrn-help', 'When you change a suggested code, the words in the file name are remembered with the code you chose, and similar files get it first next time. Remove anything that was learned wrong.')) + ' ' +
-      esc(w === 'team' ? k('ui.dcn-ns-team', 'Shared with everyone in the team') : w === 'me' ? k('ui.dcn-ns-me', 'Saved with your codes – on all your devices') : k('ui.dcn-ns-here', 'Kept on this device only')) + '</p>' +
-      (W.length ? '<ul class="dcn-lrnl">' + W.sort().slice(0, 300).map(function (x) { var c = best(x); return '<li><span><b data-noi18n>' + esc(x) + '</b> → <span data-noi18n>' + esc(c + (codeName(c) ? ' ' + codeName(c) : '')) + '</span></span><button type="button" class="icon-btn sm" data-dcnlrx="' + esc(x) + '" aria-label="' + esc(k('ui.dcn-lrn-x', 'Forget this')) + '" title="' + esc(k('ui.dcn-lrn-x', 'Forget this')) + '"><i class="bi bi-x-lg"></i></button></li>'; }).join('') + '</ul>' : '<p class="muted dc-help">' + esc(k('ui.dcn-lrn-none', 'Nothing learned yet.')) + '</p>') + '</details>';
+    if (!seeWhy()) return '';
+    var L = lrnGet(), d = LDAY(), all = Object.keys(L.w || {}), pct = L.k + L.x ? Math.round(100 * L.k / (L.k + L.x)) : null;
+    var bestOf = function (m) { var o = Object.keys(m || {}).sort(function (a, b) { return m[b] - m[a]; }); return o[0] ? [o[0], Math.round(m[o[0]])] : null; };
+    var W = all.map(function (x) { var e = L.w[x]; return { x: x, c: bestOf(e.c), t: bestOf(e.t), a: e.a || d }; }).filter(function (r) { return (r.c && r.c[1] >= 1) || (r.t && r.t[1] >= 1); })
+      .sort(function (a, b) { return ((b.c ? b.c[1] : 0) + (b.t ? b.t[1] : 0)) - ((a.c ? a.c[1] : 0) + (a.t ? a.t[1] : 0)); });
+    var nm = function (x) { return x.charAt(0) === '#' ? x.slice(1) : x.charAt(0) === '.' ? k('ui.dcn-lrn-ext', '{e} files', { e: x }) : x; };
+    return '<details class="dcn-bbl dcn-lrn"><summary>' + esc(k('ui.dcn-lrn-t2', 'Learned from corrections')) + ' <span class="muted">' + esc(k('ui.dcn-lrn-sum', 'from {n} files', { n: L.n || 0 }) + (pct != null ? ' · ' + k('ui.dcn-lrn-pct', '{p} % of the suggestions kept', { p: pct }) : '') + (L.sc ? ' · ' + k('ui.dcn-lrn-sc', '{n} scanned files read', { n: L.sc }) : '')) + '</span></summary>' +
+      '<p class="muted dc-help">' + esc(k('ui.dcn-lrn-help2', 'Every file that gets its final name teaches the suggestions: its words, its maker and the kind of document → the code and type it ended with. One choice is only a hint; a few make it the suggestion, and the newest wins. Only you see this list – remove anything learned wrong.')) + '</p>' +
+      (W.length ? '<ul class="dcn-lrnl">' + W.slice(0, 300).map(function (r) { return '<li><span><b data-noi18n>' + esc(nm(r.x)) + '</b> → <span data-noi18n>' + esc([r.c ? r.c[0] + (codeName(r.c[0]) ? ' ' + codeName(r.c[0]) : '') + ' (' + r.c[1] + '×)' : '', r.t ? r.t[0] + ' (' + r.t[1] + '×)' : ''].filter(Boolean).join(' · ')) + '</span></span><button type="button" class="icon-btn sm" data-dcnlrx="' + esc(r.x) + '" aria-label="' + esc(k('ui.dcn-lrn-x', 'Forget this')) + '" title="' + esc(k('ui.dcn-lrn-x', 'Forget this')) + '"><i class="bi bi-trash3"></i></button></li>'; }).join('') + '</ul>' : '<p class="muted dc-help">' + esc(k('ui.dcn-lrn-none', 'Nothing learned yet.')) + '</p>') + '</details>';
   }
   function ownCodes(p) {
     var h = nsBox() + '<p class="dcn-h">' + esc(k('ui.dcn-own-codes', 'Your codes')) + ' <span class="muted">' + esc(k('ui.dcn-own-codes-s', 'extra choices in the lists – or pick “+ Own code” in a list')) + '</span></p>', any = 0;
@@ -777,8 +945,8 @@
         if (kind === 'rm') { before.__files = (p2.files || []).slice(); p2.files = (p2.files || []).filter(function (f) { return ids.indexOf(f.id) < 0; }); n = ids.length; return; }
         (p2.files || []).forEach(function (f) { if (ids.indexOf(f.id) < 0) return; before[f.id] = JSON.stringify({ p: f.p, sg: f.sg, name: f.name, orig: f.orig, iss: f.iss });
           if (kind === 'code') { f.p.code = val; if (f.sg) { delete f.sg.c; delete f.sg.alt; } learn(f, val); relink(p2, f); }
-          else if (kind === 'type') { f.p.abbr = val; if (f.sg) delete f.sg.t; relink(p2, f); }
-          else if (kind === 'name') { var b = nbuild(p2, f); rename(p2, f, b.plain + ext(f.orig || f.name)); }
+          else if (kind === 'type') { f.p.abbr = val; if (f.sg) delete f.sg.t; learnT(f, val); relink(p2, f); }
+          else if (kind === 'name') { var b = nbuild(p2, f); rename(p2, f, b.plain + ext(f.orig || f.name)); teach(f); }
           n++; });
       });
       if (kind === 'rm') { pkSet(ids, false); if (I.removed) I.removed(ids); }
@@ -791,7 +959,7 @@
   }
   function nfiles(p, F) {
     var h = rulesHtml(p);
-    var todo = F.filter(function (f) { return !f.nf && (!f.p.code || (ext(f.name) === '.pdf' && !f.cc)); }).length;
+    var todo = sugTodo(p).length;
     /* values for the whole batch (building number, property ID, property name, project number) – asked once, right here, where the names are
        (JP 2026-11-16 21:50 building number; 2026-11-17 09:18 "I cannot put the eiendoms-id") */
     var need = {}; F.forEach(function (f) { if (!f.nf) ruleFor(p, f).parts.forEach(function (q) { if (PV[q.k]) need[q.k] = 1; }); });
@@ -800,7 +968,9 @@
     if (pk.length && (pvOpen || pmiss.length)) h += '<div class="dcn-pvbox"><div class="dcn-pvg">' + pk.map(function (key) { return pvField(p, key, !!need[key], false); }).join('') + '</div><p class="dcn-pvf"><small>' + esc(k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' + (pmiss.length ? '' : '<button type="button" class="pill-btn sm ghost" data-dcnpvo>' + esc(k('ui.done', 'Done')) + '</button>') + '</p></div>';
     else if (pk.length) { var sh = []; if (p.bid) sh.push(k('ui.dcn-sh-b', 'Building {v}', { v: p.bid })); if (p.pid || p.pname) sh.push(k('ui.dcn-sh-p', 'Property {v}', { v: [p.pid, p.pname].filter(Boolean).join(' ') })); if (p.no) sh.push(k('ui.dcn-sh-n', 'Project {v}', { v: p.no }));
       h += '<div class="dcn-shared"><i class="bi bi-building" aria-hidden="true"></i><span><small>' + esc(k('ui.dcn-shared', 'Shared by all the files')) + '</small><span data-noi18n>' + esc(sh.join(' · ')) + '</span></span><button type="button" class="pill-btn sm ghost" data-dcnpvo>' + esc(k('ui.dcn-change', 'Change')) + '</button></div>'; }
-    if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(todo === 1 ? k('ui.dcn-all1', 'Suggest a code and check the file') : k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
+    if (SUG[p.id]) h += '<p class="dc-facts"><button type="button" class="pill-btn" disabled aria-busy="true"><i class="bi bi-magic"></i> ' + esc(k('ui.dcn-reading', 'Reading the files …')) + '</button></p>';
+    else if (todo) h += '<p class="dc-facts"><button type="button" class="pill-btn" data-dcnall><i class="bi bi-magic"></i> ' + esc(todo === 1 ? k('ui.dcn-all1', 'Suggest a code and check the file') : k('ui.dcn-all', 'Suggest codes and check {n} files', { n: todo })) + '</button></p>';
+    h += sugBox(p);
     var many = F.length > 1, cnt = { todo: 0, ready: 0, done: 0 }; if (many) F.forEach(function (f) { cnt[fstate(p, f)]++; });
     if (many) h += '<div class="dcn-flt" role="group">' + [['', k('ui.dcn-f-all', 'All {n}', { n: F.length })], ['todo', k('ui.dcn-f-todo', 'Needs you {n}', { n: cnt.todo })], ['ready', k('ui.dcn-f-ready', 'Ready {n}', { n: cnt.ready })], ['done', k('ui.dcn-f-done', 'Done {n}', { n: cnt.done })]].map(function (c) { return '<button type="button" class="dc-chip" aria-pressed="' + (nflt === c[0]) + '" data-dcnflt="' + c[0] + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>';
     var G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F;
@@ -832,13 +1002,34 @@
     return h;
   }
   /* suggest a code and type from the name for every file, then read every PDF that hasn't been read (one at a time) */
-  function suggestAll(pid, only) {   /* only: just these file ids (the files just uploaded to a project – JP 2026-11-24) */
-    var pdfs = [], pics = []; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf || (only && only.indexOf(f.id) < 0)) return; if (!f.p.code || !f.p.abbr) { guessName(f); relink(p, f); } if (ext(f.name) === '.pdf' && !f.cc) pdfs.push(f.id); if (fkind(f) === 'photo' && !f.dt && !f.orig) pics.push(f); }); }); draw();
+  function suggestAll(pid, only, noSet) {   /* only: just these file ids (the files just uploaded to a project – JP 2026-11-24) */
+    var pdfs = [], pics = []; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf || (only && only.indexOf(f.id) < 0)) return; if (!f.p.code || !f.p.abbr) { guessName(f, p); relink(p, f); } if (ext(f.name) === '.pdf' && !f.cc) pdfs.push(f.id); if (fkind(f) === 'photo' && !f.dt && !f.orig) pics.push(f); }); }); draw();
     pics.forEach(function (f) { getBlob(f.id).then(function (bl) { return bl ? photoDate(bl) : ''; }).then(function (d) { d = d || f.lm || ''; if (d) { saveP(pid, function (p) { var g = (p.files || []).filter(function (x) { return x.id === f.id; })[0]; if (g && !g.dt) g.dt = d; }); draw(); } }).catch(function () {}); });
-    return pdfs.reduce(function (pr, id5) { return pr.then(function () { return new Promise(function (res) { ccRun(pid, id5); var w = setInterval(function () { if (!ccBusy[id5]) { clearInterval(w); res(); } }, 200); }); }); }, Promise.resolve());
+    var run = pdfs.reduce(function (pr, id5) { return pr.then(function () { return new Promise(function (res) { ccRun(pid, id5); var w = setInterval(function () { if (!ccBusy[id5]) { clearInterval(w); res(); } }, 200); }); }); }, Promise.resolve());
+    return run.then(function () { if (!noSet) saveP(pid, function (p) { sets(p, only); }); drawBg(); });
+  }
+  /* the button "Suggest codes and check the files" says what it does and what it found (JP 2026-11-25 "I tried pressing it but it does not work") */
+  var SUG = {}, SUGM = {};
+  function needsHelp(f) { return !f.nf && fkind(f) !== 'photo' && (!f.p.code || (fkind(f) === 'doc' && !f.p.abbr)); }
+  function sugTodo(p) { return ((p && p.files) || []).filter(function (f) { return (needsHelp(f) && !f.tried) || (!f.nf && ext(f.name) === '.pdf' && !f.cc); }); }
+  function sugRun(pid) {
+    var p0 = proj(pid); if (!p0 || SUG[pid]) return; var ids = sugTodo(p0).map(function (f) { return f.id; }); if (!ids.length) return;
+    SUG[pid] = 1; delete SUGM[pid]; draw();
+    suggestAll(pid, ids, 1).then(function () {
+      var miss = [];
+      saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (ids.indexOf(f.id) < 0) return; f.tried = 1; if (needsHelp(f) && !(f.sg && f.sg.alt)) miss.push([f.id, f.name, !f.p.code ? 'c' : 't']); }); });
+      SUGM[pid] = { n: ids.length, miss: miss }; delete SUG[pid]; draw();
+    }).catch(function () { delete SUG[pid]; draw(); });
+  }
+  function sugBox(p) {
+    var m = SUGM[p.id]; if (!m || SUG[p.id]) return '';
+    if (!m.miss.length) return '<p class="dc-note dcn-sugok"><i class="bi bi-check2-circle"></i> ' + esc(k('ui.dcn-sug-all', 'Every file got a suggestion – check them below.')) + ' <button type="button" class="text-btn" data-dcnsugx>' + esc(k('ui.dcn-sug-ok', 'OK')) + '</button></p>';
+    return '<div class="dcn-sugm"><p><b>' + esc(m.miss.length === 1 ? k('ui.dcn-sug-none1', 'No suggestion for 1 file') : k('ui.dcn-sug-none', 'No suggestion for {n} files', { n: m.miss.length })) + '</b> <button type="button" class="text-btn" data-dcnsugx>' + esc(k('ui.dcn-sug-ok', 'OK')) + '</button></p><ul>' +
+      m.miss.slice(0, 12).map(function (x) { return '<li><button type="button" class="text-btn" data-dcnexp="' + esc(x[0]) + '"><span data-noi18n>' + esc(x[1]) + '</span></button><small>' + esc(x[2] === 'c' ? k('ui.dcn-sug-nocode', 'Found no code in the name or the text – choose one yourself') : k('ui.dcn-sug-notype', 'Found no document type – choose one yourself')) + '</small></li>'; }).join('') +
+      (m.miss.length > 12 ? '<li class="muted">' + esc(k('ui.dcn-sug-more', '… and {n} more', { n: m.miss.length - 12 })) + '</li>' : '') + '</ul></div>';
   }
   /* "Use this name" for every file whose rule has nothing missing – returns how many got a new name */
-  function useAll(pid) { var n = 0; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf) return; var b = nbuild(p, f), nm = b.plain + ext(f.orig || f.name); if (!b.miss.length && nm !== f.name) { rename(p, f, nm); n++; } }); }); draw(); return n; }
+  function useAll(pid) { var n = 0; saveP(pid, function (p) { (p.files || []).forEach(function (f) { if (f.nf) return; var b = nbuild(p, f), nm = b.plain + ext(f.orig || f.name); if (!b.miss.length && nm !== f.name) { rename(p, f, nm); teach(f); n++; } }); }); draw(); return n; }
   function ready(p, f) { var b = nbuild(p, f); return !b.miss.length; }
   /* the name a file leaves with: the rule's name when nothing is missing, else the name it has (download in the rename tool – JP 22:30) */
   function newName(p, f) { var b = nbuild(p, f); return b.miss.length ? f.name : b.plain + ext(f.orig || f.name); }
@@ -860,7 +1051,7 @@
       if (v === '__own' && (t.dataset.dcntype || t.dataset.dcnv)) { nown = t.dataset.dcntype ? t.dataset.dcntype + ':type' : t.dataset.dcnv; draw(); setTimeout(function () { var i = document.querySelector('[data-dcnownf] [data-dcnoc]'); if (i) i.focus(); }, 30); return; }
       if (t.hasAttribute('data-dcnoa')) return;
       if (t.hasAttribute('data-dcnnsf') && t.files && t.files[0]) { var rd = new FileReader(); rd.onload = function () { nsSave(parseNS(String(rd.result || ''))); }; rd.readAsText(t.files[0]); t.value = ''; return; }
-      if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; relink(p, f); }); draw(); return; }
+      if ((fid = t.dataset.dcntype)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (!f) return; f.p.abbr = v; if (f.sg) delete f.sg.t; learnT(f, v); relink(p, f); }); draw(); return; }
       if ((fid = t.dataset.dcnk)) { saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === fid; })[0]; if (f) f.nk = v; }); draw(); return; }
       if (t.dataset.dcnv) { var a = t.dataset.dcnv.split(':'); if (a[1] === 'floor' && v) try { localStorage.setItem('dcn.floor', v); } catch (e) {} saveP(cur(), function (p) { var f = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (f) { f.nv = f.nv || {}; f.nv[a[1]] = v.slice(0, 80); } }); draw(); return; }
       if (t.dataset.dcnpv) { var pf = t.dataset.dcnpv; saveP(cur(), function (p) { p[pf] = v.trim().slice(0, 60); }); if (document.activeElement === t) t.blur(); draw(); return; }
@@ -876,14 +1067,14 @@
     on('click', function (e) {
       var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) return;
       var fileOf = function (p, id) { return (p.files || []).filter(function (x) { return x.id === id; })[0]; };
-      if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) rename(p, f, nb2.plain + ext(f.orig || f.name)); }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var nxf = PF[j + 1] || PF.filter(function (x) { return x.id !== id && fstate(proj(cur()), x) !== 'done'; })[0]; if (nxf) nfo = nxf.id; }   /* renamed – on to the next file */ draw(); return; }
+      if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) { rename(p, f, nb2.plain + ext(f.orig || f.name)); teach(f); } }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var nxf = PF[j + 1] || PF.filter(function (x) { return x.id !== id && fstate(proj(cur()), x) !== 'done'; })[0]; if (nxf) nfo = nxf.id; }   /* renamed – on to the next file */ draw(); return; }
       /* "Fill in floor and room first": takes you to the first empty field of that file (JP 2026-11-24) */
       if ((b = t.closest('[data-dcnfill]'))) { var card = b.closest('.dcn-row'), nd = card && (card.querySelector('.dcn-s .dcn-need, .dcn-s input:not([value]), .dcn-s input[value=""]') || card.querySelector('[data-dcncpick]')); if (nd) { nd.scrollIntoView({ block: 'center', behavior: 'smooth' }); nd.focus(); if (nd.matches('[data-dcncpick]')) nd.click(); } return; }
       if ((b = t.closest('[data-dcnpvo]'))) { pvOpen = !pvOpen; draw(); if (pvOpen) setTimeout(function () { var i = document.querySelector('.dcn-pvbox input'); if (i) i.focus(); }, 30); return; }
       if ((b = t.closest('[data-dcnorig]'))) { var id2 = b.dataset.dcnorig; saveP(cur(), function (p) { var f = fileOf(p, id2); if (f && f.orig) { rename(p, f, f.orig); delete f.orig; } }); draw(); return; }
       if ((b = t.closest('[data-dcnalt]'))) { var pa = b.dataset.dcnalt.split('|'); saveP(cur(), function (p) { var f = fileOf(p, pa[0]); if (!f) return; f.p.code = pa[1]; if (f.sg) { delete f.sg.alt; delete f.sg.c; } learn(f, pa[1]); relink(p, f); }); draw(); return; }
-      if ((b = t.closest('[data-dcnlrx]'))) { var L0 = lrnGet(); delete L0.w[b.dataset.dcnlrx]; lrnSave(); draw(); return; }
-      if ((b = t.closest('[data-dcnok]'))) { var id3 = b.dataset.dcnok; saveP(cur(), function (p) { var f = fileOf(p, id3); if (f) delete f.sg; }); draw(); return; }
+      if ((b = t.closest('[data-dcnlrx]'))) { var L0 = lrnGet(), x0 = b.dataset.dcnlrx, e0 = L0.w[x0]; delete L0.w[x0]; lrnSave(); draw(); if (e0) toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dcn-lrn-gone', 'Forgotten')), function () { lrnGet().w[x0] = e0; lrnSave(); draw(); }); return; }
+      if ((b = t.closest('[data-dcnok]'))) { var id3 = b.dataset.dcnok; saveP(cur(), function (p) { var f = fileOf(p, id3); if (f) { teach(f); delete f.sg; } }); draw(); return; }
       if ((b = t.closest('[data-dcncc]'))) { ccRun(cur(), b.dataset.dcncc); return; }
       if ((b = t.closest('[data-dcnuset], [data-dcnusec]'))) { var id4 = b.dataset.dcnuset || b.dataset.dcnusec, isT = !!b.dataset.dcnuset; saveP(cur(), function (p) { var f = fileOf(p, id4); if (!f || !f.cc) return; if (isT && f.cc.t) f.p.abbr = f.cc.t[0]; if (!isT && f.cc.c) f.p.code = f.cc.c[0]; relink(p, f); }); draw(); return; }
       var unfocus = function () { var a = document.activeElement; if (a && a.blur && a !== document.body) a.blur(); };   /* a page draw waits while a field has focus */
@@ -899,7 +1090,8 @@
       if ((b = t.closest('[data-dcnodel]'))) { var od = b.dataset.dcnodel.split(':'); codeDel(od[0], od[1], od.slice(2).join(':')); return; }
       if ((b = t.closest('[data-dcnoadd]'))) { var fa = b.closest('.dcn-oadd'), ak = fa.querySelector('[data-dcnoa]').value, ac = nclean(fa.querySelector('[data-dcnoc]').value).slice(0, 40), am = fa.querySelector('[data-dcnom]').value.trim().slice(0, 60);
         if (!ac) { fa.querySelector('[data-dcnoc]').focus(); return; } addCode(ak, ac, am); unfocus(); draw(); return; }
-      if (t.closest('[data-dcnall]')) { suggestAll(cur()); return; }
+      if (t.closest('[data-dcnall]')) { sugRun(cur()); return; }
+      if (t.closest('[data-dcnsugx]')) { delete SUGM[cur()]; draw(); return; }
       if ((b = t.closest('[data-dcnpks]'))) { var pp = proj(cur()) || {}, FF = (pp.files || []).filter(function (f) { return !f.nf; }), wk = b.dataset.dcnpks; pkFix(pp);
         if (wk.indexOf('kind:') === 0) { var kk = wk.slice(5); PKS = {}; pkSet((nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF).filter(function (f) { return fkind(f) === kk; }).map(function (f) { return f.id; }), true); draw(); return; }   /* only that kind – the rest is unticked */
         if (wk === 'none') PKS = {}; else pkSet((wk === 'nocode' ? FF.filter(function (f) { return !f.p.code; }) : (nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF)).map(function (f) { return f.id; }), true); draw(); return; }
@@ -922,5 +1114,5 @@
       if ((b = t.closest('[data-dcnpd]'))) { ruleEdit(function (r) { r.parts.splice(+b.dataset.dcnpd, 1); }); return; }
     });
   }
-  window.DocNaming = { picked: picked, view: view, use: use, files: nfiles, guess: guessName, suggestAll: suggestAll, useAll: useAll, ready: ready, newName: newName, busy: busy };
+  window.DocNaming = { approved: approved, teach: function (f) { teach(f); }, learnState: function () { return JSON.parse(JSON.stringify(lrnGet())); }, picked: picked, view: view, use: use, files: nfiles, guess: guessName, suggestAll: suggestAll, useAll: useAll, ready: ready, newName: newName, busy: busy };
 })();

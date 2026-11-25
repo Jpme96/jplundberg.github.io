@@ -50,6 +50,8 @@ xv = rd(os.path.join(CMD, 'xlsx-view.js'))
 put('xlsx-view.js', NOTE % 'xlsx-view.js' + xv)
 for f in ('jspdf.umd.min.js', 'html2canvas.min.js', 'pdf.min.js', 'pdf.worker.min.js'):   # pdf.js: the content check reads a PDF's text on the device
     put('vendor/' + f, rd(os.path.join(CMD, 'vendor', f), True))
+for f in sorted(os.listdir(os.path.join(CMD, 'vendor', 'ocr'))):   # scans read quietly in the background (tesseract.js – loaded the first time a scan turns up, JP 2026-11-25)
+    put('vendor/ocr/' + f, rd(os.path.join(CMD, 'vendor', 'ocr', f), True))
 
 # the NS 3451 table (codes and names, nothing personal)
 lp = rd(os.path.join(CMD, 'life-pages.js'))

@@ -38,7 +38,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   check(r0.menu && !r0.old && r0.tabs === 'Report,Document plan' && r0.art, 'the report has one Download button and two preview tabs ' + JSON.stringify(r0));
   await p.evaluate(() => document.querySelector('[data-dcdlm]').click()); await sl(300);
   const m0 = await p.evaluate(() => { const l = document.querySelector('.dc-dllist'); return { open: !!l && !l.hidden, pkg: !!l.querySelector('.dc-dlall [data-dchand]'), items: [...l.querySelectorAll('.dc-dlit b')].map(x => x.textContent).join(','), plan: (l.querySelector('[data-dcdls="plan"]').closest('label').querySelector('small') || {}).textContent, go: (l.querySelector('[data-dcdlgo]') || {}).textContent }; });
-  check(m0.open && m0.pkg && m0.items === 'Report,Document plan,Delivery list,The files' && /Vedlegg 7 made from the delivery/.test(m0.plan) && /\(2\)/.test(m0.go), 'the menu: the handover package on top, then the four choices; without an uploaded plan it is Vedlegg 7 ' + JSON.stringify(m0));
+  check(m0.open && m0.pkg && m0.items === 'Report,Document plan,Delivery list,The files' && /Document plan made from the delivery/.test(m0.plan) && /\(2\)/.test(m0.go), 'the menu: the handover package on top, then the four choices; without an uploaded plan it is Vedlegg 7 ' + JSON.stringify(m0));
   /* choose the delivery list too, then pick only one file */
   await p.click('.dc-dllist [data-dcdls="list"]'); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dcdlpick]').click()); await sl(300);
@@ -57,7 +57,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
     const u = new Uint8Array(await got.arrayBuffer()), names = []; let i = 0;
     while (i < u.length - 46) { if (u[i] === 0x50 && u[i + 1] === 0x4b && u[i + 2] === 1 && u[i + 3] === 2) { const n = u[i + 28] | (u[i + 29] << 8); names.push(new TextDecoder().decode(u.slice(i + 46, i + 46 + n))); i += 46 + n; } else i++; }
     return { name: got.name, names }; });
-  check(z && /\.zip$/.test(z.name) && z.names.some(n => /Report.*\.pdf$/.test(n)) && z.names.some(n => /Vedlegg 7.*\.xlsx$/.test(n)) && z.names.some(n => /Delivery list.*\.xlsx$/.test(n)) && z.names.filter(n => /\.pdf$/.test(n) && /\//.test(n)).length === 1, 'Download the chosen: one .zip with the report, Vedlegg 7, the delivery list and the one file ' + JSON.stringify(z));
+  check(z && /\.zip$/.test(z.name) && z.names.some(n => /Report.*\.pdf$/.test(n)) && z.names.some(n => /Document plan.*\.xlsx$/.test(n)) && z.names.some(n => /Delivery list.*\.xlsx$/.test(n)) && z.names.filter(n => /\.pdf$/.test(n) && /\//.test(n)).length === 1, 'Download the chosen: one .zip with the report, Vedlegg 7, the delivery list and the one file ' + JSON.stringify(z));
   /* the preview switches to the document plan; "Download only this" gives that one file */
   await p.evaluate(() => document.querySelector('[data-dcrtab="plan"]').click()); await sl(300);
   const pv = await p.evaluate(() => ({ rows: document.querySelectorAll('.dc-pvt tbody tr').length, tags: document.querySelectorAll('.dc-pvt .stt').length, art: !!document.querySelector('.rp-doc') }));
@@ -67,7 +67,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   /* the naming tool can make a document plan (Vedlegg 7) from its files (JP 2026-11-24 22:51) */
   await p.evaluate(async () => { await window.DocTools.ren([new File(['%PDF-1.1 made up'], '365 DA Vifte madeup.pdf', { type: 'application/pdf' })]); }); await sl(800);
   const v7 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; const b2 = document.querySelector('[data-dxrenplan]'); if (!b2) { FdvPdf.share = old; return 'no button'; } b2.click(); for (let i = 0; i < 20 && !got; i++) await new Promise(r => setTimeout(r, 100)); FdvPdf.share = old; return got ? got.name + '|' + new TextDecoder().decode(await got.arrayBuffer()).includes('365') : 'nothing'; });
-  check(/Vedlegg 7.*\.xlsx\|true$/.test(v7), 'the naming tool downloads a Vedlegg 7 made from its files ' + v7);
+  check(/Document plan.*\.xlsx\|true$/.test(v7), 'the naming tool downloads a Vedlegg 7 made from its files ' + v7);
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
 })();

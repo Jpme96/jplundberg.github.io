@@ -128,6 +128,16 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await p.evaluate(() => document.querySelector('[data-dcmkplan]').click()); await sl(500);
   const np = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), linked: r.files.filter(f => f.line).length, v7: !!document.querySelector('[data-dcvx7]') }; });
   check(np.lines === '234 A recv,234 E recv,261 E recv' && np.linked === 3 && np.v7, 'no plan: a plan is made from the delivered files, linked, ready as Vedlegg 7 ' + JSON.stringify(np));
+  /* "Usual for this project, but not in the plan" (JP 2026-11-25): a folded card from the codes the project has; one tap adds a line of your own, Undo takes it back */
+  const nd = await p.evaluate(() => { const c = document.querySelector('.dc-flow details.dc-need'); return c ? { open: c.open, n: c.querySelectorAll('[data-dcneedadd]').length, t: c.textContent } : null; });
+  check(nd && !nd.open && nd.n >= 1 && /Usual for this project, but not in the plan/.test(nd.t) && /Only a suggestion/.test(nd.t), 'a project without a plan shows the folded card of what such a project usually has ' + JSON.stringify(nd && { open: nd.open, n: nd.n }));
+  const n0d = await p.evaluate(() => Features.list('dctl').filter(x => x.id === 'fp2')[0].lines.length);
+  await p.evaluate(() => { const c = document.querySelector('.dc-flow details.dc-need'); c.open = true; c.querySelector('[data-dcneedadd]').click(); }); await sl(400);
+  const n1d = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { n: r.lines.length, own: r.lines.filter(l => l.own).length }; });
+  await p.evaluate(() => { const u = [...document.querySelectorAll('[data-undo]')].pop(); u && u.click(); }); await sl(500);
+  const n2d = await p.evaluate(() => Features.list('dctl').filter(x => x.id === 'fp2')[0].lines.length);
+  check(n1d.n === n0d + 1 && n1d.own === 1 && n2d === n0d, 'Add puts the suggested document in as a line of your own; Undo takes it out ' + JSON.stringify({ n0d, n1d, n2d }));
+  check(await p.evaluate(() => !/Vedlegg 7|Boligbygg/.test(document.querySelector('.dc-flow').innerText)), 'no client names on screen – "Download document plan (.xlsx)" (JP 2026-11-25 "I own the system")');
   /* the Vedlegg 7 from such a plan has the delivered names in Planlagt navngivning (JP 2026-11-24 09:34: it was empty) */
   const v7 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-dcvx7]').click(); FdvPdf.share = old; if (!got) return ''; return new TextDecoder().decode(await got.arrayBuffer()); });
   check(/234 SE Vindu madeup/.test(v7), 'the Vedlegg 7 made from the delivery fills Planlagt navngivning with the delivered names');
@@ -143,6 +153,20 @@ const fs = require('fs'), os = require('os'), path = require('path');
   const ag = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0], S = [...document.querySelectorAll('.dc-fsteps [data-dctab]')].map(b => b.innerText.replace(/\n/g, ' '));
     return { lines: r.lines.map(l => l.code + ' ' + l.t + ' ' + l.st).sort().join(','), files: r.files.length, lev: S[2], cmp: S[3] }; });
   check(ag.lines.split(',').length === 2 && ag.files === 2 && /2 /.test(ag.lev) && /^4 \D+ 2 /.test(ag.cmp), 'deleting an approved file takes the line made from it along – Delivery and Comparison both say 2 ' + JSON.stringify(ag));
+  /* a line of your own in Dokumentplan, kept when a new version of the plan is imported (JP 2026-11-25) */
+  await go(p, 'work/#dc=fp1', 2000);
+  await p.evaluate(() => document.querySelector('.dc-fsteps [data-dctab="plan"]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('.dc-flow [data-dcaddo]').click()); await sl(300);
+  await p.evaluate(() => document.querySelector('.dc-flow .dc-addl [data-dcaddl]').click()); await sl(200);
+  const er9 = await p.evaluate(() => { const e = document.querySelector('.dc-addle'); return e && !e.hidden ? e.textContent : ''; });
+  await p.evaluate(() => { const b = document.querySelector('.dc-flow .dc-addl'); b.querySelector('[data-dcalc]').value = '360'; b.querySelector('[data-dcalt]').value = 'I'; b.querySelector('[data-dcalx]').value = 'Made-up balancing report'; b.querySelector('[data-dcaddl]').click(); }); await sl(400);
+  const ol = await p.evaluate(() => { const l = Features.list('dctl')[0].lines.filter(x => x.own)[0]; return l ? l.code + ' ' + l.t + ' ' + l.sys + ' ' + l.st : ''; });
+  await p.evaluate(() => { const d = [...document.querySelectorAll('.dc-flow details.dc-fold')].find(x => /3 /.test(x.querySelector('summary').textContent)) || [...document.querySelectorAll('.dc-flow details.dc-fold')].pop(); d.open = true; d.dispatchEvent(new Event('toggle')); }); await sl(400);
+  check(/Write a code/.test(er9) && ol === '360 I Made-up balancing report missing', 'Add line asks for a code and a type, then adds a line of your own, missing until it is delivered ' + JSON.stringify({ er9, ol }));
+  const csv = path.join(dir, 'Made-up plan v2.csv'); fs.writeFileSync(csv, 'Systemkode;Systemnavn;Dokumenttype;Planlagt navngivning\n234;Vinduer;Produktinformasjon;234 DA Vindu madeup\n261;Tak;Produktinformasjon;261 DA Takstein madeup\n');
+  await (await p.$('.dc-flow input[data-dcplan]')).uploadFile(csv); await sl(1200);
+  const rv = await p.evaluate(() => { const q = Features.list('dctl')[0]; return { name: q.planName, own: q.lines.filter(l => l.own).map(l => l.code).join(), n: q.lines.length }; });
+  check(rv.name === 'Made-up plan v2.csv' && rv.own === '360' && rv.n === 3, 'a new version of the plan keeps your own line ' + JSON.stringify(rv));
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();

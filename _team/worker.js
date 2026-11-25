@@ -8,7 +8,7 @@
    email), ORIGIN (https://work.jplundberg.com). */
 
 const ROLES = ['read', 'edit', 'approve', 'admin'];
-const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl|clk|cfg|mine)$/;   /* clk = one clock-in/out (Phase G, 2026-11-15: anyone in the team clocks themselves, only their own), cfg = team settings only admins write (cfgclock: clocking on/off for the team and per person) */   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
+const KINDS = /^(meeting|action|note|dcp|dcl|dct|dcr|dcf|dce|insp|file|upl|clk|cfg|mine|lrn)$/;   /* clk = one clock-in/out (Phase G, 2026-11-15: anyone in the team clocks themselves, only their own), cfg = team settings only admins write (cfgclock: clocking on/off for the team and per person) */   /* file = a shared file (its bytes are encrypted chunks f:<fid>:<n>), upl = an upload link for a contractor (its key stays in the record) */   /* insp = a building inspection shared from /cmd */   /* dc*: Document control and requirements (projects, lines, types, the checklist; dcf = a plan file, dce = Excel edits) */
 const ID = /^[a-z0-9]{8,40}$/, TID = /^(team|[a-z0-9]{12})$/, GID = /^[a-z0-9]{4,40}$/;
 /* Access (JP 2026-11-16, Documentation): who may do what. ACTS = the lowest role each action needs by default (today's rules);
    an admin can change them, and give a person another role – or none – on one project. A project is a group id (g) the app
@@ -130,6 +130,7 @@ export class TeamStore {
     const fid = String(b.fid || ''), n = Math.min(MAXCHUNKS, Math.max(0, b.n | 0)); if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
     let used = (await this.s.get('fbytes')) || 0, gone = 0;
     for (let i = 0; i < n; i++) { const c = await this.cGet(fid, i); if (!c) continue; if (String(c.by || '').indexOf('link:') === 0) return json({ error: 'not yours' }, 403); used -= (c.ct || '').length; await this.cDel(fid, i); gone++; }
+    if (gone && gone >= n) await this.s.delete('fg:' + fid);
     await this.s.put('fbytes', Math.max(0, used)); return json({ ok: true, gone });
   }
 
@@ -160,14 +161,14 @@ export class TeamStore {
       if (p === 'access' && m === 'GET') return json(isAdmin ? acc : { m: acc.m, pp: { [email]: acc.pp[email] || {} }, tr: { [email]: acc.tr[email] || '' } });
       if (p === 'access' && m === 'POST') { if (!isAdmin) return json({ error: 'admins only' }, 403); return this.setAccess(email, b); }
       /* older Documentation records get their project's group id once (an admin's device knows it; the Worker can't read them) */
-      if (p === 'gtag' && m === 'POST') { if (!isAdmin) return json({ error: 'admins only' }, 403); let n = 0; for (const id of Object.keys(b.g || {}).slice(0, 20000)) { const g = b.g[id]; if (!ID.test(id) || typeof g !== 'string' || !GID.test(g)) continue; const r = await this.s.get('r:' + id); if (r && !r.g && /^(dcp|dcl|dcf|dce)$/.test(r.k)) { r.g = g; await this.s.put('r:' + id, r); n++; } } return json({ ok: true, n }); }
+      if (p === 'gtag' && m === 'POST') { if (!isAdmin) return json({ error: 'admins only' }, 403); let n = 0; for (const id of Object.keys(b.g || {}).slice(0, 20000)) { const g = b.g[id]; if (!ID.test(id) || typeof g !== 'string' || !GID.test(g)) continue; const r = await this.s.get('r:' + id); if (r && !r.g && /^(dcp|dcl|dcf|dce|file)$/.test(r.k)) { r.g = g; await this.s.put('r:' + id, r); n++; } } for (const fid of Object.keys(b.f || {}).slice(0, 20000)) { const g = b.f[fid]; if (!FID.test(fid) || typeof g !== 'string' || !GID.test(g) || (await this.s.get('fg:' + fid))) continue; await this.s.put('fg:' + fid, g); n++; } return json({ ok: true, n }); }
       if (p === 'recs' && m === 'GET') return this.recs(url, team, email, me, acc);
-      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk' && b.k !== 'mine' && !elev) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b, acc); }
+      if (p === 'rec' && m === 'PUT') { if (rank < 1 && b.k !== 'clk' && b.k !== 'mine' && b.k !== 'lrn' && !elev) return json({ error: 'read only' }, 403); return this.putRec(email, me, team, b, acc); }
       if (p === 'batch' && m === 'PUT') { if (rank < 1 && !elev) return json({ error: 'read only' }, 403); return this.batch(email, me, team, b, acc); }
       if (p === 'lock' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.lock(email, b); }
       if (p === 'log' && m === 'GET') return this.logList(url);
-      if (p === 'fchunk' && m === 'GET') return this.getChunk(url);
-      if (p === 'fchunk' && m === 'PUT') { if (rank < 1) return json({ error: 'read only' }, 403); return this.putChunk(email, b); }
+      if (p === 'fchunk' && m === 'GET') return this.getChunk(url, me, acc);
+      if (p === 'fchunk' && m === 'PUT') { if (rank < 1 && !elev) return json({ error: 'read only' }, 403); return this.putChunk(email, b, me, acc); }
       if (p === 'fdel' && m === 'POST') { if (rank < 1) return json({ error: 'read only' }, 403); return this.delChunks(email, b); }
       if (p === 'push' && m === 'GET') return json({ key: (await this.vapid()).pub });
       if (p === 'push' && m === 'POST') return this.pushSub(email, b);
@@ -355,7 +356,8 @@ export class TeamStore {
   async recs(url, team, email, me, acc) {
     const since = +url.searchParams.get('since') || 0, out = [], hid = [];
     /* only what the person may see: a project they have 'none' on – or, with no team access, everything but their own projects – never leaves the server */
-    for (const [, v] of await this.s.list({ prefix: 'r:' })) if (v.seq > since) { if (!/^(dct|dcr|cfg)$/.test(v.k) && this.roleIn(me, acc, v.g) === 'none') { hid.push(v.id); continue; } out.push(v); }   /* project types and client checklists are for everyone in the team */
+    for (const [, v] of await this.s.list({ prefix: 'r:' })) if (v.seq > since) { if (v.k === 'lrn' && v.by !== email && me.role !== 'admin') continue;   /* someone's own learning votes: only them and admins (JP 16:34 "I don't want other people to see how much it learned") */
+      if (!/^(dct|dcr|cfg)$/.test(v.k) && !(/^(mine|lrn)$/.test(v.k) && v.by === email) && this.roleIn(me, acc, v.g) === 'none') { hid.push(v.id); continue; } out.push(v); }   /* project types and client checklists are for everyone in the team */
     const locks = {}, now = Date.now();
     for (const [k, v] of await this.s.list({ prefix: 'lock:' })) if (v.until > now) locks[k.slice(5)] = v; else await this.s.delete(k);
     return json({ seq: (await this.s.get('seq')) || 0, epoch: team.epoch, recs: out, locks, hid: since ? undefined : hid.length || undefined });
@@ -392,14 +394,14 @@ export class TeamStore {
     const g = old && old.g ? old.g : b.g;
     if (acc) {   /* Documentation: the action this write is, against the role the person has where it lives (the access matrix) */
       const act = b.k === 'dct' ? 'types' : b.k === 'dcr' ? 'rules' : b.k === 'dcp' ? (del ? 'delp' : old && !old.del ? 'edit' : 'newp') : /^(dcl|dcf|dce)$/.test(b.k) ? 'edit' : '';
-      const role = this.roleIn(me, acc, /^(dcp|dcl|dcf|dce)$/.test(b.k) ? g : '');
-      if (role === 'none') return { error: 'no access', status: 403 };
+      const role = this.roleIn(me, acc, /^(dcp|dcl|dcf|dce|file)$/.test(b.k) ? g : '');
+      if (role === 'none' && !/^(mine|lrn)$/.test(b.k)) return { error: 'no access', status: 403 };   /* your own lists are yours, whatever your projects */
       if (act && ROLES.indexOf(role) < ROLES.indexOf(acc.m[act] || ACTS[act])) return { error: 'your role does not allow this', status: 403 };
-      if (!act && b.k !== 'clk' && b.k !== 'mine' && ROLES.indexOf(role) < 1) return { error: 'read only', status: 403 };
+      if (!act && b.k !== 'clk' && b.k !== 'mine' && b.k !== 'lrn' && ROLES.indexOf(role) < 1) return { error: 'read only', status: 403 };
     }
     /* the naming code template (cfgncodes) follows the access matrix's "codes" (admin by default); other settings: admins */
-    if (b.k === 'cfg' && rk < 3 && !(b.id === 'cfgncodes' && acc && ROLES.indexOf(this.roleIn(me, acc, '')) >= ROLES.indexOf(acc.m.codes || ACTS.codes))) return { error: 'admins only', status: 403 };
-    if (b.k === 'mine' && old && old.by !== email) return { error: 'not yours', status: 403 };   /* a person's own code list: only they write it (JP 2026-11-25) */                         /* team settings: admins */
+    if (b.k === 'cfg' && rk < 3 && !((b.id === 'cfgncodes' || b.id === 'cfglearn') && acc && ROLES.indexOf(this.roleIn(me, acc, '')) >= ROLES.indexOf(acc.m.codes || ACTS.codes))) return { error: 'admins only', status: 403 };
+    if ((b.k === 'mine' || b.k === 'lrn') && old && old.by !== email) return { error: 'not yours', status: 403 };   /* lrn: someone's own votes for the file suggestions (JP 2026-11-25) */   /* a person's own code list: only they write it (JP 2026-11-25) */                         /* team settings: admins */
     if (b.k === 'clk' && old && old.by !== email && rk < 3) return { error: 'not yours', status: 403 };  /* your own clock entries: only you (and admins, to fix a forgotten one) */
     if ((old ? old.v : 0) !== (b.v | 0)) return { error: 'changed meanwhile', rec: old, status: 409 };
     if (old) await this.s.put('h:' + b.id + ':' + old.v, old);   /* history: nothing is truly gone */
@@ -422,9 +424,14 @@ export class TeamStore {
   }
 
   /* ---------- shared files: the bytes are encrypted on the device in chunks of about 1 MB; the name and type are in a 'file' record ---------- */
-  async putChunk(email, b) {
+  async putChunk(email, b, me, acc) {
     const n = b.n | 0;
     if (!FID.test(String(b.fid || '')) || n < 0 || n >= MAXCHUNKS || !blob(b) || b.ct.length > MAXCHUNK) return json({ error: 'bad chunk' }, 400);
+    /* a project's file knows its project (JP 2026-11-25 16:42 "people who does not have access to the project should not be able to see the project") */
+    if (b.g !== undefined && (typeof b.g !== 'string' || !GID.test(b.g))) return json({ error: 'bad chunk' }, 400);
+    if (b.g && me && acc && this.roleIn(me, acc, b.g) === 'none') return json({ error: 'no access' }, 403);
+    if (!b.g && me && ROLES.indexOf(me.role) < 1) return json({ error: 'read only' }, 403);   /* read-only people with a project of their own send only to that project */
+    if (b.g && n === 0 && !(await this.s.get('fg:' + b.fid))) await this.s.put('fg:' + b.fid, b.g);
     const used = (await this.s.get('fbytes')) || 0;
     if (used + b.ct.length > TEAMBYTES) return json({ error: 'the team has no room for more files' }, 507);
     const old = await this.cGet(b.fid, n);
@@ -433,9 +440,10 @@ export class TeamStore {
     await this.s.put('fbytes', used + b.ct.length - (old ? old.ct.length : 0));
     return json({ ok: true });
   }
-  async getChunk(url) {
+  async getChunk(url, me, acc) {
     const fid = url.searchParams.get('fid') || '', n = +url.searchParams.get('n') | 0;
     if (!FID.test(fid)) return json({ error: 'bad file' }, 400);
+    if (me && acc) { const g = await this.s.get('fg:' + fid); if (g && this.roleIn(me, acc, g) === 'none') return json({ error: 'not found' }, 404); }   /* a file from a project you're not in is not there for you */
     const c = await this.cGet(fid, n); this.ctx.waitUntil(this.moveSome());
     return c ? json({ iv: c.iv, ct: c.ct }) : json({ error: 'not found' }, 404);
   }
