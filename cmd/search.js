@@ -28,7 +28,10 @@
     var out = commands().filter(function (c) { return c.g === 'Commands'; });
     function add(group, icon, title, sub, href, date, extra) { out.push({ g: group, i: icon, t: String(title || ''), s: sub || '', h: href, d: date || '', x: String(extra || '').toLowerCase() }); }
     var cal = readJSON('dash.calendar') || {};
-    (cal.events || []).forEach(function (e) { add('Calendar', 'calendar-event', e.title, fmt(e.date) + (e.start && !e.allDay ? ' ' + e.start : '') + (e.location ? ' · ' + e.location : ''), home + 'calendar/#d=' + e.date, e.date, (e.location || '') + ' ' + (e.notes || '')); });
+    /* a repeating event opens on its next time, not the day it was first made (review 16) */
+    function nextOf(e) { if (!e.repeat || !window.Cal || !Cal.expand) return e; try { var a = new Date(); a.setHours(0, 0, 0, 0); var b = new Date(a); b.setFullYear(b.getFullYear() + 1); var s = Cal.expand(Cal.fromOwn ? Cal.fromOwn(e) : e, a, b)[0]; if (!s) return e;
+      var k = s.getFullYear() + '-' + String(s.getMonth() + 1).padStart(2, '0') + '-' + String(s.getDate()).padStart(2, '0'); return Object.assign({}, e, { date: k }); } catch (x) { return e; } }
+    (cal.events || []).forEach(function (e) { e = nextOf(e); add('Calendar', 'calendar-event', e.title, fmt(e.date) + (e.start && !e.allDay ? ' ' + e.start : '') + (e.location ? ' · ' + e.location : ''), home + 'calendar/#d=' + e.date, e.date, (e.location || '') + ' ' + (e.notes || '')); });
     var tr = readJSON('dash.travel') || {};
     (tr.trips || []).forEach(function (t) {
       add('Trips', 'suitcase-lg', t.name || t.dest, [t.dest, fmt(t.start)].filter(Boolean).join(' · '), home + 'travel/#trip=' + t.id, t.start, (t.dest || '') + ' ' + (t.notes || '') + ' ' + ((t.place || {}).country || ''));

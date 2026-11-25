@@ -130,6 +130,9 @@ modern = rd(os.path.join(CMD, 'modern.css'))
 css.append('.dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }')
 css.append(':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }')
 css += [m.group(0) for m in re.finditer(r'^\.stt[^{]*\{[^}]*\}', modern, re.M)]
+# Team scales the page with CSS zoom and viewport units don't follow it (100dvh was 78 percent of a low laptop's screen - review 15):
+# every vh becomes the zoom-corrected --tvh that app.js sets (plain vh when there is no zoom)
+css = [re.sub(r'(?<![\w.-])(\d+(?:\.\d+)?)([dsl]?)vh\b', lambda m: 'calc(var(--tvh, 1' + m.group(2) + 'vh) * ' + m.group(1) + ')', c) for c in css]
 put('dc.css', '\n'.join(css) + '\n')
 
 # the icon font

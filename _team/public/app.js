@@ -34,6 +34,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function fit() { raf = 0; var w = window.innerWidth, h = window.innerHeight, z = 1;
     if (!(mq && mq.matches) && w >= 900) z = Math.max(.78, Math.min(1.5, Math.min(w / 1500, h / 1050)));   /* .78 at the least – text never below about 12.5 px */
     z = Math.round(z * 100) / 100; var v = z === 1 ? '' : String(z); if (!de.__pdf && de.style.zoom !== v) de.style.zoom = v;
+    de.style.setProperty('--tvh', z === 1 ? '' : (h / z / 100).toFixed(2) + 'px');   /* vh doesn't follow the zoom: 1 % of the real window height (review 15) */
     de.classList.toggle('tz-wide', z < 1 && w < 1000 && w / z >= 1000); }   /* room for the PC layout once scaled (JP 2026-11-25 18:37) */
   fit(); window.addEventListener('resize', function () { if (!raf) raf = requestAnimationFrame(fit); }); if (mq && mq.addEventListener) mq.addEventListener('change', fit);
   window.__teamFit = fit; })();
@@ -90,7 +91,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   var nb = (function () { try { var v = localStorage.getItem('team.lang'); if (v) return v === 'nb'; } catch (e) {} return true; })();   /* Norwegian unless someone picks English themselves (JP 2026-11-24 21:56) */
   function L(en, no) { return nb ? no : en; }
   /* the app's own popups instead of the browser's grey boxes (window.Ask from /dc/filedrop.js – 2026-11-19) */
-  function sure(msg) { return window.Ask ? window.Ask.confirm(msg, { danger: true }) : Promise.resolve(window.confirm(msg)); }   /* native-ok: only if Ask is missing */
+  /* the button says what happens – "Delete", not "OK" – like Documentation's own questions (review 17) */
+  var SURE_V = [[/^(Delete|Slette)\b/, 'Delete', 'Slett'], [/^(Remove|Fjerne)\b/, 'Remove', 'Fjern'], [/^(Switch off|Slå av)\b/, 'Switch off', 'Slå av'], [/^(Empty|Tømme)\b/, 'Empty', 'Tøm'], [/^(Decline|Avslå)\b/, 'Decline', 'Avslå']];
+  function sure(msg) { var v = SURE_V.filter(function (x) { return x[0].test(msg); })[0]; return window.Ask ? window.Ask.confirm(msg, { danger: true, ok: v ? L(v[1], v[2]) : undefined }) : Promise.resolve(window.confirm(msg)); }   /* native-ok: only if Ask is missing */
   function showText(msg, val) { if (window.Ask) window.Ask.prompt(msg, val, { ok: L('Close', 'Lukk') }); else window.prompt(msg, val); }   /* native-ok */
   document.documentElement.lang = nb ? 'nb' : 'en';
   var $app = document.getElementById('app');
@@ -529,7 +532,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'b8b3a9e58f20';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '760cac34e215';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -579,10 +582,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });
     if (tab === 'docs' && !S.edit) { docsReady(); if (S.dtab === 'files') loadUploads(); }
   }
-  function head(title, sub, back) {
+  function head(title, sub, back, keep) {
     return '<div class="t-top t-noprint">' + (back ? '<a class="t-back" href="#' + back[0] + '">' + ic('back') + esc(back[1]) + '</a>' : '<small>work.jplundberg.com</small>') +
       '<span class="t-topr">' + (S.me.isOwner && !back ? '<a class="t-tocmd" href="https://jplundberg.com/cmd/work/" target="_blank" rel="noopener" title="' + L('Open /cmd', 'Åpne /cmd') + '">cmd ↗</a>' : '') + '<a class="t-icon" href="#search=" aria-label="' + L('Search', 'Søk') + '">' + ic('search') + '</a>' + (S.teams.length > 1 || S.me.isOwner ? '<button class="t-icon" type="button" data-act="teams" aria-label="' + L('Your teams', 'Teamene dine') + '">' + ic('swap') + '</button>' : '') + '<button class="t-icon" type="button" data-act="settings" aria-label="' + L('Settings', 'Innstillinger') + '">' + ic('gear') + '</button></span></div>' +
-      '<div class="t-title"><h1>' + esc(title) + '</h1>' + (sub ? '<p>' + esc(sub) + '</p>' : '') + '</div>';
+      '<div class="t-title"><h1>' + esc(title) + '</h1>' + (sub ? '<p' + (keep ? ' class="t-keep"' : '') + '>' + esc(sub) + '</p>' : '') + '</div>';
   }
 
   /* what's new since your last visit (JP 23:46): what others did, counted by kind; "Seen" clears it. The app badge shows
@@ -684,7 +687,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var m = S.recs[id];
     if (!m || m.del || !m.d) return head(L('Meeting', 'Møte'), '', ['meetings', L('Meetings', 'Møter')]) + '<p class="t-empty">' + L('This meeting is not here (any more).', 'Dette møtet finnes ikke (lenger).') + '</p>';
     var d = m.d, lk = lockOf(id), own = actions().filter(function (a) { return a.d.meeting === id; }).sort(byDue), co = carried(m);
-    var out = head(d.title || L('Meeting', 'Møte'), fmtDate(d.date, true) + (d.from ? ' · ' + d.from + (d.to ? '–' + d.to : '') : ''), ['meetings', L('Meetings', 'Møter')]);
+    var out = head(d.title || L('Meeting', 'Møte'), fmtDate(d.date, true) + (d.from ? ' · ' + d.from + (d.to ? '–' + d.to : '') : ''), ['meetings', L('Meetings', 'Møter')], true);   /* the date stays on a short window (review 14) */
     if (lk) out += '<div class="t-banner t-noprint"><span class="t-dot"></span>' + esc(L(nameOf(lk.by) + ' is writing – you can read until they are done', nameOf(lk.by) + ' skriver – du kan lese til de er ferdige')) + '</div>';
     out += '<div class="t-btns t-noprint">' + (rank() >= 1 && !lk ? '<button class="t-btn sm" type="button" data-act="edit" data-id="' + id + '">' + L('Edit', 'Rediger') + '</button>' : '') + '<button class="t-btn ghost sm" type="button" data-act="print">' + L('Export PDF', 'Eksporter PDF') + '</button></div>';
     var att = (d.att || []).map(function (e) { return '<span class="t-chip">' + esc(nameOf(e)) + '</span>'; }).concat(lines(d.guests).map(function (g) { return '<span class="t-chip guest">' + esc(g) + ' (' + L('guest', 'gjest') + ')</span>'; }));

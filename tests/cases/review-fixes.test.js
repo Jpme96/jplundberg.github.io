@@ -28,6 +28,33 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="plan"]'); if (s) s.click(); }); await sl(500);
   const unk = await p.evaluate(() => { const f = document.querySelector('.dc-flow'); return f ? /Unknown document type/.test(f.innerText) : null; });
   check(unk === false, 'an old plan line with the type word "Rømningsplan" is read as a drawing now');
+  /* requirements but no contractor plan: you can still add a line, and the plan check folds many gaps per group (review 11–13) */
+  await p.evaluate(() => { const t = Features.tools(); const codes = ['221', '232', '311', '320', '330', '360', '411', '433', '442', '521', '562', '631'];
+    t.dckrav = [{ id: 'kq', name: 'Made-up req only', lines: codes.map((c, i) => ({ id: 'q' + i, code: c, t: 'A' })) }, { id: 'kp', name: 'Made-up many gaps', lines: codes.map((c, i) => ({ id: 'g' + i, code: c, t: 'A' })) }];
+    t.dctl = [{ id: 'kq1', name: 'Made-up req only', krav: 'kq', lines: codes.map((c, i) => ({ id: 'l' + i, code: c, t: 'A', type: '', planned: '', st: 'missing', files: [] })), files: [] },
+      { id: 'kp1', name: 'Made-up many gaps', krav: 'kp', planName: 'Made-up plan.xlsx', planFile: true, lines: [{ id: 'pl1', code: '221', t: 'A', type: 'Brukerveiledning', planned: '221 Brukerveiledning madeup', st: 'missing', files: [] }], files: [] }];
+    Features.saveTools(t); });
+  await go(p, 'work/#dc=kq1', 2500);
+  await p.evaluate(() => { try { PageTabs.show('doc'); } catch (e) {} }); await sl(300);
+  await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="plan"]'); if (s) s.click(); }); await sl(500);
+  check(await p.evaluate(() => !!document.querySelector('.dc-flow [data-dcaddo]')), 'a project with requirements but no contractor plan can get a line of its own');
+  await go(p, 'work/#dc=kp1', 2500);
+  await p.evaluate(() => { try { PageTabs.show('doc'); } catch (e) {} }); await sl(300);
+  await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="plan"]'); if (s) s.click(); }); await sl(500);
+  const gp = await p.evaluate(() => ({ folds: document.querySelectorAll('.dc-flow details[data-dcg^="gp:"]').length, open: document.querySelectorAll('.dc-flow details[data-dcg^="gp:"][open]').length, h: Math.round((document.querySelector('.dc-flow') || { scrollHeight: 0 }).scrollHeight) }));
+  check(gp.folds >= 3 && !gp.open, 'many gaps fold per NS group, closed ' + JSON.stringify(gp));
+  /* the same code and type twice: asked first */
+  await p.evaluate(() => { const b = document.querySelector('.dc-flow [data-dcaddo]'); if (b) b.click(); }); await sl(300);
+  const n0 = await p.evaluate(() => Features.tools().dctl.find(x => x.id === 'kp1').lines.length);
+  await p.evaluate(() => { const c = document.querySelector('[data-dcalc]'), t = document.querySelector('[data-dcalt]'); c.value = '221'; t.value = 'A'; document.querySelector('button[data-dcaddl]').click(); }); await sl(400);
+  const d1 = await p.evaluate(() => ({ n: Features.tools().dctl.find(x => x.id === 'kp1').lines.length, msg: (document.querySelector('.dc-addle') || {}).textContent || '' }));
+  check(d1.n === n0 && /already has 221/.test(d1.msg), 'adding 221 again asks first ' + JSON.stringify(d1));
+  await p.evaluate(() => document.querySelector('button[data-dcaddl]').click()); await sl(400);
+  check(await p.evaluate(() => Features.tools().dctl.find(x => x.id === 'kp1').lines.length) === n0 + 1, 'the second tap adds it anyway');
+  /* a repeating event found in search opens on its next time (review 16) */
+  const nx = await p.evaluate(() => { const c = JSON.parse(localStorage.getItem('dash.calendar') || '{}'); c.events = (c.events || []).concat([{ id: 'evmadeup', title: 'Madeup weekly swim', date: '2025-01-06', start: '18:00', dur: 3600000, repeat: 'weekly' }]); localStorage.setItem('dash.calendar', JSON.stringify(c));
+    const r = (window.SearchIndex() || []).find(x => x.t === 'Madeup weekly swim'); const t = new Date(); t.setHours(0, 0, 0, 0); const d = r && (r.h.match(/#d=(\d{4}-\d{2}-\d{2})/) || [])[1]; return { h: r && r.h, ok: !!d && new Date(d + 'T12:00') >= t }; });
+  check(nx.ok, 'a repeating event found in search opens on its next day ' + JSON.stringify(nx));
   /* Finances' late redraw after leaving (its worker answered on People/House): no error */
   await go(p, 'finance/', 1500);
   await p.evaluate(() => { const a = document.querySelector('a[href="/cmd/people/"]'); if (a) a.click(); }); await sl(2500);

@@ -1,0 +1,64 @@
+/* Team fixes from the hands-on review (JP 2026-11-25): next meeting, a short window, delete questions. Made-up data only. */
+const { spawn } = require('child_process'); const path = require('path'); const http = require('http');
+const puppeteer = require('puppeteer');
+const { check, done } = require('../lib/check');
+const sl = ms => new Promise(r => setTimeout(r, ms));
+const TPORT = (+process.env.PORT || 8770) + 420, T = 'http://localhost:' + TPORT + '/';
+const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'team-server.mjs')], { env: Object.assign({}, process.env, { TPORT: String(TPORT) }), stdio: ['ignore', 'pipe', 'inherit'] });
+process.on('exit', () => srv.kill());
+function raw(p) { return new Promise(res => { http.get(T.replace(/\/$/, '') + p, r => { let d = ''; r.on('data', c => { d += c; }); r.on('end', () => res({ status: r.statusCode, body: d })); }).on('error', () => res({ status: 0, body: '' })); }); }
+async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now() - t < ms) { if (await pg.evaluate(fn).catch(() => false)) return true; await sl(150); } return false; }
+
+(async () => {
+  for (let i = 0; i < 50 && (await raw('/index.html')).status !== 200; i++) await sl(200);
+  const b = await puppeteer.launch({ headless: true, executablePath: process.env.CHROME_PATH || undefined, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  const errs = [];
+  const ctx = await b.createBrowserContext(), own = await ctx.newPage();
+  await own.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true });
+  await own.setCookie({ name: 'who', value: 'owner%40x.no', domain: 'localhost', path: '/' });
+  own.on('pageerror', e => errs.push(e.message));
+  await own.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); window.confirm = () => true; new MutationObserver(() => { const y = document.querySelector('.ask-ov .ask-ok'); if (y) y.click(); }).observe(document, { childList: true, subtree: true }); });
+  const text = () => own.evaluate(() => document.body.innerText);
+  const click = sel => own.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
+
+  await own.goto(T); await own.waitForSelector('form[data-form=setup]');
+  await own.$eval('input[name=team]', e => { e.value = ''; }); await own.type('input[name=team]', 'Clock team');
+  await own.type('input[name=name]', 'JP'); await own.type('input[name=pass]', 'owner-pass-1'); await own.type('input[name=pass2]', 'owner-pass-1');
+  await own.click('button[type=submit]');
+  check(await until(own, () => !!document.querySelector('.t-tabs'), 20000), 'the owner is in the app');
+
+
+  /* a meeting earlier today is not "next" any more (review 4) */
+  const today = await own.evaluate(() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); });
+  await own.evaluate(() => { location.hash = '#meetings'; }); await own.waitForSelector('[data-act=newMeeting]'); await click('[data-act=newMeeting]'); await own.waitForSelector('form[data-form=meeting]');
+  await own.type('input[name=title]', 'Madeup morning meeting');
+  await own.evaluate(t => { const f = document.querySelector('form[data-form=meeting]'); f.date.value = t; if (f.from) f.from.value = '00:01'; if (f.to) f.to.value = '00:02'; }, today);
+  await click('form[data-form=meeting] button[type=submit]');
+  check(await until(own, () => /Madeup morning meeting/.test(document.body.innerText) && /^#m=/.test(location.hash)), 'the meeting is saved');
+  const mid = await own.evaluate(() => location.hash.slice(3));
+  await own.evaluate(() => { location.hash = '#overview'; }); await sl(800);
+  const ov = await own.evaluate(() => { const t = document.getElementById('app').innerText; const i = t.search(/Next meeting/i); return i < 0 ? '' : t.slice(i, i + 80); });
+  check(!/Madeup morning meeting/.test(ov), 'Overview does not call a meeting that ended this morning the next one ' + JSON.stringify(ov));
+  /* a low laptop: the date stays under the meeting's title, viewport heights follow the page zoom, Save stays in reach (review 14, 15) */
+  const lap = await ctx.newPage(); await lap.setViewport({ width: 1366, height: 650 });
+  await lap.setCookie({ name: 'who', value: 'owner%40x.no', domain: 'localhost', path: '/' });
+  await lap.evaluateOnNewDocument(() => { localStorage.setItem('team.lang', 'en'); });
+  await lap.goto(T + '#m=' + mid); await until(lap, () => !!document.querySelector('.t-title h1'), 20000); await sl(600);
+  const lp = await lap.evaluate(() => { const p = document.querySelector('.t-title p'); const d = document.createElement('div'); d.style.cssText = 'position:absolute;top:0;height:calc(var(--tvh, 1vh) * 100)'; document.body.appendChild(d);
+    const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1, hv = d.getBoundingClientRect().height * (document.documentElement.getBoundingClientRect().height ? 1 : 1); d.remove();
+    return { date: p ? getComputedStyle(p).display !== 'none' && p.textContent : '', z, hv: Math.round(hv * (navigator.userAgent ? 1 : 1)), ih: innerHeight }; });
+  check(lp.date && /\d/.test(lp.date), 'the meeting page shows its date on a low laptop ' + JSON.stringify(lp));
+  check(lp.z < 1 && Math.abs(lp.hv - lp.ih) < 6, 'a full-height box fills the real window under the page zoom ' + JSON.stringify(lp));
+  await lap.evaluate(() => { const e = document.querySelector('[data-act=edit]'); if (e) e.click(); }); await until(lap, () => !!document.querySelector('form[data-form=meeting]'));
+  const sv = await lap.evaluate(() => { const s = document.querySelector('form[data-form=meeting] [type=submit]'); const r = s.getBoundingClientRect(); return { bottom: Math.round(r.bottom), ih: innerHeight, pos: getComputedStyle(s.closest('.t-btns') || s).position }; });
+  check(sv.pos === 'sticky' && sv.bottom <= sv.ih + 2, 'Save is on the screen in the meeting editor ' + JSON.stringify(sv));
+  await lap.close();
+  /* deleting asks with a button that says Delete (review 17) */
+  await own.goto(T + '#m=' + mid); await own.waitForSelector('[data-act=edit]');
+  await own.evaluate(() => { window.__askBtn = ''; const c = window.Ask.confirm; window.Ask.confirm = (m, o) => { window.__askBtn = (o && o.ok) || 'OK'; return c.call(window.Ask, m, o); }; });
+  await click('[data-act=edit]'); await until(own, () => !!document.querySelector('[data-act=delMeeting]')); await click('[data-act=delMeeting]'); await sl(700);
+  const ab = await own.evaluate(() => window.__askBtn);
+  check(ab === 'Delete', 'the delete question says "Delete", not "OK" ' + JSON.stringify(ab));
+  check(!errs.length, 'no page errors ' + errs.join(' | '));
+  await b.close(); srv.kill(); done();
+})();
