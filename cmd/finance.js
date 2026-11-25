@@ -95,8 +95,9 @@
     var mainR = B.mainIncome ? B.mainIncome(D) : null, sl = B.slip(D, key);
     var incRows = inc.rows.map(function (r, i) {
       var src = D.budget.income[i] || {}, real = r.main && sl;
-      return '<li><span>' + esc(r.name || 'Income') + '<small>' + [src.day ? 'paid ' + dayLabel(src.day) : 'no payday', src.gross > 0 ? 'gross ' + kr(src.gross) + ' − tax ' + kr(r.tax) : 'after tax',
-        real ? (sl.src === 'bank' ? 'this month from your bank' : 'this month from your payslip') : r.note ? r.note.toLowerCase() : ''].filter(Boolean).map(esc).join(' · ') + '</small></span>' + money(r.net) + '</li>';
+      var K = I18N.k;   /* the income row in Norwegian too (live review 2026-11-25: "this month from your bank") */
+      return '<li><span>' + esc(r.name || K('ui.fn-income', 'Income')) + '<small>' + [src.day ? K('ui.fn-paid-on', 'paid {d}', { d: dayLabel(src.day) }) : K('ui.fn-no-payday', 'no payday'), src.gross > 0 ? K('ui.fn-gross-tax', 'gross {g} − tax {t}', { g: kr(src.gross), t: kr(r.tax) }) : K('ui.fn-after-tax', 'after tax'),
+        real ? (sl.src === 'bank' ? K('ui.fn-from-bank', 'this month from your bank') : K('ui.fn-from-slip', 'this month from your payslip')) : r.note ? r.note.toLowerCase() : ''].filter(Boolean).map(esc).join(' · ') + '</small></span>' + money(r.net) + '</li>';
     }).join('');
     var mine = b.fixed.filter(function (f) { return !f.src || f.src === 'loan'; }), linked = b.fixed.filter(function (f) { return f.src && f.src !== 'loan'; });
     var next = B.nextPayday(D);
@@ -109,7 +110,8 @@
   }
 
   /* ----- income: each row can be a plain net amount, or a payslip (gross, tax %, deductions, payday) ----- */
-  function dayLabel(day) { return !day ? '' : day === 'last' ? 'last day' : 'the ' + day + (day == 1 || day == 21 || day == 31 ? 'st' : day == 2 || day == 22 ? 'nd' : day == 3 || day == 23 ? 'rd' : 'th'); }
+  function dayLabel(day) { if (window.I18N && I18N.lang === 'nb') return !day ? '' : day === 'last' ? 'siste dag' : 'den ' + day + '.';   /* live review 2026-11-25 */
+    return !day ? '' : day === 'last' ? 'last day' : 'the ' + day + (day == 1 || day == 21 || day == 31 ? 'st' : day == 2 || day == 22 ? 'nd' : day == 3 || day == 23 ? 'rd' : 'th'); }
   function incomeEditor() {
     var list = D.budget.income, key = ym(new Date());
     var rows = list.map(function (r) {

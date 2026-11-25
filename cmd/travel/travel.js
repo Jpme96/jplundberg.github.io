@@ -130,8 +130,11 @@
       var leaveIn = Math.round((new Date(p.expectedStartTime) - Date.now()) / 60000);
       var spare = deadline ? Math.round((deadline - new Date(p.expectedEndTime)) / 60000) : null;
       var sub = first
-        ? 'From ' + esc(first.fromPlace.name) + (first.fromPlace.quay && first.fromPlace.quay.publicCode ? ', ' + (first.mode === 'rail' || first.mode === 'metro' ? 'platform ' : 'stop ') + esc(first.fromPlace.quay.publicCode) : '') + ' at ' + hm(first.expectedStartTime)
-        : 'Walk all the way';
+        ? (function () {   /* in Norwegian too (live review 2026-11-25: "From Nydalen, platform 1 at 21:34") */
+          var q = first.fromPlace.quay && first.fromPlace.quay.publicCode, rail = first.mode === 'rail' || first.mode === 'metro';
+          var where = esc(first.fromPlace.name) + (q ? ', ' + (rail ? I18N.k('ui.tv-platform', 'platform {n}', { n: esc(q) }) : I18N.k('ui.tv-stop', 'stop {n}', { n: esc(q) })) : '');
+          return I18N.k('ui.tv-from-at', 'From {w} at {t}', { w: where, t: hm(first.expectedStartTime) }); })()
+        : I18N.k('ui.tv-walk-all', 'Walk all the way');
       var key = p.expectedStartTime + '|' + p.expectedEndTime;
       return '<li class="tv-trip" data-i="' + i + '"><button type="button" class="tv-sum" aria-expanded="false">' +
         '<span class="tv-times"><b>' + hm(p.expectedStartTime) + ' – ' + hm(p.expectedEndTime) + '</b><span class="tv-dur">' + dur(p.duration) + '</span></span>' +

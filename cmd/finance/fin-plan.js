@@ -164,7 +164,7 @@
   function ago(k) {
     if (!k) return '';
     var n = Math.round((new Date(new Date().toDateString()) - new Date(k + 'T00:00')) / 864e5);
-    return n <= 0 ? 'today' : n === 1 ? 'yesterday' : n + ' days ago';
+    return n <= 0 ? I18N.k('ui.ago-today', 'today') : n === 1 ? I18N.k('ui.ago-yday', 'yesterday') : I18N.k('ui.ago-days', '{n} days ago', { n: n });
   }
   function seeded(d) { return (d.budget.acctList || []).some(function (a) { return a.bal != null || ['salary', 'credit', 'card'].indexOf(a.id) < 0; }); }
   function renderMoney(d) {
@@ -273,10 +273,14 @@
     var groups = used.map(function (g) {
       var a = g.a;
       return '<div class="pa-grp"><p class="pa-h"><span class="pa-ico sm" style="--c:' + a.c + '"><i class="bi bi-' + a.icon + '"></i></span>' + esc(a.label) +
-        '<small>' + g.rows.length + ' bill' + (g.rows.length === 1 ? '' : 's') + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
+        '<small>' + (g.rows.length === 1 ? I18N.k('ui.pa-bill1', '1 bill') : I18N.k('ui.pa-bills', '{n} bills', { n: g.rows.length })) + '</small><b>' + money(sum(g.rows)) + '</b></p>' +
         '<ul class="pa-list">' + g.rows.map(function (f) {
-          var info = (f.day ? 'the ' + esc(f.day) + '.' : 'no fixed day') + (f.src === 'loan' ? ' · loan' : f.src === 'sub' ? ' · subscription' : '') + (f.until ? ' · until ' + esc(new Date(+f.until.slice(0, 4), +f.until.slice(5, 7) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })) : '') + (f.split ? ' · <i class="bi bi-people"></i> your ' + esc(String(f.split.pct).replace('.', ',')) + ' %' : '') + (f.vary ? ' · <i class="bi bi-graph-up"></i> varies' + (f.usual && !f.split ? ', usually ' + esc(kr(f.usual)) : '') : '');
-          var go = f.src === 'loan' ? 'change the loan' : f.src === 'sub' ? 'change the subscription' : 'open where it comes from';
+          var K = I18N.k, nbl = I18N.lang === 'nb';   /* the bill lines in Norwegian too (live review 2026-11-25: "no fixed day") */
+          var info = (f.day ? K('ui.pa-on-day', 'the {d}.', { d: esc(f.day) }) : K('ui.pa-no-day', 'no fixed day')) + (f.src === 'loan' ? ' · ' + K('ui.pa-loan', 'loan') : f.src === 'sub' ? ' · ' + K('ui.pa-sub', 'subscription') : '') +
+            (f.until ? ' · ' + K('ui.pa-until', 'until {m}', { m: esc(new Date(+f.until.slice(0, 4), +f.until.slice(5, 7) - 1, 1).toLocaleDateString(nbl ? 'nb-NO' : 'en-GB', { month: 'short', year: 'numeric' })) }) : '') +
+            (f.split ? ' · <i class="bi bi-people"></i> ' + K('ui.pa-your-pct', 'your {p} %', { p: esc(String(f.split.pct).replace('.', nbl ? ',' : '.')) }) : '') +
+            (f.vary ? ' · <i class="bi bi-graph-up"></i> ' + K('ui.pa-varies', 'varies') + (f.usual && !f.split ? ', ' + K('ui.pa-usually', 'usually {k}', { k: esc(kr(f.usual)) }) : '') : '');
+          var go = f.src === 'loan' ? K('ui.pa-go-loan', 'change the loan') : f.src === 'sub' ? K('ui.pa-go-sub', 'change the subscription') : K('ui.pa-go-src', 'open where it comes from');
           var pd = isPaid(f), tick = '<button type="button" class="check pa-tick" data-papaid="' + esc(f.id) + '" aria-pressed="' + pd + '" aria-label="' + esc(f.name) + (pd ? ' – paid this month' : ' – mark as paid this month') + '"><i class="bi bi-check-lg"></i></button>';
           return '<li class="' + (pd ? 'pa-paid' : '') + '">' + tick + (f.src ? '<button type="button" class="pa-open" data-pasrc="' + esc(f.src + '|' + f.id) + '" aria-label="' + esc(f.name) + ' – ' + go + '"><span>' + esc(f.name) + '<small>' + info + ' · <i class="bi bi-link-45deg"></i> ' + go + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>' : '<button type="button" class="pa-open" data-fbopen="' + esc(f.id) + '" aria-label="Change ' + esc(f.name) + '"><span>' + esc(f.name) + '<small>' + info + '</small></span><i class="bi bi-pencil" aria-hidden="true"></i></button>') + money(f.amount) +
             '<label class="pa-move" title="Paid from"><i class="bi bi-arrow-left-right"></i><select data-pafrom="' + esc(f.id) + '" aria-label="Paid from, ' + esc(f.name) + '">' + opt(a.id, function (x) { return x.kind !== 'savings' && x.kind !== 'fund'; }) + '</select></label></li>';

@@ -69,6 +69,29 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(pen === true || pen === 'none', 'the avatar pen does not cover the speech bubble ' + pen);
   await go(p, 'calendar/', 2000);
   check(await p.evaluate(() => { const h = document.querySelector('.cl-hero h1'); return !!h && getComputedStyle(h).display !== 'none' && h.getBoundingClientRect().height > 0; }), 'Calendar shows its page title on a phone');
+  /* live review 2026-11-25: the final check names each line and folds per group, a missing code says what the name starts with, #dc=…&l=… opens on the line, one suggestion row per code */
+  await p.evaluate(() => { const t = Features.tools(); const L = [];
+    ['163', '164', '171', '172', '217', '230', '232', '234', '360', '442'].forEach((c, i) => L.push({ id: 'fx' + i, code: c, t: 'A', type: 'Tegning', planned: c + ' DA Madeup line ' + i, st: 'missing', files: [] }));
+    L.push({ id: 'fxn', code: '171', t: 'A', type: 'Tegning', planned: 'Eksempel: 171 RA Madeup brann', st: 'missing', files: [] });
+    t.dctl = (t.dctl || []).filter(x => x.id !== 'fx1p').concat([{ id: 'fx1p', name: 'Made-up final', planName: 'Made-up plan.xlsx', planFile: true, lines: L, files: [] }]); Features.saveTools(t); });
+  await go(p, 'work/#dc=fx1p', 2500);
+  await p.evaluate(() => { try { PageTabs.show('doc'); } catch (e) {} }); await sl(300);
+  await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="end"]'); if (s) s.click(); }); await sl(500);
+  const fx = await p.evaluate(async () => { const d = [...document.querySelectorAll('.dc-flow details[data-dcg^="fx:"]')]; if (!d.length) return { n: 0 }; d[0].open = true; d[0].dispatchEvent(new Event('toggle')); await new Promise(r => setTimeout(r, 500)); const f = document.querySelector('.dc-flow details[data-dcg^="fx:"][open]'); return { n: document.querySelectorAll('.dc-flow details[data-dcg^="fx:"]').length, sub: f ? [...f.querySelectorAll('.dc-lx small')].map(x => x.textContent).join('|') : '' }; });
+  check(fx.n >= 2 && /Madeup line/.test(fx.sub), 'the final check folds per NS group and each row names its line ' + JSON.stringify(fx));
+  await p.evaluate(() => { const s = document.querySelector('.dc-fsteps [data-dctab="plan"]'); if (s) s.click(); }); await sl(500);
+  check(await p.evaluate(() => /Starts with “Eksempel:” – the NS 3451 code \(171\) must come first/.test(document.querySelector('.dc-flow').innerText)), 'a name with the code further in says what it starts with');
+  await go(p, 'work/#dc=fx1p&l=fx4', 2500);
+  await p.evaluate(() => { try { PageTabs.show('doc'); } catch (e) {} }); await sl(500);
+  check(await p.evaluate(() => !!document.querySelector('.dc-frow2.open [data-dcline="fx4"]')), 'a link to a line opens the project on that line');
+  /* Livsadmin: a yearly reminder saved in English shows in Norwegian when Norwegian is chosen */
+  await p.evaluate(() => { const t = Features.tools(); t.ladmin = [{ id: 'lam1', name: 'Check that BankID works on a new phone or card', md: '01-15', lead: 14, notes: '', doneY: 0 }]; Features.set('ladmin', true); Features.saveTools(t); const st = JSON.parse(localStorage.getItem('dash.settings') || '{}'); st.lang = 'nb'; localStorage.setItem('dash.settings', JSON.stringify(st)); });
+  await go(p, 'lifeadmin/', 2500);
+  const la = await p.evaluate(() => document.body.innerText);
+  check(/Sjekk at BankID virker/.test(la) && !/Check that BankID works/.test(la), 'a saved English yearly reminder is shown in Norwegian');
+  const hb = await (async () => { await go(p, 'habits/', 2000); return p.evaluate(() => [...document.querySelectorAll('.hp-card small, .hp-stat small')].map(x => x.textContent).join('|')); })();
+  check(!/\bweeks?\b/.test(hb), 'Habits says uke/uker in Norwegian ' + hb.slice(0, 120));
+  await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('dash.settings') || '{}'); st.lang = 'en'; localStorage.setItem('dash.settings', JSON.stringify(st)); });
   /* Finances' late redraw after leaving (its worker answered on People/House): no error */
   await go(p, 'finance/', 1500);
   await p.evaluate(() => { const a = document.querySelector('a[href="/cmd/people/"]'); if (a) a.click(); }); await sl(2500);

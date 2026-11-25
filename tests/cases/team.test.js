@@ -302,7 +302,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.click('[data-act=seen]'); await sl(300);
   check(!(await kari.$('.t-news')), '"Seen" clears it');
   await kari.click('[data-act=settings]'); await kari.waitForSelector('[data-act=notify]');
-  check(/Turn on/.test(await kari.$eval('[data-act=notify]', e => e.textContent)), 'Settings offer notifications on this device');
+  check(await kari.$eval('[data-act=notify]', e => e.type === 'checkbox' && !e.checked && /Notifications while Team is open/.test(e.closest('label').textContent)), 'Settings offer notifications on this device (a switch, off)');
   check(!!(await kari.$('[data-settab=team]')), 'a second admin sees the Team tab in Settings');
   await kari.click('[data-act=close]');
   /* --- a backup of the team (admins), locked with its own passcode; restoring brings back what was deleted --- */

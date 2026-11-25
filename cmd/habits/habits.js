@@ -70,7 +70,8 @@
   function hideTip() { tip.hidden = true; }
 
   /* date formatting is slow when done hundreds of times – make the formatters once */
-  var F_LONG = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  var WKS = function (n) { return n === 1 ? I18N.k('ui.hb-week1', 'week') : I18N.k('ui.hb-weeks', 'weeks'); };   /* the units in Norwegian too (live review 2026-11-25: "week" in the Norwegian page) */
+  var F_LONG = new Intl.DateTimeFormat(I18N.lang === 'nb' ? 'nb-NO' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   var F_MON = new Intl.DateTimeFormat('en-GB', { month: 'short' });
   function render() {
     var list = hb.list || [];
@@ -90,7 +91,7 @@
     var bestCur = list.reduce(function (a, h) { var s = streaksOf(h); return s.cur > a.v ? { v: s.cur, n: h.name } : a; }, { v: 0, n: '' });
     var T = [
       { i: 'calendar-week', l: 'This week', v: weekTarget ? weekDone + '<small>/ ' + weekTarget + '</small>' : '–', s: weekTarget ? (weekDone >= weekTarget ? 'All targets hit 🎉' : weekDone ? Math.round(weekDone / weekTarget * 100) + ' % of this week’s targets so far' : 'of this week’s targets so far') : 'Add a habit on the dashboard' },
-      { i: 'fire', l: 'Longest current streak', v: bestCur.v + '<small>week' + (bestCur.v === 1 ? '' : 's') + '</small>', s: bestCur.v ? esc(bestCur.n) : 'Hit a weekly target to start one' },
+      { i: 'fire', l: 'Longest current streak', v: bestCur.v + '<small>' + WKS(bestCur.v) + '</small>', s: bestCur.v ? esc(bestCur.n) : 'Hit a weekly target to start one' },
       { i: 'clock-history', l: 'Last 30 days', v: String(last30), s: 'times in total' },
       { i: 'trophy', l: 'This year', v: String(yearTotal), s: 'times in ' + y }
     ];
@@ -114,8 +115,8 @@
       for (var w = 1; w <= 12; w++) if (countWeek(h.id, addDays(thisMon, -7 * w)) >= h.target) met12++;
       var stats = [
         ['This week', wk + '<small>/ ' + h.target + '</small>'],
-        ['Current streak', st.cur + '<small>week' + (st.cur === 1 ? '' : 's') + '</small>'],
-        ['Best streak', st.best + '<small>week' + (st.best === 1 ? '' : 's') + '</small>'],
+        ['Current streak', st.cur + '<small>' + WKS(st.cur) + '</small>'],
+        ['Best streak', st.best + '<small>' + WKS(st.best) + '</small>'],
         ['Last 12 weeks', Math.round(met12 / 12 * 100) + '<small data-t="ui.on-target">% on target</small>']
       ].map(function (s) { return '<div class="hp-stat"><div class="k">' + s[0] + '</div><div class="v">' + s[1] + '</div></div>'; }).join('');
 
@@ -147,7 +148,7 @@
         }
         recent += '<div class="hp-recent-row"><span class="hp-recent-lbl">' + (wi ? 'This week' : 'Last week') + '<b>' + countWeek(h.id, wm) + '<small>/' + h.target + '</small></b></span><div class="hp-recent-days">' + cells + '</div></div>';
       });
-      return '<section class="card hp-card"><div class="card-head"><h2><i class="bi bi-activity"></i> ' + esc(h.name) + '<small>' + h.target + '× per week</small></h2></div>' +
+      return '<section class="card hp-card"><div class="card-head"><h2><i class="bi bi-activity"></i> ' + esc(h.name) + '<small>' + esc(I18N.k('ui.hb-per-week', '{n}× per week', { n: h.target })) + '</small></h2></div>' +
         '<div class="hp-stats">' + stats + '</div>' +
         '<div class="hp-recent">' + recent + '</div>' +
         '<div class="hp-heat"><div class="hp-heat-inner' + (yr ? ' year' : '') + '"><div class="hp-days"><span></span><span data-t="ui.mon">Mon</span><span></span><span data-t="ui.wed">Wed</span><span></span><span data-t="ui.fri">Fri</span><span></span><span data-t="ui.sun">Sun</span></div>' +

@@ -132,11 +132,11 @@ const fs = require('fs'), os = require('os'), path = require('path');
   const nd = await p.evaluate(() => { const c = document.querySelector('.dc-flow details.dc-need'); return c ? { open: c.open, n: c.querySelectorAll('[data-dcneedadd]').length, t: c.textContent } : null; });
   check(nd && !nd.open && nd.n >= 1 && /Usual for this project, but not in the plan/.test(nd.t) && /Only a suggestion/.test(nd.t), 'a project without a plan shows the folded card of what such a project usually has ' + JSON.stringify(nd && { open: nd.open, n: nd.n }));
   const n0d = await p.evaluate(() => Features.list('dctl').filter(x => x.id === 'fp2')[0].lines.length);
-  await p.evaluate(() => { const c = document.querySelector('.dc-flow details.dc-need'); c.open = true; c.querySelector('[data-dcneedadd]').click(); }); await sl(400);
+  const nT = await p.evaluate(() => { const c = document.querySelector('.dc-flow details.dc-need'); c.open = true; const b = c.querySelector('[data-dcneedadd]'); const t = b.dataset.dcneedadd.split('|')[2].length; b.click(); return t; }); await sl(400);   /* one row per code adds each of its types (live review 2026-11-25) */
   const n1d = await p.evaluate(() => { const r = Features.list('dctl').filter(x => x.id === 'fp2')[0]; return { n: r.lines.length, own: r.lines.filter(l => l.own).length }; });
   await p.evaluate(() => { const u = [...document.querySelectorAll('[data-undo]')].pop(); u && u.click(); }); await sl(500);
   const n2d = await p.evaluate(() => Features.list('dctl').filter(x => x.id === 'fp2')[0].lines.length);
-  check(n1d.n === n0d + 1 && n1d.own === 1 && n2d === n0d, 'Add puts the suggested document in as a line of your own; Undo takes it out ' + JSON.stringify({ n0d, n1d, n2d }));
+  check(n1d.n === n0d + nT && n1d.own === nT && n2d === n0d, 'Add puts the suggested document in as a line of your own; Undo takes it out ' + JSON.stringify({ n0d, n1d, n2d }));
   check(await p.evaluate(() => !/Vedlegg 7|Boligbygg/.test(document.querySelector('.dc-flow').innerText)), 'no client names on screen – "Download document plan (.xlsx)" (JP 2026-11-25 "I own the system")');
   /* the Vedlegg 7 from such a plan has the delivered names in Planlagt navngivning (JP 2026-11-24 09:34: it was empty) */
   const v7 = await p.evaluate(async () => { let got = null; const old = FdvPdf.share; FdvPdf.share = f => { got = f; }; document.querySelector('[data-dcvx7]').click(); FdvPdf.share = old; if (!got) return ''; return new TextDecoder().decode(await got.arrayBuffer()); });

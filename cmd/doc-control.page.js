@@ -65,7 +65,8 @@
     } else if ((m = stem.match(/^(\d{3})(?:[.,]\d{1,3})?(?:\s+|-|$)(.*)$/))) {
       r.code = m[1]; r.text = m[2] || ''; if (!pic) r.issues.push(['warn', 'noabbr']);
     } else if (/^\d{4,6}-/.test(stem) || (/^\d{3,6}-/.test(stem) && /-[A-Z]-\d{3}-/.test(stem))) { r.kind = 'drawing'; r.why = tegWhy(stem); r.issues.push(['err', 'drawing']); var c = stem.match(/-[A-Z]-?(\d{3})-/) || stem.match(/-(\d{3})-[A-Z]-/); r.code = c ? c[1] : ''; }   /* starts with a building number: a drawing name that breaks the template – say which part (JP 23:13) */
-    else if (!pic) r.issues.push(['err', 'nocode']);
+    else if (!pic) { r.issues.push(['err', 'nocode']);   /* say what it starts with, and the code if it is further in (live review 2026-11-25: "171 … doesn't start with a code" looked wrong) */
+      var lc = stem.match(/(?:^|[\s:_-])(\d{3})(?=[\s.,_-]|$)/); r.lead = (stem.split(/[\s_]+/)[0] || '').slice(0, 24); r.later = lc ? lc[1] : ''; }
     /* no 30-character limit: JP's team doesn't follow BBY's 30 rule (JP 23:30) */
     if (r.kind === 'doc' && !r.text && r.code && !pic) r.issues.push(['warn', 'notext']);
     return r;
@@ -84,7 +85,7 @@
   function issueText(q, f) {
     var p = f && f.p || {};
     return { version: k('ui.dc-iss-version', 'An as-built drawing has a version number in the name'), abbr: k('ui.dc-iss-abbr', 'Unknown document code “{a}”', { a: p.abbr }), noabbr: k('ui.dc-iss-noabbr', 'No document code after the system code (e.g. DA, DV, SE)'),
-      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nodwg: k('ui.dc-iss-nodwg', 'The drawing is here as PDF – the DWG is missing'), nopdf: k('ui.dc-iss-nopdf', 'The drawing is here as DWG – the PDF is missing'), notpdf: k('ui.dc-iss-notpdf', 'Not a PDF – documents are delivered as PDF'), nocode: k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), 
+      drawing: k('ui.dc-iss-drawing', 'The drawing name doesn’t follow building-floor-discipline-code-type-number') + (p.why ? ': ' + p.why : ''), fag: k('ui.dc-iss-fag', 'Unknown discipline letter “{a}” in the drawing name', { a: p.fag }), nodwg: k('ui.dc-iss-nodwg', 'The drawing is here as PDF – the DWG is missing'), nopdf: k('ui.dc-iss-nopdf', 'The drawing is here as DWG – the PDF is missing'), notpdf: k('ui.dc-iss-notpdf', 'Not a PDF – documents are delivered as PDF'), nocode: p.later && p.lead ? k('ui.dc-iss-nocode2', 'Starts with “{a}” – the NS 3451 code ({c}) must come first', { a: p.lead, c: p.later }) : k('ui.dc-iss-nocode', 'Doesn’t start with a 3-digit NS 3451 code'), 
       notext: k('ui.dc-iss-notext', 'No describing text after the codes') }[q[1]] || q[1];
   }
 
@@ -304,7 +305,18 @@
   var open = null, tab = 'over', filt = 'all', q = '', openLine = null, adding = false, editing = false, pasting = false, quick = false, picking = false, addOpen = false, renaming = null;
   try { quick = sessionStorage.getItem('dash.dcQuick') === '1'; } catch (e) {}
   try { tab = sessionStorage.getItem('dash.dcTab') || 'over'; } catch (e) {}
-  function hashId() { var m = location.hash.match(/^#dc=([\w-]+)$/); return m ? m[1] : null; }
+  function hashId() { var m = location.hash.match(/^#dc=([\w-]+)(?:&l=[\w-]+)?$/); return m ? m[1] : null; }
+  /* #dc=<project>&l=<line> (a search hit) opens the project on that line (live review 2026-11-25) */
+  function hashLine() { var m = location.hash.match(/^#dc=[\w-]+&l=([\w-]+)$/); return m ? m[1] : null; }
+  var pendLine = hashLine();
+  function toLine(p) {
+    if (!pendLine) return; var pl = (p.lines || []).filter(function (l) { return l.id === pendLine; })[0]; pendLine = null; if (!pl) return;
+    var del = (pl.files || []).length || (pl.st && pl.st !== 'missing'), anyDel = (p.files || []).length || (p.lines || []).some(function (l) { return l.st && l.st !== 'missing'; });
+    var g0 = String(pl.code).charAt(0) || '–'; gopen['p:' + p.id + ':' + g0] = true; gopen['fx:' + p.id + ':' + g0] = true;
+    if (del || (anyDel && !hasPlan(p))) { setTab('cmp'); cmpPile = del ? 'got' : 'miss'; } else setTab(hasPlan(p) ? 'plan' : 'end');   /* no plan and nothing in yet: the line is on the final check's list */
+    openLine = pl.id;
+    setTimeout(function () { var b = document.querySelector('[data-dcline="' + pl.id + '"]'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'center' }); }, 120);
+  }
   open = hashId();
   function go(id) { if (id !== open) { kin = false; delete LSYNC[id]; }   /* opening a project looks for files from its upload links again */ if (flowOn() && id !== open) setTab('');   /* the new flow picks the step that fits the project */
     open = id; openLine = null; editing = false; ropen = null; if (hashId() !== id) history.pushState({ dc: id, from: hashId() || rHash() ? 'step' : 'list' }, '', location.pathname + location.search + '#dc=' + id); draw(); window.scrollTo(0, 0); }
@@ -312,7 +324,7 @@
      browser's history only when that is where it leads */
   function home0() { kin = false; open = null; ropen = null; openLine = null; rpicking = false; editing = false; redit = false; }
   function back() { var prev = history.state && history.state.from; if (hashId() && history.state && history.state.dc && prev === 'list') { history.back(); return; } home0(); history.pushState({ list: 1 }, '', location.pathname + location.search); draw(); window.scrollTo(0, 0); }
-  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen) { if (id && id !== open) delete LSYNC[id]; open = id; ropen = r; openLine = null; rpicking = false; if (window.PageTabs && PageTabs.show) { if (r || id) PageTabs.show('doc', true); } draw(); } });
+  window.addEventListener('popstate', function () { var id = hashId(), r = rHash(); if (id !== open || r !== ropen || hashLine()) { if (id && id !== open) delete LSYNC[id]; open = id; ropen = r; openLine = null; pendLine = hashLine(); rpicking = false; if (window.PageTabs && PageTabs.show) { if (r || id) PageTabs.show('doc', true); } draw(); } });
   function setTab(t) { if (t !== 'krav') kin = false; tab = t; try { sessionStorage.setItem('dash.dcTab', t); } catch (e) {} }
 
   /* the building and the property (JP 10:42): building ID and name, property name and ID – on the project, the requirements and the reports */
@@ -595,7 +607,7 @@
       ? '<a class="dc-teamlink" href="https://work.jplundberg.com/#docs" rel="noopener"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-in-team', 'Document requirements are in Team now')) + '</b><small>' + esc(k('ui.dr-in-team-s', 'Make and change lists there – the whole team uses the same ones')) + '</small></span><i class="bi bi-box-arrow-up-right"></i></a>' +
         (kravs().length ? '<p class="muted dc-help">' + esc(k('ui.dr-old-copies', 'Your old copies here (not updated):')) + ' <button type="button" class="text-btn" data-drmove>' + esc(k('ui.dr-move-again', 'Make the file for Team again')) + '</button></p>' : '')
       : '<div class="dc-teamlink dr-move"><i class="bi bi-people"></i><span><b>' + esc(k('ui.dr-move-h', 'Use Document requirements in Team')) + '</b><small>' + esc(k('ui.dr-move-s', 'Everyone works on the same lists, client checklists and project types. One file takes all of yours there.')) + '</small></span><button type="button" class="pill-btn" data-drmove>' + esc(k('ui.dr-move', 'Move to Team')) + '</button></div>';
-    return '<div class="card-head"><h2><i class="bi bi-folder-check"></i> ' + esc(HOST ? k('ui.dc-projects', 'Projects') : k('ui.docu', 'Documentation')) + '</h2>'   /* Team's page is already called Documentation (review 18) */ + (adding || radding || !can('newp') ? '' : '<div class="head-actions"><button type="button" class="text-btn" ' + (moved || flowOn() ? 'data-dcnew' : 'data-drnew') + '><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-new', 'New project')) + '</button></div>') + '</div>' + body;
+    return '<div class="card-head"><h2' + (HOST ? ' class="dc-h2-tab"' : '') + '><i class="bi bi-folder-check"></i> ' + esc(HOST ? k('ui.dc-projects', 'Projects') : k('ui.docu', 'Documentation')) + '</h2>'   /* Team's page is already called Documentation (review 18) */ + (adding || radding || !can('newp') ? '' : '<div class="head-actions"><button type="button" class="text-btn" ' + (moved || flowOn() ? 'data-dcnew' : 'data-drnew') + '><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dx-new', 'New project')) + '</button></div>') + '</div>' + body;
   }
   /* ---------- the new project flow (JP 2026-11-23, a test – on only where switched on): five steps in the order the work goes:
      Krav → Dokumentplan → Levering → Sammenligning → Sluttkontroll. It is a view on the same project: the plan reading, the
@@ -634,6 +646,7 @@
     return out;
   }
   function flowFull(p) {
+    toLine(p);
     if (tab === 'files') tab = 'lev'; else if (tab === 'docs') tab = 'cmp';   /* the old tabs' names (an import still asks for 'files'): stay where the work is */
     if (FLOW.indexOf(tab) < 0 && tab !== 'report') tab = (p.files || []).length ? 'cmp' : (p.lines || []).length || !kravOf(p) ? 'plan' : 'krav';   /* a project opens on the step that fits it, not the one you had open in another (JP 2026-11-23) */
     var L = p.lines || [], c = counts(L), F = p.files || [], r = kravOf(p), pc = planCheck(p), iss = flowIssues(p), loose = looseFiles(p).length;
@@ -747,7 +760,15 @@
   }
   function flowEnd(p, iss, verdict, c) {
     var h = '<div class="dc-fverd dc-v-' + verdict[0] + '"><b>' + esc(verdict[1]) + '</b><small>' + esc(k('ui.dc-fl-end-sub', '{a} of {n} approved · {m} missing · {r} waiting for approval', { a: c.done, n: c.all, m: c.missing, r: c.recv })) + '</small></div>';
-    if (iss.length) h += '<h3 class="fdv-h">' + esc(k('ui.dc-fl-end-fix', 'To put right before handover')) + '</h3><ul class="dc-flist2">' + iss.map(function (x) { return flowRow(x.l.code, (typeLabel(x.l) || '') + ' – ' + lineTitle(x.l), x.why, '<span class="dc-fpill dc-v-' + x.kind + '">' + esc(x.what) + '</span>', '', p, x.l); }).join('') + '</ul>';
+    /* each row says which line it is (the planned name – three "163 As built drawings" looked the same), and a long list folds per NS group (live review 2026-11-25) */
+    var whyPl = k('ui.dc-fl-why-plan', 'In the document plan');
+    var issRow = function (x) { var sub = x.l.planned ? x.l.planned + (x.why && x.why !== whyPl ? ' · ' + x.why : '') : x.why; return flowRow(x.l.code, (typeLabel(x.l) || '') + ' – ' + lineTitle(x.l), sub, '<span class="dc-fpill dc-v-' + x.kind + '">' + esc(x.what) + '</span>', '', p, x.l); };
+    if (iss.length) h += '<h3 class="fdv-h">' + esc(k('ui.dc-fl-end-fix', 'To put right before handover')) + '</h3>' + (iss.length <= 8 ? '<ul class="dc-flist2">' + iss.map(issRow).join('') + '</ul>' :
+      byGroup(iss.map(function (x) { return { code: x.l.code || '', x: x }; })).map(function (g) {
+        var key = 'fx:' + p.id + ':' + g[0], op = !!gopen[key];
+        return '<details class="dc-fold" data-dcg="' + esc(key) + '"' + (op ? ' open' : '') + '><summary class="fdv-h dc-gh">' + esc(g[0] + ' ' + (grpName(g[0]) || '')) + ' <small class="muted tnum">' + esc(k('ui.dc-fl-fix-n', '{n} to put right', { n: g[1].length })) + '</small></summary>' +
+          (op ? '<ul class="dc-flist2">' + g[1].map(function (y) { return issRow(y.x); }).join('') + '</ul>' : '') + '</details>';
+      }).join(''));
     h += '<div class="dc-facts"><button type="button" class="pill-btn" data-dctab="report"><i class="bi bi-file-earmark-text"></i> ' + esc(k('ui.dc-fl-report2', 'See the report and download')) + '</button></div>';   /* one place for every download – Vedlegg 7 is "Document plan" in the report's menu (JP 2026-11-24 21:41) */
     return h + '<p class="muted dc-help">' + esc(k('ui.dc-fl-end-note', 'Checked against the project’s requirements and the client’s checklist. Names are checked by the rules; whether the content is good enough is for a person to judge.')) + '</p>';
   }
@@ -1590,7 +1611,9 @@
     var nd = needs(lines, skip); if (!nd || !nd.items.length) return '';
     var op = !!NEEDO[where], sub = [nd.like ? k('ui.dc-need-like', 'Looks like: {t}', { t: nd.like }) : '', nd.from.length ? k('ui.dc-need-from', 'From {g}', { g: nd.from.join(', ') }) : ''].filter(Boolean).join(' · ');
     return '<details class="dc-need"' + (op ? ' open' : '') + ' data-dcneed="' + esc(where) + '"><summary><b>' + esc(k('ui.dc-need-t', 'Usual for this project, but not in the plan')) + '</b> <span class="stt stt-plan tnum">' + nd.items.length + '</span></summary>' +
-      (sub ? '<p class="muted dc-help" data-noi18n>' + esc(sub) + '</p>' : '') + '<ul class="dc-flist2">' + nd.items.map(function (x) { return '<li class="dc-frow2"><b class="dc-code">' + esc(x.code) + '</b><span class="dc-lx"><b data-noi18n>' + esc(x.title) + '</b><small>' + esc(typeName(x.t)) + '</small></span><button type="button" class="text-btn" data-dcneedadd="' + esc(where + '|' + x.code + '|' + x.t) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-need-add', 'Add')) + '</button></li>'; }).join('') + '</ul>' +
+      (sub ? '<p class="muted dc-help" data-noi18n>' + esc(sub) + '</p>' : '') + '<ul class="dc-flist2">' + (function () {   /* one row per code: "217 Drenering – Kravoppnåelse, Tegning" instead of the code twice (live review 2026-11-25) */
+        var rows = []; nd.items.forEach(function (x) { var r0 = rows.filter(function (r) { return r.code === x.code && r.title === x.title; })[0]; if (r0) r0.t += x.t; else rows.push({ code: x.code, title: x.title, t: x.t }); });
+        return rows.map(function (x) { return '<li class="dc-frow2"><b class="dc-code">' + esc(x.code) + '</b><span class="dc-lx"><b data-noi18n>' + esc(x.title) + '</b><small>' + esc(x.t.split('').map(typeName).join(', ')) + '</small></span><button type="button" class="text-btn" data-dcneedadd="' + esc(where + '|' + x.code + '|' + x.t) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-need-add', 'Add')) + '</button></li>'; }).join(''); })() + '</ul>' +
       '<p class="dc-needf"><button type="button" class="text-btn" data-dcneedall="' + esc(where) + '"><i class="bi bi-plus-lg"></i> ' + esc(k('ui.dc-need-all', 'Add all {n}', { n: nd.items.length })) + '</button><small class="muted">' + esc(k('ui.dc-need-only', 'Only a suggestion')) + '</small></p></details>';
   }
   var TXL = [];   /* lines added in the naming tool – they go into its document plan download */
@@ -2304,7 +2327,7 @@
       return;
     }
     if ((sb = e.target.closest('[data-dcrmplan]'))) { rmPlan(sb.dataset.dcrmplan); return; }
-    if ((sb = e.target.closest('[data-dcneedadd]'))) { var q8 = sb.dataset.dcneedadd.split('|'), it8 = (needs(needList(q8[0]), needSkip(q8[0])) || { items: [] }).items.filter(function (x) { return x.code === q8[1] && x.t === q8[2]; }); if (it8.length) needAdd(q8[0], it8); return; }
+    if ((sb = e.target.closest('[data-dcneedadd]'))) { var q8 = sb.dataset.dcneedadd.split('|'), it8 = (needs(needList(q8[0]), needSkip(q8[0])) || { items: [] }).items.filter(function (x) { return x.code === q8[1] && q8[2].indexOf(x.t) >= 0; }); if (it8.length) needAdd(q8[0], it8); return; }
     if ((sb = e.target.closest('[data-dcneedall]'))) { var w8 = sb.dataset.dcneedall, a8 = (needs(needList(w8), needSkip(w8)) || { items: [] }).items; if (a8.length) needAdd(w8, a8); return; }
     if ((sb = e.target.closest('.dc-need > summary'))) { var dn8 = sb.parentElement; setTimeout(function () { NEEDO[dn8.dataset.dcneed] = dn8.open; }, 0); return; }
     if ((sb = e.target.closest('[data-dcaddo]'))) { addOpen = sb.dataset.dcaddo; draw(); if (addOpen) setTimeout(function () { var i = document.querySelector('[data-dcalc]'); if (i) i.focus(); }, 30); return; }

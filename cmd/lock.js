@@ -612,7 +612,9 @@
     if (!window.indexedDB) return Promise.resolve(null);
     return Promise.race([
       idb('readonly', function (st) { return st.get('session'); }),
-      new Promise(function (r) { setTimeout(function () { r(null); }, 1500); })
+      /* while this device still counts as unlocked (dash.until), give a busy page longer to read the key – 1.5 s was sometimes
+         too short right after a full load and the passcode was asked for although you had just unlocked (live review 2026-11-25) */
+      new Promise(function (r) { var u = 0; try { u = +localStorage.getItem('dash.until') || 0; } catch (e) {} setTimeout(function () { r(null); }, u > Date.now() ? 5000 : 1500); })
     ]).catch(function () { return null; });
   }
 

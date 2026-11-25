@@ -491,7 +491,9 @@ export class LiveRoom {
     const u = new URL(request.url); await this.load();
     if (u.pathname === '/ws') {
       const role = u.searchParams.get('role') === 'p' ? 'p' : 'o';
-      if (this.ctx.getWebSockets(role).length >= 20) return new Response('too many', { status: 429 });
+      /* room for the new line: the oldest are most likely tabs and phones that went away without saying so – refusing the
+         newest instead turned instant updates off on the device in use (live review 2026-11-25, ×10 failures a page) */
+      for (let old = this.ctx.getWebSockets(role); old.length >= 20; old = old.slice(1)) { try { old[0].close(4002, 'replaced'); } catch (e) {} }
       const pair = new WebSocketPair();
       this.ctx.acceptWebSocket(pair[1], [role]);
       pair[1].send(this.snap(role));

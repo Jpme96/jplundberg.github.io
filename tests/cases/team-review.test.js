@@ -2,6 +2,7 @@
 const { spawn } = require('child_process'); const path = require('path'); const http = require('http');
 const puppeteer = require('puppeteer');
 const { check, done } = require('../lib/check');
+const impOpen = async (pg) => { await pg.waitForSelector('[data-act=settings]', { timeout: 20000 }); await pg.evaluate(() => { const s = document.querySelector('[data-act=settings]'); if (s) s.click(); }); await pg.waitForSelector('[data-settab=team]', { timeout: 20000 }); await pg.evaluate(() => document.querySelector('[data-settab=team]').click()); await pg.waitForSelector('input[data-dcimport]', { timeout: 20000 }); };
 const sl = ms => new Promise(r => setTimeout(r, ms));
 const TPORT = (+process.env.PORT || 8770) + 420, T = 'http://localhost:' + TPORT + '/';
 const srv = spawn(process.execPath, [path.join(__dirname, '..', 'lib', 'team-server.mjs')], { env: Object.assign({}, process.env, { TPORT: String(TPORT) }), stdio: ['ignore', 'pipe', 'inherit'] });
@@ -53,6 +54,33 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const sv = await lap.evaluate(() => { const s = document.querySelector('form[data-form=meeting] [type=submit]'); const r = s.getBoundingClientRect(); return { bottom: Math.round(r.bottom), ih: innerHeight, pos: getComputedStyle(s.closest('.t-btns') || s).position }; });
   check(sv.pos === 'sticky' && sv.bottom <= sv.ih + 2, 'Save is on the screen in the meeting editor ' + JSON.stringify(sv));
   await lap.close();
+  /* live review 2026-11-25: search as you type with the matching lines, Settings switches, the access card's arrow, normal-sized New buttons, the Projects tab, no client name */
+  const tmpS = require('path').join(require('os').tmpdir(), 'tr-madeup.json');
+  require('fs').writeFileSync(tmpS, JSON.stringify({ team: 'dctl', v: 1, p: { id: 'trs1', name: 'Madeup search project', no: 'P-9', made: '2026-11-20T10:00:00Z', files: [], lines: [{ id: 'trl1', code: '171', sys: 'Brann', type: 'Tegning', t: 'A', planned: '171 RA Brannkonsept madeup', st: 'missing', files: [] }, { id: 'trl2', code: '442', sys: 'Lys', type: 'Drift', t: 'B', st: 'missing', files: [] }] } }));
+  await own.goto(T + '#docs'); await impOpen(own); await (await own.$('input[data-dcimport]')).uploadFile(tmpS); await until(own, () => /^#dc=/.test(location.hash), 15000); await sl(800);
+  const tabs = await own.evaluate(() => [...document.querySelectorAll('[data-dtab]')].map(x => x.closest('label') ? x.closest('label').textContent.trim() : x.textContent.trim()).join('|'));
+  check(/Projects/.test(tabs) && !/Documentation/.test(tabs), 'the tab under the Documentation title says Projects ' + tabs);
+  await own.evaluate(() => { location.hash = '#search='; }); await sl(700);
+  check(await own.evaluate(() => document.activeElement && document.activeElement.matches('.t-srch input[name=q]')), 'the search box is ready to type in');
+  await own.keyboard.type('brannkonsept'); await sl(900);
+  const sr = await own.evaluate(() => ({ lines: [...document.querySelectorAll('.t-srline a')].map(a => a.getAttribute('href')), focus: document.activeElement && document.activeElement.matches('.t-srch input[name=q]'), cur: [...document.querySelectorAll('.t-tabs [aria-current="true"]')].length }));
+  check(sr.lines.some(h => /#dc=[\w-]+&l=trl1$/.test(h)) && sr.focus, 'results come while typing, with the matching line, and the box keeps the cursor ' + JSON.stringify(sr));
+  check(sr.cur === 0, 'no menu item is lit while searching');
+  await own.evaluate(() => document.querySelector('.t-srline a').click()); await sl(1500);
+  check(await own.evaluate(() => !!document.querySelector('.dc-frow2.open [data-dcline="trl1"]')), 'the hit opens the project on that line');
+  await own.evaluate(() => { document.querySelector('[data-act=settings]').click(); }); await sl(500);
+  await own.evaluate(() => { const d = document.querySelector('[data-settab=you]'); if (d) d.click(); }); await sl(400);
+  const sw = await own.evaluate(() => { const i = document.querySelector('.t-sheet input[data-act="notify"]'); return i ? { type: i.type, app: getComputedStyle(i).appearance, w: Math.round(i.getBoundingClientRect().width) } : null; });
+  check(sw && sw.type === 'checkbox' && sw.app === 'none' && sw.w >= 40, 'notifications while Team is open is a switch like the others ' + JSON.stringify(sw));
+  await own.evaluate(() => document.querySelector('[data-settab=team]').click()); await sl(400);
+  check(await own.evaluate(() => !/Oslo kommune/.test(document.querySelector('.t-sheet').innerText)), 'no client name in the colour setting');
+  await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); location.hash = '#team'; }); await sl(800);
+  check(await own.evaluate(() => { const s = document.querySelector('.t-acc summary'); return !!s && getComputedStyle(s, '::after').content !== 'none'; }), 'the access card shows it opens');
+  const big = await ctx.newPage(); await big.setViewport({ width: 1500, height: 1000 });
+  await big.goto(T + '#meetings'); await until(big, () => !!document.querySelector('[data-act=newMeeting]'), 20000); await sl(500);
+  const bw = await big.evaluate(() => { const b = document.querySelector('[data-act=newMeeting]'); return { b: Math.round(b.getBoundingClientRect().width), p: Math.round(b.parentElement.getBoundingClientRect().width) }; });
+  check(bw.b < bw.p * 0.6, 'New meeting is a button, not a bar across a big screen ' + JSON.stringify(bw));
+  await big.close();
   /* deleting asks with a button that says Delete (review 17) */
   await own.goto(T + '#m=' + mid); await own.waitForSelector('[data-act=edit]');
   await own.evaluate(() => { window.__askBtn = ''; const c = window.Ask.confirm; window.Ask.confirm = (m, o) => { window.__askBtn = (o && o.ok) || 'OK'; return c.call(window.Ask, m, o); }; });

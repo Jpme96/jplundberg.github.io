@@ -6,7 +6,9 @@
   'use strict';
   if (!window.Features || !window.Vault || !window.Kit || !window.LifePlus) return;
   var Fe = window.Features, Kt = window.Kit, LP = window.LifePlus, K = function (k, en, o) { return I18N.k(k, en, o); };
-  var NB = function () { return I18N.lang === 'nb'; }, S = function (en, nb) { return NB() ? nb : en; };   /* seed text is saved, so it's chosen once, in the language you use */
+  var EN2NB = {}, NB2EN = {};   /* every seed text in both languages, so a saved one is shown in the language you use now (live review 2026-11-25) */
+  var NB = function () { return I18N.lang === 'nb'; }, S = function (en, nb) { if (en && nb) { EN2NB[en] = nb; NB2EN[nb] = en; } return NB() ? nb : en; };
+  var shown = function (t) { return !t ? t : NB() ? (EN2NB[t] || t) : (NB2EN[t] || t); };   /* seed text is saved, so it's chosen once, in the language you use */
   function $t(n) { return document.querySelector('[data-tool="' + n + '"]'); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -63,6 +65,7 @@
       [S('Ask your bank for a better mortgage rate', 'Be banken om bedre boliglånsrente'), '10-01', 14, ''],
       [S('Check that BankID works on a new phone or card', 'Sjekk at BankID virker på ny telefon eller kort'), '01-15', 14, '']].map(function (x) { return { name: x[0], md: x[1], lead: x[2], notes: x[3], doneY: 0 }; });
   }
+  adminSeed();   /* fills EN2NB / NB2EN */
   var MDS = function () { var o = []; for (var m = 1; m <= 12; m++) for (var d = 1; d <= 31; d += (d === 1 ? 14 : d === 15 ? 13 : 3)) { if (d > 28 && m === 2) continue; var md = String(m).padStart(2, '0') + '-' + String(Math.min(d, new Date(2026, m, 0).getDate())).padStart(2, '0'); if (!o.some(function (q) { return q[0] === md; })) o.push([md, new Date(2026, m - 1, +md.slice(3)).toLocaleDateString(NB() ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'long' })]); } return o; };
   card('ladmin', { icon: 'clipboard-check', title: K('ui.lp-ladmin', 'Yearly tasks'), addTitle: K('ui.lp-ladmin-add', 'A yearly task'), editTitle: K('ui.lp-edit', 'Edit'),
     fields: [{ k: 'name', type: 'title', label: K('ui.lp-what', 'What'), req: true }, { k: 'md', type: 'select', label: K('ui.lp-every-year', 'Every year by'), options: MDS, def: '04-30' }, { k: 'lead', type: 'select', label: K('ui.lp-remind', 'Remind me'), options: [[7, K('ui.lp-1w', 'A week before')], [14, K('ui.lp-2w', 'Two weeks before')], [30, K('ui.lp-1m', 'A month before')]], def: 14 }, { k: 'notes', type: 'textarea', rows: 2, label: K('ui.notes', 'Notes') }],
@@ -70,7 +73,7 @@
     empty: K('ui.lp-ladmin-empty', 'The paperwork that comes back every year – the tax return, back-tax, renewals and checks. Tick it off each year; At a glance reminds you before.'),
     above: function (items) { return items.length ? '' : '<div class="lp-start"><button type="button" class="pill-btn" data-lpact="ladminseed" data-lpid=""><i class="bi bi-list-check"></i> ' + esc(K('ui.lp-start-norway', 'Start with the usual ones in Norway')) + '</button></div>'; },
     sort: function (a, b) { var y = new Date().getFullYear(), x = +a.doneY === y ? '9' + a.md : a.md, z = +b.doneY === y ? '9' + b.md : b.md; return x < z ? -1 : 1; },
-    row: function (x) { var y = new Date().getFullYear(), done = +x.doneY === y, d = LP.yearDate(x.md || '12-31'); return { icon: done ? 'check2-circle' : 'calendar-event', color: done ? 'var(--ok)' : 'var(--blue)', cls: done ? 'lp-done' : '', title: x.name, sub: esc(fmt(d) + (x.notes ? ' · ' + x.notes : '')), right: (done ? chip(K('ui.lp-done-year', 'Done {y}', { y: y }), 'var(--ok)') : days(today(), d) <= (+x.lead || 14) ? when(d) : '') + tick('ladmindone', x.id, x.name) }; }
+    row: function (x) { var y = new Date().getFullYear(), done = +x.doneY === y, d = LP.yearDate(x.md || '12-31'); return { icon: done ? 'check2-circle' : 'calendar-event', color: done ? 'var(--ok)' : 'var(--blue)', cls: done ? 'lp-done' : '', title: shown(x.name), sub: esc(fmt(d) + (x.notes ? ' · ' + shown(x.notes) : '')), right: (done ? chip(K('ui.lp-done-year', 'Done {y}', { y: y }), 'var(--ok)') : days(today(), d) <= (+x.lead || 14) ? when(d) : '') + tick('ladmindone', x.id, x.name) }; }
   });
   ACT.ladminseed = function () { seed('ladmin', adminSeed()); };
   ACT.ladmindone = function (id) { var y = new Date().getFullYear(); setList('ladmin', function (x) { if (x.id === id) x.doneY = +x.doneY === y ? 0 : y; }); };

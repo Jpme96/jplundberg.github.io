@@ -507,7 +507,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
 
   /* where you are: #overview, #meetings, #m=<id>, #actions, #team */
-  S.tab = function () { var h = location.hash.slice(1); if (/^(docs|files|d[cr]=|in=)/.test(h) && !dtabsOn().length) return 'overview'; if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
+  S.tab = function () { var h = location.hash.slice(1); if (/^(docs|files|d[cr]=|in=)/.test(h) && !dtabsOn().length) return 'overview'; if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; if (/^search=/.test(h)) return 'search';   /* no menu item lit while you search (live review 2026-11-25) */
+    return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
   window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
 
   function palCfg() { var r = S.recs.cfgpalette; return r && !r.del && r.d && window.__teamPals && window.__teamPals[r.d.p] ? r.d.p : 'std'; }
@@ -518,7 +519,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     return '<p class="t-h">' + L('Colours', 'Farger') + '</p><div class="t-pals" role="radiogroup" aria-label="' + L('The team\'s colours', 'Teamets farger') + '">' + ids.map(function (id) {
       var p = P[id], name = id === 'std' ? L('Berry (standard)', 'Bær (standard)') : L(p.n[0], p.n[1]), sw = id === 'std' ? '#9d174d' : p.sw;
       return '<button type="button" class="t-pal" role="radio" aria-checked="' + (id === cur) + '" data-act="pal" data-pal="' + id + '"><span class="t-palsw" style="background:' + sw + '"></span>' + esc(name) + '</button>'; }).join('') +
-      '</div><p class="t-small">' + L('Everyone in the team sees these colours. Built from Oslo kommune\'s colour palette.', 'Alle i teamet ser disse fargene. Laget ut fra Oslo kommunes fargepalett.') + '</p>';
+      '</div><p class="t-small">' + L('Everyone in the team sees these colours.', 'Alle i teamet ser disse fargene.') + '</p>';
   }
   /* a dropdown that is open is never redrawn under you (JP 2026-11-25 "boxes … do not keep themselves open"): from the press on a <select> until
      you pick, leave it or press Escape, a redraw waits and runs right after */
@@ -532,7 +533,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'e4d89969582e';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '9483cc937cdc';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -551,6 +552,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   document.addEventListener('keydown', function (e) { var t = e.target; if (t && t.tagName === 'SELECT' && /^( |Enter|ArrowDown|ArrowUp|F4)$/.test(e.key)) { SELO = t; SELT = Date.now(); } else if (SELO && (e.key === 'Escape' || e.key === 'Tab')) selDone(); }, true);
   document.addEventListener('change', function (e) { if (e.target === SELO) selDone(); }, true);
   document.addEventListener('focusout', function (e) { if (e.target === SELO) selDone(); }, true);
+  /* search as you type (live review 2026-11-25: nothing showed until Enter) */
+  var srchT = 0;
+  document.addEventListener('input', function (e) { var t = e.target; if (!t.matches || !t.matches('.t-srch input[name=q]')) return; clearTimeout(srchT);
+    srchT = setTimeout(function () { history.replaceState(null, '', '#search=' + encodeURIComponent(t.value.trim())); draw(); }, 250); });
   function draw() {
     palSync();
     if (!S.me || !S.me.member) return;
@@ -573,6 +578,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var keepC = document.getElementById('wkDocCtl'), keepR = document.getElementById('wkDocReq'), vkey = h + '|' + tab + '|' + (S.dtab || '') + '|' + !!S.edit;
     if (keepC && !keepC.childElementCount) keepC = null; if (keepR && !keepR.childElementCount) keepR = null;
     S.lastHtml = html; $app.innerHTML = html;
+    if (/^search=/.test(h) && !S.sheet && !S.edit) { var qi = $app.querySelector('.t-srch input[name=q]'); if (qi) { qi.focus(); var qn = qi.value.length; try { qi.setSelectionRange(qn, qn); } catch (x) {} } }   /* ready to type at once, and still there after each live result (live review 2026-11-25) */
     /* Documentation keeps its own page (and an open popup or dropdown in it) when Team redraws around it – it was rebuilt from "Loading …" each time */
     [[keepC, 'wkDocCtl'], [keepR, 'wkDocReq']].forEach(function (x) { var nu = x[0] && document.getElementById(x[1]); if (nu && nu !== x[0]) { x[0].hidden = nu.hidden; nu.replaceWith(x[0]); } });
     /* a new page or tab fades in (short and calm; off with reduced motion) */
@@ -618,11 +624,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var out = head(L('Search', 'Søk'), '', ['overview', L('Overview', 'Oversikt')]) + '<form class="t-form t-srch" data-form="search"><input name="q" type="search" value="' + esc(q) + '" placeholder="' + esc(L('Search meetings, actions and documents', 'Søk i møter, oppgaver og dokumenter')) + '" autocomplete="off"></form>';
     if (!words.length) return out;
     var ms = meetings().filter(function (m) { return hit(m.d); }), as = actions().filter(function (a) { return hit(a.d); }), ds = [];
-    (docRO().dctl || []).forEach(function (p) { var ls = (p.lines || []).filter(function (l) { return hit(l); }); if (hit({ n: p.name, no: p.no, who: p.who, t: p.trade }) || ls.length) ds.push({ p: p, n: ls.length }); });
+    (docRO().dctl || []).forEach(function (p) { var ls = (p.lines || []).filter(function (l) { return hit(l); }); if (hit({ n: p.name, no: p.no, who: p.who, t: p.trade }) || ls.length) ds.push({ p: p, n: ls.length, ls: ls }); });
     if (!ms.length && !as.length && !ds.length) return out + '<p class="t-empty">' + esc(L('Nothing found for “' + q + '”.', 'Fant ingenting for «' + q + '».')) + '</p>';
     if (ms.length) out += '<p class="t-h">' + L('Meetings', 'Møter') + '</p>' + ms.slice(0, 30).map(meetingCard).join('');
     if (as.length) out += '<p class="t-h">' + L('Actions', 'Oppgaver') + '</p>' + actionList(as.slice(0, 50), true);
-    if (ds.length) out += '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p><ul class="t-list">' + ds.slice(0, 30).map(function (x) { return '<li><a class="t-row" href="#dc=' + esc(x.p.id) + '"><span class="grow"><span>' + esc(x.p.name) + '</span><small>' + esc(x.n ? L(x.n + ' matching documents', x.n + ' treff i dokumentene') : L('The project', 'Prosjektet')) + '</small></span></a></li>'; }).join('') + '</ul>';
+    if (ds.length) out += '<p class="t-h">' + L('Documentation', 'Dokumentasjon') + '</p><ul class="t-list">' + ds.slice(0, 30).map(function (x) { return '<li><a class="t-row" href="#dc=' + esc(x.p.id) + '"><span class="grow"><span>' + esc(x.p.name) + '</span><small>' + esc(x.n ? L(x.n + ' matching documents', x.n + ' treff i dokumentene') : L('The project', 'Prosjektet')) + '</small></span></a></li>' +
+      /* the matching lines themselves, each opening the project on that line (live review 2026-11-25: the hit opened the last step) */
+      x.ls.slice(0, 8).map(function (l) { return '<li class="t-srline"><a class="t-row" href="#dc=' + esc(x.p.id) + '&l=' + esc(l.id) + '"><span class="t-code">' + esc(l.code || '') + '</span><span class="grow"><span>' + esc(l.planned || l.sys || l.type || '') + '</span>' + (l.planned && l.sys ? '<small>' + esc(l.sys) + '</small>' : '') + '</span></a></li>'; }).join('') +
+      (x.ls.length > 8 ? '<li class="t-srline t-small">' + esc(L('… and ' + (x.ls.length - 8) + ' more', '… og ' + (x.ls.length - 8) + ' til')) + '</li>' : ''); }).join('') + '</ul>';
     return out;
   }
   function viewOverview() {
@@ -893,7 +902,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<label class="t-lbl">' + L('Appearance', 'Utseende') + '<select data-themepick>' + [['light', L('Light', 'Lys')], ['dark', L('Dark', 'Mørk')], ['auto', L('Like the device', 'Som enheten')]].map(function (o) { var cur = 'light'; try { cur = localStorage.getItem('team.theme') || 'light'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' + '</div>' +
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
-      '<div class="t-setrow"><span><b>' + L('Notifications while Team is open', 'Varsler mens Team er åpent') + '</b><small>' + (nOn ? L('On on this device', 'På på denne enheten') : L('Off on this device', 'Av på denne enheten')) + '</small></span><button class="t-btn ghost sm" type="button" data-act="notify">' + (nOn ? L('Turn off', 'Slå av') : L('Turn on', 'Slå på')) + '</button></div>'
+      '<label class="t-switch t-inline"><span><b>' + L('Notifications while Team is open', 'Varsler mens Team er åpent') + '</b><small>' + L('On this device', 'På denne enheten') + '</small></span><input type="checkbox" data-act="notify"' + (nOn ? ' checked' : '') + '></label>'
       : tab === 'team' ?
         '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
         palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() +
@@ -1485,7 +1494,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
      like the rest; you only change your own. It shows on Overview as a card with the running time and this week's hours;
      admins see everyone's week on the Team tab. */
   /* the three Documents tabs can be switched off for the whole team by an admin (JP 2026-11-19 21:42); all three off = no Documents in the menu */
-  var DTABS = [['doc', 'Documentation', 'Dokumentasjon'], ['insp', 'Inspections', 'Befaringer'], ['files', 'Uploads', 'Opplastinger']];
+  var DTABS = [['doc', 'Projects', 'Prosjekter'],   /* the page is already called Documentation (live review 2026-11-25) */ ['insp', 'Inspections', 'Befaringer'], ['files', 'Uploads', 'Opplastinger']];
   function dtabsOff() { var r = (S.recs || {}).cfgdoctabs; var d = r && !r.del && r.d ? r.d : {}; return Array.isArray(d.off) ? d.off.filter(function (x) { return /^(doc|insp|files)$/.test(x); }) : []; }
   function dtabsOn() { var off = dtabsOff(); return DTABS.filter(function (t) { return off.indexOf(t[0]) < 0; }); }
   async function dtabsSet(key, on) { var off = dtabsOff().filter(function (x) { return x !== key; }); if (!on) off.push(key); if (await putRec('cfg', 'cfgdoctabs', { off: off }, L('Documents tabs', 'Faner i Dokumenter'))) { if (S.sheet) settingsSheet(); draw(); } }
@@ -1645,7 +1654,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'upcopy') { var lr = S.recs[t.dataset.id]; if (!lr || !lr.d) return; var lu = linkUrl(lr.d); (navigator.clipboard ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { showText(L('The link', 'Lenken'), lu); }); return; }
     if (a === 'upoff') { upOff(t.dataset.id); return; }
     if (a === 'seen') { try { localStorage.setItem(seenKey(), String(S.seq)); } catch (x) {} badge(0); draw(); return; }
-    if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); closeSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); closeSheet(); }); return; }
+    if (a === 'notify') { if (!window.Notification) { toast(L('This browser cannot show notifications.', 'Denne nettleseren kan ikke vise varsler.')); return; } var on = localStorage.getItem('team.notify') === '1'; if (on) { localStorage.removeItem('team.notify'); settingsSheet(); toast(L('Notifications off', 'Varsler av')); return; } Notification.requestPermission().then(function (pm) { if (pm === 'granted') { localStorage.setItem('team.notify', '1'); toast(L('Notifications on for this device', 'Varsler på for denne enheten')); } else toast(L('The browser said no – allow notifications for work.jplundberg.com in its settings.', 'Nettleseren sa nei – tillat varsler for work.jplundberg.com i innstillingene.')); settingsSheet(); }); return; }
     if (a === 'renameTeam') return renameSheet();
     if (a === 'backup') return backupSheet();
     if (a === 'deleteTeam') return deleteSheet();

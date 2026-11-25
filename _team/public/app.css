@@ -357,3 +357,26 @@ html.tz-wide { --sn-pad: 208px; }
 .t-edsheet .t-form > .t-btns:has(> [type="submit"]) { padding: 10px 0; margin-bottom: 0; }
 .t-edsheet .t-form > [type="submit"] { margin-bottom: 0; }
 .t-setrow > .t-btn, .t-setrow > label.t-btn { align-self: center; flex: none; }   /* a long hint beside it never stretches the button (review 19) */
+/* settings switches look like switches – one kind of control (live review 2026-11-25: bare checkboxes next to a "Slå på" button) */
+.t-switch input[type="checkbox"] { -webkit-appearance: none; appearance: none; width: 44px; height: 26px; border-radius: 13px; background: var(--line, rgba(127,127,127,.35)); position: relative; cursor: pointer; transition: background var(--dur-1, .15s); border: 0; margin: 0; }
+.t-switch input[type="checkbox"]::before { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform var(--dur-1, .15s); }
+.t-switch input[type="checkbox"]:checked { background: var(--acc); }
+.t-switch input[type="checkbox"]:checked::before { transform: translateX(18px); }
+.t-switch input[type="checkbox"]:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.t-switch input[type="checkbox"]:disabled { opacity: .5; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .t-switch input[type="checkbox"], .t-switch input[type="checkbox"]::before { transition: none; } }
+/* search: the matching lines under their project */
+.t-srline .t-row { padding-left: 28px; }
+.t-srline .t-code { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 3.2em; color: var(--muted); }
+.t-srline.t-small { padding: 4px 0 8px 28px; color: var(--muted); list-style: none; }
+/* the access card shows it opens, like the other folded cards (live review 2026-11-25) */
+.t-acc summary { align-items: center; }
+.t-acc summary::after { content: ''; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted, #9aa0aa); border-bottom: 2px solid var(--muted, #9aa0aa); transform: rotate(-45deg); transition: transform var(--dur-1, .15s); flex: none; }
+.t-acc[open] summary::after { transform: rotate(45deg); }
+@media (prefers-reduced-motion: reduce) { .t-acc summary::after { transition: none; } }
+/* on a big screen "New meeting" / "New action" are buttons, not bars across the page – like "Invite someone" (live review 2026-11-25) */
+@media (min-width: 1000px) { .t-btn.wide[data-act="newMeeting"], .t-btn.wide[data-act="newAction"] { width: auto; padding-left: 22px; padding-right: 22px; } }
+html.tz-wide .t-btn.wide[data-act="newMeeting"], html.tz-wide .t-btn.wide[data-act="newAction"] { width: auto; padding-left: 22px; padding-right: 22px; }
+/* Team's tab above already says Projects: the card's own title is only for screen readers (live review 2026-11-25) */
+.dc-host .card-head h2.dc-h2-tab { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dc-host .card-head:has(h2.dc-h2-tab) { justify-content: flex-end; }

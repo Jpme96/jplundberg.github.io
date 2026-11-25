@@ -102,7 +102,7 @@
      · Fallback (no WebSocket, or the server doesn't offer it): a tiny check every few seconds while the app is on
        screen (1.5 s while the chat is open). Both stop while the app is in the background. */
   var liveSubs = [], liveT = null, liveFast = 0, liveBusy = false, liveOff = 0;
-  var ws = null, wsOk = false, wsFail = 0, wsT = null, wsPing = null, wsAt = 0, wsLast = null;
+  var ws = null, wsOk = false, wsOff = false, wsFail = 0, wsT = null, wsPing = null, wsAt = 0, wsLast = null;
   function emit(j) { liveSubs.forEach(function (f) { try { f(j); } catch (e) {} }); }
   function liveTick() {
     clearTimeout(liveT); liveT = null; if (!liveSubs.length || document.hidden || liveBusy) return;
@@ -117,9 +117,9 @@
   }
   function wsOpen() {
     clearTimeout(wsT); wsT = null;
-    if (ws || !window.WebSocket || document.hidden || !liveSubs.length || wsFail >= 5) return;
+    if (ws || !window.WebSocket || document.hidden || !liveSubs.length || wsOff) return;
     var s, opened = false;
-    try { s = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/cmd/api/ws'); } catch (e) { wsFail = 5; return; }
+    try { s = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/cmd/api/ws'); } catch (e) { wsOff = true; return; }
     ws = s;
     s.onopen = function () {
       opened = true; wsOk = true; wsFail = 0; wsAt = Date.now(); clearInterval(wsPing);
@@ -135,18 +135,19 @@
       clearInterval(wsPing); if (ws === s) ws = null; wsOk = false; wsLast = null;
       if (!opened) {                               /* the server has no instant updates (yet)? Ask once, then stop trying */
         wsFail++;
-        if (wsFail === 1) fetch('/cmd/api/ws', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (r.status === 501 || r.status === 404) { wsFail = 5; clearTimeout(wsT); wsT = null; } }, function () {});
+        if (wsFail === 1) fetch('/cmd/api/ws', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { if (r.status === 501 || r.status === 404) { wsOff = true; clearTimeout(wsT); wsT = null; } }, function () {});
       }
       if (ev && ev.code === 4001) wsFail = Math.max(wsFail, 3);   /* sharing changed: one more try in a while */
       liveTick();
-      if (!document.hidden && wsFail < 5) wsT = setTimeout(wsOpen, Math.min(30000, 1000 * Math.pow(2, wsFail)));
+      /* a passing failure never turns instant updates off for good – only a server without them (wsOff) does; the wait grows to a minute (live review 2026-11-25) */
+      if (!document.hidden && !wsOff) wsT = setTimeout(wsOpen, Math.min(60000, 1000 * Math.pow(2, Math.min(wsFail, 6))));
     };
   }
   function wsClose() { clearTimeout(wsT); wsT = null; if (ws) { var s = ws; ws = null; wsOk = false; clearInterval(wsPing); try { s.close(1000, 'hidden'); } catch (e) {} } }
   function live(fn) {
     liveSubs.push(fn);
     if (liveSubs.length === 1) {
-      document.addEventListener('visibilitychange', function () { if (document.hidden) { wsClose(); return; } liveOff = 0; if (wsFail < 5) wsFail = Math.min(wsFail, 2); wsOpen(); liveTick(); });
+      document.addEventListener('visibilitychange', function () { if (document.hidden) { wsClose(); return; } liveOff = 0; wsFail = Math.min(wsFail, 2); wsOpen(); liveTick(); });
       window.addEventListener('online', function () { wsFail = Math.min(wsFail, 2); wsOpen(); });
       setTimeout(liveTick, 1500); wsOpen();
     }

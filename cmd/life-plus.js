@@ -167,7 +167,7 @@
   });
 
   /* the cards (life-plus.page.js) load only when a section is on and this page has its slot – most pages never need them */
-  var LPP_V = '5e3d0da3d7';   /* stamped by cmd/build.py */
+  var LPP_V = '28ad4832e9';   /* stamped by cmd/build.py */
   var IDS = ['ready', 'hood', 'ladmin', 'deals', 'climate', 'parties', 'moments', 'family', 'pets', 'clubs', 'sleep', 'calm', 'media', 'later', 'digital', 'career', 'outdoor', 'mood', 'wheel', 'wins', 'hobbies', 'bodycare', 'screen', 'style', 'usefood', 'freezer', 'returns', 'thanks'];
   /* the life pages (Home life · Life admin · Me): a note when none of their sections is on */
   function pgEmpty() {

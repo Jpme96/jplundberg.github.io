@@ -156,9 +156,11 @@
      is used at once and a fresh one is fetched behind it; the menu's pages are fetched while you're idle, and a page starts
      loading the moment a finger touches its link. A newer version found on the way still loads normally once (below). */
   var htmlAt = {}, htmlBusy = {};
-  function netHtml(k) {
-    if (htmlBusy[k]) return htmlBusy[k];
-    return (htmlBusy[k] = fetch(k, { credentials: 'same-origin' }).then(function (r) { if (!r.ok || r.redirected) throw new Error(r.status); return r.text(); })
+  function netHtml(k, fresh) {
+    if (htmlBusy[k] && !fresh) return htmlBusy[k];
+    /* fresh: past the browser's own copy too (it keeps a page up to 10 min – right after a release that copy still named
+       the old version, so the page change became a full load, and a full load can mean the passcode again: live review 2026-11-25) */
+    return (htmlBusy[k] = fetch(k, { credentials: 'same-origin', cache: fresh ? 'no-cache' : 'default' }).then(function (r) { if (!r.ok || r.redirected) throw new Error(r.status); return r.text(); })
       .then(function (t) { htmlCache[k] = t; htmlAt[k] = Date.now(); delete htmlBusy[k]; return t; }, function (e) { delete htmlBusy[k]; throw e; }));
   }
   function stored(k) { return window.caches && caches.match ? caches.match(k).then(function (h) { return h ? h.text() : null; }).catch(function () { return null; }) : Promise.resolve(null); }
@@ -198,7 +200,7 @@
       try { sessionStorage.setItem('softnav.err', why); } catch (er) {} if (window.Diag && window.Diag.log) window.Diag.log('softnav', why, 'softnav.js'); failed(why); full(); }, 6000);
     getHtml(u).then(function (text) {
       /* a kept copy from another version: ask the network before deciding it's a new version */
-      if (HEAD && text && srcOf(new DOMParser().parseFromString(text, 'text/html'), /dist\/head\.js/) !== HEAD) return netHtml(u.pathname).catch(function () { return text; });
+      if (HEAD && text && srcOf(new DOMParser().parseFromString(text, 'text/html'), /dist\/head\.js/) !== HEAD) return netHtml(u.pathname, true).catch(function () { return text; });
       return text;
     }).then(function (text) {
       mark('sn:html'); if (T) T.html = performance.now(); stage = 'reading the page'; var doc = new DOMParser().parseFromString(text, 'text/html');

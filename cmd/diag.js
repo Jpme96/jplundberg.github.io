@@ -235,7 +235,8 @@
     if (status >= 200 && status < 400) { netOk[s] = Date.now(); return; }
     if (!status && navigator.onLine === false) return;                     // offline: the sync notice already says so
     if (s === 'api/vault' && status === 404) return;                         // nothing saved on the server yet
-    if (status === 409 || status === 412) return;                            // "changed elsewhere" – handled where it happens
+    if (status === 409 || status === 412) return;
+    if (s === 'api/ws' && status === 426) return;                           // the live line's own check ("is it set up?") – 426 means yes                            // "changed elsewhere" – handled where it happens
     /* no answer at all (a train, a tunnel, a weak signal) is normal: changes wait on the device and the "N changes
        waiting" chip says so. Only a service that keeps not answering for 10 minutes, with nothing getting through,
        is written down (2026-11-20 – these were the biggest group in the error log). */
