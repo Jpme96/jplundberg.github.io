@@ -290,9 +290,11 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     await own.evaluate(() => { if (!document.querySelector('.dc-fresh select[data-dcntype]')) { const b = document.querySelector('.dc-fresh [data-dcnexp]'); b && b.click(); } });
     check(await until(own, () => !!document.querySelector('.dc-fresh select[data-dcntype]'), 8000), 'the naming card has the document type list');
     const ty = await own.evaluate(() => { const s0 = document.querySelector('.dc-fresh select[data-dcntype]'); return { g: [...s0.querySelectorAll('optgroup')].map(g => g.label), v: [...s0.options].map(o => o.value) }; });
-    check(['AT', 'BA', 'BE', 'BI', 'BO', 'BR', 'ID', 'KR', 'PT', 'PU', 'RI', 'SA', 'SH', 'DA', 'MR'].every(c => ty.v.includes(c)) && ty.g.some(g => /Technical|Teknisk/.test(g)) && ty.g.some(g => /Administrative/.test(g)) && ty.v.includes('__ownedit'), 'Document type has all of the Coda list, grouped Technical / Administrative, and Edit own codes ' + JSON.stringify(ty.g));
+    check(['AT', 'BA', 'BE', 'BI', 'BR', 'ID', 'KR', 'PT', 'PU', 'RI', 'SA', 'SH', 'DA', 'MR'].every(c => ty.v.includes(c)) && ty.g.some(g => /Technical|Teknisk/.test(g)) && ty.g.some(g => /Administrative/.test(g)) && ty.v.includes('__ownedit') && !ty.v.includes('BO'), 'Document type has all of the Coda list, grouped Technical / Administrative, and Edit own codes ' + JSON.stringify(ty.g));
     await own.evaluate(() => { const s0 = document.querySelector('select[data-dcntype]'); s0.value = '__ownedit'; s0.dispatchEvent(new Event('change', { bubbles: true })); });
     check(await until(own, () => !!document.querySelector('.dcn-codes .dcn-cds') && /Document type|Dokumenttype/.test(document.querySelector('.dcn-codes').textContent), 6000), 'Edit own codes opens a popup for that list');
+    const lay = await own.evaluate(() => ({ mine: /My codes|Mine koder/.test(document.querySelector('.dcn-codes').textContent), fit: [...document.querySelectorAll('.dcn-codes .dcn-cdadd input')].every(i => i.scrollWidth <= i.clientWidth + 1 && i.clientWidth >= 200) }));
+    check(!lay.mine && lay.fit, 'whoever keeps the team\'s list sees no empty "My codes", and the fields are wide enough for their hints ' + JSON.stringify(lay));
     await own.type('.dcn-codes [data-cdnc]', 'XQ'); await own.type('.dcn-codes [data-cdnm]', 'Made-up type');
     await own.click('.dcn-codes [data-cdadd]'); await sl(1200);
     const t1 = await own.evaluate(() => ({ t: JSON.stringify(DocHost.codes.t().type || []), row: !!document.querySelector('.dcn-codes [data-cddel="t:XQ"]'), sel: [...document.querySelectorAll('select[data-dcntype] optgroup')].some(g => /team/i.test(g.label) && [...g.children].some(o => o.value === 'XQ')) }));
@@ -311,7 +313,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     await own.type('.dcn-codes [data-cdnc]', 'ZZ9'); await own.click('.dcn-codes [data-cdadd]'); await sl(1200);
     check(await own.evaluate(() => /ZZ9/.test(JSON.stringify(DocHost.codes.m().type || [])) && !/ZZ9/.test(JSON.stringify(DocHost.codes.t().type || []))), 'it lands in your own list, not the team\'s');
     await own.evaluate(() => { DocHost.codes.can = window.__canC; const x = document.querySelector('.dcn-codes [data-cdx]'); x && x.click(); }); await sl(300);
-    await own.evaluate(() => { const x = document.querySelector('[data-dcnfx]'); x && x.click(); }); await sl(500);   /* the file card closes; the tidy-up popup stays */
+    await own.keyboard.press('Escape'); await sl(500);   /* Escape closes the file card; the tidy-up popup stays (JP 2026-11-25) */
     check(await until(own, () => !document.querySelector('.dcn-ov') && !!document.querySelector('.dc-freshov'), 4000), 'closing leaves the tidy-up popup as it was ' + await own.evaluate(() => [...document.querySelectorAll('.dcn-ov')].map(x => x.className).join('|') + ' fresh=' + !!document.querySelector('.dc-freshov')));
     /* the delivered files are shared with the team (JP 2026-11-24 "files should be shareable"): each gets an encrypted copy in the team's
        storage (R2 in the test server), and a device without the file opens it from there */

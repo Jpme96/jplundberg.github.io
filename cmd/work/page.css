@@ -548,7 +548,8 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-cdr { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 6px 4px 12px; border-top: 1px solid var(--line); } .dcn-cdr:first-child { border-top: 0; }
 .dcn-cdt { flex: 1; min-width: 0; display: flex; flex-direction: column; } .dcn-cdt small { font-size: 12.5px; }
 .dcn-cdr.ed { flex-wrap: wrap; padding: 8px 10px; } .dcn-cdr.ed input, .dcn-cdadd input { flex: 1 1 140px; min-width: 0; height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: inherit; font: inherit; font-size: 16px; }
-.dcn-cdadd { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.dcn-cdadd { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 8px; margin-top: 16px; } .dcn-cdadd .pill-btn { grid-column: 1 / -1; justify-self: end; }   /* the fields get the width, the button its own row – no cut-off hints (JP 2026-11-25) */
+@media (max-width: 480px) { .dcn-cdadd { grid-template-columns: 1fr; } .dcn-cdadd .pill-btn { justify-self: stretch; } }
 .dcn-oc > span { font-size: 12px; color: var(--muted); width: 100%; }
 .dcn-ochip { font-size: 13px; gap: 4px; }
 .dcn-ochip button { border: 0; background: none; color: var(--muted); padding: 0 2px; cursor: pointer; }

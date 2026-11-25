@@ -27,7 +27,7 @@
     ['KR', 'Kravoppnåelse', 'Compliance', 't'], ['BR', 'Branndokumentasjon', 'Fire documentation', 't'], ['PT', 'Testprosedyrer', 'Test procedures', 't'], ['PU', 'Testrapporter, dokumentert sluttprøve', 'Test reports, documented final test', 't'],
     ['RA', 'Rapporter, analyser, beregninger, utredninger, testrapporter', 'Reports, analyses, calculations, studies', 't'], ['RI', 'Risikovurdering', 'Risk assessment', 't'], ['PR', 'Prosedyrer, rutiner', 'Procedures, routines', 't'], ['SA', 'Serviceavtaler', 'Service agreements', 't'],
     ['ID', 'Identifikasjon', 'Identification', 't'], ['LI', 'Lister, dokumentplan, tegningslister, modelllister', 'Lists, document plan, drawing and model lists', 't'], ['NO', 'Notat – fag/tekniske, beskrivelser, forvaltningsplan', 'Note – technical, descriptions, management plan', 't'],
-    ['SK', 'Skjema, dørskjema', 'Forms, door schedule', 't'], ['SH', 'SHA-plan og miljøoppfølging', 'HSE plan and environmental follow-up', 't'], ['BI', 'Bilder', 'Pictures', 't'], ['BO', 'Bilde, foto', 'Picture, photo', 't'],
+    ['SK', 'Skjema, dørskjema', 'Forms, door schedule', 't'], ['SH', 'SHA-plan og miljøoppfølging', 'HSE plan and environmental follow-up', 't'], ['BI', 'Bilder', 'Pictures', 't'],
     ['BM', 'BIM strategi, manualer og relaterte dokumenter', 'BIM strategy, manuals and related documents', 't'], ['BF', 'BIM følgeskriv', 'BIM cover letter', 't'],
     ['PK', 'Protokoller, garantidokumenter', 'Protocols, warranty documents', 'a'], ['PL', 'Planer, fremdrift, KS, organisasjon, opplæring', 'Plans, progress, quality, organisation, training', 'a'], ['OK', 'Avtaledokument', 'Agreement', 'a'], ['RF', 'Referat', 'Minutes', 'a'],
     ['MR', 'Månedsrapport', 'Monthly report', 'a'], ['PA', 'Prosjekteringsanvisning', 'Design guideline', 'a'], ['PD', 'Premissdokument, prinsippdokumenter', 'Premise and principle documents', 'a'], ['PP', 'Presentasjoner', 'Presentations', 'a'],
@@ -84,7 +84,7 @@
   /* "Edit own codes …" in every list: the team's codes (changed by whoever may) and your own, a pen and a bin on each, a field to add */
   var CED = '';
   function codesPop(key) {
-    var old = document.querySelector('.dcn-codes'); if (old) old.remove();
+    var old = document.querySelector('.dcn-codes'); if (old) { if (old.__close) old.__close(); else old.remove(); }   /* a popup opened again closes the old one properly (its Escape listener too) */
     var ov = document.createElement('div'), team = cstore() === 'team'; ov.className = 'dcn-ov dc-host dcn-codes';
     var row = function (w, y) { var id = w + ':' + y[0], can = w === 'm' || canT();
       if (CED === id) return '<li class="dcn-cdr ed"><input data-cdc maxlength="40" value="' + esc(y[0]) + '" aria-label="' + esc(k('ui.dcn-own-c', 'Code or text, e.g. E2')) + '"><input data-cdm maxlength="60" value="' + esc(y[1] || '') + '" placeholder="' + esc(k('ui.dcn-own-m', 'What it means (optional)')) + '" aria-label="' + esc(k('ui.dcn-own-m', 'What it means (optional)')) + '"><span class="dcn-b"><button type="button" class="pill-btn sm" data-cdsave="' + esc(id) + '">' + esc(k('ui.save', 'Save')) + '</button><button type="button" class="pill-btn sm ghost" data-cdcan>' + esc(k('ui.cancel', 'Cancel')) + '</button></span></li>';
@@ -94,7 +94,7 @@
       var tw = canT() ? 't' : 'm';
       ov.innerHTML = '<div class="dcn-sheet dcn-cds" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dcn-codes-h', 'Own codes – {f}', { f: okey(key) })) + '"><div class="dcn-shead"><b>' + esc(k('ui.dcn-codes-h', 'Own codes – {f}', { f: okey(key) })) + '</b><button type="button" class="icon-btn" data-cdx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
         (team ? sec('t', k('ui.dcn-codes-team', 'The team’s codes'), canT() ? k('ui.dcn-codes-team-s', 'Everyone in the team sees these') : k('ui.dcn-codes-team-ro', 'Everyone sees these – only the ones allowed to change the list can'), k('ui.dcn-codes-none', 'None yet.')) +
-          sec('m', k('ui.dcn-codes-mine', 'My codes'), k('ui.dcn-codes-mine-s', 'Only you see these – for what the team’s list doesn’t have'), k('ui.dcn-codes-none', 'None yet.'))
+          (!canT() || clist('m', key).length ? sec('m', k('ui.dcn-codes-mine', 'My codes'), k('ui.dcn-codes-mine-s', 'Only you see these – for what the team’s list doesn’t have'), k('ui.dcn-codes-none', 'None yet.')) : '')   /* whoever keeps the team's list adds there – no empty "My codes" (JP 2026-11-25) */
           : sec('t', k('ui.dcn-own-codes', 'Your codes'), '', k('ui.dcn-codes-none', 'None yet.'))) +
         '<div class="dcn-cdadd"><input data-cdnc maxlength="40" placeholder="' + esc(k('ui.dcn-own-c', 'Code or text, e.g. E2')) + '" aria-label="' + esc(k('ui.dcn-own-c', 'Code or text, e.g. E2')) + '"><input data-cdnm maxlength="60" placeholder="' + esc(k('ui.dcn-own-m', 'What it means (optional)')) + '" aria-label="' + esc(k('ui.dcn-own-m', 'What it means (optional)')) + '">' +
         '<button type="button" class="pill-btn" data-cdadd><i class="bi bi-plus-lg"></i> ' + esc(team ? (tw === 't' ? k('ui.dcn-codes-add-t', 'Add to the team’s codes') : k('ui.dcn-codes-add-m', 'Add to my codes')) : k('ui.dcn-own-addb', 'Add')) + '</button></div>' +
@@ -102,6 +102,7 @@
       if (window.I18N && I18N.apply) try { I18N.apply(ov); } catch (e) {}
     };
     var close = function () { ov.remove(); CED = ''; document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov, .dx-tov')); };
+    ov.__close = close;
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
     ov.addEventListener('click', function (e) {
@@ -343,7 +344,7 @@
   }
   function view(blob, name, opt) {
     opt = opt || {};   /* opt.sub: a small line under the name; opt.share: a Share button when the device can share files (Team's files, JP 2026-11-25) */
-    var old = document.querySelector('.dx-fv'); if (old) old.remove();
+    var old = document.querySelector('.dx-fv'); if (old) { if (old.__close) old.__close(); else old.remove(); }   /* a popup opened again closes the old one properly (its Escape listener too) */
     var url = URL.createObjectURL(blob), e0 = ext(name), pdf = e0 === '.pdf' || blob.type === 'application/pdf', img = /^\.(jpe?g|png|gif|webp|heic|heif|bmp|svg)$/.test(e0) || /^image\//.test(blob.type), txt = /^\.(txt|csv|tsv|xml|json|md)$/.test(e0);
     var shareFile = null; try { shareFile = blob instanceof File && blob.name === name ? blob : new File([blob], name, { type: blob.type || (pdf ? 'application/pdf' : '') }); } catch (x) {}
     var canShare = !!(opt.share && shareFile && navigator.share && navigator.canShare && navigator.canShare({ files: [shareFile] }));
@@ -353,6 +354,7 @@
       '<div class="dx-fvzb" hidden><button type="button" class="icon-btn" data-dxz="out" aria-label="' + esc(k('ui.zoom-out', 'Zoom out')) + '"><i class="bi bi-dash-lg"></i></button><button type="button" class="pill-btn sm ghost" data-dxz="fit" data-dxzl>100%</button><button type="button" class="icon-btn" data-dxz="in" aria-label="' + esc(k('ui.zoom-in', 'Zoom in')) + '"><i class="bi bi-plus-lg"></i></button></div><div class="dx-fvb">' +
       (img ? '<img src="' + url + '" alt="">' : pdf || txt ? '<p class="muted">' + esc(k('ui.dx-fv-loading', 'Opening …')) + '</p>' : '<p class="muted">' + esc(k('ui.dx-fv-none', 'No preview for this kind of file – download it to open it.')) + '</p>') + '</div></div>';
     var close = function () { ov.remove(); URL.revokeObjectURL(url); document.removeEventListener('keydown', ek, true); document.documentElement.classList.remove('dcn-modal'); };
+    ov.__close = close;
     var ek = function (e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
     ov.addEventListener('click', function (e) { if ((e.target === ov && dn === ov) || e.target.closest('[data-dxfvx]')) close(); if (e.target.closest('[data-dxfvsh]')) navigator.share({ files: [shareFile] }).catch(function () {}); });
@@ -468,7 +470,7 @@
   /* a searchable list for the code (JP 2026-11-17 12:53 "make it searchable"): opens over the page, filters by number or name as you type;
      built from the hidden select, which still does the saving */
   function cpick(sel) {
-    var old = document.querySelector('.dcn-cpk'); if (old) old.remove();
+    var old = document.querySelector('.dcn-cpk'); if (old) { if (old.__close) old.__close(); else old.remove(); }   /* a popup opened again closes the old one properly (its Escape listener too) */
     var items = [], grp = '';
     [].forEach.call(sel.querySelectorAll('option, optgroup'), function (n) { if (n.tagName === 'OPTGROUP') { grp = n.label; return; } if (n.value) items.push({ v: n.value, t: n.textContent, g: n.parentNode.tagName === 'OPTGROUP' ? n.parentNode.label : '', on: n.value === sel.value }); });
     var ov = document.createElement('div'); ov.className = 'dcn-ov dc-host dcn-cpk';
@@ -476,6 +478,7 @@
       '<input type="search" class="dcn-cpq" placeholder="' + esc(k('ui.dcn-cp-q', 'Search a number or a word – e.g. 36 or ventilasjon')) + '" aria-label="' + esc(k('ui.dcn-cp-q', 'Search a number or a word – e.g. 36 or ventilasjon')) + '" autocomplete="off"><ul class="dcn-cpl"></ul></div>';
     var q = ov.querySelector('.dcn-cpq'), ul = ov.querySelector('.dcn-cpl'), dn = null;
     var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
+    ov.__close = close;
     var pick = function (v) { close(); sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
     var draw1 = function () {
       var w = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean), last = '', h = '', n = 0;
@@ -727,7 +730,7 @@
     return [['doc', k('ui.dcn-pk-docs', 'Documents ({n})', { n: c.doc })], ['drawing', k('ui.dcn-pk-dwgs', 'Drawings ({n})', { n: c.drawing })], ['photo', k('ui.dcn-pk-pics', 'Photos ({n})', { n: c.photo })]].filter(function (x) { return c[x[0]]; }).map(function (x) { return '<button type="button" class="pill-btn sm ghost" data-dcnpks="kind:' + x[0] + '">' + esc(x[1]) + '</button>'; }).join(''); }
   function bulkPop(kind) {
     var p = proj(cur()); if (!p) return; var F = (p.files || []).filter(function (f) { return PKS[f.id] && !f.nf; }); if (!F.length) return;
-    var old = document.querySelector('.dcn-bulk'); if (old) old.remove();
+    var old = document.querySelector('.dcn-bulk'); if (old) { if (old.__close) old.__close(); else old.remove(); }   /* a popup opened again closes the old one properly (its Escape listener too) */
     /* drawings and photos stay out of code and name changes unless you take them in (JP 2026-11-24); a type is only for documents; removing takes all */
     var odd = F.filter(function (f) { return fkind(f) !== 'doc'; }), inc = false, nDw = odd.filter(function (f) { return fkind(f) === 'drawing'; }).length, nPh = odd.length - nDw;
     var docsOf = function () { return kind === 'type' || ((kind === 'code' || kind === 'name') && !inc) ? F.filter(function (f) { return fkind(f) === 'doc'; }) : F; }, docs = docsOf();
@@ -756,6 +759,7 @@
     };
     render();
     var close = function () { ov.remove(); document.removeEventListener('keydown', ek, true); document.documentElement.classList.toggle('dcn-modal', !!document.querySelector('.dcn-ov')); };
+    ov.__close = close;
     var ek = function (e) { if (e.key === 'Escape' && !document.querySelector('.dcn-cpk')) { e.stopPropagation(); close(); } };
     var dn = null; ov.addEventListener('pointerdown', function (e) { dn = e.target; });
     ov.addEventListener('change', function (e) { if (e.target.matches('[data-bksel]')) { val = /^\s*([0-9A-Za-z.]+)/.exec(e.target.value || '') ? /^\s*([0-9A-Za-z.]+)/.exec(e.target.value)[1] : ''; render(); } else if (e.target.matches('[data-bkover]')) { over = e.target.checked; render(); } else if (e.target.matches('[data-bkodd]')) { inc = e.target.checked; docs = docsOf(); ready = readyOf(); own = kind === 'code' ? docs.filter(function (f) { return f.p.code && !(f.sg && f.sg.c); }) : own; render(); } });
