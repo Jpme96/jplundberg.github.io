@@ -32,14 +32,14 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await add(['MADEUP Zetabeis fasade.docx']);
   await pop(/Zetabeis fasade/); await sl(200);
   const d = await inPop();
-  check(d && /^235/.test(d.code) && /learned from earlier choices/.test(d.why), 'a code you chose is learned from the file name and suggested next time ' + JSON.stringify(d));
-  check(await p.evaluate(() => !!(Features.tools().fdvlearn || {}).w && !!Features.tools().fdvlearn.w.zetabeis), 'learned codes are kept with your codes (synced, encrypted)');
+  check(d && !/^\d/.test(d.code) && d.alt.some(x => /^235/.test(x)), 'a code you chose once is learned from the file name and offered as a choice next time (twice makes it the code – doc-learn) ' + JSON.stringify(d));
+  check(await p.evaluate(() => !!(Features.tools().fdvlearn || {}).w && !!Features.tools().fdvlearn.w.zetabei), 'learned codes are kept with your codes (synced, encrypted)');
 
   await p.evaluate(() => document.querySelectorAll('[data-dcnfx]').forEach(x => x.click())); await sl(150);
   const lr = await p.evaluate(() => { const d = document.querySelector('.dcn-lrn'); if (!d) return null; d.open = true; return [...d.querySelectorAll('li')].map(x => x.textContent); });
-  check(lr && lr.some(x => /zetabeis\s*→\s*235/.test(x)), 'the rules show what was learned ' + JSON.stringify(lr));
-  await p.evaluate(() => document.querySelector('[data-dcnlrx="zetabeis"]').click()); await sl(300);
-  check(await p.evaluate(() => !Features.tools().fdvlearn.w.zetabeis), 'and it can be forgotten');
+  check(lr && lr.some(x => /zetabei\s*→\s*235/.test(x)), 'the rules show what was learned ' + JSON.stringify(lr));
+  await p.evaluate(() => document.querySelector('[data-dcnlrx="zetabei"]').click()); await sl(300);
+  check(await p.evaluate(() => !Features.tools().fdvlearn.w.zetabei), 'and it can be forgotten');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await p.evaluate(() => { localStorage.removeItem('dcn.nsnames'); const t = Features.tools(); delete t.fdvlearn; Features.saveTools(t); });
   await b.close(); done();
