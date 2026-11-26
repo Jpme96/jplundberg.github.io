@@ -69,6 +69,14 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await own.evaluate(() => { const t = document.querySelector('[data-settab=req]'); const r = t.getBoundingClientRect(); const bar = t.parentElement.getBoundingClientRect(); return r.right <= bar.right + 1 && r.left >= bar.left - 1 && t.scrollWidth <= t.clientWidth + 2; }), 'the Requests tab is in view at phone width (the tabs scroll sideways) ' + JSON.stringify(await own.evaluate(() => [...document.querySelectorAll('.t-settab')].map(t => [t.textContent, t.clientWidth, t.scrollWidth, Math.round(t.getBoundingClientRect().right)]))));
 
   if (process.env.SHOT) await own.screenshot({ path: process.env.SHOT + '-en.png' });
+  /* a big screen, after Documentation has loaded its styles: each request is still one card top to bottom, nothing to scroll sideways (JP 2026-11-26 12:56) */
+  await own.setViewport({ width: 1920, height: 1080 }); await own.goto(U + '#docs'); await sl(2500); await own.goto(U + '#req');
+  await until(own, () => !!document.querySelector('.t-rq'), 10000);
+  const wide = await own.evaluate(() => { const c = document.querySelector('.t-rq'), sb = document.querySelector('.t-setbody'); return { disp: getComputedStyle(c).display, over: sb.scrollWidth - sb.clientWidth }; });
+  check(wide.disp === 'block' && wide.over <= 2, 'on a big screen the request card stays a card, nothing sideways ' + JSON.stringify(wide));
+  check(!/(^|[},\s])\.acc\s*\{/.test(require('fs').readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'dc', 'dc.css'), 'utf8')), "cmd's .acc rule stays out of Team's copy of the styles");
+  await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); });
+  await own.setViewport({ width: 393, height: 852, isMobile: true, hasTouch: true }); await own.goto(U + '#overview'); await own.reload(); await own.waitForSelector('.t-tabs'); await openReq(own);
   /* in Norwegian the tab is "Forespørsler" – still fits */
   await own.evaluate(() => { localStorage.setItem('team.lang', 'nb'); }); await own.evaluate(() => document.querySelector('[data-act=close]').click());
   await own.reload(); await own.waitForSelector('.t-tabs');

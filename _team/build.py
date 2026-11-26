@@ -88,6 +88,9 @@ def rules(css):
 
 TOK = set(re.findall(r'[a-zA-Z][\w-]*', src + rd(os.path.join(CMD, 'fdv.page.js'))))   # + the inspection report's classes (inspections shared to Team)
 SKIP = re.compile(r':root|\bhtml\b|\.modern\b|\.glass\b|\.simple\b|\.unlocked\b|\.lock\b|\[data-theme|\.mo-|\.dens-|\.corners-')
+# Team's own class names that cmd also uses for something else: cmd's rules for them never come along
+# (cmd's `.acc` – a finance account row, display: flex – turned Team's accent cards into rows in Settings → Requests, JP 2026-11-26 12:56)
+CLASH = {'acc'}
 def keep(sel):
     """the parts of a selector list that Document control uses – a list that also names a class it doesn't use still keeps its other parts
        (the rule that centres an icon in a round button named .fold-btn too, so Team lost it – JP 2026-11-23 "the x was not in the middle")"""
@@ -95,7 +98,7 @@ def keep(sel):
     ok = []
     for part in sel.split(','):
         cls = re.findall(r'\.([a-zA-Z][\w-]*)', part)
-        if cls and all(c in TOK for c in cls): ok.append(part.strip())
+        if cls and all(c in TOK for c in cls) and not (set(cls) & CLASH): ok.append(part.strip())
     return ', '.join(ok)
 def wanted(sel): return bool(keep(sel))
 
