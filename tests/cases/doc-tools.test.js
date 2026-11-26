@@ -83,6 +83,8 @@ fs.writeFileSync(lone, '%PDF made up 4');
     const pb = document.querySelector('[data-dxrenplan]'); return { tint: /dcn-(good|bad)/.test(cls), plan: !!pb && !pb.classList.contains('ghost') }; });
   check(lk.tint && lk.plan, 'the file card is tinted by how it stands, and the plan button has the same look as Add and Download ' + JSON.stringify(lk));
   check(/dcn-danger" data-dcnpka="rm"/.test(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'cmd', 'doc-naming.js'), 'utf8')) && /\.pill-btn\.dcn-danger/.test(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'cmd', 'work', 'page.css'), 'utf8')), '"Remove from the list" is drawn in red');
+  { const dc = require('fs').readFileSync(require('path').join(__dirname, '..', '..', '_team', 'public', 'dc', 'dc.css'), 'utf8');
+    check(/\.dcn-card\.dcn-bad/.test(dc) && /\.dcn-card\.dcn-good/.test(dc) && /\.pill-btn\.dcn-danger/.test(dc), 'Team gets the red/green card and the red button too (its build keeps only classes written out in full – JP 2026-11-26 12:09)'); }
   const cl = await p.evaluate(async () => {
     for (const r0 of [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')]) { if (/check2-circle/.test(r0.innerHTML)) continue; r0.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 300));
       const u = document.querySelector('.dcn-fpop [data-dcnuse]:not([disabled])'); if (!u) { document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); await new Promise(r => setTimeout(r, 150)); continue; }

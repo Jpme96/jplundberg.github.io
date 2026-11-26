@@ -1570,6 +1570,9 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-need > summary::-webkit-details-marker { display: none; }
 .dc-need > summary::after { content: ''; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform var(--dur-1, .15s); flex: none; }
 .dc-need[open] > summary::after { transform: rotate(45deg); }
+.dcn-row.dcn-card.dcn-bad { background: rgba(var(--danger-rgb), .13); border: 1px solid rgba(var(--danger-rgb), .55); border-left: 5px solid rgb(var(--danger-rgb)); }
+.dcn-row.dcn-card.dcn-good { background: rgba(var(--ok-rgb), .14); border: 1px solid rgba(var(--ok-rgb), .6); border-left: 5px solid rgb(var(--ok-rgb)); }
+.dcn-row.dcn-card.dcn-bad .dcn-part, .dcn-row.dcn-card.dcn-good .dcn-part { background: transparent; }
 .pill-btn.dcn-danger { color: var(--danger); border-color: rgba(var(--danger-rgb), .5); background: rgba(var(--danger-rgb), .08); }
 .pill-btn.dcn-danger:hover { background: rgba(var(--danger-rgb), .16); }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
