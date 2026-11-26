@@ -775,6 +775,7 @@ html.dcn-modal { overflow: hidden; }
 
 /* Tick several (2026-11-21): Received's Documents and Files, the Requirements list */
 .dc-selrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dc-selrow:has(> .dc-selbtn:only-child) { justify-content: flex-end; }   /* Select several alone sits at the right, by the lines it acts on (2026-11-26) */
 .dc-selbtn { white-space: nowrap; }
 /* every step's actions are the same small outline buttons as Gi navn (JP 2026-11-26 20:55 – Dokumentplan had text links, Levering buttons) */
 .pill-btn.dc-selbtn, .dc-fheadb > .pill-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -1008,7 +1009,7 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-tnh { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 4px 0 6px; }
 .dc-tnh .dc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .dc-freshbtns .dc-sp { flex: 1; }
-.dc-linkb { font-size: 13px; margin: 4px 0 0; }
+.dc-linkb { flex: none; }
 /* small buttons stay small inside the tools and popups that make every button 44 px (JP 2026-11-24 19:49) */
 :is(.dx-ren, .dcn-ov, .dx-panel, .dx-plans, .dx-plb, .dx-dupbtns, .dcn-pkact) .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 13.5px; border-radius: 10px; }
 .dcn-pkh .dcn-pkc.dcn-pkall { height: 36px; }   /* the same height as the small buttons beside it (JP 2026-11-24 19:49) */

@@ -1281,6 +1281,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-row.dcn-pkd { background: rgba(var(--accent-rgb), .06); box-shadow: none; }
 .dcn-pkc.dcn-pkall { width: auto; gap: 10px; padding-right: 6px; font-size: 15px; font-weight: 500; }
 .dc-selrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dc-selrow:has(> .dc-selbtn:only-child) { justify-content: flex-end; }
 .dc-selbtn { white-space: nowrap; }
 .pill-btn.dc-selbtn, .dc-fheadb > .pill-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .pill-btn.ghost.dc-rmplan { color: var(--danger); }
@@ -1495,7 +1496,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-tnh { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 4px 0 6px; }
 .dc-tnh .dc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .dc-freshbtns .dc-sp { flex: 1; }
-.dc-linkb { font-size: 13px; margin: 4px 0 0; }
+.dc-linkb { flex: none; }
 :is(.dx-ren, .dcn-ov, .dx-panel, .dx-plans, .dx-plb, .dx-dupbtns, .dcn-pkact) .pill-btn.sm { min-height: 36px; padding: 6px 12px; font-size: 14px; border-radius: 10px; }
 .dcn-pkh .dcn-pkc.dcn-pkall { height: 36px; }
 .dc-rbar { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }

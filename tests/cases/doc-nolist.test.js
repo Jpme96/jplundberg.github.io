@@ -47,6 +47,9 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   /* Team: Documentation's popups have their keyframes (they were left out, so they opened with no animation), the type scale, the step buttons */
   const fs = require('fs'), path = require('path'), dcc = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'dc', 'dc.css'), 'utf8'), tc = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'app.css'), 'utf8');
   check(['ov-in', 'sh-in', 'view-in', 'ov-out', 'sh-out'].every(n => new RegExp('@keyframes ' + n + '\\b').test(dcc + tc)) && !/@keyframes rise\b/.test(dcc), 'Team has the popup keyframes (and not the card rise)');
+  /* Levering: Select several sits in the summary row, and linking a loose file is a small button on its row (JP 2026-11-26 21:37) */
+  const pcs = fs.readFileSync(path.join(__dirname, '..', '..', 'cmd', 'doc-control.page.js'), 'utf8');
+  check(/!namingOn\(\) && F\.length \? selBtn\('f', p\.id\)/.test(pcs) && !/'<div class="dc-selrow">' \+ selBtn\('f'/.test(pcs) && /icon-btn sm dc-linkb/.test(pcs) && !/text-btn dc-linkb/.test(pcs), 'Select several in the Levering row; Link to a line is a row button');
   check(!/font-size:\s*(11|11\.5|12\.5|13\.5|14\.5)px/.test(dcc + tc), 'Team uses one type scale (no 12.5 / 13.5 / 14.5 px)');
   check(/html\.t-modal, html\.dcn-modal \{ overflow: hidden/.test(tc), 'the page doesn\'t scroll behind a Documentation popup in Team');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
