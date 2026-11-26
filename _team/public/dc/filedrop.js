@@ -2,8 +2,8 @@
 /* Every file picker opens the same drop popup (JP 2026-11-17 21:02): "Add files" – drop them here – or "Choose files".
    A head module (runs once): it catches a tap on a file field's label, a click on the field itself and a script's
    input.click(), opens the popup, and hands the chosen or dropped files back to the original field (input + change
-   events), so every feature keeps its own code. Not for camera fields (capture=…), fields marked data-nodrop or the
-   popup's own field. Also loaded by Team (copied to /dc/ by _team/build.py).
+   events), so every feature keeps its own code. Not for camera fields (capture=…), fields marked data-nodrop, the
+   popup's own field or a field inside a drop area that is already on screen (.dc-drop / .dx-dz – JP 2026-11-26 11:44: a second popup). Also loaded by Team (copied to /dc/ by _team/build.py).
    It also holds window.Ask – the app's own confirm/prompt/alert popups (2026-11-19), in the same look. */
 (function () {
   'use strict';
@@ -60,7 +60,7 @@
   }
   function wants(i) {
     return !!(i && i.type === 'file' && !i.disabled && !i.hasAttribute('capture') && !i.hasAttribute('data-nodrop') && !i.hasAttribute('webkitdirectory') &&
-      !(i.closest && i.closest('[data-nodrop], .fdz-ov, .dx-dz')));
+      !(i.closest && i.closest('[data-nodrop], .fdz-ov, .dx-dz, .dc-drop')));
   }
   function give(inp, files) {
     var acc = inp.getAttribute('accept') || '', ok = files.filter(function (f) { return fits(f, acc); });

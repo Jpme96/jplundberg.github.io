@@ -26,6 +26,9 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(await p.evaluate(() => /Drop the files here/.test((document.querySelector('.fdz-ov .fdz-dz b') || {}).textContent || '')), 'a script’s input.click() opens it too');
   await p.keyboard.press('Escape'); await sl(150);
   check(await p.evaluate(() => !document.querySelector('.fdz-ov')), 'Escape closes it');
+  /* a field inside a drop area already on screen opens the file chooser straight away – no second popup (JP 2026-11-26 11:44) */
+  await p.evaluate(() => { const d = document.createElement('div'); d.className = 'dc-drop'; d.id = 'fdzIn'; d.innerHTML = '<label>Choose<input type="file" multiple hidden></label>'; document.body.appendChild(d); d.querySelector('label').click(); }); await sl(200);
+  check(await p.evaluate(() => { const none = !document.querySelector('.fdz-ov'); document.getElementById('fdzIn').remove(); return none; }), 'a picker inside a drop area that is already shown opens no second popup');
   await p.evaluate(() => document.getElementById('fdzC').click()); await sl(150);
   check(await p.evaluate(() => !document.querySelector('.fdz-ov')), 'a camera field goes straight to the camera');
   check(!p.errs.length, 'no errors ' + p.errs.join(' | ').slice(0, 300));
