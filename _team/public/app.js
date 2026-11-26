@@ -578,7 +578,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'bf1f629296c0';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '3156483799d0';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -932,8 +932,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
           return '<div class="t-card acc t-rq" data-rq="' + esc(key) + '"><h2>' + esc(q.name) + '</h2><p class="t-small">' + esc(q.email) + ' · ' + esc(fmtTime(q.at)) + '</p>' +
             '<p class="t-small">' + L('Check code:', 'Kontrollkode:') + ' <span class="t-code" data-rqcode="' + esc(key) + '">…</span></p>' +
             '<label class="t-lbl">' + L('Role', 'Rolle') + '<select data-rqrole>' + ROLES.map(function (r) { return '<option value="' + r + '"' + ((q.role || 'edit') === r ? ' selected' : '') + '>' + roleName(r) + '</option>'; }).join('') + '</select></label>' +
-            (ask ? '<label class="t-lbl">' + esc(L('Your passcode for ' + tName(t.id), 'Koden din for ' + tName(t.id))) + '<input name="rqpass" type="password" autocomplete="current-password"></label><p class="t-small">' + L('That team isn\'t open on this device. Its passcode gives the new person its key.', 'Det teamet er ikke åpent på denne enheten. Koden gir den nye personen nøkkelen.') + '</p>' : '') +
-            '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="rqno" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + L('Decline', 'Avslå') + '</button><button class="t-btn" type="button" data-act="rqok" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + L('Approve', 'Godkjenn') + '</button></div></div>';
+            (ask ? '<div class="t-rqpass"><p><b>' + esc(L(tName(t.id) + ' is locked on this device', tName(t.id) + ' er låst på denne enheten')) + '</b><br>' + esc(L('Type your Team passcode for ' + tName(t.id) + ' here, then Unlock and approve.', 'Skriv Team-koden din for ' + tName(t.id) + ' her, og trykk Lås opp og godkjenn.')) + '</p>' +
+              '<label class="t-lbl">' + esc(L('Your passcode for ' + tName(t.id), 'Koden din for ' + tName(t.id))) + '<input name="rqpass" type="password" autocomplete="current-password" data-rqenter></label></div>' : '') +
+            '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="rqno" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + L('Decline', 'Avslå') + '</button><button class="t-btn" type="button" data-act="rqok" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + (ask ? L('Unlock and approve', 'Lås opp og godkjenn') : L('Approve', 'Godkjenn')) + '</button></div></div>';
         }).join('');
       }).join('');
   }
@@ -959,7 +960,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     catch (e) { btn.disabled = false; if (err) err.textContent = L('Wrong passcode.', 'Feil kode.'); return; }
     if (!ks) {
       btn.disabled = false;
-      if (!pin) { RQ.ask[tid + '|' + email] = 1; settingsSheet(); var p2 = document.querySelector('[data-rq="' + CSS.escape(tid + '|' + email) + '"] input[name=rqpass]'); if (p2) p2.focus(); }
+      if (!pin) { RQ.ask[tid + '|' + email] = 1; settingsSheet(); var p2 = document.querySelector('[data-rq="' + CSS.escape(tid + '|' + email) + '"] input[name=rqpass]'); if (p2) { p2.scrollIntoView({ block: 'center' }); p2.focus(); } }   /* JP 2026-11-26 14:10: it asked, but it wasn't clear where */
       else if (err) err.textContent = L('Your key for that team is missing. Ask another admin.', 'Nøkkelen din til det teamet mangler. Spør en annen admin.');
       return;
     }
@@ -1903,6 +1904,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     ({ setup: onSetup, join: onJoin, unlock: onUnlock, meeting: onMeeting, action: onAction, invite: onInvite, role: onRole, pass: onPass, rename: onRename, delTeam: onDelTeam, backup: onBackup, restore: onRestore, inote: onInote, uplink: onUplink, upnew: onUpNew, search: function (f2) { location.hash = 'search=' + encodeURIComponent(f2.q.value.trim()); } })[f.dataset.form](f);
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.sheet) closeSheet(); });
+  document.addEventListener('keydown', function (e) { var t = e.target; if (e.key !== 'Enter' || !t || !t.hasAttribute || !t.hasAttribute('data-rqenter')) return; e.preventDefault(); var b = t.closest('.t-rq') && t.closest('.t-rq').querySelector('[data-act=rqok]'); if (b && !b.disabled) rqApprove(b); });
 
   boot();
 })();

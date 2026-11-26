@@ -400,3 +400,7 @@ html.tz-wide #app:has(> .t-screen) { margin-left: auto; margin-right: auto; }
 .t-settabs { overflow-x: auto; scrollbar-width: none; }
 .t-settabs::-webkit-scrollbar { display: none; }
 .t-settab { flex: 1 0 auto; overflow: visible; }
+/* a locked team's request: the passcode box stands out, so it's clear where to type (JP 2026-11-26 14:10) */
+.t-rqpass { margin: 12px 0 4px; padding: 12px; border-radius: 12px; background: var(--card); border: 2px solid var(--acc); }
+.t-rqpass p { margin: 0 0 10px; font-size: 14px; color: var(--ink); }
+.t-rqpass input { border-color: var(--acc); }

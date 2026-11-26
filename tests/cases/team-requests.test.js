@@ -98,10 +98,13 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await openReq(own);
   await own.evaluate(() => document.querySelector('[data-act=rqok][data-email="ola@madeup.no"]').click());
   check(await until(own, () => !!document.querySelector('.t-rq input[name=rqpass]')), 'South site isn\'t open here: the row asks for its passcode');
+  const ask = await own.evaluate(() => { const r = document.querySelector('.t-rq .t-rqpass'), i = document.querySelector('.t-rq input[name=rqpass]'), b = document.querySelector('.t-rq [data-act=rqok]'); return { box: !!r && /is locked on this device/.test(r.textContent) && /Type your Team passcode/.test(r.textContent), focus: document.activeElement === i, btn: b && b.textContent }; });
+  check(ask.box && ask.focus && ask.btn === 'Unlock and approve', 'it says where: a marked box "South site is locked on this device", the field ready to type in, the button "Unlock and approve" (JP 2026-11-26 14:10) ' + JSON.stringify(ask));
+  if (process.env.SHOT) await own.screenshot({ path: process.env.SHOT + '-pass.png' });
   await own.type('.t-rq input[name=rqpass]', 'wrong-pass-9'); await own.evaluate(() => document.querySelector('[data-act=rqok][data-email="ola@madeup.no"]').click());
   check(await until(own, () => /Wrong passcode/.test((document.querySelector('.t-rq .t-err') || {}).textContent || '')), 'a wrong passcode is said in the row');
   await own.$eval('.t-rq input[name=rqpass]', e => { e.value = ''; }); await own.type('.t-rq input[name=rqpass]', 'owner-pass-2');
-  await own.evaluate(() => document.querySelector('[data-act=rqok][data-email="ola@madeup.no"]').click());
+  await own.keyboard.press('Enter');   /* Enter in the field does the same as the button */
   check(await until(own, () => /Nobody is waiting/.test(document.querySelector('.t-sheet').innerText)), 'with the right passcode Ola is approved – nobody is waiting any more');
   check(await own.evaluate(() => !document.querySelector('[data-act=settings] .t-rqn')), 'the gear has no number');
   check(await until(ola.p, () => !!document.querySelector('.t-tabs') || /Unlock|Lås opp/.test(document.body.innerText), 20000), 'Ola\'s page opens by itself');
