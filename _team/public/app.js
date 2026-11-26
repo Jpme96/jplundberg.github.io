@@ -157,7 +157,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   /* ---------- the server ---------- */
   function api(path, opt) {
     opt = opt || {};
-    var init = { method: opt.method || 'GET', headers: { 'x-team': '1', 'x-tid': S.tid }, credentials: 'same-origin', cache: 'no-store' };
+    var init = { method: opt.method || 'GET', headers: { 'x-team': '1', 'x-tid': opt.tid || S.tid }, credentials: 'same-origin', cache: 'no-store' };
     if (path === 'me' && joinCode()) init.headers['x-join'] = joinCode();   /* the invite shows which team you're joining */
     if (opt.body !== undefined) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
     return fetch('/api/' + path, init).then(function (r) {
@@ -388,7 +388,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
 
   /* ---------- the app ---------- */
   async function startApp() {
-    document.documentElement.classList.add('unlocked'); S.unlocked = true; actAt = 0; usedNow(); waitChip(); flush().catch(function () {});
+    document.documentElement.classList.add('unlocked'); S.unlocked = true; actAt = 0; usedNow(); waitChip(); flush().catch(function () {}); loadRq();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
     try { await Promise.all([pull(true), loadMembers(), loadAccess()]); S.offline = false; }
     catch (e) {
@@ -578,7 +578,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '87144aa5e53b';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '4ab7262c8446';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -623,7 +623,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
     var keepC = document.getElementById('wkDocCtl'), keepR = document.getElementById('wkDocReq'), vkey = h + '|' + tab + '|' + (S.dtab || '') + '|' + !!S.edit;
     if (keepC && !keepC.childElementCount) keepC = null; if (keepR && !keepR.childElementCount) keepR = null;
-    S.lastHtml = html; $app.innerHTML = html;
+    S.lastHtml = html; $app.innerHTML = html; rqBadge();
     if (/^search=/.test(h) && !S.sheet && !S.edit) { var qi = $app.querySelector('.t-srch input[name=q]'); if (qi) { qi.focus(); var qn = qi.value.length; try { qi.setSelectionRange(qn, qn); } catch (x) {} } }   /* ready to type at once, and still there after each live result (live review 2026-11-25) */
     /* Documentation keeps its own page (and an open popup or dropdown in it) when Team redraws around it – it was rebuilt from "Loading …" each time */
     [[keepC, 'wkDocCtl'], [keepR, 'wkDocReq']].forEach(function (x) { var nu = x[0] && document.getElementById(x[1]); if (nu && nu !== x[0]) { x[0].hidden = nu.hidden; nu.replaceWith(x[0]); } });
@@ -868,6 +868,108 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     out += '</div></div>';   /* no change log (JP 2026-11-24 22:57) – the two columns still close here */
     return out;
   }
+  /* ---------- Settings → Requests: everyone waiting to join, from every team where you are admin (JP 2026-11-26 00:00–00:04) ----------
+     Like Account it is the same in every team. Approving gives the new person that team's key, so that team's keys must be on this
+     device: the team you are in has them; another team uses what this device kept for it, else asks for its passcode in the row. */
+  var RQ = { teams: [], at: 0, ask: {} };
+  function rqCount() { return RQ.teams.reduce(function (n, t) { return n + t.requests.length; }, 0); }
+  function rqAdmin() { return (S.teams || []).some(function (t) { return t.role === 'admin'; }) || rank() >= 3; }
+  async function loadRq() {
+    if (!rqAdmin()) { RQ.teams = []; rqBadge(); return; }
+    try { RQ.teams = (await api('requests')).teams || []; RQ.at = Date.now(); } catch (e) {}
+    rqBadge();
+  }
+  function rqBadge() {
+    var n = rqCount();
+    [].forEach.call(document.querySelectorAll('[data-act=settings], [data-settab=req]'), function (b) {
+      var d = b.querySelector('.t-rqn'); if (!n) { if (d) d.remove(); return; }
+      if (!d) { d = document.createElement('span'); d.className = 't-rqn tnum'; b.appendChild(d); } d.textContent = n;
+      if (b.dataset.act === 'settings') b.setAttribute('aria-label', L('Settings – ' + n + ' waiting to join', 'Innstillinger – ' + n + ' venter på å bli med'));
+    });
+  }
+  function tName(id) { var t = (S.teams || []).filter(function (x) { return x.id === id; })[0]; return (t && t.name) || 'Team'; }
+  function knT(tid, k) { return tid === 'team' ? k : 't/' + tid + '/' + k; }
+  function kgetT(tid, k) { return kop('readonly', function (st) { return st.get(knT(tid, k)); }); }
+  function ksetT(tid, k, v) { return kop('readwrite', function (st) { st.put(v, knT(tid, k)); }); }
+  function idleOverT(tid) { var m = 0, a = 0; try { m = +localStorage.getItem('team.idle.' + tid) || 0; a = +localStorage.getItem('team.act.' + tid) || 0; } catch (e) {} return m > 0 && a > 0 && Date.now() - a > m * 60000; }
+  /* that team's keys on this device – or, with its passcode, opened and kept like an unlock there would */
+  async function rqKeys(t, pass) {
+    if (t.id === S.tid && S.keys[t.epoch]) return S.keys;
+    var priv = null;
+    if (pass) {
+      priv = await openPriv(t.priv, pass, false);
+      await ksetT(t.id, 'email', S.me.email); await ksetT(t.id, 'priv', priv);
+      try { localStorage.setItem('team.act.' + t.id, String(Date.now())); } catch (x) {}
+    } else {
+      if (idleOverT(t.id)) return null;
+      var em = await kgetT(t.id, 'email').catch(function () { return null; }); if (em !== S.me.email) return null;
+      priv = await kgetT(t.id, 'priv').catch(function () { return null; }); if (!priv) return null;
+    }
+    var out = {};
+    for (var e in (t.keys || {})) {
+      var k = await kgetT(t.id, 'tk:' + e).catch(function () { return null; });
+      if (!k) { try { k = await unwrapTeam(t.keys[e], priv, e); await ksetT(t.id, 'tk:' + e, k); } catch (x) { continue; } }
+      out[e] = k;
+    }
+    return out[t.epoch] ? out : null;
+  }
+  function rqBody() {
+    if (!RQ.at) return '<p class="t-small" id="rqWait">' + L('Looking in your teams …', 'Ser i teamene dine …') + '</p>';
+    var ts = RQ.teams.filter(function (t) { return t.requests.length; });
+    if (!ts.length) return '<p class="t-small t-rqnone">' + L('Nobody is waiting to join any of your teams.', 'Ingen venter på å bli med i noen av teamene dine.') + '</p>';
+    return '<p class="t-small">' + L('Everyone waiting to join the teams where you are admin. Ask them to read their check code to you before you approve.', 'Alle som venter på å bli med i teamene der du er admin. Be dem lese opp kontrollkoden sin før du godkjenner.') + '</p>' +
+      ts.map(function (t) {
+        return '<p class="t-h">' + esc(tName(t.id)) + (t.id === S.tid ? ' <span class="t-small">' + L('You are here', 'Du er her') + '</span>' : '') + '</p>' + t.requests.map(function (q) {
+          var key = t.id + '|' + q.email, ask = RQ.ask[key];
+          return '<div class="t-card acc t-rq" data-rq="' + esc(key) + '"><h2>' + esc(q.name) + '</h2><p class="t-small">' + esc(q.email) + ' · ' + esc(fmtTime(q.at)) + '</p>' +
+            '<p class="t-small">' + L('Check code:', 'Kontrollkode:') + ' <span class="t-code" data-rqcode="' + esc(key) + '">…</span></p>' +
+            '<label class="t-lbl">' + L('Role', 'Rolle') + '<select data-rqrole>' + ROLES.map(function (r) { return '<option value="' + r + '"' + ((q.role || 'edit') === r ? ' selected' : '') + '>' + roleName(r) + '</option>'; }).join('') + '</select></label>' +
+            (ask ? '<label class="t-lbl">' + esc(L('Your passcode for ' + tName(t.id), 'Koden din for ' + tName(t.id))) + '<input name="rqpass" type="password" autocomplete="current-password"></label><p class="t-small">' + L('That team isn\'t open on this device. Its passcode gives the new person its key.', 'Det teamet er ikke åpent på denne enheten. Koden gir den nye personen nøkkelen.') + '</p>' : '') +
+            '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="rqno" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + L('Decline', 'Avslå') + '</button><button class="t-btn" type="button" data-act="rqok" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + L('Approve', 'Godkjenn') + '</button></div></div>';
+        }).join('');
+      }).join('');
+  }
+  async function rqCodes() {
+    for (var i = 0; i < RQ.teams.length; i++) for (var j = 0; j < RQ.teams[i].requests.length; j++) {
+      var t = RQ.teams[i], q = t.requests[j], el = document.querySelector('[data-rqcode="' + CSS.escape(t.id + '|' + q.email) + '"]');
+      if (el) el.textContent = await checkCode(q.pub);
+    }
+  }
+  function rqFind(tid, email) { var t = RQ.teams.filter(function (x) { return x.id === tid; })[0]; return { t: t, q: t && t.requests.filter(function (x) { return x.email === email; })[0] }; }
+  async function rqAfter(tid) {
+    await loadRq();
+    if (tid === S.tid) { try { await loadMembers(); } catch (x) {} }
+    if ((S.sheet && S.sheet.querySelector && S.sheet.querySelector('.t-settabs')) && S.setTab === 'req') settingsSheet();
+    draw();
+  }
+  async function rqApprove(btn) {
+    var tid = btn.dataset.tid, email = btn.dataset.email, f = rqFind(tid, email), row = btn.closest('.t-rq'); if (!f.q || !row) return;
+    var pin = row.querySelector('input[name=rqpass]'), err = row.querySelector('.t-err'), pass = pin ? pin.value : '';
+    btn.disabled = true; if (err) err.textContent = '';
+    var ks = null;
+    try { ks = await rqKeys(f.t, pass); }
+    catch (e) { btn.disabled = false; if (err) err.textContent = L('Wrong passcode.', 'Feil kode.'); return; }
+    if (!ks) {
+      btn.disabled = false;
+      if (!pin) { RQ.ask[tid + '|' + email] = 1; settingsSheet(); var p2 = document.querySelector('[data-rq="' + CSS.escape(tid + '|' + email) + '"] input[name=rqpass]'); if (p2) p2.focus(); }
+      else if (err) err.textContent = L('Your key for that team is missing. Ask another admin.', 'Nøkkelen din til det teamet mangler. Spør en annen admin.');
+      return;
+    }
+    try {
+      var role = (row.querySelector('select[data-rqrole]') || {}).value || 'edit', keys = {};
+      for (var e in ks) keys[e] = await wrapFor(f.q.pub, ks[e], e);
+      await api('approve', { method: 'POST', body: { email: email, role: role, keys: keys }, tid: tid });
+      delete RQ.ask[tid + '|' + email];
+      toast(L(f.q.name + ' is in ' + tName(tid), f.q.name + ' er med i ' + tName(tid)));
+      await rqAfter(tid);
+    } catch (e) { btn.disabled = false; if (err) err.textContent = failMsg(e); }
+  }
+  async function rqDecline(btn) {
+    var tid = btn.dataset.tid, email = btn.dataset.email, f = rqFind(tid, email); if (!f.q) return;
+    if (!(await sure(L('Decline ' + f.q.name + '\'s request to join ' + tName(tid) + '?', 'Avslå forespørselen fra ' + f.q.name + ' om å bli med i ' + tName(tid) + '?')))) return;
+    try { await api('decline', { method: 'POST', body: { email: email }, tid: tid }); toast(L('Declined', 'Avslått')); await rqAfter(tid); }
+    catch (e) { toast(failMsg(e)); }
+  }
   async function fillCodes() { for (var i = 0; i < S.requests.length; i++) { var q = S.requests[i], el = document.querySelector('[data-code="' + CSS.escape(q.email) + '"]'); if (el) el.textContent = await checkCode(q.pub); } }
   function logHtml(n) {
     if (!S.log.length) return '<p class="t-empty">' + L('Nothing yet.', 'Ingenting ennå.') + '</p>';
@@ -962,9 +1064,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     fillAccess();
   }
   function settingsSheet() {
-    var adm = rank() >= 3, tabs = [['you', L('You', 'Deg')]].concat(adm ? [['team', L('The team', 'Teamet')]] : []).concat([['acct', L('Account', 'Konto')]]);
+    var adm = rank() >= 3, tabs = [['you', L('You', 'Deg')]].concat(adm ? [['team', L('The team', 'Teamet')]] : []).concat([['acct', L('Account', 'Konto')]]).concat(rqAdmin() ? [['req', L('Requests', 'Forespørsler')]] : []);
     var tab = tabs.some(function (x) { return x[0] === S.setTab; }) ? S.setTab : 'you', nOn = ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })());
-    var body = tab === 'you' ?
+    var body = tab === 'req' ? rqBody() : tab === 'you' ?
       '<div class="t-set2">' +
       '<label class="t-lbl">' + L('Appearance', 'Utseende') + '<select data-themepick>' + [['light', L('Light', 'Lys')], ['dark', L('Dark', 'Mørk')], ['auto', L('Like the device', 'Som enheten')]].map(function (o) { var cur = 'light'; try { cur = localStorage.getItem('team.theme') || 'light'; } catch (e) {} return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' + '</div>' +
@@ -984,6 +1086,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<div class="t-setbody">' + body + '</div>' +
       '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>', 'set');
     if (tab === 'acct' && S.me.isOwner) fillAccess();
+    if (tab === 'req') { setTimeout(rqCodes, 0); if (!RQ.at || Date.now() - RQ.at > 15000) loadRq().then(function () { if ((S.sheet && S.sheet.querySelector && S.sheet.querySelector('.t-settabs')) && S.setTab === 'req') { var b = document.querySelector('.t-setbody'); if (b) { b.innerHTML = rqBody(); rqCodes(); } } }); }
+    rqBadge();
   }
   /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
   function renameSheet() {
@@ -1633,6 +1737,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   async function lockIdle() { var m = idleOver(); if (!m || !S.unlocked) return; S.unlocked = false; S.lockedAfter = m; try { await kclear(); } catch (e) {} if (S.sheet) closeSheet(); stopPoll(); screenUnlock(); }
   ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, usedNow, { passive: true, capture: true }); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) lockIdle(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && S.unlocked && Date.now() - RQ.at > 60000) loadRq(); });   /* someone may have asked to join meanwhile */
   setInterval(lockIdle, 30000);
   function lockAdmin() {
     if (rank() < 3) return '';
@@ -1766,6 +1871,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'copyInvite') { var inp = document.getElementById('invLink'); inp.select(); (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { document.execCommand('copy'); toast(L('Copied', 'Kopiert')); }); return; }
     if (a === 'cancelInvite') { try { await api('invites?id=' + t.dataset.id, { method: 'DELETE' }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'approve') return approve(t.dataset.email, t);
+    if (a === 'rqok') return rqApprove(t);
+    if (a === 'rqno') return rqDecline(t);
     if (a === 'decline') { if (!(await sure(L('Decline this request?', 'Avslå denne forespørselen?')))) return; try { await api('decline', { method: 'POST', body: { email: t.dataset.email } }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'member') return memberSheet(t.dataset.email);
     if (a === 'remove') return removeMember(t.dataset.email, t);

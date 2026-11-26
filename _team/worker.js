@@ -73,6 +73,16 @@ export default {
       }));
       return json({ teams: out.filter(Boolean), owner: email === owner });
     }
+    /* Settings → Requests: everyone waiting to join, from every team where you are admin, in one list */
+    if (url.pathname === '/api/requests' && request.method === 'GET') {
+      const ids = ['team'].concat((await (await dir.fetch(new Request('https://team/dir/list', { headers: h }))).json()).ids || []);
+      const out = [];
+      await Promise.all(ids.map(async (id, i) => {
+        const r = await (await env.TEAM.get(env.TEAM.idFromName(id)).fetch(new Request('https://team/api/reqs', { headers: h }))).json().catch(() => ({}));
+        if (r && Array.isArray(r.requests) && r.keys) out[i] = { id, requests: r.requests, epoch: r.epoch, keys: r.keys, priv: r.priv };
+      }));
+      return json({ teams: out.filter(Boolean) });
+    }
     if (url.pathname === '/api/teams/delete' && request.method === 'POST') {   /* the owner deletes a team: everything in it is gone (asked twice in the app) */
       if (email !== owner) return json({ error: 'only the owner can delete a team' }, 403);
       const b = await request.json().catch(() => ({})), id = String(b.id || '');
@@ -204,6 +214,8 @@ export class TeamStore {
       if (p === 'join' && m === 'POST') return this.join(email, me, b);
       if (p === 'join' && m === 'DELETE') { await this.s.delete('q:' + email); return json({ ok: true }); }
       if (!me) return json({ error: 'not a member' }, 403);
+      /* who waits to join, for Settings → Requests across all teams (JP 2026-11-26 00:00) – admins only, without marking you as seen */
+      if (p === 'reqs' && m === 'GET') { const qs = []; if (isAdmin) for (const [, v] of await this.s.list({ prefix: 'q:' })) qs.push({ email: v.email, name: v.name, pub: v.pub, at: v.at, role: v.role }); return json({ requests: qs, epoch: team.epoch, keys: isAdmin ? me.keys || {} : undefined, priv: isAdmin ? me.priv : undefined }); }
       await this.touch(me);
       if (p === 'priv' && m === 'POST') { if (!blob(b.priv)) return json({ error: 'bad key' }, 400); me.priv = b.priv; await this.s.put('m:' + email, me); return json({ ok: true }); }
       if (p === 'members' && m === 'GET') return this.members(isAdmin);

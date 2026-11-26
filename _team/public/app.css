@@ -389,3 +389,9 @@ html.tz-wide #app:has(> .t-screen) { margin-left: auto; margin-right: auto; }
 .t-setrow select[data-lockmin], .t-setrow select[data-acclen] { flex: none; width: auto; min-width: 9em; }
 .t-authbar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 10px); z-index: 60; display: flex; align-items: center; gap: 12px; max-width: min(640px, calc(100vw - 24px)); padding: 10px 12px 10px 16px; border-radius: 14px; background: var(--bad-soft, #fde2df); color: var(--bad, #a3261b); box-shadow: 0 8px 24px rgba(0,0,0,.18); font-size: 14px; }
 .t-authbar .t-btn { flex: none; }
+/* Settings → Requests (2026-11-26): a count on the gear and on the tab when someone waits to join one of your teams */
+.t-icon[data-act=settings], .t-settab { position: relative; }
+.t-rqn { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; pointer-events: none; }
+.t-settab .t-rqn { position: static; display: inline-block; margin-left: 5px; vertical-align: 1px; }
+.t-settab { flex: 1 1 auto; min-width: 0; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-rq h2 { margin-bottom: 2px; }

@@ -483,7 +483,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const st = await own.evaluate(() => ({ heads: [...document.querySelectorAll('.t-settab')].map(x => x.textContent), name: !!document.querySelector('.t-setrow [data-act=renameTeam]') }));
   const inside = await own.evaluate(async () => { const out = []; for (const t of ['you', 'team', 'acct']) { document.querySelector('[data-settab=' + t + ']').click(); await new Promise(r => setTimeout(r, 100)); const sh = document.querySelector('.t-sheet'), b = document.querySelector('[data-act=close].t-btn.wide'); out.push(t + ':' + !!(b && sh.contains(b))); } document.querySelector('[data-settab=team]').click(); return out.join(); });
   check(!/false/.test(inside), 'Done stays inside the settings window on every tab (JP 2026-11-24) ' + inside);
-  check(st.heads.length === 3 && st.name, 'Settings in three tabs, the team name with Change for admins (JP 2026-11-23) ' + JSON.stringify(st));
+  check(st.heads.join() === 'You,The team,Account,Requests' && st.name, 'Settings in tabs (Requests next to Account for admins, JP 2026-11-26), the team name with Change for admins (JP 2026-11-23) ' + JSON.stringify(st));
   await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); if (c) c.click(); }); await sl(300);
   /* an admin can switch the three Documents tabs off for the whole team (JP 2026-11-19 21:42) */
   await own.goto(U + '#docs'); await sl(800);
