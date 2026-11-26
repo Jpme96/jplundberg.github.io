@@ -19,7 +19,7 @@ const up = () => new Promise(r => { const q = http.get(U, res => { res.resume();
   try {
     for (const W of [1280, 393]) {
       const ctx = await b.newContext({ viewport: { width: W, height: W < 700 ? 852 : 900 }, isMobile: W < 700 && ENGINE !== 'firefox', hasTouch: W < 700, bypassCSP: ENGINE === 'firefox' });   /* Firefox: Playwright's own polling uses eval, which cmd's policy blocks – the csp test checks the policy */
-      const p = await ctx.newPage(); p.on('pageerror', e => errs.push(W + ': ' + e.message));
+      const p = await ctx.newPage(); p.on('pageerror', e => { if (/due to access control checks/.test(e.message)) return; errs.push(W + ': ' + e.message); });   /* WebKit reports a cut-off or blocked fetch as a page error even when the code catches it (outside sites are blocked here; a page change cuts fetches off) – 2026-11-26, three runs in a row */
       await p.route(/^(?!http:\/\/localhost)/, r => r.abort());
       await p.goto(U); await p.waitForSelector('#lockPass', { state: 'visible', timeout: 15000 });
       await p.fill('#lockPass', 'test-passcode-1');
