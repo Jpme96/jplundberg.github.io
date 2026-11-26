@@ -22,9 +22,9 @@ window.__teamSwitch = function (name) {
   return el;
 };
 /* it stays a little while when the page opens (JP 2026-11-19 22:32/22:33) – a tap skips it; tests (webdriver) don't wait */
-var SW_MIN = navigator.webdriver ? 0 : 2200;   /* JP 22:33 'or a proper amount': long enough to see the ring and the name (about 1.3 s), then a short pause */
+var SW_MIN = navigator.webdriver ? 0 : 1100;   /* JP 22:33 'or a proper amount'; shortened 2026-11-26 (JP 20:55 – it felt slow when showing Team to someone): the ring and the name in about .7 s, then a short pause */
 window.__teamSwitchDone = function () { var el = document.getElementById('tSwitch'); if (!el) return;
-  if (!el._skip && !el.classList.contains('out')) { var left = SW_MIN - (Date.now() - (el._t0 || 0)); if (left > 0) { clearTimeout(el._wait); el._wait = setTimeout(window.__teamSwitchDone, left); return; } } if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 600) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 420); };   /* never left behind: a second call removes it */
+  if (!el._skip && !el.classList.contains('out')) { var left = SW_MIN - (Date.now() - (el._t0 || 0)); if (left > 0) { clearTimeout(el._wait); el._wait = setTimeout(window.__teamSwitchDone, left); return; } } if (el.classList.contains('out')) { if (Date.now() - (el._out || 0) > 300) el.remove(); return; } el.classList.add('out'); el._out = Date.now(); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 270); };   /* never left behind: a second call removes it */
 (function () { var n = null; try { n = sessionStorage.getItem('team.switch'); sessionStorage.removeItem('team.switch'); if (!n && !navigator.webdriver && !/[?&#](join|j)=/.test(location.href)) n = localStorage.getItem('team.lastName') || 'Team'; } catch (e) {}
   if (n) { var go = function () { window.__teamSwitch(n); setTimeout(window.__teamSwitchDone, 12000); }; if (document.body) go(); else document.addEventListener('DOMContentLoaded', go); } })();
 /* Team fits the screen by itself (JP 2026-11-25 14:52 "fully visible on every screen so I don't have to zoom", 14:53 "and a big tv"): unless a finger is
@@ -570,18 +570,31 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
      you pick, leave it or press Escape, a redraw waits and runs right after */
   /* the opening waits until the popup has been drawn (JP 2026-11-26 20:14 "stuttering"): building a big popup took 60–100 ms, and an animation
      started in that same frame jumped half-way – now it is held still until two frames later, then runs smoothly from the start */
+  /* tests (webdriver) click right away: popups and page fades don't move under them there (a test can switch them back on with __ovAnim) */
+  if (navigator.webdriver && !window.__ovAnim) document.documentElement.classList.add('t-still');
   function holdAnim(o) { o.classList.add('ov-wait'); requestAnimationFrame(function () { requestAnimationFrame(function () { o.classList.remove('ov-wait'); }); }); }
   /* a popup opens with a short fade once; when a redraw puts the same popup back it gets .ov-still, so the opening never replays (JP 2026-11-25) */
   (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, born = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
-    var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
-    var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
-    new MutationObserver(function (ms) { ms.forEach(function (m) {
+    var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|ov-wait|ov-ghost|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
+    var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.classList.contains('ov-ghost')) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), function (x) { if (!x.classList.contains('ov-ghost')) f(x); }); };
+    /* closing fades too (JP 2026-11-26 20:55): a popup taken away is put back for a moment as a copy that can't be touched (.ov-ghost) and fades out;
+       a popup drawn again in the same moment is a redraw, not a close. Scroll positions are carried over, so the copy doesn't jump. */
+    var SCR = typeof Set === 'function' ? new Set() : null;
+    document.addEventListener('scroll', function (e) { var t = e.target; if (SCR && t && t.nodeType === 1 && t.closest && t.closest(SEL)) { t.__st = t.scrollTop; SCR.add(t); } }, true);
+    var calm = function () { var de = document.documentElement; return (navigator.webdriver && !window.__ovGhost) || document.hidden || de.classList.contains('mo-off') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); };
+    var ghost = function (o) { if (calm() || o.classList.contains('ov-ghost')) return; var g = o.cloneNode(true), sc = [];
+      if (SCR) SCR.forEach(function (t) { if (!t.isConnected && (t === o || o.contains(t))) { sc.push(t); SCR.delete(t); } });
+      g.classList.remove('ov-wait'); g.classList.add('ov-still', 'ov-ghost'); g.setAttribute('aria-hidden', 'true'); g.inert = true; g.removeAttribute('id'); [].forEach.call(g.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); });
+      document.body.appendChild(g);
+      if (sc.length) { var A = [o].concat([].slice.call(o.querySelectorAll('*'))), B = [g].concat([].slice.call(g.querySelectorAll('*'))); sc.forEach(function (t) { var i = A.indexOf(t); if (i >= 0 && B[i]) B[i].scrollTop = t.__st; }); }
+      setTimeout(function () { g.remove(); if (!document.querySelector('.dcn-ov:not(.ov-ghost), .dx-tov:not(.ov-ghost)')) document.documentElement.classList.remove('dcn-modal'); }, 150); };
+    new MutationObserver(function (ms) { var shut = []; ms.forEach(function (m) {
       [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 320) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
-      [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
-    }); }).observe(document.body, { childList: true, subtree: true }); })();
+      [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } shut.push([o, k]); }); });
+    }); shut.forEach(function (x) { if (!x[0].isConnected && !open[x[1]]) ghost(x[0]); }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '9304c5687fc8';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '1a05f8ffeafb';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -696,7 +709,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard();   /* "Denne uka" is gone – Oversikt shows what needs doing (JP 2026-11-24 22:57) */
     if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#req"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && ahead(next) ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
-    out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
+    out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
     out += '<p class="t-h"><span>' + L('My open actions', 'Mine åpne oppgaver') + '</span><span>' + mine.length + '</span></p>';
     out += mine.length ? actionList(mine) : '<p class="t-empty">' + L('Nothing open for you.', 'Ingenting åpent for deg.') + '</p>';
     out += '</div><div class="t-col">' + projectsCard() + '</div></div>';   /* two columns on a computer (JP 2026-11-17 11:43) */

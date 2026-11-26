@@ -220,6 +220,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(await kari.evaluate(() => !document.querySelector('[data-dcst="a2:ok"]') && !document.querySelector('[data-dcst="a2:rej"]')), 'Can edit has no Approved / Not approved buttons (the access matrix: that is Can approve, JP 15:03)');
   await kari.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a2').st = 'ok'; DocHost.Fe.saveTools(t); }); await sl(800);
   check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'recv'), 'Can edit cannot mark a document Approved, even around the buttons');
+  await kari.evaluate(() => document.querySelector('[data-dcst="a2:na"]').scrollIntoView({ block: 'center' }));   /* keep it clear of the bottom menu on a phone */
   await kari.click('[data-dcst="a2:na"]'); await sl(1200);
   /* at the same time the owner changes another line of the same project */
   await own.evaluate(() => { const t = DocHost.Fe.tools(); t.dctl[0].lines.find(l => l.id === 'a1').st = 'na'; DocHost.Fe.saveTools(t); }); await sl(1200);

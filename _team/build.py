@@ -102,6 +102,7 @@ def keep(sel):
     return ', '.join(ok)
 def wanted(sel): return bool(keep(sel))
 
+KF = {}
 def pick(css):
     out = []
     for pre, body in rules(css):
@@ -109,7 +110,7 @@ def pick(css):
             inner = [keep(p2) + ' {' + b2 + '}' for p2, b2 in rules(body) if wanted(p2)]
             if inner: out.append(pre + ' {\n  ' + '\n  '.join(inner) + '\n}')
         elif pre.startswith('@keyframes'):
-            if pre.split()[-1] in TOK: out.append(pre + ' {' + body + '}')
+            KF[pre.split()[-1]] = pre + ' {' + body + '}'   # kept below when a kept rule uses it
         elif wanted(pre):
             out.append(keep(pre) + ' {' + body + '}')
     return out
@@ -128,6 +129,11 @@ css = ['/* Built by _team/build.py from cmd/styles.css and cmd/work/page.css –
        ':root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --ok: #43f8b6; --ok-rgb: 67, 248, 182; --warn: #f9c66b; --warn-rgb: 249, 198, 107; --danger-rgb: 255, 130, 116; --orange: #e0adff; --orange-rgb: 224, 173, 255; --blue: #6fe9ff; --blue-rgb: 111, 233, 255; --slate: #d0bfae; --slate-rgb: 208, 191, 174; --stt-fg: 100%; --stt-bg: .16; }',
        '.dc-host .stt-bad { --c: #2a2859; } :root[data-theme="dark"] .dc-host .stt-bad { --c: #ff8274; }']
 css += pick(styles) + pick(rd(os.path.join(CMD, 'work', 'page.css')))
+# keyframes: those a kept rule animates with (the popups' ov-in/sh-in/view-in never came along, so Documentation's popups opened with no
+# animation while Team's own sheets faded – JP 2026-11-26 20:44); cmd's card rise stays out (it replayed on every redraw)
+_used = ' '.join(css)
+css += [v for k, v in KF.items() if k != 'rise' and (k in TOK or re.search(r'animation[^;{}]*\b' + re.escape(k) + r'\b', _used))]
+css.append('.dc-host .card, .dc-host.card { animation: none; }')
 # the status tags (modern.css) – Team didn't have them, so "Navn OK" showed as plain text (JP 2026-11-24)
 modern = rd(os.path.join(CMD, 'modern.css'))
 css.append('.dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }')
@@ -136,6 +142,9 @@ css += [m.group(0) for m in re.finditer(r'^\.stt[^{]*\{[^}]*\}', modern, re.M)]
 # Team scales the page with CSS zoom and viewport units don't follow it (100dvh was 78 percent of a low laptop's screen - review 15):
 # every vh becomes the zoom-corrected --tvh that app.js sets (plain vh when there is no zoom)
 css = [re.sub(r'(?<![\w.-])(\d+(?:\.\d+)?)([dsl]?)vh\b', lambda m: 'calc(var(--tvh, 1' + m.group(2) + 'vh) * ' + m.group(1) + ')', c) for c in css]
+# one type scale inside Team (JP 2026-11-26): the in-between sizes from cmd snap to 12 / 13 / 14 / 15 px
+_SNAP = {'11': '12', '11.5': '12', '12.5': '12', '13.5': '14', '14.5': '15', '15.5': '15', '17': '16', '19': '20'}
+css = [re.sub(r'font-size:\s*(\d+(?:\.\d+)?)px', lambda m: 'font-size: ' + _SNAP.get(m.group(1), m.group(1)) + 'px', c) for c in css]
 put('dc.css', '\n'.join(css) + '\n')
 
 # the icon font

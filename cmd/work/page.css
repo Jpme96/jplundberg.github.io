@@ -776,6 +776,9 @@ html.dcn-modal { overflow: hidden; }
 /* Tick several (2026-11-21): Received's Documents and Files, the Requirements list */
 .dc-selrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .dc-selbtn { white-space: nowrap; }
+/* every step's actions are the same small outline buttons as Gi navn (JP 2026-11-26 20:55 – Dokumentplan had text links, Levering buttons) */
+.pill-btn.dc-selbtn, .dc-fheadb > .pill-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.pill-btn.ghost.dc-rmplan { color: var(--danger); }
 .dc-ck { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid rgba(var(--ink-rgb), .35); display: inline-grid; place-items: center; margin-right: 8px; color: transparent; }
 .dc-ck i { font-size: 14px; }
 .picked > .dc-ck, .picked .dc-ck { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -975,7 +978,7 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dc-freshsheet { padding: 18px 20px 20px; }
 .dc-freshsheet > .dc-fresh { margin: 0; border: 0; padding: 0; background: none; }
 .dc-freshbtns { position: sticky; bottom: -20px; display: flex; justify-content: flex-end; gap: 8px; margin: 12px -20px -20px; padding: 12px 20px 16px; background: var(--bg); border-top: 1px solid var(--line); }
-.dc-skipk { font-size: 14px; }
+.dc-skipk { font-size: 13px; }
 /* The tidy-up popup (JP 2026-11-24 19:12–19:59): steps 1 Duplikater · 2 Gi navn; "Give names" on the summary line */
 .dc-sumbar .dc-gname { white-space: nowrap; }
 .dc-badl { font: inherit; padding: 0; text-decoration: underline; }
@@ -1049,7 +1052,12 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
 .dc-enter > * { animation: view-in .2s ease-out both; }
 .ov-still, .ov-still > * { animation: none !important; }
-.ov-wait, .ov-wait > * { animation-play-state: paused !important; }   /* held until the popup or page has been drawn (2026-11-26) */
+.ov-wait, .ov-wait > * { animation-play-state: paused !important; }
+@keyframes ov-out { to { opacity: 0; } }
+@keyframes sh-out { to { opacity: 0; transform: translateY(8px) scale(.99); } }
+.ov-ghost { pointer-events: none !important; }
+.ov-ghost.ov-ghost { animation: ov-out .14s ease-in both !important; }   /* a closed popup fades away (2026-11-26) */
+.ov-ghost.ov-ghost > * { animation: sh-out .14s ease-in both !important; }   /* held until the popup or page has been drawn (2026-11-26) */
 html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; } }
 /* the upload line stays in one place at the bottom instead of pushing the page down and up (JP 2026-11-25 "the entire page shakes") */

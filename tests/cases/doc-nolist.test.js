@@ -39,6 +39,16 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const ow = await p.evaluate(async () => { const seen = []; const mo = new MutationObserver(() => { const o = document.querySelector('.dx-tov'); if (o) seen.push(o.classList.contains('ov-wait')); }); mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     document.querySelector('[data-dxtool="ren"]').click(); await new Promise(r => setTimeout(r, 300)); mo.disconnect(); const o = document.querySelector('.dx-tov'); return { first: seen[0], now: o && o.classList.contains('ov-wait'), anim: o && getComputedStyle(o.querySelector('.dx-tsheet')).animationName, cls: o && o.className, html: document.documentElement.className, off: document.documentElement.classList.contains('mo-off') || matchMedia('(prefers-reduced-motion: reduce)').matches }; });
   check(ow.first === true && ow.now === false && (ow.off || /sh-in/.test(ow.anim || '')), 'a new popup waits (ov-wait) until drawn, then opens with its animation ' + JSON.stringify(ow));
+  /* closing fades out as a copy that can't be touched, then it is gone (JP 2026-11-26 20:55) */
+  const gh = await p.evaluate(async () => { window.__ovGhost = true; const dbg = { hidden: document.hidden, n: document.querySelectorAll('.dx-tov').length }; const o = document.querySelector('.dx-tov'); o.remove(); await new Promise(r => setTimeout(r, 30));
+    const g = document.querySelector('.dx-tov.ov-ghost'); const a = g && getComputedStyle(g).animationName, pe = g && getComputedStyle(g).pointerEvents; await new Promise(r => setTimeout(r, 300)); window.__ovGhost = false;
+    return { had: !!g, a, pe, gone: !document.querySelector('.ov-ghost'), dbg }; });
+  check(gh.had && gh.pe === 'none' && /ov-out/.test(gh.a || '') && gh.gone, 'a closed popup fades out as an untouchable copy, then is gone ' + JSON.stringify(gh));
+  /* Team: Documentation's popups have their keyframes (they were left out, so they opened with no animation), the type scale, the step buttons */
+  const fs = require('fs'), path = require('path'), dcc = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'dc', 'dc.css'), 'utf8'), tc = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'app.css'), 'utf8');
+  check(['ov-in', 'sh-in', 'view-in', 'ov-out', 'sh-out'].every(n => new RegExp('@keyframes ' + n + '\\b').test(dcc + tc)) && !/@keyframes rise\b/.test(dcc), 'Team has the popup keyframes (and not the card rise)');
+  check(!/font-size:\s*(11|11\.5|12\.5|13\.5|14\.5)px/.test(dcc + tc), 'Team uses one type scale (no 12.5 / 13.5 / 14.5 px)');
+  check(/html\.t-modal, html\.dcn-modal \{ overflow: hidden/.test(tc), 'the page doesn\'t scroll behind a Documentation popup in Team');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
 })();
