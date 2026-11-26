@@ -127,12 +127,19 @@ async function accessCfg(env, host, put) {
   if (!app) throw new Error('no Access application for ' + host);
   if (put) {
     const d = String(put.d || ''); if (ACCESS_LEN.indexOf(d) < 0) throw new Error('bad length');
-    const org = await cf('organizations');
-    const o2 = Object.assign({}, org, { session_duration: d }); ['created_at', 'updated_at'].forEach(k => delete o2[k]);
-    await cf('organizations', { method: 'PUT', body: JSON.stringify(o2) });
+    /* the app first: its length is the one that decides for Team; then the organization's (the e-mail code itself) */
     const a2 = Object.assign({}, app, { session_duration: d }); ['id', 'aud', 'created_at', 'updated_at', 'uid'].forEach(k => delete a2[k]);
     if (Array.isArray(app.policies)) a2.policies = app.policies.map(p => ({ id: p.id, precedence: p.precedence }));
     await cf('apps/' + app.id, { method: 'PUT', body: JSON.stringify(a2) });
+    /* sending the organization back as read refused it ("invalid_org_config", JP 2026-11-26 06:53): empty and read-only
+       fields go, and if Cloudflare still says no, only the fields it needs plus the length are sent (nothing else is reset by PATCH-like keeping) */
+    const org = await cf('organizations'), drop = o => { const x = {}; for (const k in o) { const v = o[k]; if (v === null || v === '' || /^(created_at|updated_at|id|uid)$/.test(k)) continue; if (v && typeof v === 'object' && !Array.isArray(v)) { const y = drop(v); if (Object.keys(y).length) x[k] = y; } else x[k] = v; } return x; };
+    try { await cf('organizations', { method: 'PUT', body: JSON.stringify(Object.assign(drop(org), { session_duration: d })) }); }
+    catch (e) {
+      const keep = {}; ['name', 'auth_domain', 'is_ui_read_only', 'allow_authenticate_via_warp', 'auto_redirect_to_identity', 'login_design', 'custom_pages', 'warp_auth_session_duration', 'user_seat_expiration_inactive_time'].forEach(k => { if (org[k] !== undefined && org[k] !== null && org[k] !== '') keep[k] = org[k]; });
+      try { await cf('organizations', { method: 'PUT', body: JSON.stringify(Object.assign(drop(keep), { session_duration: d })) }); }
+      catch (e2) { return { set: true, ok: true, d: d, org: false, why: String(e2 && e2.message || e2) }; }
+    }
     return { set: true, ok: true, d: d };
   }
   const org = await cf('organizations');

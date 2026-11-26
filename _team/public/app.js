@@ -558,7 +558,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '1f2b379eba34';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'd23059c24fe3';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -937,7 +937,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   async function setAccess(d) {
     if (!d) return; toast(L('Saving in Cloudflare …', 'Lagrer i Cloudflare …'));
-    try { var r = await api('cflogin', { method: 'PUT', body: { d: d } }); if (r && r.ok) toast(L('Saved – new logins follow it', 'Lagret – nye innlogginger følger den')); else throw new Error((r && r.error) || ''); }
+    try { var r = await api('cflogin', { method: 'PUT', body: { d: d } }); if (r && r.ok && r.org === false) toast(L('Saved for Team – Cloudflare kept its general login as it was', 'Lagret for Team – Cloudflare beholdt den generelle innloggingen som før')); else if (r && r.ok) toast(L('Saved – new logins follow it', 'Lagret – nye innlogginger følger den')); else throw new Error((r && r.error) || ''); }
     catch (e) { toast(L('Not saved: ', 'Ikke lagret: ') + ((e && e.message) || '')); }
     fillAccess();
   }
