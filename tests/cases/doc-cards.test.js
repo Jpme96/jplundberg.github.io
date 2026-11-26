@@ -34,11 +34,11 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   /* the button takes you to the first empty field */
   const fo = await p.evaluate(async () => { document.querySelector('.dcn-fpop [data-dcnfill]').click(); await new Promise(r => setTimeout(r, 400)); const a = document.activeElement; return !!a && a.classList.contains('dcn-need'); });
   check(fo, 'Fill in … first takes you to the first empty field');
-  /* fill in the property ID: it goes to the shared line, and the card stops asking */
+  /* fill in the property ID: it goes to the shared line, and the card shows it filled in (it stays there – JP 2026-11-26) */
   await p.evaluate(() => { const f = document.querySelector('.dcn-fpop [data-dcnpv="pid"]'); f.value = '3-777'; f.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
   await p.evaluate(() => { const s = document.querySelector('.dcn-fpop [data-dcnv$=":floor"]'); s.value = 'H02'; s.dispatchEvent(new Event('change', { bubbles: true })); }); await sl(400);
-  const c2 = await p.evaluate(() => ({ askPid: !!document.querySelector('.dcn-fpop [data-dcnpv="pid"]'), line: (document.querySelector('.dx-ren .dcn-shared') || {}).textContent || '', box: !!document.querySelector('.dx-ren .dcn-pvbox') }));
-  check(!c2.askPid && /3-777/.test(c2.line) && !c2.box, 'once set, the property ID is on the “Shared by all the files” line and the card no longer asks ' + JSON.stringify(c2));
+  const c2 = await p.evaluate(() => ({ askPid: (() => { const f = document.querySelector('.dcn-fpop [data-dcnpv="pid"]'); return !f ? 'none' : f.classList.contains('dcn-need') ? 'asks' : f.value; })(), line: (document.querySelector('.dx-ren .dcn-shared') || {}).textContent || '', box: !!document.querySelector('.dx-ren .dcn-pvbox') }));
+  check(c2.askPid === '3-777' && /3-777/.test(c2.line) && !c2.box, 'once set, the property ID is on the “Shared by all the files” line; the card shows it filled in and no longer asks (JP 2026-11-26) ' + JSON.stringify(c2));
   /* the next photo gets the floor picked last, and a camera name gives no free text */
   await R(/IMG_0001/);
   const c3 = await p.evaluate(() => { const li = document.querySelector('.dcn-fpop .dcn-row'); return { floor: li.querySelector('[data-dcnv$=":floor"]').value, free: li.querySelector('[data-dcnv$=":free"]').value }; });
