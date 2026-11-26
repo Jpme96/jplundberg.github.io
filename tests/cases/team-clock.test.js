@@ -67,7 +67,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   check(!/owner|x\.no|Clock team|JP/i.test(href.split('#')[1] || ''), 'the link holds times only – no names, no team');
   await own.reload(); await until(own, () => !!document.querySelector('.t-tabs'), 15000);
 
-  /* admins see the team's week on the Team tab */
+  /* admins see the team's week in Settings → Members (2026-11-26) */
   await own.goto(T + '#team'); await sl(800);
   const tt = await text();
   check(/Hours this week/i.test(tt), 'the Team tab shows hours this week for admins ' + (/Hours this week/i.test(tt) ? '' : tt.slice(0, 400).replace(/\n/g, ' | ')));

@@ -84,12 +84,15 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await ola0.ctx.close();
 
   /* --- the owner sees the request with the same check code and approves --- */
-  await own.goto(U + '#team'); await own.reload();
-  check(await until(own, () => /Wants to join/i.test(document.body.innerText)), 'the owner sees the request');
-  check(await until(own, c => [...document.querySelectorAll('[data-code]')].some(e => e.textContent === c), 8000, kcode), 'with the same check code as on Kari\'s phone');
-  check(/1/.test(await own.$eval('.t-tabs [data-go=team]', e => e.textContent)), 'the Team tab shows a badge for the request');
-  await own.click('[data-act=approve]');
-  check(await until(own, () => /Kari is in the team/.test(document.body.innerText)), 'approved');
+  /* (2026-11-26) who waits is under Settings → Requests; the gear shows how many */
+  await own.goto(U + '#overview'); await own.reload();
+  check(await until(own, () => (document.querySelector('[data-act=settings] .t-rqn') || {}).textContent === '1'), 'the gear shows 1 waiting');
+  await own.goto(U + '#req');
+  check(await until(own, () => /Kari/.test((document.querySelector('.t-sheet') || {}).innerText || '')), 'the owner sees the request under Requests');
+  check(await until(own, c => [...document.querySelectorAll('[data-rqcode]')].some(e => e.textContent === c), 8000, kcode), 'with the same check code as on Kari\'s phone');
+  await own.click('[data-act=rqok]');
+  check(await until(own, () => /Kari is in/.test(document.body.innerText)), 'approved');
+  await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); });
   check(await until(kari, () => !!document.querySelector('.t-tabs'), 15000), "Kari's phone opens the app by itself");
 
   /* --- a meeting with an action --- */
@@ -229,10 +232,11 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await kari.reload(); await kari.waitForSelector('.t-tabs'); await until(kari, () => window.DocHost && DocHost.Fe.list('dctl').length === 1, 15000);
   check(await kari.evaluate(() => DocHost.Fe.list('dctl')[0].lines.find(l => l.id === 'a2').st === 'ok'), "and Kari sees the owner's approval");
   /* --- Access (JP 2026-11-16): the admin's card – what each role can do, and who sees which projects --- */
-  await own.goto(U + '#team'); await own.reload(); await own.waitForSelector('details[data-accd]', { timeout: 20000 });
-  await own.evaluate(() => { document.querySelector('details[data-accd]').open = true; });
-  await own.evaluate(() => window.dispatchEvent(new HashChangeEvent('hashchange'))); await sl(200);
-  check(await own.evaluate(() => document.querySelector('details[data-accd]').open), 'an opened box stays open when the page is drawn again (JP 2026-11-17 19:59)');
+  /* (2026-11-26) the access card is Settings → Roles, open there */
+  await own.reload(); await own.waitForSelector('.t-tabs', { timeout: 20000 }); await own.goto(U + '#team'); await own.waitForSelector('[data-settab=roles]', { timeout: 20000 });
+  await own.evaluate(() => document.querySelector('[data-settab=roles]').click()); await own.waitForSelector('.t-sheet details[data-accd]', { timeout: 10000 });
+  check(await own.evaluate(() => document.querySelector('.t-sheet details[data-accd]').open), 'Settings → Roles shows who may do what, open');
+  await own.evaluate(() => document.querySelector('.t-sheet [data-act=close]').click());
   check(await own.evaluate(() => { const p = document.createElement('p'); p.className = 't-wait'; p.textContent = 'Team'; document.body.appendChild(p); const st = getComputedStyle(p), ok = st.position !== 'fixed' && st.borderTopStyle === 'none'; p.remove(); return ok; }), 'the loading word is plain text, not the orange "changes waiting" chip (JP 2026-11-19 21:04)');
   const sw = await own.evaluate(async () => { const el = window.__teamSwitch('Made-up Team'); const a = { on: !!document.getElementById('tSwitch'), ini: el.querySelector('b').textContent, letters: el.querySelectorAll('.t-sw-name span').length }; window.__teamSwitchDone(); await new Promise(r => setTimeout(r, 500)); a.gone = !document.getElementById('tSwitch'); return a; });
   check(sw.on && sw.ini === 'MT' && sw.letters === 12 && sw.gone, 'switching team shows the team’s initials and name, then fades away (JP 2026-11-19 21:41) ' + JSON.stringify(sw));
@@ -240,6 +244,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     localStorage.setItem('team.theme', 'dark'); window.__teamTheme(); a.dark = document.documentElement.dataset.theme; a.acc2 = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(); localStorage.removeItem('team.theme'); window.__teamTheme(); return a; });
   check(th.theme === 'light' && th.acc === '#9d174d' && th.dark === 'dark' && th.acc2 === '#f06595', 'Team is light with the deep berry accent by default; dark (pink) is a choice (JP 2026-11-19) ' + JSON.stringify(th));
   check(await own.evaluate(async () => { window.dispatchEvent(new HashChangeEvent('hashchange')); await new Promise(r => setTimeout(r, 100));   /* the box opened above is now in the page once */ const a = document.querySelector('.t-tabs'); window.dispatchEvent(new HashChangeEvent('hashchange')); await new Promise(r => setTimeout(r, 100)); return document.querySelector('.t-tabs') === a; }), 'a redraw with nothing new leaves the page alone – no stutter (JP 2026-11-17 21:35)');
+  await own.goto(U + '#team'); await own.waitForSelector('[data-settab=roles]', { timeout: 20000 }); await own.evaluate(() => document.querySelector('[data-settab=roles]').click()); await own.waitForSelector('.t-sheet [data-act="accsave"]', { timeout: 10000 });
   const ac0 = await own.evaluate(() => ({ boxes: document.querySelectorAll('[data-accm]').length, people: document.querySelectorAll('[data-acctr]').length, cells: document.querySelectorAll('[data-accpp]').length, save: document.querySelector('[data-act="accsave"]').disabled }));
   check(ac0.boxes === 40 && ac0.people >= 1 && ac0.cells >= ac0.people && ac0.save, 'the access card: 10 actions × 4 roles, a row per person who is not an admin, Save off until something changes ' + JSON.stringify(ac0));
   const kname = await kari.evaluate(() => DocHost.Fe.list('dctl')[0].name);
@@ -259,7 +264,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(!/SECRET-DC|SECRET-SYS|SECRET-REQ|Missing the manual|Lighting/.test(memDc), 'the server only has the projects as ciphertext');
 
   /* --- roles --- */
-  async function setRole(email, role) { await own.goto(U + '#team'); await own.reload(); await own.waitForSelector('[data-act=member][data-email="' + email + '"]'); await own.click('[data-act=member][data-email="' + email + '"]'); await own.waitForSelector('form[data-form=role]'); await own.select('form[data-form=role] select[name=role]', role); await own.click('form[data-form=role] button[type=submit]'); await until(own, () => !document.querySelector('.t-sheetbg')); }
+  async function setRole(email, role) { await own.reload(); await own.waitForSelector('.t-tabs', { timeout: 20000 }); await own.goto(U + '#team'); await own.waitForSelector('[data-act=member][data-email="' + email + '"]'); await own.click('[data-act=member][data-email="' + email + '"]'); await own.waitForSelector('form[data-form=role]'); await own.select('form[data-form=role] select[name=role]', role); await own.click('form[data-form=role] button[type=submit]'); await until(own, () => !document.querySelector('.t-sheetbg')); }
   await setRole('kari@y.no', 'read');
   check(await api(kari, 'rec', { method: 'PUT', body: JSON.stringify({ id: 'abcdefgh12', k: 'action', e: 1, iv: 'AAAAAAAAAAAAAAAA', ct: 'AAAA', v: 0 }) }) === 403, 'Read cannot write');
   check(await api(kari, 'invites', { method: 'POST', body: '{}' }) === 403, 'and a non-admin cannot invite');
@@ -273,15 +278,15 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await ola.type('input[name=name]', 'Ola'); await ola.type('input[name=pass]', 'ola-pass-11'); await ola.type('input[name=pass2]', 'ola-pass-11'); await ola.click('button[type=submit]');
   await until(ola, () => !!document.getElementById('checkCode'));
   /* Kari is admin now and approves him */
-  await kari.goto(U + '#team'); await kari.reload();
-  check(await until(kari, () => !!document.querySelector('[data-act=approve]')), 'a second admin can approve too');
-  await kari.click('[data-act=approve]');
+  await kari.reload(); await kari.waitForSelector('.t-tabs', { timeout: 20000 }); await kari.goto(U + '#req');
+  check(await until(kari, () => !!document.querySelector('[data-act=rqok]')), 'a second admin can approve too');
+  await kari.click('[data-act=rqok]');
   check(await until(ola, () => !!document.querySelector('.t-tabs'), 15000), 'Ola is in');
   await ola.goto(U + '#meetings'); await sl(300);
   check(/MARK-SECRET-1/.test(await text(ola)), 'and can read the old meetings');
   await ola.goto(U + '#overview');
   check(!(await ola.$('[data-act=newMeeting]')), 'Ola (Read) has no New meeting button');
-  await own.goto(U + '#team'); await own.reload(); await own.waitForSelector('[data-act=member][data-email="ola@y.no"]');
+  await own.reload(); await own.waitForSelector('.t-tabs', { timeout: 20000 }); await own.goto(U + '#team'); await own.waitForSelector('[data-act=member][data-email="ola@y.no"]');
   await own.click('[data-act=member][data-email="ola@y.no"]'); await own.waitForSelector('[data-act=remove]'); await own.click('[data-act=remove]');
   check(await until(own, () => /Ola was removed/.test(document.body.innerText)), 'Ola is removed');
   check(await own.evaluate(() => window.__team.me.team.epoch === 2 && !!window.__team.keys[2]), 'the team has a new key (epoch 2)');
@@ -335,8 +340,11 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     return { left: t.left === 0 && t.width < 260 && t.height > 600, wide: a.width > 900, over: a.left >= t.right, cols: c.length === 2 && c[1].getBoundingClientRect().left > c[0].getBoundingClientRect().left + 200, fits: document.documentElement.scrollWidth <= innerWidth }; });
   check(Object.values(lay).every(Boolean), 'on a computer: menu on the left, a wide page, two columns ' + JSON.stringify(lay));
   if (process.env.SHOT) await kari2.screenshot({ path: path.join(__dirname, '..', '.tmp', 'team-pc.png') });
-  await kari2.goto(U + '#team'); await sl(400);
-  check(await kari2.evaluate(() => { const c = document.querySelectorAll('.t-tcols > .t-col'); return c.length === 2 && c[1].getBoundingClientRect().left > c[0].getBoundingClientRect().right; }), 'the Team tab is two columns on a computer (JP 2026-11-17 20:11)');
+  /* (JP 2026-11-26 09:50) no Team page in the menu – the people are in Settings → The team */
+  check(await kari2.evaluate(() => !document.querySelector('.t-tabs [data-go=team]')), 'no Team item in the menu');
+  await kari2.goto(U + '#team'); await sl(600);
+  check(await kari2.evaluate(() => { const on = document.querySelector('.t-sheet [data-settab=members].on'), t = (document.querySelector('.t-sheet') || {}).innerText || ''; return !!on && /Members/.test(t) && /Invite someone/.test(t); }), 'an old #team link opens Settings → Members');
+  await kari2.evaluate(() => document.querySelector('.t-sheet [data-act=close]').click());
   await kari2.goto(U + '#meetings'); await sl(300);
   check(/MARK-SECRET-1/.test(await text(kari2)) && /MARK-SECRET-4/.test(await text(kari2)), 'she reads meetings from before and after the new key');
 
@@ -385,10 +393,11 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   check(/Join Second site/.test(await text(per)), 'the link opens the right team');
   await per.type('input[name=name]', 'Per'); await per.type('input[name=pass]', 'per-pass-11'); await per.type('input[name=pass2]', 'per-pass-11'); await per.click('button[type=submit]');
   check(await until(per, () => !!document.getElementById('checkCode')), 'Per waits for approval');
-  await own.goto(U + '#team'); await own.reload(); await until(own, () => !!document.querySelector('[data-act=approve]')); await own.click('[data-act=approve]');
+  await own.reload(); await own.waitForSelector('.t-tabs', { timeout: 20000 }); await own.goto(U + '#req'); await until(own, () => !!document.querySelector('[data-act=rqok]')); await own.click('[data-act=rqok]');
   check(await until(per, () => !!document.querySelector('.t-tabs'), 15000), 'Per is in the second team');
   await per.goto(U + '#meetings'); await sl(400);
   check(/MARK-SECRET-5/.test(await text(per)) && !/MARK-SECRET-1|MARK-SECRET-4/.test(await text(per)), 'Per reads the second team only');
+  await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); });
   /* the owner switches back: the first team opens without its passcode again (its keys stayed on this device) */
   await own.click('[data-act=teams]'); await own.waitForSelector('.t-teams');
   check(/Site team/.test(await text(own)) && /Second site/.test(await text(own)), 'the owner sees both teams');
@@ -483,7 +492,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const st = await own.evaluate(() => ({ heads: [...document.querySelectorAll('.t-settab')].map(x => x.textContent), name: !!document.querySelector('.t-setrow [data-act=renameTeam]') }));
   const inside = await own.evaluate(async () => { const out = []; for (const t of ['you', 'team', 'acct']) { document.querySelector('[data-settab=' + t + ']').click(); await new Promise(r => setTimeout(r, 100)); const sh = document.querySelector('.t-sheet'), b = document.querySelector('[data-act=close].t-btn.wide'); out.push(t + ':' + !!(b && sh.contains(b))); } document.querySelector('[data-settab=team]').click(); return out.join(); });
   check(!/false/.test(inside), 'Done stays inside the settings window on every tab (JP 2026-11-24) ' + inside);
-  check(st.heads.join() === 'You,The team,Account,Requests' && st.name, 'Settings in tabs (Requests next to Account for admins, JP 2026-11-26), the team name with Change for admins (JP 2026-11-23) ' + JSON.stringify(st));
+  check(st.heads.join() === 'You,The team,Members,Roles,Account,Requests' && st.name, 'Settings in tabs (Requests next to Account for admins, JP 2026-11-26), the team name with Change for admins (JP 2026-11-23) ' + JSON.stringify(st));
   await own.evaluate(() => { const c = document.querySelector('[data-act=close]'); if (c) c.click(); }); await sl(300);
   /* an admin can switch the three Documents tabs off for the whole team (JP 2026-11-19 21:42) */
   await own.goto(U + '#docs'); await sl(800);

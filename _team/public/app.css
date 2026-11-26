@@ -395,3 +395,8 @@ html.tz-wide #app:has(> .t-screen) { margin-left: auto; margin-right: auto; }
 .t-settab .t-rqn { position: static; display: inline-block; margin-left: 5px; vertical-align: 1px; }
 .t-settab { flex: 1 1 auto; min-width: 0; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .t-rq h2 { margin-bottom: 2px; }
+.t-rqlink { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+/* six tabs for an admin (You, The team, Members, Roles, Account, Requests): on a phone they scroll sideways, the open one in view */
+.t-settabs { overflow-x: auto; scrollbar-width: none; }
+.t-settabs::-webkit-scrollbar { display: none; }
+.t-settab { flex: 1 0 auto; overflow: visible; }

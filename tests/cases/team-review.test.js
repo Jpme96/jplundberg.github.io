@@ -75,6 +75,7 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   await own.evaluate(() => document.querySelector('[data-settab=team]').click()); await sl(400);
   check(await own.evaluate(() => !/Oslo kommune/.test(document.querySelector('.t-sheet').innerText)), 'no client name in the colour setting');
   await own.evaluate(() => { const c = document.querySelector('.t-sheet [data-act=close]'); if (c) c.click(); location.hash = '#team'; }); await sl(800);
+  await own.evaluate(() => { const r = document.querySelector('[data-settab=roles]'); if (r) r.click(); }); await sl(500);
   check(await own.evaluate(() => { const s = document.querySelector('.t-acc summary'); return !!s && getComputedStyle(s, '::after').content !== 'none'; }), 'the access card shows it opens');
   const big = await ctx.newPage(); await big.setViewport({ width: 1500, height: 1000 });
   await big.goto(T + '#meetings'); await until(big, () => !!document.querySelector('[data-act=newMeeting]'), 20000); await sl(500);

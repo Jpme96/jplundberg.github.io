@@ -551,10 +551,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     catch (err) { if (err.offline) { enqueue({ id: id, k: cur.k, del: true, v: cur.v, s: sm }); cur.del = 1; return true; } toast(failMsg(err)); return false; }
   }
 
-  /* where you are: #overview, #meetings, #m=<id>, #actions, #team */
+  /* where you are: #overview, #meetings, #m=<id>, #actions (#team and #req open Settings → The team / Requests) */
   S.tab = function () { var h = location.hash.slice(1); if (/^(docs|files|d[cr]=|in=)/.test(h) && !dtabsOn().length) return 'overview'; if (/^m=/.test(h)) return 'meetings'; if (/^(d[cr]|in)=/.test(h) || h === 'files') return 'docs'; if (/^search=/.test(h)) return 'search';   /* no menu item lit while you search (live review 2026-11-25) */
-    return /^(overview|meetings|actions|docs|team)$/.test(h) ? h : 'overview'; };
-  window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(); draw(); window.scrollTo(0, 0); });
+    return /^(overview|meetings|actions|docs)$/.test(h) ? h : 'overview'; };
+  window.addEventListener('hashchange', function () { if (S.edit) endEdit(true); closeSheet(true); draw(); window.scrollTo(0, 0); });
 
   function palCfg() { var r = S.recs.cfgpalette; return r && !r.del && r.d && window.__teamPals && window.__teamPals[r.d.p] ? r.d.p : 'std'; }
   function palSync() { var id = palCfg(), cur = document.documentElement.getAttribute('data-pal') || 'std'; if (id !== cur) window.__teamPal(id === 'std' ? '' : id); try { localStorage.setItem('team.pal.' + S.tid, id === 'std' ? '' : id); } catch (e) {} }
@@ -578,7 +578,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '4ab7262c8446';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '5118f37d072a';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -602,6 +602,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   document.addEventListener('input', function (e) { var t = e.target; if (!t.matches || !t.matches('.t-srch input[name=q]')) return; clearTimeout(srchT);
     srchT = setTimeout(function () { history.replaceState(null, '', '#search=' + encodeURIComponent(t.value.trim())); draw(); }, 250); });
   function draw() {
+    var hh = location.hash.slice(1); if (hh === 'team' || hh === 'req') { history.replaceState(null, '', '#overview'); S.setTab = hh === 'team' ? 'members' : hh; setTimeout(settingsSheet, 0); }   /* old links and the overview card */
+    refreshSet();
     palSync();
     if (!S.me || !S.me.member) return;
     if (S.unlocked === false) return;   /* locked after a while without use: the unlock screen stays */
@@ -609,16 +611,16 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     S.stale = false; lockKeep();   /* the team's lock time, kept for the next start (read before the keys are opened) */
     clearTimeout(S.needsT); S.needsT = setTimeout(pushNeeds, 2500);   /* the contractors' lists follow the project */
     var h = location.hash.slice(1), body;
-    if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? (({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.edit.from] || viewMeetings)() : viewMeeting(S.edit.id)) +   /* the page you were on stays behind the new meeting – it changed to Møter and flickered (JP 2026-11-25) */ '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
+    if (S.edit) body = (S.edit.isNew || !S.recs[S.edit.id] ? (({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs })[S.edit.from] || viewMeetings)() : viewMeeting(S.edit.id)) +   /* the page you were on stays behind the new meeting – it changed to Møter and flickered (JP 2026-11-25) */ '<div class="t-edov"><div class="t-edsheet" role="dialog" aria-modal="true">' + viewEdit() + '</div></div>';   /* a popup over the page, not a page of its own (JP 2026-11-17 21:39) */
     else if (/^m=/.test(h)) body = viewMeeting(h.slice(2));
     else if (/^search=/.test(h)) body = viewSearch(decodeURIComponent(h.slice(7)));
     else if (/^in=/.test(h)) body = viewInsp(h.slice(3));
-    else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs, team: viewTeam })[S.tab()]();
-    var tab = S.tab(), reqs = rank() >= 3 ? S.requests.length : 0;
+    else body = ({ overview: viewOverview, meetings: viewMeetings, actions: viewActions, docs: viewDocs })[S.tab()]();
+    var tab = S.tab();
     var dKey = function (d) { var sm = d.querySelector('summary'); return d.className + '|' + (sm ? sm.textContent.trim() : ''); }, dWas = {};
     [].forEach.call($app.querySelectorAll('details'), function (d) { if (!d.closest('.dc-host, #wkDocCtl, #wkDocReq')) dWas[dKey(d)] = d.open; });   /* a box you opened or closed stays that way when the page is drawn again (JP 2026-11-17 19:59) */
-    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documentation', 'Dokumentasjon')], ['team', 'team', L('Team', 'Team')]].filter(function (t) { return t[0] !== 'docs' || dtabsOn().length; }).map(function (t) {
-      return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + (t[0] === 'team' && reqs ? ' <span class="t-badge">' + reqs + '</span>' : '') + '</span></button>';
+    var html = body + '<nav class="t-tabs t-noprint" aria-label="' + L('Team', 'Team') + '">' + [['overview', 'home', L('Overview', 'Oversikt')], ['meetings', 'cal', L('Meetings', 'Møter')], ['actions', 'check', L('Actions', 'Oppgaver')], ['docs', 'docs', L('Documentation', 'Dokumentasjon')], ].filter(function (t) { return t[0] !== 'docs' || dtabsOn().length; }).map(function (t) {
+      return '<button type="button" data-go="' + t[0] + '" aria-current="' + (tab === t[0]) + '">' + ic(t[1]) + '<span>' + t[2] + '</span></button>';
     }).join('') + '</nav>';
     if (html === S.lastHtml && $app.querySelector(':scope > .t-tabs')) return;   /* nothing changed: leave the page alone – redrawing it every 15 s made Team stutter (JP 2026-11-17 21:35) */
     var keepC = document.getElementById('wkDocCtl'), keepR = document.getElementById('wkDocReq'), vkey = h + '|' + tab + '|' + (S.dtab || '') + '|' + !!S.edit;
@@ -689,7 +691,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var out = head(S.me.team.name, nMembers(S.members.length) + L(' · your role: ', ' · din rolle: ') + roleName(S.me.member.role));
     out += welcomeCard();
     out += '<div class="t-cols"><div class="t-col">' + clockCard() + newsCard();   /* "Denne uka" is gone – Oversikt shows what needs doing (JP 2026-11-24 22:57) */
-    if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#team"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
+    if (rank() >= 3 && S.requests.length) out += '<a class="t-card acc t-link" href="#req"><h2>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</h2><span class="t-small">' + L('Check their code and approve them under Team.', 'Sjekk koden deres og godkjenn dem under Team.') + '</span></a>';
     out += '<p class="t-h">' + (next && ahead(next) ? L('Next meeting', 'Neste møte') : L('Latest meeting', 'Siste møte')) + '</p>';
     out += next ? meetingCard(next) : '<div class="t-card"><p class="t-empty">' + L('No meetings yet.', 'Ingen møter ennå.') + '</p>' + (rank() >= 1 ? '<button class="t-btn sm" type="button" data-act="newMeeting">' + ic('plus') + L('New meeting', 'Nytt møte') + '</button>' : '') + '</div>';
     out += '<p class="t-h"><span>' + L('My open actions', 'Mine åpne oppgaver') + '</span><span>' + mine.length + '</span></p>';
@@ -842,31 +844,37 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
 
   /* ---------- the team: members, invites, requests, the change log ---------- */
-  function viewTeam() {
-    var adm = rank() >= 3;
-    var out = head(L('Team', 'Team'), (S.me.team.name !== 'Team' ? S.me.team.name + ' · ' : '') + nMembers(S.members.length)) + '<div class="t-cols t-tcols"><div class="t-col">';   /* on a computer: people on the left, access, clock and log on the right (JP 2026-11-17 20:11) */
+  /* The team's people now live in Settings → The team (JP 2026-11-26 09:50: "can Team be moved to the settings"): the members for
+     everyone; for admins also inviting, open invites, the team's settings, access and this week's hours. Who waits to join is under Requests. */
+  function membersHtml() {
+    var adm = rank() >= 3, out = '';
     if (adm) out += '<button class="t-btn wide t-inv" type="button" data-act="invite">' + ic('plus') + L('Invite someone', 'Inviter noen') + '</button><p class="t-small">' + L('One link per person. It works once and runs out.', 'Én lenke per person. Den virker én gang og går ut.') + '</p>';
-    if (adm && S.requests.length) {
-      out += '<p class="t-h">' + L('Wants to join', 'Vil bli med') + '</p>';
-      out += S.requests.map(function (q) {
-        return '<div class="t-card acc"><h2>' + esc(q.name) + '</h2><p class="t-small">' + esc(q.email) + ' · ' + esc(fmtTime(q.at)) + '</p>' +
-          '<p class="t-small">' + L('Check code – ask them to read theirs to you:', 'Kontrollkode – be dem lese opp sin:') + ' <span class="t-code" data-code="' + esc(q.email) + '">…</span></p>' +
-          '<label class="t-lbl">' + L('Role', 'Rolle') + '<select data-qrole="' + esc(q.email) + '">' + ROLES.map(function (r) { return '<option value="' + r + '"' + ((q.role || 'edit') === r ? ' selected' : '') + '>' + roleName(r) + '</option>'; }).join('') + '</select></label>' +
-          '<div class="t-btns"><button class="t-btn ghost" type="button" data-act="decline" data-email="' + esc(q.email) + '">' + L('Decline', 'Avslå') + '</button><button class="t-btn" type="button" data-act="approve" data-email="' + esc(q.email) + '">' + L('Approve', 'Godkjenn') + '</button></div></div>';
-      }).join('');
-      setTimeout(fillCodes, 0);
-    }
-    out += '<p class="t-h">' + L('Members', 'Medlemmer') + '</p><ul class="t-list">' + S.members.slice().sort(function (a, b) { return ROLES.indexOf(b.role) - ROLES.indexOf(a.role) || a.name.localeCompare(b.name); }).map(function (m) {
+    if (adm && S.requests.length) out += '<button class="t-card acc t-link t-rqlink" type="button" data-act="settab" data-settab="req"><b>' + L(S.requests.length + ' waiting to join', S.requests.length + ' venter på å bli med') + '</b><span class="t-small">' + L('See Requests', 'Se Forespørsler') + '</span></button>';
+    out += '<p class="t-h">' + L('Members', 'Medlemmer') + ' <span class="t-small tnum">' + S.members.length + '</span></p><ul class="t-list">' + S.members.slice().sort(function (a, b) { return ROLES.indexOf(b.role) - ROLES.indexOf(a.role) || a.name.localeCompare(b.name); }).map(function (m) {
       var inner = '<span class="grow"><span>' + esc(m.email === S.me.email ? m.name + ' (' + L('you', 'deg') + ')' : m.name) + '</span><small>' + esc(adm ? m.email + ' · ' : '') + esc(L('Used: ', 'Brukt: ') + ago(m.seen)) + '</small></span><span class="t-chip' + (m.role === 'admin' ? ' acc' : '') + '">' + roleName(m.role) + '</span>';
       return '<li>' + (adm && m.email !== S.me.email ? '<button class="t-row" type="button" data-act="member" data-email="' + esc(m.email) + '">' + inner + '</button>' : inner) + '</li>';
     }).join('') + '</ul>';
     if (adm) out += '<p class="t-small">' + L('Tap a person to change their role or remove them. Removing gives the team a new key at once.', 'Trykk på en person for å endre rolle eller fjerne dem. Når noen fjernes, får teamet en ny nøkkel med en gang.') + '</p>';
     if (adm && S.invites.length) out += '<p class="t-h">' + L('Open invites', 'Åpne invitasjoner') + '</p><ul class="t-list">' + S.invites.map(function (v) { return '<li><span class="grow"><span>' + esc(v.label || roleName(v.role)) + '</span><small>' + esc(L('Runs out ', 'Går ut ') + fmtTime(v.exp)) + '</small></span><button class="t-btn ghost sm" type="button" data-act="cancelInvite" data-id="' + v.id + '">' + L('Cancel', 'Avbryt') + '</button></li>'; }).join('') + '</ul>';
-    out += '</div><div class="t-col">';
-    if (adm) out += accessCard();
-    out += clockTeamCard();
-    out += '</div></div>';   /* no change log (JP 2026-11-24 22:57) – the two columns still close here */
     return out;
+  }
+  /* Settings → The team (admins: the team's own settings), Members (everyone; admins also invite, change roles and see this week's hours)
+     and Roles (admins: who may do what) – JP 2026-11-26 09:50–09:53 */
+  function teamTabHtml(tab) {
+    if (tab === 'members') return membersHtml() + (rank() >= 3 ? clockTeamCard() : '');
+    if (rank() < 3) return '';
+    if (tab === 'roles') { S.accOpen = true; return accessCard(); }
+    return '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
+        palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() + lockAdmin() +
+        (S.me.isOwner ? '<p class="t-h">' + L('From /cmd', 'Fra /cmd') + '</p><div class="t-setrow"><span><b>' + L('Import from /cmd', 'Importer fra /cmd') + '</b><small>' + L('A project or all your lists, sent from /cmd (Work → Documentation → Send to Team)', 'Et prosjekt eller alle listene dine, sendt fra /cmd (Jobb → Dokumentasjon → Send til Team)') + '</small></span><button class="t-btn ghost sm" type="button" id="dcImport" data-act="dcImportPick">' + L('Choose file', 'Velg fil') + '</button><input type="file" accept=".json,application/json" data-dcimport hidden></div>' : '') +
+        '<p class="t-h">' + L('Backup', 'Sikkerhetskopi') + '</p><div class="t-setrow"><span><b>' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div>';
+  }
+  /* a change while Settings → The team is open (a role, an invite, access ticks) shows there at once, in the same place */
+  function refreshSet() {
+    var sb = document.querySelector('.t-sheet-set .t-setbody'); if (!sb || !/^(team|members|roles)$/.test(S.setShown || '') || selOpen()) return;
+    var ae = document.activeElement; if (ae && sb.contains(ae) && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && !/^(checkbox|radio)$/.test(ae.type)))) return;   /* not while typing in it – a focused dropdown or tick box is fine */
+    var h = teamTabHtml(S.setShown); if (sb.__h === h) return;
+    var top = sb.scrollTop; sb.innerHTML = h; sb.__h = h; sb.scrollTop = top;
   }
   /* ---------- Settings → Requests: everyone waiting to join, from every team where you are admin (JP 2026-11-26 00:00–00:04) ----------
      Like Account it is the same in every team. Approving gives the new person that team's key, so that team's keys must be on this
@@ -970,7 +978,6 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     try { await api('decline', { method: 'POST', body: { email: email }, tid: tid }); toast(L('Declined', 'Avslått')); await rqAfter(tid); }
     catch (e) { toast(failMsg(e)); }
   }
-  async function fillCodes() { for (var i = 0; i < S.requests.length; i++) { var q = S.requests[i], el = document.querySelector('[data-code="' + CSS.escape(q.email) + '"]'); if (el) el.textContent = await checkCode(q.pub); } }
   function logHtml(n) {
     if (!S.log.length) return '<p class="t-empty">' + L('Nothing yet.', 'Ingenting ennå.') + '</p>';
     var A = { access: L('changed who may do what', 'endret hvem som kan gjøre hva'), 'log-reset': L('emptied the log', 'tømte loggen'), 'upload-removed': L('removed uploaded files', 'fjernet opplastede filer'), upload: L('sent a file on an upload link', 'sendte en fil med en opplastingslenke'), uplink: L('made an upload link', 'lagde en opplastingslenke'), 'uplink-off': L('switched off an upload link', 'slo av en opplastingslenke'), setup: L('set up the team', 'satte opp teamet'), invite: L('made an invite', 'lagde en invitasjon'), request: L('asked to join', 'ba om å bli med'), approve: L('approved', 'godkjente'), decline: L('declined', 'avslo'), role: L('changed the role of', 'endret rollen til'), remove: L('removed', 'fjernet'), new: L('added', 'la til'), edit: L('changed', 'endret'), del: L('deleted', 'slettet'), restore: L('brought back', 'hentet tilbake'), rename: L('renamed the team to', 'ga teamet navnet') };
@@ -1004,16 +1011,6 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
         '<div class="t-btns">' + (navigator.share ? '<button class="t-btn" type="button" data-act="shareInvite">' + L('Share', 'Del') + '</button>' : '') + '<button class="t-btn ghost" type="button" data-act="copyInvite">' + L('Copy', 'Kopier') + '</button></div><button class="t-btn ghost wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>');
       loadMembers().then(function () { if (!S.sheet) draw(); });
     } catch (e) { busy(f, false); setErr(failMsg(e)); }
-  }
-  async function approve(email, btn) {
-    var q = S.requests.filter(function (x) { return x.email === email; })[0]; if (!q) return;
-    var sel = document.querySelector('[data-qrole="' + CSS.escape(email) + '"]'), role = sel ? sel.value : 'edit';
-    btn.disabled = true;
-    try {
-      var keys = {}; for (var e in S.keys) keys[e] = await wrapFor(q.pub, S.keys[e], e);
-      await api('approve', { method: 'POST', body: { email: email, role: role, keys: keys } });
-      toast(L(q.name + ' is in the team', q.name + ' er med i teamet')); await loadMembers(); draw();
-    } catch (e) { btn.disabled = false; toast(failMsg(e)); }
   }
   function memberSheet(email) {
     var m = S.members.filter(function (x) { return x.email === email; })[0]; if (!m) return;
@@ -1064,7 +1061,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     fillAccess();
   }
   function settingsSheet() {
-    var adm = rank() >= 3, tabs = [['you', L('You', 'Deg')]].concat(adm ? [['team', L('The team', 'Teamet')]] : []).concat([['acct', L('Account', 'Konto')]]).concat(rqAdmin() ? [['req', L('Requests', 'Forespørsler')]] : []);
+    var ob = document.querySelector('.t-sheet-set .t-setbody'), keepTop = ob && S.setShown === S.setTab ? ob.scrollTop : 0; S.setShown = S.setTab;
+    var adm = rank() >= 3, tabs = [['you', L('You', 'Deg')]].concat(adm ? [['team', L('The team', 'Teamet')]] : []).concat([['members', L('Members', 'Medlemmer')]]).concat(adm ? [['roles', L('Roles', 'Roller')]] : []).concat([['acct', L('Account', 'Konto')]]).concat(rqAdmin() ? [['req', L('Requests', 'Forespørsler')]] : []);
     var tab = tabs.some(function (x) { return x[0] === S.setTab; }) ? S.setTab : 'you', nOn = ((function () { try { return localStorage.getItem('team.notify') === '1'; } catch (e) { return false; } })());
     var body = tab === 'req' ? rqBody() : tab === 'you' ?
       '<div class="t-set2">' +
@@ -1072,11 +1070,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<label class="t-lbl">' + L('Language', 'Språk') + '<select data-lang><option value="en"' + (nb ? '' : ' selected') + '>English</option><option value="nb"' + (nb ? ' selected' : '') + '>Norsk</option></select></label>' + '</div>' +
       '<label class="t-switch"><span><b>' + L('Push when Team is closed', 'Push når Team er lukket') + '</b><small>' + L('Only that someone changed something in this team – never what was written. On this device.', 'Bare at noen endret noe i dette teamet – aldri hva som ble skrevet. På denne enheten.') + '</small></span><input type="checkbox" data-push' + (pushOn() ? ' checked' : '') + '></label>' +
       '<label class="t-switch t-inline"><span><b>' + L('Notifications while Team is open', 'Varsler mens Team er åpent') + '</b><small>' + L('On this device', 'På denne enheten') + '</small></span><input type="checkbox" data-act="notify"' + (nOn ? ' checked' : '') + '></label>'
-      : tab === 'team' ?
-        '<div class="t-setrow"><span><b>' + L('Team name', 'Navn på teamet') + '</b><small>' + esc(S.me.team.name) + '</small></span><button class="t-btn ghost sm" type="button" data-act="renameTeam">' + L('Change', 'Endre') + '</button></div>' +
-        palAdmin() + dtabsAdmin() + flowAdmin() + clockAdmin() + lockAdmin() +
-        (S.me.isOwner ? '<p class="t-h">' + L('From /cmd', 'Fra /cmd') + '</p><div class="t-setrow"><span><b>' + L('Import from /cmd', 'Importer fra /cmd') + '</b><small>' + L('A project or all your lists, sent from /cmd (Work → Documentation → Send to Team)', 'Et prosjekt eller alle listene dine, sendt fra /cmd (Jobb → Dokumentasjon → Send til Team)') + '</small></span><button class="t-btn ghost sm" type="button" id="dcImport" data-act="dcImportPick">' + L('Choose file', 'Velg fil') + '</button><input type="file" accept=".json,application/json" data-dcimport hidden></div>' : '') +
-        '<p class="t-h">' + L('Backup', 'Sikkerhetskopi') + '</p><div class="t-setrow"><span><b>' + L('Backup of the team', 'Sikkerhetskopi av teamet') + '</b><small>' + L('A copy of everything in the team, encrypted', 'En kopi av alt i teamet, kryptert') + '</small></span><button class="t-btn ghost sm" type="button" data-act="backup">' + L('Open', 'Åpne') + '</button></div>'
+      : tab === 'team' || tab === 'members' || tab === 'roles' ? teamTabHtml(tab)
       : (S.me.isOwner ? '<div id="accessBox" class="t-accbox"></div>' : '') + '<p class="t-small">' + L('Signed in as ', 'Logget inn som ') + esc(S.me.email) + ' · ' + roleName(S.me.member.role) + '</p>' +
         '<div class="t-btns t-setbtns"><button class="t-btn ghost sm" type="button" data-act="changePass">' + L('Change my passcode', 'Bytt koden min') + '</button><a class="t-btn ghost sm" href="/cdn-cgi/access/logout" data-act="signout">' + L('Sign out', 'Logg ut') + '</a><button class="t-btn ghost sm" type="button" data-act="forget">' + L('Forget Team on this device', 'Glem Team på denne enheten') + '</button></div>' +
         (S.me.isOwner ? '<button class="t-btn ghost sm t-danger t-setdel" type="button" data-act="deleteTeam">' + L('Delete the team …', 'Slett teamet …') + '</button>' : '') +
@@ -1085,9 +1079,12 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       '<div class="t-settabs" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" class="t-settab' + (x[0] === tab ? ' on' : '') + '" aria-selected="' + (x[0] === tab) + '" data-act="settab" data-settab="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<div class="t-setbody">' + body + '</div>' +
       '<button class="t-btn wide" type="button" data-act="close">' + L('Done', 'Ferdig') + '</button>', 'set');
+    var sb = document.querySelector('.t-sheet-set .t-setbody'); if (sb) sb.__h = /^(team|members|roles)$/.test(tab) ? body : '';
+    if (keepTop && sb) sb.scrollTop = keepTop;
     if (tab === 'acct' && S.me.isOwner) fillAccess();
     if (tab === 'req') { setTimeout(rqCodes, 0); if (!RQ.at || Date.now() - RQ.at > 15000) loadRq().then(function () { if ((S.sheet && S.sheet.querySelector && S.sheet.querySelector('.t-settabs')) && S.setTab === 'req') { var b = document.querySelector('.t-setbody'); if (b) { b.innerHTML = rqBody(); rqCodes(); } } }); }
     rqBadge();
+    var onT = document.querySelector('.t-sheet-set .t-settab.on'); if (onT && onT.scrollIntoView) onT.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
   /* the team's name (admins) and deleting a team (only the owner, the name typed again – it can't be undone) */
   function renameSheet() {
@@ -1772,9 +1769,10 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
 
   /* ---------- sheets ---------- */
   function openSheet(html, cls) {
+    var fromSet = cls !== 'set' && !!(S.sheet && (S.sheet.querySelector('.t-settabs') || S.sheet.__ret));   /* opened from Settings (a person, an invite): closing it goes back there */
     closeSheet(true);
     var bg = document.createElement('div'); bg.className = 't-sheetbg'; bg.innerHTML = '<div class="t-sheet' + (cls ? ' t-sheet-' + cls : '') + '" role="dialog" aria-modal="true">' + html + '</div>';
-    document.body.appendChild(bg); S.sheet = bg;
+    document.body.appendChild(bg); S.sheet = bg; bg.__ret = fromSet;
     var f = bg.querySelector('input:not([readonly]), select'); if (f && !/Mobi/.test(navigator.userAgent)) f.focus();
   }
   /* your teams: each one is separate – switching opens it (unlocked once per device, like the first) */
@@ -1786,7 +1784,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }).join('') + '</ul>' + (S.me.isOwner ? '<button class="t-btn wide" type="button" data-act="newTeam">' + ic('plus') + ' ' + L('New team', 'Nytt team') + '</button>' : '') +
       '<button class="t-btn ghost wide" type="button" data-act="close">' + L('Close', 'Lukk') + '</button>');
   }
-  function closeSheet(keep) { if (S.sheet) { S.sheet.remove(); S.sheet = null; if (!keep && S.stale) draw(); } }
+  function closeSheet(keep) { if (S.sheet) { var ret = S.sheet.__ret; S.sheet.remove(); S.sheet = null; if (!keep && ret) return settingsSheet(); if (!keep && S.stale) draw(); } }
 
   /* ---------- one place for clicks and forms ---------- */
   document.addEventListener('click', async function (e) {
@@ -1870,10 +1868,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (a === 'shareInvite') { var v = document.getElementById('invLink').value; navigator.share({ title: S.me.team.name, text: L('Join our team', 'Bli med i teamet vårt'), url: v }).catch(function () {}); return; }
     if (a === 'copyInvite') { var inp = document.getElementById('invLink'); inp.select(); (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject()).then(function () { toast(L('Copied', 'Kopiert')); }, function () { document.execCommand('copy'); toast(L('Copied', 'Kopiert')); }); return; }
     if (a === 'cancelInvite') { try { await api('invites?id=' + t.dataset.id, { method: 'DELETE' }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
-    if (a === 'approve') return approve(t.dataset.email, t);
     if (a === 'rqok') return rqApprove(t);
     if (a === 'rqno') return rqDecline(t);
-    if (a === 'decline') { if (!(await sure(L('Decline this request?', 'Avslå denne forespørselen?')))) return; try { await api('decline', { method: 'POST', body: { email: t.dataset.email } }); await loadMembers(); draw(); } catch (x) { toast(failMsg(x)); } return; }
     if (a === 'member') return memberSheet(t.dataset.email);
     if (a === 'remove') return removeMember(t.dataset.email, t);
     if (a === 'logall') { openSheet('<h2>' + L('Change log', 'Endringslogg') + '</h2>' + logHtml() + '<div class="t-btns"><button class="t-btn ghost" type="button" data-act="close">' + L('Close', 'Lukk') + '</button></div>', 'log'); return; }

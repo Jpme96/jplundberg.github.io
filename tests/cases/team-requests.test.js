@@ -66,14 +66,14 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   const t1 = await text(own);
   check(/North site/i.test(t1) && /South site/i.test(t1) && /Kari/.test(t1) && /Ola/.test(t1), 'Requests lists both teams with their people ' + JSON.stringify(t1.slice(-600)));
   check(await until(own, c => [...document.querySelectorAll('[data-rqcode]')].some(e => e.textContent === c), 8000, kari.code) && await until(own, c => [...document.querySelectorAll('[data-rqcode]')].some(e => e.textContent === c), 8000, ola.code), 'each with the same check code as on their phone');
-  check(await own.evaluate(() => { const t = document.querySelector('[data-settab=req]'); const r = t.getBoundingClientRect(); return r.right <= innerWidth + 1 && t.scrollWidth <= t.clientWidth + 2; }), 'the four tabs fit at phone width ' + JSON.stringify(await own.evaluate(() => [...document.querySelectorAll('.t-settab')].map(t => [t.textContent, t.clientWidth, t.scrollWidth, Math.round(t.getBoundingClientRect().right)]))));
+  check(await own.evaluate(() => { const t = document.querySelector('[data-settab=req]'); const r = t.getBoundingClientRect(); const bar = t.parentElement.getBoundingClientRect(); return r.right <= bar.right + 1 && r.left >= bar.left - 1 && t.scrollWidth <= t.clientWidth + 2; }), 'the Requests tab is in view at phone width (the tabs scroll sideways) ' + JSON.stringify(await own.evaluate(() => [...document.querySelectorAll('.t-settab')].map(t => [t.textContent, t.clientWidth, t.scrollWidth, Math.round(t.getBoundingClientRect().right)]))));
 
   if (process.env.SHOT) await own.screenshot({ path: process.env.SHOT + '-en.png' });
   /* in Norwegian the tab is "Forespørsler" – still fits */
   await own.evaluate(() => { localStorage.setItem('team.lang', 'nb'); }); await own.evaluate(() => document.querySelector('[data-act=close]').click());
   await own.reload(); await own.waitForSelector('.t-tabs');
   await openReq(own);
-  check(await own.evaluate(() => /Forespørsler/.test(document.querySelector('[data-settab=req]').textContent) && [...document.querySelectorAll('.t-settab')].every(t => t.scrollWidth <= t.clientWidth + 2 && t.getBoundingClientRect().right <= innerWidth + 1)), 'in Norwegian: "Forespørsler", and all four tabs fit');
+  check(await own.evaluate(() => /Forespørsler/.test(document.querySelector('[data-settab=req]').textContent) && (() => { const t = document.querySelector('[data-settab=req]'), r = t.getBoundingClientRect(), bar = t.parentElement.getBoundingClientRect(); return r.right <= bar.right + 1 && r.left >= bar.left - 1; })()), 'in Norwegian: "Forespørsler", in view');
   if (process.env.SHOT) await own.screenshot({ path: process.env.SHOT + '-nb.png' });
   await own.evaluate(() => { localStorage.setItem('team.lang', 'en'); }); await own.reload(); await own.waitForSelector('.t-tabs'); await openReq(own);
   /* North site's keys are on this device (set up here, not idle-locked): approving Kari from South site works at once */
