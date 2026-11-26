@@ -39,7 +39,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check((await p.evaluate(() => Features.list('dctl').length)) === 1, 'Received again opens the same control project, not a second one');
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-dcback]').click()); await sl(500);
   const l2 = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dx-list .kit-main')].map(r => r.textContent.replace(/\s+/g, ' ').trim()));
-  check(l2.length === 1 && /Received · 0 of \d+/.test(l2[0]), 'one project in the list, now "Received · 0 of n" – the requirements and the control project are one row ' + JSON.stringify(l2));
+  check(l2.length === 1 && /0 of \d+ delivered · 0 approved/.test(l2[0]), 'one project in the list, now "0 of n delivered · 0 approved" (2026-11-26) – the requirements and the control project are one row ' + JSON.stringify(l2));
   /* a project straight from a plan */
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-drnew]').click()); await sl(300);
   await p.evaluate(() => document.querySelector('#wkDocCtl form[data-drform] [data-dcnew]').click()); await sl(300);

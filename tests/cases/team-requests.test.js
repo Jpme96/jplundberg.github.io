@@ -98,7 +98,7 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
   await openReq(own);
   await own.evaluate(() => document.querySelector('[data-act=rqok][data-email="ola@madeup.no"]').click());
   check(await until(own, () => !!document.querySelector('.t-rq input[name=rqpass]')), 'South site isn\'t open here: the row asks for its passcode');
-  const ask = await own.evaluate(() => { const r = document.querySelector('.t-rq .t-rqpass'), i = document.querySelector('.t-rq input[name=rqpass]'), b = document.querySelector('.t-rq [data-act=rqok]'); return { box: !!r && /is locked on this device/.test(r.textContent) && /Type your Team passcode/.test(r.textContent), focus: document.activeElement === i, btn: b && b.textContent }; });
+  const ask = await own.evaluate(() => { const r = document.querySelector('.t-rq .t-rqpass'), i = document.querySelector('.t-rq input[name=rqpass]'), b = document.querySelector('.t-rq [data-act=rqok]'); return { box: !!r && /is locked on this device/.test(r.textContent) && /passcode you chose when you made or joined South site \(not the code from the e-mail\)/.test(r.textContent), focus: document.activeElement === i, btn: b && b.textContent }; });
   check(ask.box && ask.focus && ask.btn === 'Unlock and approve', 'it says where: a marked box "South site is locked on this device", the field ready to type in, the button "Unlock and approve" (JP 2026-11-26 14:10) ' + JSON.stringify(ask));
   if (process.env.SHOT) await own.screenshot({ path: process.env.SHOT + '-pass.png' });
   await own.type('.t-rq input[name=rqpass]', 'wrong-pass-9'); await own.evaluate(() => document.querySelector('[data-act=rqok][data-email="ola@madeup.no"]').click());

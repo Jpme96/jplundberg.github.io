@@ -48,5 +48,9 @@ const noEmpty = b => !JSON.stringify(b).includes('""') && !JSON.stringify(b).inc
   /* 4: the app's message for the half-saved case exists in both languages */
   const app = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'app.js'), 'utf8');
   check(/r\.org === false/.test(app) && /Lagret for Team/.test(app), 'the app says when only Team\'s length was saved');
+  /* "Blandet (730h / 24h)" was technical (JP 2026-11-26): lengths in words */
+  const hs = app.indexOf('function hLen('), hLen = new Function(app.slice(hs, app.indexOf('\n', hs)) + '\nreturn hLen;')();
+  check(hLen('730h', 1) === '30 dager' && hLen('24h', 1) === '1 dag' && hLen('8h', 0) === '8 hours' && hLen('1h', 1) === '1 time', 'Cloudflare lengths are shown in words (730h → 30 dager)');
+  check(/Ulikt: Team ' \+ hLen\(r\.app, 1\)/.test(app) && !/'Blandet \(/.test(app), 'a mixed setting says “Ulikt: Team 30 dager, Cloudflare 1 dag – velg én”');
   done();
 })();

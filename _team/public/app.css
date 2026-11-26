@@ -404,3 +404,10 @@ html.tz-wide #app:has(> .t-screen) { margin-left: auto; margin-right: auto; }
 .t-rqpass { margin: 12px 0 4px; padding: 12px; border-radius: 12px; background: var(--card); border: 2px solid var(--acc); }
 .t-rqpass p { margin: 0 0 10px; font-size: 14px; color: var(--ink); }
 .t-rqpass input { border-color: var(--acc); }
+/* the welcome card is compact (2026-11-26): "Got it" beside the title, the five parts side by side where there is room */
+.t-whead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.t-whead .t-btn { flex: none; }
+.t-welcome .t-wsteps { gap: 8px 18px; margin: 10px 0 2px; }
+.t-welcome .t-wsteps small { font-size: 13px; }
+@media (min-width: 700px) { .t-welcome .t-wsteps { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); } }
+html.tz-wide .t-welcome .t-wsteps { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }

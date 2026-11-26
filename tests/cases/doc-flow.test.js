@@ -102,10 +102,13 @@ const fs = require('fs'), os = require('os'), path = require('path');
   /* delete straight from the list: asked first, Cancel keeps it, Undo brings it back (JP 2026-11-24) */
   await p.evaluate(() => { const t = Features.tools(); t.dctl.push({ id: 'fp8', name: 'Made-up list delete', lines: [], files: [] }); Features.saveTools(t); });
   await go(p, 'work/#docs', 2000);
-  check(await p.evaluate(() => !!document.querySelector('.dx-list [data-dxdel="fp8"]')), 'the project list has a delete button on each project');
+  check(await p.evaluate(() => !document.querySelector('.dx-list [data-dxdel="fp8"]') && !!document.querySelector('.dx-list [data-dxmore="fp8"]')), 'the bin is behind "⋯" on each project row, not out on the row (JP 2026-11-26)');
+  await p.evaluate(() => document.querySelector('[data-dxmore="fp8"]').click()); await sl(300);
+  check(await p.evaluate(() => /Delete the project|Slett prosjektet/.test((document.querySelector('.dx-rowmenu') || {}).textContent || '')), '"⋯" opens a menu with Delete the project');
   await p.evaluate(() => document.querySelector('[data-dxdel="fp8"]').click()); await sl(400);
   await p.evaluate(() => document.querySelector('.ask-ov .ask-no').click()); await sl(400);
   check(await p.evaluate(() => Features.tools().dctl.some(x => x.id === 'fp8')), 'Cancel keeps the project');
+  await p.evaluate(() => { if (!document.querySelector('[data-dxdel="fp8"]')) document.querySelector('[data-dxmore="fp8"]').click(); }); await sl(300);
   await p.evaluate(() => document.querySelector('[data-dxdel="fp8"]').click()); await sl(400);
   await p.evaluate(() => document.querySelector('.ask-ov .ask-ok').click()); await sl(600);
   check(await p.evaluate(() => !Features.tools().dctl.some(x => x.id === 'fp8') && !document.querySelector('[data-dxdel="fp8"]')), 'Delete removes it from the list');

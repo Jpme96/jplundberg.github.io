@@ -578,7 +578,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '3156483799d0';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '7e7d6f5d67ea';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -707,11 +707,11 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       ['home', L('Overview', 'Oversikt'), L('Your open actions and the next meeting – start here each day.', 'Dine åpne oppgaver og neste møte – start her hver dag.')],
       ['docs', L('Documentation', 'Dokumentasjon'), L('The document requirements, what has come in and the report for each project.', 'Dokumentkravene, det som har kommet inn og rapporten for hvert prosjekt.')],
       ['cal', L('Meetings', 'Møter'), L('Agendas, minutes and the actions that come out of them.', 'Saksliste, referat og oppgavene som kommer ut av dem.')],
+      ['check', L('Actions', 'Oppgaver'), L('What you and the others are to do, with deadlines.', 'Hva du og de andre skal gjøre, med frister.')],
       ['gear', L('Settings', 'Innstillinger'), L('Turn on notifications to hear when something changes – only who changed what kind, never the content.', 'Slå på varsler for å høre når noe endres – bare hvem som endret hva slags, aldri innholdet.')]
     ];
-    return '<div class="t-card t-welcome"><h2>' + L('Welcome to ', 'Velkommen til ') + esc(S.me.team.name) + '</h2><p class="t-small">' + L('Everything here is encrypted in your browser – the server never sees what you write.', 'Alt her krypteres i nettleseren din – serveren ser aldri det du skriver.') + '</p><ol class="t-wsteps">' +
-      steps.map(function (s) { return '<li>' + ic(s[0]) + '<span><b>' + esc(s[1]) + '</b><small>' + esc(s[2]) + '</small></span></li>'; }).join('') + '</ol>' +
-      '<button class="t-btn sm ghost" type="button" data-act="welcomeOk">' + L('Got it', 'Skjønner') + '</button></div>';
+    return '<div class="t-card t-welcome"><div class="t-whead"><h2>' + L('Welcome to ', 'Velkommen til ') + esc(S.me.team.name) + '</h2><button class="t-btn sm ghost" type="button" data-act="welcomeOk">' + L('Got it', 'Skjønner') + '</button></div><p class="t-small">' + L('Everything here is encrypted in your browser – the server never sees what you write.', 'Alt her krypteres i nettleseren din – serveren ser aldri det du skriver.') + '</p><ol class="t-wsteps">' +
+      steps.map(function (s) { return '<li>' + ic(s[0]) + '<span><b>' + esc(s[1]) + '</b><small>' + esc(s[2]) + '</small></span></li>'; }).join('') + '</ol></div>';
   }
   function meetingCard(m) {
     var open = actions().filter(function (a) { return a.d.meeting === m.id && !a.d.done; }).length;
@@ -932,7 +932,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
           return '<div class="t-card acc t-rq" data-rq="' + esc(key) + '"><h2>' + esc(q.name) + '</h2><p class="t-small">' + esc(q.email) + ' · ' + esc(fmtTime(q.at)) + '</p>' +
             '<p class="t-small">' + L('Check code:', 'Kontrollkode:') + ' <span class="t-code" data-rqcode="' + esc(key) + '">…</span></p>' +
             '<label class="t-lbl">' + L('Role', 'Rolle') + '<select data-rqrole>' + ROLES.map(function (r) { return '<option value="' + r + '"' + ((q.role || 'edit') === r ? ' selected' : '') + '>' + roleName(r) + '</option>'; }).join('') + '</select></label>' +
-            (ask ? '<div class="t-rqpass"><p><b>' + esc(L(tName(t.id) + ' is locked on this device', tName(t.id) + ' er låst på denne enheten')) + '</b><br>' + esc(L('Type your Team passcode for ' + tName(t.id) + ' here, then Unlock and approve.', 'Skriv Team-koden din for ' + tName(t.id) + ' her, og trykk Lås opp og godkjenn.')) + '</p>' +
+            (ask ? '<div class="t-rqpass"><p><b>' + esc(L(tName(t.id) + ' is locked on this device', tName(t.id) + ' er låst på denne enheten')) + '</b><br>' + esc(L('Type the passcode you chose when you made or joined ' + tName(t.id) + ' (not the code from the e-mail), then Unlock and approve.', 'Skriv koden du valgte da du lagde eller ble med i ' + tName(t.id) + ' (ikke koden fra e-posten), og trykk Lås opp og godkjenn.')) + '</p>' +
               '<label class="t-lbl">' + esc(L('Your passcode for ' + tName(t.id), 'Koden din for ' + tName(t.id))) + '<input name="rqpass" type="password" autocomplete="current-password" data-rqenter></label></div>' : '') +
             '<p class="t-err"></p><div class="t-btns"><button class="t-btn ghost" type="button" data-act="rqno" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + L('Decline', 'Avslå') + '</button><button class="t-btn" type="button" data-act="rqok" data-tid="' + esc(t.id) + '" data-email="' + esc(q.email) + '">' + (ask ? L('Unlock and approve', 'Lås opp og godkjenn') : L('Approve', 'Godkjenn')) + '</button></div></div>';
         }).join('');
@@ -1042,6 +1042,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   /* Settings: three tabs – You, The team (admins), Account – one thing per row, so it is calm (JP 2026-11-23 "clean the settings") */
   /* the owner: how often the e-mail code is asked – one length for all of work.jplundberg.com (and the account's other logins),
      set in Cloudflare by the Worker (/api/cflogin) – JP 2026-11-25 22:01 */
+  /* a Cloudflare length in words ("730h" → "30 days") – JP 2026-11-26: "Blandet (730h / 24h)" was technical */
+  function hLen(v, nb) { var h = parseInt(v, 10) || 0; if (/m$/.test(v)) return nb ? h + ' min' : h + ' min'; if (h >= 24) { var d = Math.round(h / 24); return d === 1 ? (nb ? '1 dag' : '1 day') : d + (nb ? ' dager' : ' days'); } return h === 1 ? (nb ? '1 time' : '1 hour') : h + (nb ? ' timer' : ' hours'); }
   var ACCLEN = [['1h', '1 hour', '1 time'], ['8h', '8 hours', '8 timer'], ['24h', '1 day', '1 dag'], ['72h', '3 days', '3 dager'], ['168h', '1 week', '1 uke'], ['336h', '2 weeks', '2 uker'], ['720h', '30 days', '30 dager']];
   async function fillAccess() {
     var box = document.getElementById('accessBox'); if (!box) return;
@@ -1053,7 +1055,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     if (!r || r.error) { box.innerHTML = head + '<p class="t-small t-err">' + esc(L('Cloudflare did not answer: ', 'Cloudflare svarte ikke: ') + ((r && r.error) || '')) + '</p>'; return; }
     var cur = r.app === r.org ? r.app : '';
     box.innerHTML = head + '<div class="t-setrow"><span><b>' + L('Ask for the e-mail code again after', 'Be om e-postkoden igjen etter') + '</b><small>' + L('For everyone on work.jplundberg.com – all teams – and your own e-mail login to jplundberg.com.', 'For alle på work.jplundberg.com – alle team – og din egen e-postinnlogging på jplundberg.com.') + (r.pol ? ' ' + L('A rule in Cloudflare has its own length and wins over this.', 'En regel i Cloudflare har sin egen lengde og går foran denne.') : '') + '</small></span>' +
-      '<select data-acclen aria-label="' + esc(L('Ask for the e-mail code again after', 'Be om e-postkoden igjen etter')) + '">' + (cur ? '' : '<option value="" selected>' + esc(L('Mixed (' + r.app + ' / ' + r.org + ')', 'Blandet (' + r.app + ' / ' + r.org + ')')) + '</option>') + ACCLEN.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + L(o[1], o[2]) + '</option>'; }).join('') + '</select></div>';
+      '<select data-acclen aria-label="' + esc(L('Ask for the e-mail code again after', 'Be om e-postkoden igjen etter')) + '">' + (cur ? '' : '<option value="" selected>' + esc(L('Not the same: Team ' + hLen(r.app, 0) + ', Cloudflare ' + hLen(r.org, 0) + ' – pick one', 'Ulikt: Team ' + hLen(r.app, 1) + ', Cloudflare ' + hLen(r.org, 1) + ' – velg én')) + '</option>') + ACCLEN.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + L(o[1], o[2]) + '</option>'; }).join('') + '</select></div>';
   }
   async function setAccess(d) {
     if (!d) return; toast(L('Saving in Cloudflare …', 'Lagrer i Cloudflare …'));
@@ -1652,7 +1654,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       var bar = ls.length ? '<span class="t-pbar" role="img" aria-label="' + esc(SEG.filter(function (g) { return c[g[0]]; }).map(function (g) { return c[g[0]] + ' ' + g[1]; }).join(', ')) + '">' + SEG.map(function (g) { return c[g[0]] ? '<i class="s-' + g[0] + '" style="flex:' + c[g[0]] + '"></i>' : ''; }).join('') + '</span>' : '';
       var keys = ls.length ? '<span class="t-pkeys">' + SEG.filter(function (g) { return c[g[0]]; }).map(function (g) { return '<span><i class="s-' + g[0] + '"></i><b class="t-num">' + c[g[0]] + '</b> ' + g[1] + '</span>'; }).join('') + (all.length > ls.length ? '<span><i class="s-na"></i><b class="t-num">' + (all.length - ls.length) + '</b> ' + L('not relevant', 'ikke relevant') + '</span>' : '') + '</span>' : '<span class="t-small">' + L('No document plan yet', 'Ingen dokumentplan ennå') + '</span>';
       return '<a class="t-proj" href="#dc=' + esc(p.id) + '"><span class="t-ptop"><span class="grow"><b>' + esc(p.name) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
-        (ls.length ? '<span class="t-pbig' + (pct === 100 ? ' all' : '') + '"><b class="t-num">' + pct + ' %</b><small>' + L(done + ' of ' + ls.length, done + ' av ' + ls.length) + '</small></span>' : '') + '</span>' + bar + keys +
+        (ls.length ? '<span class="t-pbig' + (pct === 100 ? ' all' : '') + '"><b class="t-num">' + pct + ' %</b><small>' + L(done + ' of ' + ls.length + ' approved', done + ' av ' + ls.length + ' godkjent') + '</small></span>' : '') + '</span>' + bar + keys +
         (due ? '<span class="t-pdue' + (late ? ' t-warn' : '') + '">' + esc((late ? L('Overdue ', 'Forfalt ') : L('Due ', 'Frist ')) + fmtDate(due)) + '</span>' : '') + '</a>';
     }).join('') + '</div>';
   }
