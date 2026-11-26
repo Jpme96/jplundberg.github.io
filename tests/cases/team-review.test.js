@@ -108,11 +108,16 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   check(Math.abs(st.mid - st.w / 2) < 40 && st.btn, 'not in the team: the message is in the middle, with "Sign in with another e-mail" ' + JSON.stringify(st));
   /* "Sign in with another e-mail" (JP 2026-11-26 07:24 "Failed to log out"): back to Team first; still the same e-mail → the account's logout, once */
   const navs = []; stranger.on('request', r => { if (r.isNavigationRequest()) navs.push(r.url()); });
+  /* a saved copy and keys on this device (made-up) – signing out removes them all */
+  await stranger.evaluate(() => new Promise(res => { const q = indexedDB.open('team-keys', 1); q.onupgradeneeded = () => q.result.createObjectStore('k'); q.onsuccess = () => { const t = q.result.transaction('k', 'readwrite'); t.objectStore('k').put({ me: { email: 'someone@madeup.no' } }, 'other:cache'); t.objectStore('k').put('x', 'other:tk:1'); t.oncomplete = () => { q.result.close(); res(); }; }; }));
   await stranger.evaluate(() => document.querySelector('.t-screen [data-act=signout]').click());
   for (let i = 0; i < 60 && !navs.some(u => /cdn-cgi\/access\/logout/.test(u)); i++) await sl(200);
   const iHome = navs.findIndex(u => /\/$/.test(u) && u.startsWith(T)), iOut = navs.findIndex(u => /cdn-cgi\/access\/logout/.test(u));
   check(iHome >= 0 && iOut > iHome, 'signing out goes back to Team first, then (same e-mail still) to the logout page ' + JSON.stringify(navs));
-  navs.length = 0; await stranger.goto(T); await until(stranger, () => /not in this team/.test(document.body.innerText), 15000); await sl(800);
+  navs.length = 0; await stranger.goto(T);
+  const left = await stranger.evaluate(() => new Promise(res => { const q = indexedDB.open('team-keys', 1); q.onsuccess = () => { const r = q.result.transaction('k').objectStore('k').count(); r.onsuccess = () => res(r.result); }; q.onerror = () => res(-1); }));
+  check(left === 0, 'signing out removes everything Team kept on the device (saved copy, every team\'s keys) ' + left);
+ await until(stranger, () => /not in this team/.test(document.body.innerText), 15000); await sl(800);
   check(!navs.some(u => /logout/.test(u)), 'the logout page is opened only once per tab ' + JSON.stringify(navs));
   /* another e-mail after signing out: no second logout – the not-in-the-team screen for the new one */
   await stranger.setCookie({ name: 'who', value: 'other%40madeup.no', domain: 'localhost', path: '/' });

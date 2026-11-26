@@ -229,6 +229,9 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function mine(k) { return S.tid === 'team' ? !/^t\//.test(k) : k.indexOf('t/' + S.tid + '/') === 0; }
   function kget(k) { return kop('readonly', function (st) { return st.get(kn(k)); }); }
   function kset(k, v) { return kop('readwrite', function (st) { st.put(v, kn(k)); }); }
+  /* signing out: everything Team kept on this device goes – the saved copy and every team's keys (JP 2026-11-26 08:32: a wrong e-mail
+     signed out and Team opened as him from the saved copy) */
+  function kwipe() { return kop('readwrite', function (st) { st.clear(); }); }
   function kclear() { return kop('readwrite', function (st) { var r = st.getAllKeys(); r.onsuccess = function () { r.result.forEach(function (k) { if (mine(String(k))) st.delete(k); }); }; }); }
 
   async function loadKeys() {
@@ -282,7 +285,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
        already ended the session. So: leave this address, then open Team again. Cloudflare asks for the e-mail if the session is gone;
        if it still knows the same e-mail, the account's logout is opened once (then there is a session for it to end). */
     var u = ''; try { u = (await api('signout')).u || ''; } catch (x) {}
-    try { await kclear(); } catch (x) {}
+    try { await kwipe(); } catch (x) {}
+    try { Object.keys(localStorage).forEach(function (k) { if (/^team\.(act|idle|lastName|tid)/.test(k)) localStorage.removeItem(k); }); } catch (x) {}
     try { await fetch('/cdn-cgi/access/logout', { credentials: 'same-origin', redirect: 'manual', cache: 'no-store' }); } catch (x) {}
     try { localStorage.setItem('team.signedout', JSON.stringify({ t: Date.now(), e: (S.me && S.me.email) || '', u: /^https:\/\/[\w.-]+\.cloudflareaccess\.com\/cdn-cgi\/access\/logout$/.test(u) ? u : '' })); sessionStorage.removeItem('team.outtried'); } catch (x) {}
     location.replace('/');
@@ -574,7 +578,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'e7c4e6fd16c3';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '87144aa5e53b';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
