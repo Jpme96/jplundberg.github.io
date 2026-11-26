@@ -106,6 +106,18 @@ async function until(pg, fn, ms = 15000) { const t = Date.now(); while (Date.now
   const st = await stranger.evaluate(() => { const s = document.querySelector('.t-screen'), r = s.getBoundingClientRect(); return { mid: Math.round((r.left + r.right) / 2), w: innerWidth, btn: !!document.querySelector('.t-screen [data-act=signout]'), name: /Clock team/.test(document.body.innerText) }; });
   check(st.name === false, 'someone not in the team does not see its name');
   check(Math.abs(st.mid - st.w / 2) < 40 && st.btn, 'not in the team: the message is in the middle, with "Sign in with another e-mail" ' + JSON.stringify(st));
+  /* "Sign in with another e-mail" (JP 2026-11-26 07:24 "Failed to log out"): back to Team first; still the same e-mail → the account's logout, once */
+  const navs = []; stranger.on('request', r => { if (r.isNavigationRequest()) navs.push(r.url()); });
+  await stranger.evaluate(() => document.querySelector('.t-screen [data-act=signout]').click());
+  for (let i = 0; i < 60 && !navs.some(u => /cdn-cgi\/access\/logout/.test(u)); i++) await sl(200);
+  const iHome = navs.findIndex(u => /\/$/.test(u) && u.startsWith(T)), iOut = navs.findIndex(u => /cdn-cgi\/access\/logout/.test(u));
+  check(iHome >= 0 && iOut > iHome, 'signing out goes back to Team first, then (same e-mail still) to the logout page ' + JSON.stringify(navs));
+  navs.length = 0; await stranger.goto(T); await until(stranger, () => /not in this team/.test(document.body.innerText), 15000); await sl(800);
+  check(!navs.some(u => /logout/.test(u)), 'the logout page is opened only once per tab ' + JSON.stringify(navs));
+  /* another e-mail after signing out: no second logout – the not-in-the-team screen for the new one */
+  await stranger.setCookie({ name: 'who', value: 'other%40madeup.no', domain: 'localhost', path: '/' });
+  await stranger.goto(T); await until(stranger, () => /other@madeup\.no/.test(document.body.innerText), 15000);
+  check(/other@madeup\.no/.test(await stranger.evaluate(() => document.body.innerText)) && !/logout/.test(stranger.url()), 'a new e-mail after signing out gets the normal screen');
   await stranger.close();
   /* the sign-in runs out while Team is open: it says so and offers to sign in again (JP 2026-11-25 22:37 – it looked open, nothing reached the server) */
   await own.setCookie({ name: 'noauth', value: '1', domain: 'localhost', path: '/' });

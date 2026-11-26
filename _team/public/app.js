@@ -263,6 +263,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function joinCode() { try { return sessionStorage.getItem('team.join'); } catch (e) { return null; } }
   async function route() {
     var me = S.me;
+    if (stillSignedIn(me)) return;
     if (S.newTeam && me.isOwner) return screenSetup(true);
     if (!me.team) return me.isOwner ? screenSetup() : screen('<h1>' + L('No team yet', 'Ingen team ennå') + '</h1><p>' + L('The team has not been set up yet.', 'Teamet er ikke satt opp ennå.') + '</p>');
     if (me.member) {
@@ -277,11 +278,25 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   /* out of this address and the account's login both, so the e-mail page comes back and another e-mail can be tried (JP 2026-11-25 22:01) */
   async function signOut() {
+    /* JP 2026-11-26 07:24: going straight to the account's logout page showed Cloudflare's "Failed to log out" – the app's logout had
+       already ended the session. So: leave this address, then open Team again. Cloudflare asks for the e-mail if the session is gone;
+       if it still knows the same e-mail, the account's logout is opened once (then there is a session for it to end). */
     var u = ''; try { u = (await api('signout')).u || ''; } catch (x) {}
     try { await kclear(); } catch (x) {}
     try { await fetch('/cdn-cgi/access/logout', { credentials: 'same-origin', redirect: 'manual', cache: 'no-store' }); } catch (x) {}
-    try { localStorage.setItem('team.signedout', String(Date.now())); } catch (x) {}
-    location.href = /^https:\/\/[\w.-]+\.cloudflareaccess\.com\/cdn-cgi\/access\/logout$/.test(u) ? u : '/cdn-cgi/access/logout';
+    try { localStorage.setItem('team.signedout', JSON.stringify({ t: Date.now(), e: (S.me && S.me.email) || '', u: /^https:\/\/[\w.-]+\.cloudflareaccess\.com\/cdn-cgi\/access\/logout$/.test(u) ? u : '' })); sessionStorage.removeItem('team.outtried'); } catch (x) {}
+    location.replace('/');
+  }
+  /* right after signing out: still the same e-mail = Cloudflare kept the session – end it on the account's page (once) */
+  function stillSignedIn(me) {
+    var o = null; try { o = JSON.parse(localStorage.getItem('team.signedout') || 'null'); } catch (x) {}
+    if (!o || typeof o !== 'object') return false;
+    var fresh = Date.now() - (o.t || 0) < 180e3, same = me && me.email && o.e && me.email === o.e, tried = false;
+    try { tried = sessionStorage.getItem('team.outtried') === '1'; } catch (x) {}
+    if (!fresh || !same || tried) { try { localStorage.removeItem('team.signedout'); } catch (x) {} return false; }
+    try { sessionStorage.setItem('team.outtried', '1'); } catch (x) {}
+    location.replace(o.u || '/cdn-cgi/access/logout');
+    return true;
   }
   function screen(html) { stopPoll(); $app.innerHTML = '<div class="t-screen">' + html + '</div>'; if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 250); }
   function passFields() {
@@ -558,7 +573,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'd23059c24fe3';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'e6a85398dad0';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
