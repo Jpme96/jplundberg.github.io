@@ -737,7 +737,8 @@
     var head = headLine || '<div class="dcn-head"><i class="bi bi-' + (kd === 'photo' ? 'image' : kd === 'drawing' ? 'rulers' : 'file-earmark-text') + '" aria-hidden="true"></i><span class="dcn-hn"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(kd === 'photo' ? k('ui.dcn-k-photo', 'Photo') : kd === 'drawing' ? k('ui.dcn-k-drawing', 'Drawing') : k('ui.dcn-k-doc', 'Document')) + (f.orig && f.orig !== f.name ? ' · <span data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</span>' : '') + '</small></span>' + stt +
       (f.nf ? '' : '<button type="button" class="pill-btn sm ghost dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</div>';
     var code = f.p.code ? f.p.code + ' ' + (codeName(f.p.code) || '') : '', seen = {};
-    var h = '<li class="dcn-row dcn-card dcn-' + lvl + '" data-dcnf="' + esc(f.id) + '">' + head + '<div class="dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-code', 'Code and type')) + '</p><div class="dcn-g">' +
+    var good = fstate(p, f) !== 'todo' && lvl !== 'warn';   /* the whole card a light red while something is wrong, a light green when it's right (JP 2026-11-26 10:17) */
+    var h = '<li class="dcn-row dcn-card dcn-' + lvl + ' dcn-' + (good ? 'good' : 'bad') + '" data-dcnf="' + esc(f.id) + '">' + head + '<div class="dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-code', 'Code and type')) + '</p><div class="dcn-g">' +
       '<label class="dcn-c dcn-kind"><span>' + esc(k('ui.dcn-kind', 'Kind of file')) + '</span><select data-dcnk="' + esc(f.id) + '">' + [['doc', 'ui.dcn-k-doc', 'Document'], ['photo', 'ui.dcn-k-photo', 'Photo'], ['drawing', 'ui.dcn-k-drawing', 'Drawing']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === kd ? ' selected' : '') + '>' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select></label>' +
       '<label class="dcn-c"><span>' + esc(kd === 'photo' ? k('ui.dcn-code-opt', 'NS 3451 code (optional)') : k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '" class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, f) + '</select>' +
         '<button type="button" class="dcn-cbtn" data-dcncpick="' + esc(f.id) + '"><span>' + esc(f.p.code ? f.p.code + (codeName(f.p.code) ? ' ' + codeName(f.p.code) : '') : k('ui.dcn-choose-code', 'Choose a code')) + '</span><i class="bi bi-search"></i></button></label>' + (nown === f.id + ':code' ? ownForm(f.id, 'code') : '') +
@@ -746,8 +747,8 @@
       (tags.length || (f.sg && (f.sg.c || f.sg.t)) ? '<div class="dcn-t">' + tags.join('') + (f.sg && (f.sg.c || f.sg.t) ? '<button type="button" class="text-btn" data-dcnok="' + esc(f.id) + '">' + esc(k('ui.dcn-looks-right', 'Looks right')) + '</button>' : '') + '</div>' : '') + '</div></div>';   /* closes the grid and the Code and type part */
     if (f.sg && (f.sg.c || (f.sg.t && kd === 'doc'))) h += '<p class="dcn-why"><i class="bi bi-lightbulb"></i> ' + esc([f.sg.c ? k('ui.dcn-code', 'NS 3451 code') + ': ' + f.sg.c : '', f.sg.t && kd === 'doc' ? k('ui.dcn-type', 'Document type') + ': ' + f.sg.t : ''].filter(Boolean).join(' · ')) + '</p>';
     var hs = '';
-    /* a project value (building, property, project) is asked here only while it's missing – once set it's on the "Shared by all the files" line above, where it can be changed (JP 2026-11-24) */
-    r.parts.forEach(function (q) { if (PV[q.k] && !p[PV[q.k][0]]) hs += pvField(p, q.k, true, false); });
+    /* a project value (building, property, project) the name uses stays in the file's popup too – a change here is for all the files (JP 2026-11-26 10:17: the building vanished from the popup once it was set) */
+    r.parts.forEach(function (q) { if (PV[q.k]) hs += pvField(p, q.k, true, !!p[PV[q.k][0]], true); });
     r.parts.forEach(function (q) { if (NPART[q.k] && NPART[q.k][2] && !seen[q.k]) { seen[q.k] = 1; hs += nfield(p, f, q.k, b.miss.indexOf(q.k) >= 0); } });
     if (hs) h += '<div class="dcn-s dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-parts', 'Name parts')) + '</p>' + hs + '</div>';
     var mw = b.miss.map(function (x) { return x === 'code' ? lc1(k('ui.dcn-code', 'NS 3451 code')) : x === 'type' ? lc1(k('ui.dcn-type', 'Document type')) : x === 'room' ? k('ui.dcn-short-room', 'room') : lc1(partName(x)); }), mws = mw.length > 1 ? mw.slice(0, -1).join(', ') + k('ui.dcn-and', ' and ') + mw[mw.length - 1] : mw[0];
@@ -887,10 +888,10 @@
   }
   var PV = { bno: ['bid', 'ui.dx-bno', 'Building number (for drawings)', 'ui.dx-bno-ph', 'e.g. 11621', 'numeric'], unit: ['pid', 'ui.dx-pid', 'Property ID', 'ui.dx-pid-ph', 'e.g. 3-1234', ''],
     pname: ['pname', 'ui.dx-pname', 'Property name', 'ui.dx-pname-ph', 'e.g. Made-up school', ''], proj: ['no', 'ui.dx-pno', 'Project number', 'ui.dx-pno-ph', 'e.g. P-123', ''] };
-  function pvField(p, key, needed, big) {
+  function pvField(p, key, needed, big, inFile) {
     var d = PV[key], v = p[d[0]] || '';
     return '<label class="dcn-fl dcn-bno"><span>' + esc(k(d[1], d[2])) + '</span><input data-dcnpv="' + d[0] + '"' + (key === 'bno' ? ' data-dcnbid' : '') + ' value="' + esc(v) + '" maxlength="60"' + (d[5] ? ' inputmode="' + d[5] + '"' : '') + ' placeholder="' + esc(k(d[3], d[4])) + '"' + (needed && !v ? ' class="dcn-need"' : '') + '>' +
-      (big ? '<small>' + esc(k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' : '') + '</label>';
+      (big ? '<small>' + esc(inFile ? k('ui.dcn-pv-all', 'The same for all the files') : k('ui.dcn-pv-s', 'Used in every name that has it, and kept for the next files')) + '</small>' : '') + '</label>';
   }
   /* ---------- several files at once (JP 2026-11-19): a checkbox on each line, a bar with the changes, one popup per change, Undo ---------- */
   var PKS = {}, pkP = '', pvOpen = false;
@@ -989,7 +990,7 @@
     if (pick && pkN()) h += '<div class="dcn-pkact" role="toolbar" aria-label="' + esc(k('ui.dcn-pk-bar', 'Selected files')) + '"><b>' + esc(k('ui.dcn-pk-n', '{n} selected', { n: pkN() })) + '</b>' +
       (pkOdd.length ? '<span class="dcn-pkodd"><i class="bi bi-exclamation-circle"></i> ' + esc(pkDw ? (pkDw === 1 ? k('ui.dcn-pk-dwin1', 'incl. 1 drawing – left out unless you take it in') : k('ui.dcn-pk-dwin', 'incl. {n} drawings – left out unless you take them in', { n: pkDw })) : (pkOdd.length === 1 ? k('ui.dcn-pk-phin1', 'incl. 1 photo – left out unless you take it in') : k('ui.dcn-pk-phin', 'incl. {n} photos – left out unless you take them in', { n: pkOdd.length }))) + '</span>' : '') +
       '<button type="button" class="pill-btn" data-dcnpka="code">' + esc(k('ui.dcn-pk-code', 'Change code')) + '</button><button type="button" class="pill-btn sm ghost" data-dcnpka="type">' + esc(k('ui.dcn-pk-type', 'Change type')) + '</button>' +
-      '<button type="button" class="pill-btn sm ghost" data-dcnpka="name">' + esc(k('ui.dcn-pk-name', 'Use the new name')) + '</button>' + (p.tool ? '<button type="button" class="pill-btn sm ghost" data-dcnpka="rm">' + esc(k('ui.dcn-pk-rm', 'Remove from the list')) + '</button>' : '') +
+      '<button type="button" class="pill-btn sm ghost" data-dcnpka="name">' + esc(k('ui.dcn-pk-name', 'Use the new name')) + '</button>' + (p.tool ? '<button type="button" class="pill-btn sm ghost dcn-danger" data-dcnpka="rm">' + esc(k('ui.dcn-pk-rm', 'Remove from the list')) + '</button>' : '') +
       '<button type="button" class="icon-btn" data-dcnpks="none" aria-label="' + esc(k('ui.dcn-pk-clear', 'Clear the selection')) + '"><i class="bi bi-x-lg"></i></button></div>';
     /* one file at a time in a popup over the list, with the one before / after (JP 2026-11-17 08:07: "lose control what is what") */
     var L2 = G.some(function (f) { return f.id === nfo; }) ? G : F, ix = -1; L2.forEach(function (f, i) { if (f.id === nfo) ix = i; });
@@ -1069,7 +1070,8 @@
     on('click', function (e) {
       var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) return;
       var fileOf = function (p, id) { return (p.files || []).filter(function (x) { return x.id === id; })[0]; };
-      if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) { rename(p, f, nb2.plain + ext(f.orig || f.name)); teach(f); } }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var nxf = PF[j + 1] || PF.filter(function (x) { return x.id !== id && fstate(proj(cur()), x) !== 'done'; })[0]; if (nxf) nfo = nxf.id; }   /* renamed – on to the next file */ draw(); return; }
+      if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) { rename(p, f, nb2.plain + ext(f.orig || f.name)); teach(f); } }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var P2 = proj(cur()), left = function (x) { return x.id !== id && fstate(P2, x) !== 'done'; }, nxf = PF.slice(j + 1).filter(left)[0] || PF.filter(left)[0];   /* renamed – on to the next file that still needs it */
+        if (nxf) nfo = nxf.id; else { nfo = ''; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); toast('<i class="bi bi-check2-circle"></i> ' + esc(k('ui.dcn-all-done', 'All the files have their new names'))); } }   /* none left: the popup closes (JP 2026-11-26 10:17) */ draw(); return; }
       /* "Fill in floor and room first": takes you to the first empty field of that file (JP 2026-11-24) */
       if ((b = t.closest('[data-dcnfill]'))) { var card = b.closest('.dcn-row'), nd = card && (card.querySelector('.dcn-s .dcn-need, .dcn-s input:not([value]), .dcn-s input[value=""]') || card.querySelector('[data-dcncpick]')); if (nd) { nd.scrollIntoView({ block: 'center', behavior: 'smooth' }); nd.focus(); if (nd.matches('[data-dcncpick]')) nd.click(); } return; }
       if ((b = t.closest('[data-dcnpvo]'))) { pvOpen = !pvOpen; draw(); if (pvOpen) setTimeout(function () { var i = document.querySelector('.dcn-pvbox input'); if (i) i.focus(); }, 30); return; }

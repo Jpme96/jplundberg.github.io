@@ -1570,6 +1570,8 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-need > summary::-webkit-details-marker { display: none; }
 .dc-need > summary::after { content: ''; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform var(--dur-1, .15s); flex: none; }
 .dc-need[open] > summary::after { transform: rotate(45deg); }
+.pill-btn.dcn-danger { color: var(--danger); border-color: rgba(var(--danger-rgb), .5); background: rgba(var(--danger-rgb), .08); }
+.pill-btn.dcn-danger:hover { background: rgba(var(--danger-rgb), .16); }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }
 .stt { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: var(--r-chip); font-size: var(--fs-s); font-weight: 600; line-height: 1.5; white-space: nowrap;

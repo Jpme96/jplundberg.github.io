@@ -4398,6 +4398,8 @@ I18N.add({
   "ui.dx-pno": ["Project number", "Prosjektnummer"],
   "ui.dx-pno-ph": ["e.g. P-123", "f.eks. P-123"],
   "ui.dcn-pv-s": ["Used in every name that has it, and kept for the next files", "Brukes i alle navn som har den, og huskes til neste filer"],
+  "ui.dcn-pv-all": ["The same for all the files", "Det samme for alle filene"],
+  "ui.dcn-all-done": ["All the files have their new names", "Alle filene har fått nye navn"],
   "ui.dcn-ns-team": ["Shared with everyone in the team", "Delt med alle i teamet"],
   "ui.dcn-ns-me": ["Saved with your codes – on all your devices", "Lagret med kodene dine – på alle enhetene dine"],
   "ui.dcn-ns-here": ["Kept on this device only", "Lagres bare på denne enheten"],

@@ -76,7 +76,22 @@ fs.writeFileSync(lone, '%PDF made up 4');
     const b2 = document.querySelector('.dx-ren .dcn-pvbox [data-dcnbid]'); b2.value = '11621'; b2.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 250));
     const done = document.querySelector('.dx-ren .dcn-pvbox [data-dcnpvo]'); done && done.click(); await new Promise(r => setTimeout(r, 200));
     return { box: true, inRow, txt, was, now, folded: !document.querySelector('.dx-ren .dcn-pvbox') && !!document.querySelector('.dx-ren .dcn-shared') }; });
-  check(bn.box && !bn.inRow && /11621/.test(bn.txt) && bn.was === '11621' && /^22222-/.test(bn.now) && bn.folded, 'the building number is on the shared line once set, Change opens it, it can be changed, Done folds it again ' + JSON.stringify(bn));
+  check(bn.box && bn.inRow && /11621/.test(bn.txt) && bn.was === '11621' && /^22222-/.test(bn.now) && bn.folded, 'the building number is on the shared line once set and still in the file (JP 2026-11-26), Change opens it, it can be changed, Done folds it again ' + JSON.stringify(bn));
+  /* JP 2026-11-26 10:17: the card is light red while something is wrong and light green when right; the plan button looks like the others;
+     "Remove from the list" is red; renaming the last file that needed it closes the popup */
+  const lk = await p.evaluate(async () => { const li = await R(/Rørplan sprinkler/); const cls = li ? li.className : ''; document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); await new Promise(r => setTimeout(r, 200));
+    const pb = document.querySelector('[data-dxrenplan]'); return { tint: /dcn-(good|bad)/.test(cls), plan: !!pb && !pb.classList.contains('ghost') }; });
+  check(lk.tint && lk.plan, 'the file card is tinted by how it stands, and the plan button has the same look as Add and Download ' + JSON.stringify(lk));
+  check(/dcn-danger" data-dcnpka="rm"/.test(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'cmd', 'doc-naming.js'), 'utf8')) && /\.pill-btn\.dcn-danger/.test(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'cmd', 'work', 'page.css'), 'utf8')), '"Remove from the list" is drawn in red');
+  const cl = await p.evaluate(async () => {
+    for (const r0 of [...document.querySelectorAll('.dx-ren .dcn-row.dcn-c')]) { if (/check2-circle/.test(r0.innerHTML)) continue; r0.querySelector('[data-dcnexp]').click(); await new Promise(r => setTimeout(r, 300));
+      const u = document.querySelector('.dcn-fpop [data-dcnuse]:not([disabled])'); if (!u) { document.querySelectorAll('[data-dcnfx]').forEach(x => x.click()); await new Promise(r => setTimeout(r, 150)); continue; }
+      const id = u.dataset.dcnuse; u.click(); await new Promise(r => setTimeout(r, 400));
+      const card = document.querySelector('.dcn-fpop [data-dcnf]'), nid = card ? card.dataset.dcnf : '';
+      const nrow = nid && document.querySelector('.dx-ren .dcn-row.dcn-c[data-dcnc="' + nid + '"]');
+      return { used: true, moved: !card || (nid !== id && !(nrow && /check2-circle/.test(nrow.innerHTML))), open: !!card }; }
+    return { used: false }; });
+  check(cl.used && cl.moved, 'after "Use this name" the popup goes to a file that still needs it, or closes when none is left ' + JSON.stringify(cl));
   /* the PDF viewer zooms inside the PDF, not the whole page (JP 2026-11-23) */
   const zv = await p.evaluate(async () => {
     await new Promise((ok, no) => { if (window.jspdf) return ok(); const sc = document.createElement('script'); sc.src = '/cmd/vendor/jspdf.umd.min.js?v=2.5.2'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
