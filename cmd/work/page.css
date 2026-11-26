@@ -1090,7 +1090,8 @@ html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { anima
 .dc-need[open] > summary::after { transform: rotate(45deg); }
 /* JP 2026-11-26 10:17: a file's card is a light red while something is wrong and a light green when it's right (Oslo red/green in Team);
    "Remove from the list" in red */
-.dcn-row.dcn-card.dcn-bad { background: rgba(var(--danger-rgb), .07); border-color: rgba(var(--danger-rgb), .35); border-left-color: rgb(var(--danger-rgb)); }
-.dcn-row.dcn-card.dcn-good { background: rgba(var(--ok-rgb), .09); border-color: rgba(var(--ok-rgb), .45); border-left-color: rgb(var(--ok-rgb)); }
+.dcn-row.dcn-card.dcn-bad { background: rgba(var(--danger-rgb), .13); border: 1px solid rgba(var(--danger-rgb), .55); border-left: 5px solid rgb(var(--danger-rgb)); }
+.dcn-row.dcn-card.dcn-good { background: rgba(var(--ok-rgb), .14); border: 1px solid rgba(var(--ok-rgb), .6); border-left: 5px solid rgb(var(--ok-rgb)); }
+.dcn-row.dcn-card.dcn-bad .dcn-part, .dcn-row.dcn-card.dcn-good .dcn-part { background: transparent; }
 .pill-btn.dcn-danger { color: var(--danger); border-color: rgba(var(--danger-rgb), .5); background: rgba(var(--danger-rgb), .08); }
 .pill-btn.dcn-danger:hover { background: rgba(var(--danger-rgb), .16); }
