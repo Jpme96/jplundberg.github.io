@@ -1049,6 +1049,7 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
 .dc-enter > * { animation: view-in .2s ease-out both; }
 .ov-still, .ov-still > * { animation: none !important; }
+.ov-wait, .ov-wait > * { animation-play-state: paused !important; }   /* held until the popup or page has been drawn (2026-11-26) */
 html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; } }
 /* the upload line stays in one place at the bottom instead of pushing the page down and up (JP 2026-11-25 "the entire page shakes") */

@@ -1532,6 +1532,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
 .dc-enter > * { animation: view-in .2s ease-out both; }
 .ov-still, .ov-still > * { animation: none !important; }
+.ov-wait, .ov-wait > * { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) {
   .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; }
 }

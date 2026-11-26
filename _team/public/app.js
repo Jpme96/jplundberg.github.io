@@ -568,17 +568,20 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   }
   /* a dropdown that is open is never redrawn under you (JP 2026-11-25 "boxes … do not keep themselves open"): from the press on a <select> until
      you pick, leave it or press Escape, a redraw waits and runs right after */
+  /* the opening waits until the popup has been drawn (JP 2026-11-26 20:14 "stuttering"): building a big popup took 60–100 ms, and an animation
+     started in that same frame jumped half-way – now it is held still until two frames later, then runs smoothly from the start */
+  function holdAnim(o) { o.classList.add('ov-wait'); requestAnimationFrame(function () { requestAnimationFrame(function () { o.classList.remove('ov-wait'); }); }); }
   /* a popup opens with a short fade once; when a redraw puts the same popup back it gets .ov-still, so the opening never replays (JP 2026-11-25) */
-  (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
+  (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, born = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
     var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
     var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
     new MutationObserver(function (ms) { ms.forEach(function (m) {
-      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) o.classList.add('ov-still'); if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 320) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
     }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '7e7d6f5d67ea';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '9304c5687fc8';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -630,7 +633,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     /* Documentation keeps its own page (and an open popup or dropdown in it) when Team redraws around it – it was rebuilt from "Loading …" each time */
     [[keepC, 'wkDocCtl'], [keepR, 'wkDocReq']].forEach(function (x) { var nu = x[0] && document.getElementById(x[1]); if (nu && nu !== x[0]) { x[0].hidden = nu.hidden; nu.replaceWith(x[0]); } });
     /* a new page or tab fades in (short and calm; off with reduced motion) */
-    if (S.vkey && S.vkey !== vkey && !S.edit && !S.wasEdit) { $app.classList.remove('t-enter'); void $app.offsetWidth; $app.classList.add('t-enter'); clearTimeout(S.enterT); S.enterT = setTimeout(function () { $app.classList.remove('t-enter'); }, 400); }
+    if (S.vkey && S.vkey !== vkey && !S.edit && !S.wasEdit) { $app.classList.remove('t-enter'); void $app.offsetWidth; $app.classList.add('t-enter'); holdAnim($app); clearTimeout(S.enterT); S.enterT = setTimeout(function () { $app.classList.remove('t-enter'); }, 400); }
     S.vkey = vkey; S.wasEdit = !!S.edit; try { if (S.me && S.me.team && S.me.team.name) localStorage.setItem('team.lastName', S.me.team.name); } catch (e) {} if (window.__teamSwitchDone) setTimeout(window.__teamSwitchDone, 350);
     document.documentElement.classList.toggle('t-modal', !!S.edit);
     [].forEach.call($app.querySelectorAll('details'), function (d) { var w = dWas[dKey(d)]; if (w !== undefined && d.open !== w) d.open = w; if (d.hasAttribute('data-accd')) S.accOpen = d.open; });

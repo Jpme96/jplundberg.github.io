@@ -35,6 +35,10 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(/t-whead/.test(app) && /L\('Actions', 'Oppgaver'\), L\('What you and the others are to do/.test(app), 'the welcome card is compact ("Got it" beside the title) and names Oppgaver too');
   await go(p, 'work/#docs', 2000);
   check(await p.evaluate(() => { const n = document.querySelector('[data-dcnew], [data-drnew]'); return !!n && n.classList.contains('pill-btn'); }), '"New project" is a real button');
+  /* a popup's opening is held until it has been drawn, then runs from the start (JP 2026-11-26 20:14 "stuttering") */
+  const ow = await p.evaluate(async () => { const seen = []; const mo = new MutationObserver(() => { const o = document.querySelector('.dx-tov'); if (o) seen.push(o.classList.contains('ov-wait')); }); mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    document.querySelector('[data-dxtool="ren"]').click(); await new Promise(r => setTimeout(r, 300)); mo.disconnect(); const o = document.querySelector('.dx-tov'); return { first: seen[0], now: o && o.classList.contains('ov-wait'), anim: o && getComputedStyle(o.querySelector('.dx-tsheet')).animationName, cls: o && o.className, html: document.documentElement.className, off: document.documentElement.classList.contains('mo-off') || matchMedia('(prefers-reduced-motion: reduce)').matches }; });
+  check(ow.first === true && ow.now === false && (ow.off || /sh-in/.test(ow.anim || '')), 'a new popup waits (ov-wait) until drawn, then opens with its animation ' + JSON.stringify(ow));
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
 })();

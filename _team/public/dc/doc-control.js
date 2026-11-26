@@ -1211,11 +1211,13 @@
     document.addEventListener('change', function (e) { if (e.target === SO) done(); }, true);
     document.addEventListener('focusout', function (e) { if (e.target === SO) done(); }, true); })();
   window.addEventListener('sel:done', function () { if (drawLater) { drawLater = false; draw(); } });
-  if (!HOST) (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
+  /* the opening waits until the popup has been drawn (JP 2026-11-26 "stuttering"): held still for two frames, then it runs from the start */
+  function holdAnim(o) { o.classList.add('ov-wait'); requestAnimationFrame(function () { requestAnimationFrame(function () { o.classList.remove('ov-wait'); }); }); }
+  if (!HOST) (function () { var SEL = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov', open = {}, gone = {}, born = {}, seen = typeof WeakSet === 'function' ? new WeakSet() : null;   /* seen: a node only moved (a popup lifted to the page's end) is not a redraw */
     var key = function (o) { var c = o.firstElementChild; return String(o.className).replace(/\b(ov-still|dcn-lifted)\b/g, '').replace(/\s+/g, ' ').trim() + '|' + ((c && c.getAttribute('aria-label')) || ''); };
     var each = function (n, f) { if (!n || n.nodeType !== 1) return; if (n.matches(SEL)) f(n); [].forEach.call(n.querySelectorAll(SEL), f); };
     new MutationObserver(function (ms) { ms.forEach(function (m) {
-      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) o.classList.add('ov-still'); if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 320) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } }); });
     }); }).observe(document.body, { childList: true, subtree: true }); })();   /* the calm popup opening without replays – Team has its own for its whole page */
   function draw() {
@@ -1239,7 +1241,7 @@
     var ts0 = el.querySelector('.dx-tsheet'), tsTop = ts0 ? ts0.scrollTop : 0;
     el.innerHTML = p ? full(p) : rp && er ? '' : home();
     var vk = (p ? p.id + '|' + tab + '|' + !!kin : '') + '|' + (rp ? rp.id : '');   /* a project, a step or the list: the new view fades in (JP 2026-11-25) */
-    if (VKEY !== null && VKEY !== vk) { el.classList.remove('dc-enter'); void el.offsetWidth; el.classList.add('dc-enter'); clearTimeout(VKT); VKT = setTimeout(function () { el.classList.remove('dc-enter'); }, 400); }
+    if (VKEY !== null && VKEY !== vk) { el.classList.remove('dc-enter'); void el.offsetWidth; el.classList.add('dc-enter'); holdAnim(el); clearTimeout(VKT); VKT = setTimeout(function () { el.classList.remove('dc-enter'); }, 400); }
     VKEY = vk;
     var hold = document.getElementById('dcPopHold'), hs0 = hold && hold.querySelector('.dx-tsheet'); if (hs0) tsTop = hs0.scrollTop || tsTop;
     if (renHere && xtool !== 'ren') renHere = false;
