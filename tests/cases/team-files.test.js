@@ -266,6 +266,8 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tf-'));
     check(eb.box && !eb.menu, 'an empty Levering is one box to drop on, no Add menu yet ' + JSON.stringify(eb) + (eb.box ? '' : await own.evaluate(() => { const i = document.querySelector('input[data-dcfiles]'); let e = i, c = []; while (e && c.length < 5) { c.push(e.tagName + '.' + e.className); e = e.parentNode; } return c.join(' < '); })));
     const inp = await own.$('.dc-drop input[data-dcfiles]'); if (inp) await inp.uploadFile(up, up2);
     check(await until(own, () => { const b = document.querySelector('.dc-fresh'); return !!b && /Gi de nye filene riktig navn|Give the new files/.test(b.textContent) && /Tegning madeup 15/.test(b.textContent); }, 10000), 'an uploaded file gets the "Give the new files the right names" box');
+    /* the file's pieces are sent by a worker, off the page's thread (JP 2026-11-27: the page stuttered while uploading) */
+    check(await until(own, () => performance.getEntriesByType('resource').some(e => /\/up-worker\.js/.test(e.name)), 10000), 'the upload runs in a worker (up-worker.js)');
     /* it is a popup after your own upload; Not now leaves a line that opens it again, and with files there is "+ Add" (JP 2026-11-24 17:53) */
     const pp = await own.evaluate(() => ({ pop: !!document.querySelector('.dc-freshov .dc-fresh'), box: !!document.querySelector('.dc-drop'), add: !!document.querySelector('.dc-sumbar [data-dcaddm]') }));
     check(pp.pop && !pp.box && pp.add, 'the naming box opens as a popup; the page has "+ Add" instead of the big box ' + JSON.stringify(pp));

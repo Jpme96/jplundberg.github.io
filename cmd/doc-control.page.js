@@ -1235,6 +1235,9 @@
     if (busyField() || (window.__selOpen && window.__selOpen())) { drawLater = true; return; }
     var now = Date.now(), mine = now - (window.__dcUser || 0) < 400;
     if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
+    /* while files are being sent up (and read), the page is drawn at most every 700 ms unless you just tapped or typed – each finished file
+       asked for a whole draw and the page stuttered during an upload (JP 2026-11-27 10:05) */
+    if (shBusy && now - (window.__dcInput || 0) > 500 && now - lastDraw < 700) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 700 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
     lastDraw = now; window.__dcDraws = (window.__dcDraws || 0) + 1;   /* counted for the tests – an update in place may change nothing on the page */
     var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae) || (document.getElementById('dcPopHold') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
@@ -1271,6 +1274,7 @@
      different kind is swapped. What the page itself adds to a popup or a view stays (the popup observer's classes and delay, the fades).
      Fields come back to what the HTML says, as a full redraw did (a draw never runs while you type). */
   var PKEEP = /^(ov-still|ov-wait|ov-ghost|dcn-lifted|dc-enter|t-enter)$/, PPOP = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov, .fdz-ov', PINJ = '.fold-btn';
+  ['pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function () { window.__dcInput = Date.now(); }, true); });   /* a real tap or key: drawn at once, also during an upload */
   function patchIn(el, html) {
     var tmp = document.createElement('div'); tmp.innerHTML = html;
     if (window.I18N && I18N.walk) try { I18N.walk(tmp); } catch (e) {}

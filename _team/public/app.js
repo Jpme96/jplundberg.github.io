@@ -594,7 +594,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); shut.forEach(function (x) { if (!x[0].isConnected && !open[x[1]]) ghost(x[0]); }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = 'c4012babc439';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'f2b0e04e031b';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -1437,8 +1437,25 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   /* the encrypted pieces of one file – shared files and, since 2026-11-24, a project's delivered files (DocHost.fup) */
   /* a Documentation project's group id from its own id (requirements and their control project are one) */
   function gOfPid(pid) { if (!pid) return ''; var raw = ''; Object.keys(S.recs).some(function (id) { var r = S.recs[id]; if (!r || r.del || r.k !== 'dcp' || !r.d || !r.d.p || r.d.p.id !== pid) return false; raw = r.d.key === 'dctl' && r.d.p.krav ? r.d.p.krav : r.d.p.id; return true; }); return gOfRaw(raw); }
+  /* a file's pieces are read, locked and sent by a worker, off the page's thread (JP 2026-11-27 "runs in the background first, then just
+     shows up"); if the worker can't start or can't take the key, the page does it itself as before */
+  var UPW = null, UPWN = 0, UPWQ = {};
+  function upWorker() { if (UPW === false) return null; if (UPW) return UPW; try { UPW = new Worker('/up-worker.js?v=' + BUILD); UPW.onmessage = function (ev) { var m = ev.data || {}, q = UPWQ[m.id]; if (!q) return; delete UPWQ[m.id]; q(m); }; UPW.onerror = function () { var all = UPWQ; UPWQ = {}; UPW = false; Object.keys(all).forEach(function (k) { all[k]({ fail: 'worker' }); }); }; } catch (x) { UPW = false; } return UPW || null; }
+  function sendChunksW(file, g, e, fid) {
+    var w = upWorker(); if (!w) return Promise.resolve(null);
+    return new Promise(function (res, rej) {
+      var id = ++UPWN; UPWQ[id] = function (m) {
+        if (m.ok) return res({ fid: fid, n: m.n, e: e });
+        if (m.fail) return res(null);   /* the worker couldn't: the page does it */
+        if (m.offline) { var eo = new Error('offline'); eo.offline = true; authProbe(); return rej(eo); }
+        if (m.status === 401 && S.me) authGone(); var er = new Error(m.error || ('HTTP ' + m.status)); er.status = m.status; er.data = m.data; rej(er);
+      };
+      try { w.postMessage({ id: id, file: file, key: S.keys[e], epoch: e, fid: fid, tid: S.tid, g: g || '', chunk: CHUNK }); } catch (x) { delete UPWQ[id]; UPW = false; res(null); }
+    });
+  }
   async function sendChunks(file, g) {
     var e = S.me.team.epoch, fid = hexId(16), n = Math.max(1, Math.ceil(file.size / CHUNK));
+    var wr = await sendChunksW(file, g, e, fid); if (wr) return wr;
     for (var i = 0; i < n; i++) {
       var part = new Uint8Array(await file.slice(i * CHUNK, (i + 1) * CHUNK).arrayBuffer()), iv = rnd(12);
       var ct = await C.encrypt({ name: 'AES-GCM', iv: iv, additionalData: TE.encode(fid + '|' + i + '|' + e) }, S.keys[e], part);
