@@ -472,6 +472,14 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 .ln.flash { box-shadow: 0 0 0 2px var(--accent); transition: box-shadow .3s; }
 .kit-card .dn { color: var(--orange); }
 .pill-btn.sm { padding: 6px 12px; font-size: 13px; min-height: 34px; }
+.card-head > :not(h2):not(.fold-btn):has(+ .fold-btn) { margin-left: auto; }
+.card-head:has(> .fold-btn) { justify-content: flex-start; }
+.card-head > h2 + .fold-btn { margin-left: auto; }
+.fold-btn { flex: none; width: 40px; height: 40px; margin-left: 2px; color: var(--muted); background: transparent; border-color: transparent; }
+.fold-btn i { font-size: 13px; }
+@media (hover: hover) {
+  .fold-btn:hover { color: var(--text); }
+}
 .check { position: relative; }
 .check::after { content: ""; position: absolute; inset: -9px; }
 .card-head .head-actions .text-btn:not(:has(span)) { min-width: 36px; justify-content: center; }
@@ -484,8 +492,8 @@ a.text-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
 }
 .kit-r[hidden] { display: none !important; }
 span).pill-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; line-height: 1.2; text-decoration: none; cursor: pointer; }
-.icon-btn > i.bi, .pill-btn.sm > i.bi:only-child { display: block; line-height: 1; width: 1em; height: 1em; }
-.icon-btn > i.bi::before, .pill-btn.sm > i.bi:only-child::before { display: block; vertical-align: 0; line-height: 1; }
+.icon-btn > i.bi, .fold-btn > i.bi, .pill-btn.sm > i.bi:only-child { display: block; line-height: 1; width: 1em; height: 1em; }
+.icon-btn > i.bi::before, .fold-btn > i.bi::before, .pill-btn.sm > i.bi:only-child::before { display: block; vertical-align: 0; line-height: 1; }
 :where(.pill-btn:not([hidden])) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center; text-decoration: none; box-sizing: border-box; }
 .pill-btn { height: auto; min-height: 44px; padding: 8px 18px; font-size: 15px; line-height: 1.2; border-radius: 12px; }
 .pill-btn.wide { border-radius: 12px; }

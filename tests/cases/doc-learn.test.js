@@ -47,7 +47,7 @@ const mk = (n, lines) => { const f = path.join(dir, n); fs.writeFileSync(f, pdf(
   /* 1. the suggest button: it says it's reading, then names the file it couldn't help – and goes away */
   await up([mk('12312312313.pdf', ['Made-up', 'Nothing here says what this is.'])]);
   const b0 = await p.evaluate(() => { const x = document.querySelector('.dx-ren [data-dcnall]'); return x ? x.textContent : ''; });
-  await p.evaluate(() => { window.__busySeen = ''; const mo = new MutationObserver(() => { const x = document.querySelector('.dx-ren button[aria-busy]'); if (x) window.__busySeen = x.textContent; }); mo.observe(document.body, { childList: true, subtree: true }); window.__busyMo = mo; document.querySelector('.dx-ren [data-dcnall]').click(); });
+  await p.evaluate(() => { window.__busySeen = ''; const mo = new MutationObserver(() => { const x = document.querySelector('.dx-ren button[aria-busy]'); if (x) window.__busySeen = x.textContent; }); mo.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true }); window.__busyMo = mo;   /* the page is updated in place: the button changes, it isn't replaced */ document.querySelector('.dx-ren [data-dcnall]').click(); });
   await sl(3000);
   const busy = await p.evaluate(() => { window.__busyMo.disconnect(); return window.__busySeen; });
   const m1 = await p.evaluate(() => { const m = document.querySelector('.dx-ren .dcn-sugm'); return { msg: m ? m.textContent.replace(/\s+/g, ' ') : '', btn: !!document.querySelector('.dx-ren [data-dcnall]'), open: !!(m && m.querySelector('[data-dcnexp]')) }; });

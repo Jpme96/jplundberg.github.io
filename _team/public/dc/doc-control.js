@@ -1237,7 +1237,7 @@
     var now = Date.now(), mine = now - (window.__dcUser || 0) < 400;
     if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
-    lastDraw = now;
+    lastDraw = now; window.__dcDraws = (window.__dcDraws || 0) + 1;   /* counted for the tests – an update in place may change nothing on the page */
     var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae) || (document.getElementById('dcPopHold') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
     if (!open && ropen && flowOn()) { var rq0 = krav(ropen), cq0 = rq0 && ctlOf(rq0); if (!cq0 && rq0 && can('newp')) { cq0 = proj(projFromKrav(rq0)); if (cq0 && !(rq0.lines || []).length) { open = cq0.id; kinOpen(cq0); open = null; } }   /* a list without a project becomes one: in the five steps every list is a project (JP 18:37) */
       if (cq0) { var kk = kin, kr = ropen; open = cq0.id; setTab('krav'); if (kk) { kin = kk; ropen = kr; } try { history.replaceState({ dc: cq0.id, from: 'list' }, '', location.pathname + location.search + '#dc=' + cq0.id); } catch (e) {} } }   /* a project's requirements live in its step 1 (JP 2026-11-24) */
@@ -1250,7 +1250,7 @@
     document.body.classList.toggle('dr-full', !!rp);
     el.classList.toggle('dc-gone', !!rp && !!er);
     var ts0 = el.querySelector('.dx-tsheet'), tsTop = ts0 ? ts0.scrollTop : 0;
-    el.innerHTML = p ? full(p) : rp && er ? '' : home();
+    patchIn(el, p ? full(p) : rp && er ? '' : home());   /* only what changed is touched (JP 2026-11-27: opening a file card redrew the whole page) */
     var vk = (p ? p.id + '|' + tab + '|' + !!kin : '') + '|' + (rp ? rp.id : '');   /* a project, a step or the list: the new view fades in (JP 2026-11-25) */
     if (VKEY !== null && VKEY !== vk) { el.classList.remove('dc-enter'); void el.offsetWidth; el.classList.add('dc-enter'); holdAnim(el); clearTimeout(VKT); VKT = setTimeout(function () { el.classList.remove('dc-enter'); }, 400); }
     VKEY = vk;
@@ -1260,13 +1260,53 @@
     else if (hold && hold.firstChild) hold.innerHTML = '';
     var ts1 = el.querySelector('.dx-tsheet') || (hold && hold.querySelector('.dx-tsheet')); if (ts1 && tsTop) ts1.scrollTop = tsTop;   /* a redraw keeps the popup where you were */
     document.documentElement.classList.toggle('dcn-modal', !!ts1 || !!document.querySelector('.dcn-ov'));
-    if (window.I18N && I18N.apply) try { I18N.apply(el); } catch (e) {}
-    clampHelp(el);
     if (!er) return;
     er.classList.toggle('dc-gone', !rp);
     er.innerHTML = rp ? kravFull(rp) : '';
     if (window.I18N && I18N.apply) try { I18N.apply(er); } catch (e) {}
     clampHelp(er);
+  }
+  /* Update in place (JP 2026-11-27 06:06 – opening a file card took a 42 ms frame, because every click rebuilt the whole project page):
+     the new HTML is built off the page (translated and with its help texts clamped, as before), then laid over the live page node by
+     node – a node that is the same stays as it is (no new layout, no lost scroll), a changed one gets just its new attributes/text, a
+     different kind is swapped. What the page itself adds to a popup or a view stays (the popup observer's classes and delay, the fades).
+     Fields come back to what the HTML says, as a full redraw did (a draw never runs while you type). */
+  var PKEEP = /^(ov-still|ov-wait|ov-ghost|dcn-lifted|dc-enter|t-enter)$/, PPOP = '.dcn-ov, .dx-tov, .t-sheetbg, .t-edov, .fdz-ov', PINJ = '.fold-btn';
+  function patchIn(el, html) {
+    var tmp = document.createElement('div'); tmp.innerHTML = html;
+    if (window.I18N && I18N.walk) try { I18N.walk(tmp); } catch (e) {}
+    if (window.I18N && I18N.apply) try { I18N.apply(tmp); } catch (e) {}
+    clampHelp(tmp);
+    pKids(el, tmp);
+    el.querySelectorAll('input, textarea, select').forEach(function (c) {
+      if (c.tagName === 'SELECT') { var d = -1; [].forEach.call(c.options, function (o, i) { if (c.multiple) o.selected = o.defaultSelected; else if (o.defaultSelected && d < 0) d = i; }); if (!c.multiple && c.options.length && c.selectedIndex !== (d < 0 ? 0 : d)) c.selectedIndex = d < 0 ? 0 : d; }
+      else if (c.type === 'checkbox' || c.type === 'radio') { if (c.checked !== c.defaultChecked) c.checked = c.defaultChecked; }
+      else if (c.type === 'file') { if (c.value) c.value = ''; }
+      else if (c.value !== c.defaultValue) c.value = c.defaultValue;
+    });
+  }
+  function pKids(a, b) {
+    var A = [].filter.call(a.childNodes, function (n) { return !(n.nodeType === 1 && n.matches(PINJ)); }), B = [].slice.call(b.childNodes);   /* buttons the page adds by itself (the fold button on a card head) are left where they are */
+    for (var i = 0; i < B.length; i++) {
+      var x = A[i], y = B[i];
+      if (!x) a.appendChild(y);
+      else if (x.nodeType !== y.nodeType || (x.nodeType === 1 && (x.tagName !== y.tagName || x.id !== y.id || x.type !== y.type))) a.replaceChild(y, x);
+      else if (x.nodeType === 1) { if (!x.isEqualNode(y)) { pAttrs(x, y); pKids(x, y); } }
+      else if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue;
+    }
+    for (var j = B.length; j < A.length; j++) if (A[j].parentNode === a) a.removeChild(A[j]);
+  }
+  function pAttrs(x, y) {
+    var pop = x.matches && x.matches(PPOP);
+    [].slice.call(x.attributes).forEach(function (t) { if (y.hasAttribute(t.name) || (pop && t.name === 'style')) return;
+      if (t.name === 'class') { var k0 = [].filter.call(x.classList, function (c) { return PKEEP.test(c); }); if (k0.length) { x.setAttribute('class', k0.join(' ')); return; } }
+      x.removeAttribute(t.name); });
+    [].forEach.call(y.attributes, function (t) {
+      var v = t.value;
+      if (t.name === 'class') { var keep = [].filter.call(x.classList, function (c) { return PKEEP.test(c) && !y.classList.contains(c); }); if (keep.length) v = (v + ' ' + keep.join(' ')).trim(); }
+      if (pop && t.name === 'style') return;
+      if (x.getAttribute(t.name) !== v) x.setAttribute(t.name, v);
+    });
   }
   /* help texts: one line until tapped, unless they hold a button or a field (JP 13:48 – too many words) */
   function clampHelp(root) { if (root) root.querySelectorAll('.dc-help').forEach(function (p) { if (!p.querySelector('button, label, select, a, input') && p.textContent.length > 70) p.classList.add('dc-clamp'); }); }

@@ -222,8 +222,8 @@ fs.writeFileSync(lone, '%PDF made up 4');
   check(nm0 === '413' && nm1.gone && nm1.a === '412 Made-up wiring' && nm1.b === '413 Made-up cables' && nm1.kept === 2 && /all your devices/.test(nm1.where), 'codes without a name show only the number; pasted names show in the list and are saved with your codes (synced) ' + JSON.stringify({ nm0, nm1 }));
   /* redraws that come by themselves are gathered – uploading many files made the page flicker (JP 13:32) */
   const fl = await p.evaluate(async () => { document.activeElement && document.activeElement.blur && document.activeElement.blur(); await new Promise(r => setTimeout(r, 900)); window.__dcUser = 0;
-    const el = document.getElementById('wkDocCtl'); let n = 0; const mo = new MutationObserver(ms => { if (ms.some(m => m.target === el)) n++; }); mo.observe(el, { childList: true });
-    for (let i = 0; i < 12; i++) { DocCtl.draw(); await new Promise(r => setTimeout(r, 60)); } await new Promise(r => setTimeout(r, 1200)); mo.disconnect(); return n; });
+    const d0 = window.__dcDraws || 0;
+    for (let i = 0; i < 12; i++) { DocCtl.draw(); await new Promise(r => setTimeout(r, 60)); } await new Promise(r => setTimeout(r, 1200)); return (window.__dcDraws || 0) - d0; });
   check(fl >= 1 && fl <= 3, '12 background redraws in under a second become at most 3 (' + fl + ')');
   /* the code is searchable (JP 12:53) */
   const sr = await p.evaluate(async () => { const li = await R(/./); li.querySelector('[data-dcncpick]').click(); await new Promise(r => setTimeout(r, 200));

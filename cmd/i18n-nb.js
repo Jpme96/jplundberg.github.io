@@ -1541,6 +1541,7 @@
   /* never touch your own words */
   var SKIP = '[data-tool="people"] .kit-x b,.pp5-t b,script,style,textarea,input,.todo-item .label,.note-body,.notes-list,.sc-url,code,[data-noi18n],.tx-text strong,.ce-title,.cl-ev-t,.ci-x b,.im-x b,#cr-content,.cr-content';
   window.I18N.skip = SKIP;
+  window.I18N.walk = function (r) { walk(r); };   /* translate a tree before it goes on the page (doc-control's update in place compares translated text, 2026-11-27) */
   var ATTR = ['placeholder', 'aria-label', 'title', 'data-title'];
   /* texts by name: data-t="key" (the element's own text) and data-t-<attribute>="key" – no sentence matching for them */
   var NB = window.I18N.nb || {};

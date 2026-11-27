@@ -36,6 +36,15 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await go(p, 'work/#docs', 2000);
   check(await p.evaluate(() => { const n = document.querySelector('[data-dcnew], [data-drnew]'); return !!n && n.classList.contains('pill-btn'); }), '"New project" is a real button');
   /* a popup's opening is held until it has been drawn, then runs from the start (JP 2026-11-26 20:14 "stuttering") */
+  /* the page is updated in place (JP 2026-11-27: opening a file card rebuilt the whole page): what didn't change stays the same node,
+     a field comes back to what the page says, the popup observer's classes stay on a kept popup */
+  const ip = await p.evaluate(async () => { const el = document.getElementById('wkDocCtl'); const first = el.firstElementChild; const kids = el.querySelectorAll('*').length;
+    let muts = 0, mw = []; const mo = new MutationObserver(ms => { muts += ms.length; ms.forEach(m => mw.push(m.type + ':' + (m.target.className || m.target.nodeName) + ':' + [...m.removedNodes].map(n => n.outerHTML || n.nodeValue).join('|').slice(0, 200) + '+' + [...m.addedNodes].map(n => n.outerHTML || n.nodeValue).join('|').slice(0, 200))); }); mo.observe(el, { childList: true, subtree: true, attributes: true, characterData: true });
+    window.__dcUser = Date.now(); DocCtl.draw(); await new Promise(r => setTimeout(r, 50)); mo.disconnect();
+    const inp = el.querySelector('input:not([type=checkbox]):not([type=file]):not([type=radio])'); let reset = null;
+    if (inp) { inp.value = 'zz typed'; inp.blur(); window.__dcUser = Date.now(); DocCtl.draw(); await new Promise(r => setTimeout(r, 50)); reset = el.contains(inp) ? inp.value === inp.defaultValue : true; }
+    return { same: first && first.isConnected && el.firstElementChild === first, muts, mw, kids, reset }; });
+  check(ip.same && ip.muts === 0 && ip.reset !== false, 'a redraw with nothing new changes nothing on the page, and a field comes back to what the page says ' + JSON.stringify(ip));
   const ow = await p.evaluate(async () => { const seen = []; const mo = new MutationObserver(() => { const o = document.querySelector('.dx-tov'); if (o) seen.push(o.classList.contains('ov-wait')); }); mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     document.querySelector('[data-dxtool="ren"]').click(); await new Promise(r => setTimeout(r, 300)); mo.disconnect(); const o = document.querySelector('.dx-tov'); return { first: seen[0], now: o && o.classList.contains('ov-wait'), anim: o && getComputedStyle(o.querySelector('.dx-tsheet')).animationName, cls: o && o.className, html: document.documentElement.className, off: document.documentElement.classList.contains('mo-off') || matchMedia('(prefers-reduced-motion: reduce)').matches }; });
   check(ow.first === true && ow.now === false && (ow.off || /sh-in/.test(ow.anim || '')), 'a new popup waits (ov-wait) until drawn, then opens with its animation ' + JSON.stringify(ow));
