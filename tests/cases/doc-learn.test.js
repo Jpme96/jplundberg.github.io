@@ -94,6 +94,14 @@ const mk = (n, lines) => { const f = path.join(dir, n); fs.writeFileSync(f, pdf(
   check(!/scann|skann(?!\s*0042)|ocr\b/i.test(scanTxt.replace(/Skann 0042[^\n]*/g, '')), 'and nothing on screen says it was scanned');
   check(await p.evaluate(() => (DocNaming.learnState().sc || 0) >= 1), 'only the learning info (yours) counts the scans read');
 
+  /* 0. the file card opens, moves and closes without drawing the page behind it again (JP 2026-11-27: one 42 ms frame) */
+  await sl(1500);
+  const qp = await p.evaluate(async () => { const el = document.getElementById('wkDocCtl'); let m = 0; const mo = new MutationObserver(ms => ms.forEach(x => { if (!(x.target.closest && x.target.closest('.dcn-fpop')) && x.attributeName !== 'aria-expanded') m++; })); mo.observe(el, { childList: true, subtree: true, attributes: true, characterData: true });
+    const d0 = window.__dcDraws || 0; const ex = document.querySelector('.dx-ren [data-dcnexp]'); ex.click(); await new Promise(r => setTimeout(r, 200));
+    const open1 = !!document.querySelector('.dcn-fpop:not(.ov-ghost)'), exp = ex.getAttribute('aria-expanded'), pos0 = (document.querySelector('.dcn-fpop:not(.ov-ghost) .dcn-fpos') || {}).textContent || ''; const nx = document.querySelector('.dcn-fpop:not(.ov-ghost) [data-dcnfgo]:not([disabled])'); nx && nx.click(); await new Promise(r => setTimeout(r, 200));
+    const pos = (document.querySelector('.dcn-fpop:not(.ov-ghost) .dcn-fpos') || {}).textContent || ''; document.querySelector('.dcn-fpop:not(.ov-ghost) [data-dcnfx]').click(); await new Promise(r => setTimeout(r, 300)); mo.disconnect();
+    return { open1, exp, pos0, pos, shut: !document.querySelector('.dcn-fpop:not(.ov-ghost)'), draws: (window.__dcDraws || 0) - d0, m, modal: document.documentElement.classList.contains('dcn-modal') }; });
+  check(qp.open1 && qp.exp === 'true' && /File \d+ of/.test(qp.pos) && qp.pos !== qp.pos0 && qp.shut && qp.draws === 0 && qp.m === 0, 'the file card opens, goes to the next file and closes without drawing the page again ' + JSON.stringify(qp));
   check(!errs.length, 'no errors ' + errs.join(' | '));
   await b.close(); done();
 })();

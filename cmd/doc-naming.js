@@ -995,16 +995,41 @@
       '<button type="button" class="pill-btn sm ghost" data-dcnpka="name">' + esc(k('ui.dcn-pk-name', 'Use the new name')) + '</button>' + (p.tool ? '<button type="button" class="pill-btn sm ghost dcn-danger" data-dcnpka="rm">' + esc(k('ui.dcn-pk-rm', 'Remove from the list')) + '</button>' : '') +
       '<button type="button" class="icon-btn" data-dcnpks="none" aria-label="' + esc(k('ui.dcn-pk-clear', 'Clear the selection')) + '"><i class="bi bi-x-lg"></i></button></div>';
     /* one file at a time in a popup over the list, with the one before / after (JP 2026-11-17 08:07: "lose control what is what") */
+    LASTP = p.id; LASTF = F.map(function (f) { return f.id; });
+    var ph = popHtml(p, F, G, many); if (ph) h += ph;
+    else nfo = '';
+    return h;
+  }
+  /* the file card's HTML on its own, so it can open without drawing the page again (JP 2026-11-27: one 42 ms frame) */
+  var LASTP = '', LASTF = [];
+  function popHtml(p, F, G, many) {
     var L2 = G.some(function (f) { return f.id === nfo; }) ? G : F, ix = -1; L2.forEach(function (f, i) { if (f.id === nfo) ix = i; });
-    if (many && ix > -1) { var f0 = L2[ix], pv = L2[ix - 1], nx = L2[ix + 1];
-      h += '<div class="dcn-ov dc-host dcn-fpop" data-dcnov2><div class="dcn-sheet dcn-fsheet" role="dialog" aria-modal="true" aria-label="' + esc(f0.name) + '"><div class="dcn-shead">' +
+    if (!(many && ix > -1)) return ''; var f0 = L2[ix], pv = L2[ix - 1], nx = L2[ix + 1];
+    return '<div class="dcn-ov dc-host dcn-fpop" data-dcnov2><div class="dcn-sheet dcn-fsheet" role="dialog" aria-modal="true" aria-label="' + esc(f0.name) + '"><div class="dcn-shead">' +
         '<button type="button" class="icon-btn" data-dcnfgo="' + esc(pv ? pv.id : '') + '"' + (pv ? '' : ' disabled') + ' aria-label="' + esc(k('ui.dcn-prev', 'The file before')) + '"><i class="bi bi-chevron-left"></i></button>' +
         '<b class="dcn-fpos">' + esc(k('ui.dcn-fpos', 'File {i} of {n}', { i: ix + 1, n: L2.length })) + '</b>' +
         '<button type="button" class="icon-btn" data-dcnfgo="' + esc(nx ? nx.id : '') + '"' + (nx ? '' : ' disabled') + ' aria-label="' + esc(k('ui.dcn-next', 'The next file')) + '"><i class="bi bi-chevron-right"></i></button>' +
         '<span class="spacer"></span><button type="button" class="icon-btn" data-dcnfx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' +
-        '<ul class="dcn-files">' + nrow(p, f0) + '</ul></div></div>'; }
-    else nfo = '';
-    return h;
+        '<ul class="dcn-files">' + nrow(p, f0) + '</ul></div></div>';
+  }
+  /* open / switch / close the card straight on the page: only the card is built (the list behind is as it was); the next real draw lays the
+     same card in again and lift() swaps it without a replay */
+  function quickPop() {
+    var p = LASTP && proj(LASTP); if (!p || !nfo) return false;
+    var byId = {}; (p.files || []).forEach(function (f) { byId[f.id] = f; }); var F = LASTF.map(function (id) { return byId[id]; }).filter(Boolean); if (F.length !== LASTF.length) return false;
+    var many = F.length > 1, G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F, html = popHtml(p, F, G, many); if (!html) return false;
+    var tmp = document.createElement('div'); tmp.innerHTML = html; var o = tmp.firstElementChild;
+    if (window.I18N && I18N.walk) try { I18N.walk(o); } catch (e) {}
+    [].forEach.call(document.querySelectorAll('.dcn-fpop:not(.ov-ghost)'), function (x) { x.remove(); });
+    o.classList.add('dcn-lifted'); document.body.appendChild(o); document.documentElement.classList.add('dcn-modal');
+    [].forEach.call(document.querySelectorAll('[data-dcnexp]'), function (x) { if (!x.closest('.dcn-fpop')) x.setAttribute('aria-expanded', String(x.dataset.dcnexp === nfo)); });
+    return true;
+  }
+  function quickShut() {
+    var had = false; [].forEach.call(document.querySelectorAll('.dcn-fpop:not(.ov-ghost)'), function (x) { x.remove(); had = true; });
+    [].forEach.call(document.querySelectorAll('[data-dcnexp][aria-expanded="true"]'), function (x) { if (!x.closest('.dcn-fpop')) x.setAttribute('aria-expanded', 'false'); });
+    if (!document.querySelector('.dcn-ov:not(.ov-ghost), .dx-tov:not(.ov-ghost)')) document.documentElement.classList.remove('dcn-modal');
+    return had;
   }
   /* suggest a code and type from the name for every file, then read every PDF that hasn't been read (one at a time) */
   function suggestAll(pid, only, noSet) {   /* only: just these file ids (the files just uploaded to a project – JP 2026-11-24) */
@@ -1102,9 +1127,9 @@
         if (wk.indexOf('kind:') === 0) { var kk = wk.slice(5); PKS = {}; pkSet((nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF).filter(function (f) { return fkind(f) === kk; }).map(function (f) { return f.id; }), true); draw(); return; }   /* only that kind – the rest is unticked */
         if (wk === 'none') PKS = {}; else pkSet((wk === 'nocode' ? FF.filter(function (f) { return !f.p.code; }) : (nflt ? FF.filter(function (f) { return fstate(pp, f) === nflt; }) : FF)).map(function (f) { return f.id; }), true); draw(); return; }
       if ((b = t.closest('[data-dcnpka]'))) { bulkPop(b.dataset.dcnpka); return; }
-      if ((b = t.closest('[data-dcnexp]'))) { nfo = b.dataset.dcnexp; draw(); return; }
-      if ((b = t.closest('[data-dcnfgo]'))) { if (b.dataset.dcnfgo) { nfo = b.dataset.dcnfgo; unfocus(); draw(); } return; }
-      if (t.closest('[data-dcnfx]') || (t.matches && t.matches('[data-dcnov2]') && bgClick(t))) { nfo = ''; unfocus(); draw(); return; }
+      if ((b = t.closest('[data-dcnexp]'))) { nfo = b.dataset.dcnexp; if (!quickPop()) draw(); return; }   /* only the card is built (2026-11-27) */
+      if ((b = t.closest('[data-dcnfgo]'))) { if (b.dataset.dcnfgo) { nfo = b.dataset.dcnfgo; unfocus(); if (!quickPop()) draw(); } return; }
+      if (t.closest('[data-dcnfx]') || (t.matches && t.matches('[data-dcnov2]') && bgClick(t))) { nfo = ''; unfocus(); if (!quickShut()) draw(); return; }
       if ((b = t.closest('[data-dcnflt]'))) { nflt = b.dataset.dcnflt; draw(); return; }
       if ((b = t.closest('[data-dcnsel]'))) { nsel = b.dataset.dcnsel; nopen = true; draw(); return; }
       if ((b = t.closest('[data-dcnedit]'))) { nfo = ''; nsel = nsel === b.dataset.dcnedit ? '' : b.dataset.dcnedit; npi = -1; nopen = true; draw(); return; }
