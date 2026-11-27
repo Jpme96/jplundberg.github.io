@@ -1031,8 +1031,12 @@
     var many = F.length > 1, G = many && nflt ? F.filter(function (f) { return fstate(p, f) === nflt; }) : F, html = popHtml(p, F, G, many); if (!html) return false;
     var tmp = document.createElement('div'); tmp.innerHTML = html; var o = tmp.firstElementChild;
     if (window.I18N && I18N.walk) try { I18N.walk(o); } catch (e) {}
-    [].forEach.call(document.querySelectorAll('.dcn-fpop:not(.ov-ghost)'), function (x) { x.remove(); });
-    o.classList.add('dcn-lifted'); document.body.appendChild(o); document.documentElement.classList.add('dcn-modal');
+    var cur = document.querySelectorAll('.dcn-fpop:not(.ov-ghost)');
+    /* moving to the file before / after: the card stays and only its sheet is swapped – replacing the whole full-screen card made the
+       browser paint the entire screen again (50–100 ms on a laptop at 2× pixels, 2026-11-27) */
+    if (cur.length === 1 && cur[0].parentNode === document.body && cur[0].firstElementChild && o.firstElementChild) { cur[0].classList.add('ov-still'); cur[0].replaceChild(o.firstElementChild, cur[0].firstElementChild); }   /* ov-still: the new sheet doesn't slide in again */
+    else { [].forEach.call(cur, function (x) { x.remove(); }); o.classList.add('dcn-lifted'); document.body.appendChild(o); }
+    document.documentElement.classList.add('dcn-modal');
     [].forEach.call(document.querySelectorAll('[data-dcnexp]'), function (x) { if (!x.closest('.dcn-fpop')) x.setAttribute('aria-expanded', String(x.dataset.dcnexp === nfo)); });
     return true;
   }
