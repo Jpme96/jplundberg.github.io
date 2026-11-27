@@ -666,8 +666,18 @@
     if (!matchMedia('(pointer: coarse)').matches) q.focus();
     return ov;
   }
+  /* the code list is the same for every file of a project: built once and kept until the codes, their names or the plan change –
+     only "selected" differs (JP 2026-11-27: building 730 choices again took most of the file card's time) */
+  var COC = null;
   function codeOpts(p, f) {
-    var v = String(f.p.code || ''), L = codeList(p), names = {}, groups = [];
+    var v = String(f.p.code || ''), key = '';
+    try { key = (nb() ? 'n' : 'e') + '\u0001' + (localStorage.getItem(NSK) || '') + '\u0001' + JSON.stringify(LP && LP.ownMap ? LP.ownMap() : {}) + '\u0001' + JSON.stringify(owns(p, 'code')) + '\u0001' + (p.lines || []).map(function (l) { return l.code + ':' + lineTitle(l); }).join('|'); } catch (e) { key = ''; }
+    if (key && !(COC && COC.key === key)) { var r0 = codeOptsRaw(p, ''); COC = { key: key, h: r0.h, known: r0.known }; }
+    if (key && COC && (!v || COC.known.indexOf(v) >= 0)) return (v ? COC.h.replace('<option value="' + v + '">', '<option value="' + v + '" selected>') : COC.h) + ownOpts(p, 'code', v, COC.known.slice());
+    var r = codeOptsRaw(p, v); return r.h + ownOpts(p, 'code', v, r.known);
+  }
+  function codeOptsRaw(p, v) {
+    var L = codeList(p), names = {}, groups = [];
     var NN = Object.assign({}, LP && LP.ownMap ? LP.ownMap() : {}, nsNames()); owns(p, 'code').forEach(function (y) { if (y[1]) NN[y[0]] = NN[y[0]] || y[1]; });
     L.forEach(function (c) { names[c[0]] = c[1]; if (c[0].length === 2) groups.push(c[0]); });
     Object.keys(NN).forEach(function (c) { if (c.length >= 3 && !names[c]) L.push([c, NN[c]]); names[c] = names[c] || NN[c]; });
@@ -687,7 +697,7 @@
       if (!list.length) return;
       h += '<optgroup label="' + esc(g + (gn ? ' ' + gn : '')) + '">' + list.map(function (c) { known.push(c); return '<option value="' + c + '"' + (c === v ? ' selected' : '') + '>' + (c.length > 3 ? '\u2003\u2003' : '') + esc(c + (names[c] ? ' ' + names[c] : '')) + '</option>'; }).join('') + '</optgroup>';
     });
-    return h + ownOpts(p, 'code', v, known);
+    return { h: h, known: known };
   }
   function codeList(p) {
     var m = {}, add = function (c, n) { c = String(c); if (/^\d{2,4}$/.test(c) && !m[c]) m[c] = n || codeName(c) || ''; };
