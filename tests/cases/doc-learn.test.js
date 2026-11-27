@@ -56,6 +56,11 @@ const mk = (n, lines) => { const f = path.join(dir, n); fs.writeFileSync(f, pdf(
   await p.evaluate(() => document.querySelector('.dx-ren [data-dcnsugx]').click()); await sl(200);
 
   /* 2. learning: a code you choose for a file is remembered with its words; once is a hint, a few times makes it the suggestion */
+  /* many files at once: the page is drawn calmly while they are read (JP 2026-11-27 11:53 "moves like a seizure") – before, every file drew it twice */
+  const d0 = await p.evaluate(() => window.__dcDraws || 0);
+  await up(Array.from({ length: 10 }, (_, i) => mk('Calm made-up ' + i + '.pdf', ['Made-up', 'Product sheet ' + i])));
+  const dn = await p.evaluate(d0 => (window.__dcDraws || 0) - d0, d0);
+  check(dn <= 12, 'ten files added at once draw the page at most 12 times (was about 25) – ' + dn);
   await up([mk('Zorblat irisspjeld A.pdf', ['Made-up', 'Product sheet'])]);
   await row(/Zorblat irisspjeld A/); await setCode(/Zorblat irisspjeld A/, '364'); await closeRow();
   await up([mk('Zorblat irisspjeld B.pdf', ['Made-up', 'Product sheet'])]);

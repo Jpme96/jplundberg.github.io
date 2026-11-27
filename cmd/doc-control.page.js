@@ -502,7 +502,7 @@
     var bt = ov.querySelector('[data-dxdx]'); if (bt) bt.focus();
   }
   function renAdd(list) {
-    var got = [];
+    var got = []; impBusy++; var fin = function () { impBusy = Math.max(0, impBusy - 1); draw(); };   /* calm drawing while the files are read and suggested (JP 2026-11-27 11:53) */
     return list.reduce(function (pr, f) { return pr.then(function () {
       if (/\.zip$/i.test(f.name)) return f.arrayBuffer().then(function (buf) { var Z = zipEntries(buf).filter(function (z) { return !/\/$/.test(z.name) && !/(^|\/)(__MACOSX|\.DS_Store|Thumbs\.db|desktop\.ini)(\/|$)/i.test(z.name) && !/(^|\/)\._/.test(z.name); });
         return Z.reduce(function (p2, z) { return p2.then(function () { var nm = z.name.split('/').pop(); if (!nm || /\.zip$/i.test(nm)) return; return inflate(z).then(function (u) { got.push({ name: nm, size: z.size, blob: new Blob([u]), dir: f.name + (z.name.indexOf('/') > 0 ? ' › ' + z.name.split('/').slice(0, -1).join(' › ') : '') }); }); }); }, Promise.resolve()); })
@@ -513,8 +513,8 @@
       var p = toolP(), have = {}; p.files.forEach(function (f) { have[f.name.toLowerCase() + '|' + (f.h || f.size)] = 1; });
       var newIds = []; got.forEach(function (g) { var key = g.name.toLowerCase() + '|' + (g.h || g.size); if (have[key]) return; have[key] = 1; var pn = parseName(g.name), id = uid() + Math.random().toString(36).slice(2, 4); newIds.push(id);
         TOOL.blobs[id] = g.blob; if (g.upl) TOOL.upl[id] = g.upl; p.files.push({ id: id, name: g.name.slice(0, 160), size: g.size, lm: fdate(g.blob), h: g.h || '', dir: (g.dir || '').slice(0, 200), p: { code: pn.code, abbr: pn.abbr, text: pn.text.slice(0, 80), stem: pn.stem.slice(0, 120), kind: pn.kind }, iss: pn.issues }); });
-      draw(); var N = naming(); if (N) N.suggestAll('__ren', newIds).then(function () { draw(); });   /* only what came in now – a set is the files added together */
-    });
+      draw(); var N = naming(); if (N) return N.suggestAll('__ren', newIds).then(fin, fin); fin();   /* only what came in now – a set is the files added together */
+    }).catch(fin);
   }
   /* what to download, shown before it happens (JP 2026-11-19): all, the selected ones or the finished ones – with the list of names; one file comes as itself, not a .zip */
   function dlPop() {
@@ -1042,7 +1042,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = '1618308370';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = 'bdd774d49a';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; }, projects: function () { return projects(); } };
@@ -1237,7 +1237,7 @@
     if (!mine && now - lastDraw < 800) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 800 - (now - lastDraw)); return; }
     /* while files are being sent up (and read), the page is drawn at most every 700 ms unless you just tapped or typed – each finished file
        asked for a whole draw and the page stuttered during an upload (JP 2026-11-27 10:05) */
-    if (shBusy && now - (window.__dcInput || 0) > 500 && now - lastDraw < 700) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 700 - (now - lastDraw)); return; }
+    if ((shBusy || (window.DocNaming && DocNaming.busy && DocNaming.busy()) || impBusy) && now - (window.__dcInput || 0) > 500 && now - lastDraw < 700) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 700 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
     lastDraw = now; window.__dcDraws = (window.__dcDraws || 0) + 1;   /* counted for the tests – an update in place may change nothing on the page */
     var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae) || (document.getElementById('dcPopHold') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
@@ -2285,7 +2285,9 @@
   }
   var OKX = /\.(pdf|jpe?g|png|heic|heif|webp|gif|docx?|xlsx?|xlsm|odt|ods|txt|rtf|dwg|dxf|ifc|csv|msg|eml|mp4|mov|zip)$/i;
   function mime(n) { n = n.toLowerCase(); return /\.pdf$/.test(n) ? 'application/pdf' : /\.jpe?g$/.test(n) ? 'image/jpeg' : /\.png$/.test(n) ? 'image/png' : 'application/octet-stream'; }
+  var impBusy = 0;   /* files being taken in: the page is drawn calmly meanwhile */
   function importFiles(id, list, names, src) {
+    impBusy++;
     var got = (names || []).map(function (n) { return { name: n, size: 0, blob: null, nf: true }; });
     list.reduce(function (pr, f) {
       return pr.then(function () {
@@ -2325,7 +2327,8 @@
         var nwIds = add.filter(function (f) { return f.size && !names; }).map(function (f) { return f.id; }), sg = function () { var N = naming(); if (N && nwIds.length) N.suggestAll(id, nwIds).then(function () { draw(); }); };
         if (HOST && !namingOn()) { if (naming()) sg(); else if (dcnLoading) dcnLoading.then(sg); }
       });
-    }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-files-bad', 'Some files could not be read.'))); try { console.warn('[dc] files', e); } catch (e2) {} });
+    }).catch(function (e) { toast('<i class="bi bi-exclamation-triangle"></i> ' + esc(k('ui.dc-files-bad', 'Some files could not be read.'))); try { console.warn('[dc] files', e); } catch (e2) {} })
+      .then(function () { impBusy = Math.max(0, impBusy - 1); draw(); });
   }
   /* document names from the FDV system (Plania etc.): pasted text or an export (Excel/CSV) – every cell that looks like a document name */
   function looksLikeName(c) { c = String(c || '').trim(); return c.length >= 4 && c.length <= 200 && (/^\d{3}(?:[.,]\d{1,3})?[\s_-]+\S/.test(c) || /^\d{3,6}-[A-Z0-9]{3}-[A-Z]-\d{3}-/.test(c) || /\.(pdf|docx?|xlsx?|dwg|dxf|ifc|jpe?g|png)$/i.test(c)); }

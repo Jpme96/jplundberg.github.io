@@ -519,7 +519,7 @@
     return s1 >= 1 && s1 + s2 >= 2 && shape;
   }
   function ccRun(pid, fid) {
-    if (ccBusy[fid]) return; ccBusy[fid] = 1; draw();
+    if (ccBusy[fid]) return; ccBusy[fid] = 1; drawBg();   /* a background draw: many files being read made the page jump on every one (JP 2026-11-27 11:53) */
     getBlob(fid).then(function (bl) {
       if (!bl) throw { here: 1 };
       /* pages 1–3 first – that is where the title, maker and kind of document are; the rest only when still unsure (JP 2026-11-25) */
