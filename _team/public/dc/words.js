@@ -806,7 +806,7 @@ window.DC_NB = {
 "ui.dx-dup-prev": "Forrige gruppe",
 "ui.dx-dup-rm": "Fjern de {n} andre",
 "ui.dx-dup-t": "Samme innhold – gruppe {i} av {n}",
-"ui.dx-empty": "Ett prosjekt per bygg: velg hva det skal levere (Krav), ta imot det som leveres (Mottak) og se hva som mangler (Rapport).",
+"ui.dx-empty": "Ett prosjekt per bygg: hva det skal levere (Krav), entreprenørens plan (Dokumentplan), det som kom inn (Levering), hva som mangler (Sammenligning) og sluttkontrollen før overlevering.",
 "ui.dx-fdv-check": "Sjekk navnene",
 "ui.dx-fdv-clear": "Start på nytt",
 "ui.dx-fdv-copy": "Kopier de som må rettes",

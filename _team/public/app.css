@@ -424,3 +424,5 @@ html.tz-wide .t-welcome .t-wsteps { grid-template-columns: repeat(auto-fill, min
 .t-h, .dc-host .fdv-h, .dc-host .dcn-sec, .dc-host .dcn-shared small { font-size: 12px; font-weight: 600; letter-spacing: .06em; }
 .dc-host .fdv-title h2 { font-size: 26px; letter-spacing: -.02em; color: var(--head); }
 .dc-host .dx-row .kit-main b, .dc-host .dx-row .kit-main strong { font-size: 16px; font-weight: 700; }
+
+.t-uptop { display: flex; justify-content: flex-end; margin: 0 0 12px; }   /* New upload link, top right like New project (2026-11-27) */

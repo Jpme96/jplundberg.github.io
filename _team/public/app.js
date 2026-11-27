@@ -594,7 +594,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); shut.forEach(function (x) { if (!x[0].isConnected && !open[x[1]]) ghost(x[0]); }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '0acf0b4e09bd';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = 'c4012babc439';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -1507,7 +1507,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     var fl = files(), by = {}, out = '';
     /* Opplastinger is only about links (JP 2026-11-25 08:49): the link button; Add files / Take a photo and Shared files went –
        project files live in Levering, contractors' files come on links. Shared files made before still show below until deleted. */
-    if (rank() >= 1) out += '<div class="t-card t-noprint"><button class="t-btn wide" type="button" data-act="uplink">' + L('Upload link for a contractor …', 'Opplastingslenke til en entreprenør …') + '</button></div>';
+    if (rank() >= 1) out += '<div class="t-uptop t-noprint"><button class="t-btn" type="button" data-act="uplink">' + ic('plus') + ' ' + L('New upload link', 'Ny opplastingslenke') + '</button></div>';   /* the same place and look as New project (2026-11-27) */
     /* Opplastinger shows what is live or waiting – no history (JP 2026-11-24 22:56): a project's link sends its files straight into the
        project's Levering; a link without a project keeps its files here until you rename and download them, put them in a project or just download them */
     var ls = links().filter(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = r.d.pid && projName(r.d.pid); return live || !hasP; });
@@ -1515,7 +1515,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     /* the card (JP 2026-11-25): what acts on the link (Remind, Copy, Switch off – or Delete the files once it is off) sits small next to the title;
        what acts on the files (Name and download, Put in a project) at the bottom; each file has its own eye and download */
     if (!ls.length) out += '<p class="t-empty">' + L('No upload links right now. Send one to a contractor: files for a project go straight into its Levering, others wait here.', 'Ingen opplastingslenker nå. Send en til en entreprenør: filer til et prosjekt legges rett i Levering, andre venter her.') + '</p>';
-    if (ls.length) out += '<p class="t-h">' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = !!(r.d.pid && projName(r.d.pid));
+    if (ls.length) out += '<p class="t-h" data-uphead>' + L('Upload links', 'Opplastingslenker') + '</p>' + ls.map(function (r) { var live = r.d.exp > Date.now() && !r.d.off, hasP = !!(r.d.pid && projName(r.d.pid));
       var top = live ? remindBtn(r) + '<button class="t-btn sm ghost" type="button" data-act="upcopy" data-id="' + esc(r.id) + '">' + L('Copy the link', 'Kopier lenken') + '</button>' + (rank() >= 1 ? '<button class="t-btn sm ghost t-danger" type="button" data-act="upoff" data-id="' + esc(r.id) + '">' + L('Switch off', 'Slå av') + '</button>' : '')
         : (!hasP && rank() >= 1 ? '<button class="t-btn sm ghost t-danger" type="button" data-act="upwipe" data-id="' + esc(r.id) + '" hidden>' + L('Delete the files', 'Slett filene') + '</button>' : '');
       return '<div class="t-card t-upl" data-lid="' + esc(r.d.lid) + '"' + (hasP ? '' : ' data-upwait') + '><div class="t-uph"><h2>' + esc(hasP ? projName(r.d.pid) : (r.d.label || L('Upload link', 'Opplastingslenke'))) + ' <span class="t-chip t-upcount"></span></h2>' + (top ? '<div class="t-uphb">' + top + '</div>' : '') + '</div>' +
@@ -1531,6 +1531,8 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     });
     return out;
   }
+  /* when the last card goes (an old link with nothing waiting), the heading goes too and the empty text shows (2026-11-27 – a lone heading was left) */
+  function upEmpty() { if (document.querySelector('#app .t-upl')) return; var h = document.querySelector('#app [data-uphead]'); if (!h) return; var p = document.createElement('p'); p.className = 't-empty'; p.textContent = L('No upload links right now. Send one to a contractor: files for a project go straight into its Levering, others wait here.', 'Ingen opplastingslenker nå. Send en til en entreprenør: filer til et prosjekt legges rett i Levering, andre venter her.'); h.replaceWith(p); }
   /* what came in on each upload link: the names are opened here with the link's key */
   async function loadUploads() {
     var ls = links(); if (!ls.length) return;
@@ -1538,7 +1540,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       var r = ls[i], ul = document.querySelector('[data-ups="' + r.d.lid + '"]'); if (!ul) continue;
       try {
         var w = await linkIn(r), card = ul.closest('.t-upl'), cnt = card && card.querySelector('.t-upcount'), acts = document.querySelector('[data-upacts="' + r.d.lid + '"]'), live = r.d.exp > Date.now() && !r.d.off;
-        if (!w.length && !live) { if (card) card.remove(); continue; }   /* an old link with nothing waiting is gone */
+        if (!w.length && !live) { if (card) card.remove(); upEmpty(); continue; }   /* an old link with nothing waiting is gone */
         if (cnt) cnt.textContent = w.length ? L(w.length + ' waiting', w.length + ' venter') : '';
         var groups = {}, order = []; w.forEach(function (um) { var g = um.b || um.fid; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(um); });
         ul.innerHTML = order.length ? order.map(function (g) { var l = groups[g], m0 = l[0];

@@ -60,6 +60,9 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const pcs = fs.readFileSync(path.join(__dirname, '..', '..', 'cmd', 'doc-control.page.js'), 'utf8');
   check(/!namingOn\(\) && F\.length \? selBtn\('f', p\.id\)/.test(pcs) && !/'<div class="dc-selrow">' \+ selBtn\('f'/.test(pcs) && /icon-btn sm dc-linkb/.test(pcs) && !/text-btn dc-linkb/.test(pcs), 'Select several in the Levering row; Link to a line is a row button');
   check(!/font-size:\s*(11|11\.5|12\.5|13\.5|14\.5)px/.test(dcc + tc), 'Team uses one type scale (no 12.5 / 13.5 / 14.5 px)');
+  const tj = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'app.js'), 'utf8');
+  check(/data-uphead/.test(tj) && /card\.remove\(\); upEmpty\(\);/.test(tj) && /New upload link/.test(tj), 'Opplastinger: when the last old link drops out, the heading goes and the empty text shows; New upload link sits like New project');
+  check(/\(Document plan\)/.test(pcs) && !/\(Received\)/.test(pcs), 'the empty Documentation list names today\'s five steps');
   check(/html\.t-modal, html\.dcn-modal \{ overflow: hidden/.test(tc), 'the page doesn\'t scroll behind a Documentation popup in Team');
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
