@@ -1046,7 +1046,7 @@
   /* ---------- file naming (JP 2026-11-16, a test, on only where switched on): cmd/doc-naming.js, loaded the first time ---------- */
   function namingOn() { try { if (/[?&]naming=1\b/.test(location.search)) localStorage.setItem('dash.dcNaming', '1'); return localStorage.getItem('dash.dcNaming') === '1'; } catch (e) { return false; } }
   function nswitch() { return '<label class="dcn-sw"><input type="checkbox" data-dcnon' + (namingOn() ? ' checked' : '') + '> ' + esc(k('ui.dcn-switch', 'New file naming (test, only on this device)')) + '</label>'; }
-  var DCN_V = 'bdd774d49a';   /* stamped by cmd/build.py from doc-naming.js */
+  var DCN_V = '2368a14d8c';   /* stamped by cmd/build.py from doc-naming.js */
   var PAIR = ['nodwg', 'nopdf', 'notpdf'];   /* before DCN_API: the file naming read it as undefined (a drawing that followed its rule threw) */
   var DCN_API = { esc: esc, k: k, toast: toast, uid: uid, saveP: saveP, proj: proj, draw: function () { draw(); }, getBlob: getBlob, lineOf: lineOf, unlink: unlink, bestLine: bestLine, parseName: parseName, pairs: function (p) { pairs(p); }, issueText: issueText,
     linkOpts: linkOpts, codeName: codeName, lineTitle: lineTitle, ABBR: ABBR, TEG: TEG, FAG: FAG, PAIR: PAIR, today: today, pad: pad, LP: LP, HOST: HOST, cur: function () { return open; }, projects: function () { return projects(); } };
@@ -1229,9 +1229,9 @@
       g.classList.remove('ov-wait'); g.classList.add('ov-still', 'ov-ghost'); g.setAttribute('aria-hidden', 'true'); g.inert = true; g.removeAttribute('id'); [].forEach.call(g.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); });
       document.body.appendChild(g);
       if (sc.length) { var A = [o].concat([].slice.call(o.querySelectorAll('*'))), B = [g].concat([].slice.call(g.querySelectorAll('*'))); sc.forEach(function (t) { var i = A.indexOf(t); if (i >= 0 && B[i]) B[i].scrollTop = t.__st; }); }
-      setTimeout(function () { g.remove(); if (!document.querySelector('.dcn-ov:not(.ov-ghost), .dx-tov:not(.ov-ghost)')) document.documentElement.classList.remove('dcn-modal'); }, 150); };
+      setTimeout(function () { g.remove(); if (!document.querySelector('.dcn-ov:not(.ov-ghost), .dx-tov:not(.ov-ghost)')) document.documentElement.classList.remove('dcn-modal'); }, 200); };
     new MutationObserver(function (ms) { var shut = []; ms.forEach(function (m) {
-      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 320) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 380) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } shut.push([o, k]); }); });
     }); shut.forEach(function (x) { if (!x[0].isConnected && !open[x[1]]) ghost(x[0]); }); }).observe(document.body, { childList: true, subtree: true }); })();   /* the calm popup opening without replays – Team has its own for its whole page */
   function draw() {

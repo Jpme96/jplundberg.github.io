@@ -1542,14 +1542,19 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dc-dlfr { padding-left: 32px; }
 .dc-addlist, .dc-dllist { background: var(--bg-solid, var(--card)); }
 .dc-freshov .dcn-flt { display: none; }
-.dcn-ov, .dx-tov { animation: ov-in .18s ease-out both; }
-.dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
-.dc-enter > * { animation: view-in .2s ease-out both; }
+.dcn-ov, .dx-tov { animation: ov-in .24s cubic-bezier(.2, .6, .3, 1) both; }
+.dx-fvz canvas, .dx-fvb > img { opacity: 0; transition: opacity .3s cubic-bezier(.2, .6, .3, 1); }
+.dx-fvz canvas.on, .dx-fvb > img.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .dx-fvz canvas, .dx-fvb > img { transition: none; }
+}
+.dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .34s cubic-bezier(.16, 1, .3, 1) both; }
+.dc-enter > * { animation: view-in .26s cubic-bezier(.2, .6, .3, 1) both; }
 .ov-still, .ov-still > * { animation: none !important; }
 .ov-wait, .ov-wait > * { animation-play-state: paused !important; }
 .ov-ghost { pointer-events: none !important; }
-.ov-ghost.ov-ghost { animation: ov-out .14s ease-in both !important; }
-.ov-ghost.ov-ghost > * { animation: sh-out .14s ease-in both !important; }
+.ov-ghost.ov-ghost { animation: ov-out .18s cubic-bezier(.4, 0, 1, 1) both !important; }
+.ov-ghost.ov-ghost > * { animation: sh-out .18s cubic-bezier(.4, 0, 1, 1) both !important; }
 @media (prefers-reduced-motion: reduce) {
   .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; }
 }
@@ -1592,10 +1597,10 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-rowmenu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.16); padding: 4px; min-width: 190px; }
 .dx-rowmenu .dx-del { width: 100%; height: auto; margin: 0; padding: 10px 12px; justify-content: flex-start; gap: 8px; font: inherit; color: rgb(var(--danger-rgb)); border-radius: 8px; }
 @keyframes ov-in { from { opacity: 0; } }
-@keyframes sh-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes sh-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 @keyframes view-in { from { opacity: 0; } }
 @keyframes ov-out { to { opacity: 0; } }
-@keyframes sh-out { to { opacity: 0; transform: translateY(8px) scale(.99); } }
+@keyframes sh-out { to { opacity: 0; transform: translateY(6px) scale(.985); } }
 .dc-host .card, .dc-host.card { animation: none; }
 .dc-host { --r-chip: 999px; --fs-s: 12px; --stt-mix: black; }
 :root[data-theme="dark"] .dc-host, :root[data-theme="dark"] .dc-host.dcn-ov { --stt-mix: white; }

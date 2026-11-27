@@ -587,14 +587,14 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
       g.classList.remove('ov-wait'); g.classList.add('ov-still', 'ov-ghost'); g.setAttribute('aria-hidden', 'true'); g.inert = true; g.removeAttribute('id'); [].forEach.call(g.querySelectorAll('[id]'), function (x) { x.removeAttribute('id'); });
       document.body.appendChild(g);
       if (sc.length) { var A = [o].concat([].slice.call(o.querySelectorAll('*'))), B = [g].concat([].slice.call(g.querySelectorAll('*'))); sc.forEach(function (t) { var i = A.indexOf(t); if (i >= 0 && B[i]) B[i].scrollTop = t.__st; }); }
-      setTimeout(function () { g.remove(); if (!document.querySelector('.dcn-ov:not(.ov-ghost), .dx-tov:not(.ov-ghost)')) document.documentElement.classList.remove('dcn-modal'); }, 150); };
+      setTimeout(function () { g.remove(); if (!document.querySelector('.dcn-ov:not(.ov-ghost), .dx-tov:not(.ov-ghost)')) document.documentElement.classList.remove('dcn-modal'); }, 200); };
     new MutationObserver(function (ms) { var shut = []; ms.forEach(function (m) {
-      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 320) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
+      [].forEach.call(m.addedNodes, function (n) { each(n, function (o) { var k = key(o); if (!(seen && seen.has(o)) && (open[k] || (gone[k] && Date.now() - gone[k] < 600))) { var el = Date.now() - (born[k] || 0); if (el < 380) { o.style.animationDelay = -el + 'ms'; if (o.firstElementChild) o.firstElementChild.style.animationDelay = -el + 'ms'; } else o.classList.add('ov-still'); } else if (!(seen && seen.has(o))) { born[k] = Date.now(); holdAnim(o); } if (seen) seen.add(o); open[k] = (open[k] || 0) + 1; delete gone[k]; }); });
       [].forEach.call(m.removedNodes, function (n) { each(n, function (o) { var k = key(o); open[k] = (open[k] || 1) - 1; if (open[k] <= 0) { delete open[k]; gone[k] = Date.now(); } shut.push([o, k]); }); });
     }); shut.forEach(function (x) { if (!x[0].isConnected && !open[x[1]]) ghost(x[0]); }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '7a2911cb8480';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '1cb076ac6428';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();

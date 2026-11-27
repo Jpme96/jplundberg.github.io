@@ -1050,18 +1050,24 @@ html.dc-dragging .dc-drop, html.dc-dragging .dc-flow { outline: 2px dashed var(-
 /* one calm opening for every popup (JP 2026-11-25 "add some animation … it feels too instant"): the backdrop fades, the sheet rises a little;
    a popup that was already open and is only drawn again gets .ov-still (no replay); off with reduced motion and cmd's motion-off */
 @keyframes ov-in { from { opacity: 0; } }
-@keyframes sh-in { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes sh-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 @keyframes view-in { from { opacity: 0; } }   /* opacity only: a transform would move fixed popups inside for a moment */
-.dcn-ov, .dx-tov { animation: ov-in .18s ease-out both; }
-.dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .22s cubic-bezier(.2, .8, .2, 1) both; }
-.dc-enter > * { animation: view-in .2s ease-out both; }
+/* smoother (JP 2026-11-27 12:43): a little longer, one soft landing curve, a shorter way to travel; closing is quicker than opening */
+.dcn-ov, .dx-tov { animation: ov-in .24s cubic-bezier(.2, .6, .3, 1) both; }
+/* a file in the viewer fades in once it is drawn (2026-11-27) – each page as it is ready, an image when it has loaded */
+.dx-fvz canvas, .dx-fvb > img { opacity: 0; transition: opacity .3s cubic-bezier(.2, .6, .3, 1); }
+.dx-fvz canvas.on, .dx-fvb > img.on { opacity: 1; }
+html.mo-off :is(.dx-fvz canvas, .dx-fvb > img) { transition: none; }
+@media (prefers-reduced-motion: reduce) { .dx-fvz canvas, .dx-fvb > img { transition: none; } }
+.dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet { animation: sh-in .34s cubic-bezier(.16, 1, .3, 1) both; }
+.dc-enter > * { animation: view-in .26s cubic-bezier(.2, .6, .3, 1) both; }
 .ov-still, .ov-still > * { animation: none !important; }
 .ov-wait, .ov-wait > * { animation-play-state: paused !important; }
 @keyframes ov-out { to { opacity: 0; } }
-@keyframes sh-out { to { opacity: 0; transform: translateY(8px) scale(.99); } }
+@keyframes sh-out { to { opacity: 0; transform: translateY(6px) scale(.985); } }
 .ov-ghost { pointer-events: none !important; }
-.ov-ghost.ov-ghost { animation: ov-out .14s ease-in both !important; }   /* a closed popup fades away (2026-11-26) */
-.ov-ghost.ov-ghost > * { animation: sh-out .14s ease-in both !important; }   /* held until the popup or page has been drawn (2026-11-26) */
+.ov-ghost.ov-ghost { animation: ov-out .18s cubic-bezier(.4, 0, 1, 1) both !important; }   /* a closed popup fades away (2026-11-26) */
+.ov-ghost.ov-ghost > * { animation: sh-out .18s cubic-bezier(.4, 0, 1, 1) both !important; }   /* held until the popup or page has been drawn (2026-11-26) */
 html.mo-off :is(.dcn-ov, .dx-tov, .dcn-sheet, .dx-tsheet, .dc-enter > *) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .dcn-ov, .dx-tov, .dcn-ov > .dcn-sheet, .dx-tov > .dx-tsheet, .dc-enter > * { animation: none !important; } }
 /* the upload line stays in one place at the bottom instead of pushing the page down and up (JP 2026-11-25 "the entire page shakes") */

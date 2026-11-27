@@ -442,7 +442,7 @@
         if (want <= p.done * 1.15 || p.busy) return;
         p.busy = true; var vp = p.pg.getViewport({ scale: want }), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
         p.pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () {
-          p.busy = false; if (!p.c.isConnected) return; c.style.width = p.c.style.width; p.c.replaceWith(c); p.c = c; p.done = want;
+          p.busy = false; if (!p.c.isConnected) return; c.style.width = p.c.style.width; c.className = 'on'; p.c.replaceWith(c); p.c = c; p.done = want;   /* a sharper copy after zooming is shown at once, no fade */
         }, function () { p.busy = false; });
       });
     }
@@ -482,14 +482,17 @@
     ov.addEventListener('click', function (e) { if ((e.target === ov && dn === ov) || e.target.closest('[data-dxfvx]')) close(); if (e.target.closest('[data-dxfvsh]')) navigator.share({ files: [shareFile] }).catch(function () {}); });
     document.addEventListener('keydown', ek, true); document.body.appendChild(ov); document.documentElement.classList.add('dcn-modal');
     var body = ov.querySelector('.dx-fvb'), bt = ov.querySelector('[data-dxfvx]'); if (bt) bt.focus();
+    /* the file fades in once it is drawn, like opening a file online (JP 2026-11-27 12:43): "Opening …" stays until the first page is ready */
+    var shown = function (el) { requestAnimationFrame(function () { el.classList.add('on'); }); };
+    var im0 = body && body.querySelector(':scope > img'); if (im0) { if (im0.complete) shown(im0); else { im0.addEventListener('load', function () { shown(im0); }); im0.addEventListener('error', function () { shown(im0); }); } }
     if (txt) blob.text().then(function (t) { var pre = document.createElement('pre'); pre.textContent = t.slice(0, 200000); body.innerHTML = ''; body.appendChild(pre); });
     if (pdf) blob.arrayBuffer().then(function (buf) { return pdfLib().then(function (lib) { return lib.getDocument({ data: new Uint8Array(buf), isEvalSupported: false }).promise; }); }).then(function (doc) {
-      body.innerHTML = ''; var W = Math.min(body.clientWidth || 800, 900), n = Math.min(doc.numPages, 40), chain = Promise.resolve(), pages = [];
+      var wait = body.querySelector(':scope > p.muted'), W = Math.min(body.clientWidth || 800, 900), n = Math.min(doc.numPages, 40), chain = Promise.resolve(), pages = [];
       var wrap = document.createElement('div'); wrap.className = 'dx-fvz'; body.appendChild(wrap); zoomer(body, wrap, pages);
       for (var i = 1; i <= n; i++) (function (i) { chain = chain.then(function () { if (!ov.isConnected) return; return doc.getPage(i).then(function (pg) {
         var v1 = pg.getViewport({ scale: 1 }), dpr = Math.min(window.devicePixelRatio || 1, 2), sc = W / v1.width, vp = pg.getViewport({ scale: sc * dpr }), c = document.createElement('canvas');
         c.width = vp.width; c.height = vp.height; c.style.width = Math.round(vp.width / dpr * (wrap.__z || 1)) + 'px'; wrap.appendChild(c);
-        pages.push({ pg: pg, c: c, w: vp.width / dpr, sc: sc, done: sc * dpr }); return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; }); }); })(i);
+        pages.push({ pg: pg, c: c, w: vp.width / dpr, sc: sc, done: sc * dpr }); var fin = function () { if (wait) { wait.remove(); wait = null; } shown(c); }; return pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(fin, function (er) { fin(); throw er; }); }); }); })(i);
       chain.then(function () { if (doc.numPages > n && ov.isConnected) { var m = document.createElement('p'); m.className = 'muted'; m.textContent = k('ui.dx-fv-more', 'Showing the first {n} of {t} pages – download for the rest.', { n: n, t: doc.numPages }); body.appendChild(m); } });
     }).catch(function () { body.innerHTML = '<p class="muted">' + esc(k('ui.dx-fv-bad', 'Could not show this PDF – download it to open it.')) + '</p>'; });
     return ov;
