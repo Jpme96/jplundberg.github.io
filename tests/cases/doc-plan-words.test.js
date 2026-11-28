@@ -6,7 +6,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const { b, p } = await open(1280);
   await p.evaluate(() => {
     const t = Features.tools(), mk = (id, made) => ({ id, name: 'Madeup site', made, lines: [{ id: id + 'l1', code: '360', st: 'recv' }, { id: id + 'l2', code: '362', st: 'missing' }], files: [{ id: id + 'f1', name: '360 Madeup damper.pdf', line: id + 'l1', p: { code: '360' } }, { id: id + 'f2', name: 'Madeup loose sheet.pdf', p: {} }] });
-    t.dckrav = [{ id: 'kmadeupj', name: 'Madeup join', lines: [{ id: 'kj1', code: '320', t: 'D' }] }]; t.dctl = [{ id: 'pmadeupj', name: 'Madeup join', made: '2026-11-26T09:00:00.000Z', lines: [], files: [] }, mk('pmadeupa', '2026-11-20T10:00:00.000Z'), mk('pmadeupb', '2026-11-27T10:00:00.000Z'), Object.assign(mk('pmadeupc', '2026-11-27T14:30:00.000Z'), {})]; Features.saveTools(t);
+    t.dckrav = [{ id: 'kmadeupj', name: 'Madeup join', lines: [{ id: 'kj1', code: '320', t: 'D' }] }]; t.dctl = [{ id: 'pmadeupj', name: 'Madeup join', made: '2026-11-26T09:00:00.000Z', lines: [], files: [] }, mk('pmadeupa', '2026-11-20T10:00:00.000Z'), mk('pmadeupb', '2026-11-27T10:00:00.000Z'), (q => (q.files = q.files.slice(0, 1), q))(mk('pmadeupc', '2026-11-27T14:30:00.000Z'))]; Features.saveTools(t);
   });
   await go(p, 'work/', 2500);
   await p.evaluate(() => PageTabs.show('doc')); await sl(400);
@@ -30,6 +30,17 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-dctab="cmp"]').click()); await sl(500);
   const heads = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dc-flist2 li b, #wkDocCtl .dc-frow b')].map(x => x.textContent.trim()).filter(Boolean));
   check(heads.length && !heads.some(x => /^–/.test(x)), 'line titles without a type have no lone dash ' + JSON.stringify(heads));
+  /* Ikke på listen ennå: the line choice on the file's row, no lone dash, no stray dot; a pile with 0 is grey (JP 2026-11-28 14:02) */
+  await p.evaluate(() => document.querySelector('#wkDocCtl [data-dcpile="loose"]').click()); await sl(500);
+  const lo = await p.evaluate(() => { const li = document.querySelector('#wkDocCtl .dc-loose'); if (!li) return null; const n = li.querySelector('.dc-lx').getBoundingClientRect(), s = li.querySelector('select.dc-link').getBoundingClientRect(); return { code: li.querySelector('.dc-code').textContent, opts: [...li.querySelectorAll('option')].map(o => o.textContent), same: Math.abs((n.top + n.bottom) / 2 - (s.top + s.bottom) / 2) < 20, pills: [...document.querySelectorAll('#wkDocCtl .dc-pile .dc-fpill')].map(x => x.className) }; });
+  check(lo && lo.code !== '–' && lo.same && lo.opts.length > 1 && !lo.opts.some(o => / · $/.test(o)) && lo.pills.some(c => /dc-v-wa/.test(c)), 'a file not on the list: its line choice is on its row, no dash, no stray dot ' + JSON.stringify(lo));
+  /* a saved description from before the maker fix loses its label */
+  await go(p, 'work/', 2000); await p.evaluate(() => { PageTabs.show('doc'); }); await sl(300); await p.evaluate(() => document.querySelector('[data-dxtool="ren"]').click()); for (let i = 0; i < 20 && !(await p.evaluate(() => !!window.DocNaming)); i++) await sl(250);
+  const nm = await p.evaluate(() => { const t = Features.tools(), pr = t.dctl.find(x => x.id === 'pmadeupa'), f = JSON.parse(JSON.stringify(pr.files[0])); f.p.abbr = 'DV'; f.nv = { desc: 'Madeup damper Produsent Testfirma' }; return DocNaming.newName(pr, f); });
+  check(/Madeup damper Testfirma/.test(nm) && !/Produsent/.test(nm), 'a saved description loses the maker’s label ' + nm);
+  await go(p, 'work/#dc=pmadeupc', 2000); await p.evaluate(() => { const b = document.querySelector('#wkDocCtl [data-dctab="cmp"]'); if (b) b.click(); }); await sl(500);
+  const z = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dc-pile')].map(x => x.querySelector('b').textContent + ':' + x.querySelector('.dc-fpill').className));
+  check(z.length && z.filter(x => /^0:/.test(x)).every(x => /dc-v-ne/.test(x)) && z.some(x => /^0:/.test(x)), 'a pile with 0 is grey, not red or green ' + JSON.stringify(z));
   const app = require('fs').readFileSync(require('path').join(__dirname, '../../_team/public/app.js'), 'utf8');
   check(/nmN\[String\(p\.name[^\]]*\] > 1 && p\.made \? L\('made ', 'laget '\)/.test(app), 'Team\'s overview cards also show the day for two projects with one name');
   check(!p.errs.length, 'no errors ' + p.errs.join(' | '));

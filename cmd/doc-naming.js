@@ -166,13 +166,16 @@
   function lastFloor() { try { return localStorage.getItem('dcn.floor') || ''; } catch (e) { return ''; } }
   /* the day a photo was taken: the earliest EXIF date in its first 256 kB (DateTimeOriginal is never later than an edit date), else the file's own date */
   function photoDate(blob) { return blob.slice(0, 262144).arrayBuffer().then(function (ab) { var t = new TextDecoder('latin1').decode(new Uint8Array(ab)), rx = /(19|20)(\d{2}):(\d{2}):(\d{2}) \d{2}:\d{2}:\d{2}/g, m, best = ''; while ((m = rx.exec(t))) { var d = m[1] + m[2] + '-' + m[3] + '-' + m[4]; if (+m[3] >= 1 && +m[3] <= 12 && +m[4] >= 1 && +m[4] <= 31 && (!best || d < best)) best = d; } return best; }).catch(function () { return ''; }); }
+  /* a maker's label is not part of the name – also in texts saved before 2026-11-28 ("… Produsent Testfirma" → "… Testfirma", JP's live check) */
+  var LBL = /(^|\s)(?:[Pp]rodusent|[Ll]everandør|[Ll]everandor|[Mm]anufacturer|[Ss]upplier|[Tt]illverkare|[Ll]everantör|[Pp]roducent|[Ff]abrikant|[Ii]mportør|[Hh]ersteller)\s+(?=[A-ZÆØÅ])/g;
+  function noLabel(s) { return String(s).replace(LBL, '$1'); }
   function nval(p, f, part) {
     var v = f.nv || {}, d = drawn(f), x;
     switch (part.k) {
       case 'code': return f.p && f.p.code || ''; case 'type': return f.p && f.p.abbr || ''; case 'typename': return catName(f.p && f.p.abbr) || ownMean(p, 'type', f.p && f.p.abbr);
       case 'proj': return p.no || ''; case 'bno': return p.bid || ''; case 'unit': return p.pid || ''; case 'pname': return p.pname || '';
       case 'contractor': return v.contractor != null ? v.contractor : p.who || '';
-      case 'desc': return v.desc != null ? v.desc : f.p && f.p.text || '';
+      case 'desc': return noLabel(v.desc != null ? v.desc : f.p && f.p.text || '');
       case 'floor': case 'disc': case 'dtype': return v[part.k] != null ? v[part.k] : d[part.k] || (part.k === 'disc' ? guessDisc(f.p && f.p.code) : part.k === 'dtype' ? guessDtype(f.orig || f.name) : part.k === 'floor' && fkind(f) === 'photo' ? lastFloor() : '');
       case 'free': return v.free != null ? v.free : freeGuess(f);
       case 'rev': x = String(v.rev || '').trim(); return x ? 'Rev' + x : '';
