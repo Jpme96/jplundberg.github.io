@@ -729,6 +729,24 @@
     if (key === 'rev') v = (f.nv || {}).rev || '';
     return lab + '<input id="' + id + '"' + nc + ' data-dcnv="' + esc(f.id) + ':' + key + '" value="' + esc(v) + '" maxlength="80"></label>';
   }
+  function sttOf(f, b) { var same = !b.miss.length && b.plain === splitStem(f.name); return b.miss.length ? tag('var(--warn)', k(b.miss.length === 1 ? 'ui.dcn-miss1' : 'ui.dcn-missn', b.miss.length === 1 ? '1 field missing' : '{n} fields missing', { n: b.miss.length })) : same ? tag('var(--ok)', k('ui.dcn-follows', 'Name follows the rule')) : tag('var(--blue)', k('ui.dcn-ready', 'Ready-made')); }
+  /* the card is green when the file's name follows its rule and nothing is said against the name itself – a missing DWG/PDF twin is
+     about the delivery, not the name, so it no longer keeps the card red (JP 2026-11-28 11:15) */
+  function goodOf(p, f, r) {
+    r = r || ruleFor(p, f); if (fstate(p, f) !== 'done') return false;
+    return !(f.iss || []).some(function (x) { return PAIR.indexOf(x[1]) < 0 && r.id === 'bby-doc'; });
+  }
+  /* while you type in a part, the card shows at once what the name becomes: its colour, its status and the new name (JP 11:15) –
+     nothing is saved or drawn until the field's change, as before */
+  function liveCard(t) {
+    var a = String(t.dataset.dcnv || '').split(':'), card = t.closest('.dcn-card'), p = proj(cur()); if (!card || !p || a.length < 2) return;
+    var f0 = (p.files || []).filter(function (x) { return x.id === a[0]; })[0]; if (!f0) return;
+    var f = Object.assign({}, f0), nv = Object.assign({}, f0.nv); nv[a[1]] = String(t.value).slice(0, 80); f.nv = nv;
+    var r = ruleFor(p, f), b = nbuild(p, f, r), good = goodOf(p, f, r);
+    card.classList.toggle('dcn-good', good); card.classList.toggle('dcn-bad', !good);
+    var cd = card.querySelector('.dcn-sug code'); if (cd) cd.innerHTML = b.html + esc(ext(f.orig || f.name));
+    var st = card.querySelector('.dcn-head > .dc-st'); if (st) { var w = document.createElement('div'); w.innerHTML = sttOf(f, b); if (window.I18N && I18N.apply) try { I18N.apply(w); } catch (e) {} if (w.firstChild && st.outerHTML !== w.firstChild.outerHTML) st.replaceWith(w.firstChild); }
+  }
   var nopk = false;   /* set while Ready / Done are drawn: rows without a pick box */
   function nrow(p, f, compact, headLine) {
     var r = ruleFor(p, f), b = nbuild(p, f, r), e = ext(f.orig || f.name), l = f.line && lineOf(p, f.line), kd = fkind(f), tags = [], lvl = 'ok';
@@ -749,14 +767,13 @@
        what's missing is said once – on the head and on the button – and an empty field has an orange edge */
     var gaps = b.miss.filter(function (x) { return x !== 'code' && x !== 'type'; }), same = !b.miss.length && b.plain === splitStem(f.name);
     if (gaps.length && lvl === 'ok') lvl = 'warn';
-    var stt = b.miss.length ? tag('var(--warn)', k(b.miss.length === 1 ? 'ui.dcn-miss1' : 'ui.dcn-missn', b.miss.length === 1 ? '1 field missing' : '{n} fields missing', { n: b.miss.length })) : same ? tag('var(--ok)', k('ui.dcn-follows', 'Name follows the rule')) : tag('var(--blue)', k('ui.dcn-ready', 'Ready-made'));
+    var stt = sttOf(f, b);
     var head = headLine || '<div class="dcn-head"><i class="bi bi-' + (kd === 'photo' ? 'image' : kd === 'drawing' ? 'rulers' : 'file-earmark-text') + '" aria-hidden="true"></i><span class="dcn-hn"><b data-noi18n>' + esc(f.name) + '</b><small>' + esc(kd === 'photo' ? k('ui.dcn-k-photo', 'Photo') : kd === 'drawing' ? k('ui.dcn-k-drawing', 'Drawing') : k('ui.dcn-k-doc', 'Document')) + (f.orig && f.orig !== f.name ? ' · <span data-noi18n>' + esc(k('ui.dcn-sent-as', 'Sent as: {n}', { n: f.orig })) + '</span>' : '') + '</small></span>' + stt +
       (f.nf ? '' : '<button type="button" class="pill-btn sm ghost dcn-open" data-dcview="' + esc(f.id) + '"><i class="bi bi-eye"></i> ' + esc(k('ui.dcn-open', 'Open')) + '</button>') + '</div>';
     var code = f.p.code ? f.p.code + ' ' + (codeName(f.p.code) || '') : '', seen = {};
     /* the whole card a light red while something is wrong, a light green when it's right (JP 2026-11-26 10:17; 11:36 "I cannot see it"):
        right = the file already has its final name and nothing is said against it */
-    var iss0 = (f.iss || []).filter(function (x) { return !(b.plain === splitStem(f.name) && !b.miss.length && r.id !== 'bby-doc' && PAIR.indexOf(x[1]) < 0); });
-    var good = fstate(p, f) === 'done' && lvl !== 'warn' && !iss0.length;
+    var good = lvl !== 'warn' && goodOf(p, f, r);
     var h = '<li class="dcn-row dcn-card dcn-' + lvl + ' ' + (good ? 'dcn-good' : 'dcn-bad') + '" data-dcnf="' + esc(f.id) + '">' + head + '<div class="dcn-part"><p class="dcn-sec">' + esc(k('ui.dcn-sec-code', 'Code and type')) + '</p><div class="dcn-g">' +
       '<label class="dcn-c dcn-kind"><span>' + esc(k('ui.dcn-kind', 'Kind of file')) + '</span><select data-dcnk="' + esc(f.id) + '">' + [['doc', 'ui.dcn-k-doc', 'Document'], ['photo', 'ui.dcn-k-photo', 'Photo'], ['drawing', 'ui.dcn-k-drawing', 'Drawing']].map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === kd ? ' selected' : '') + '>' + esc(k(x[1], x[2])) + '</option>'; }).join('') + '</select></label>' +
       '<label class="dcn-c"><span>' + esc(kd === 'photo' ? k('ui.dcn-code-opt', 'NS 3451 code (optional)') : k('ui.dcn-code', 'NS 3451 code')) + '</span><select data-dcncode="' + esc(f.id) + '" title="' + esc(code.trim()) + '" class="dcn-hsel" tabindex="-1" aria-hidden="true">' + codeOpts(p, f) + '</select>' +
@@ -1114,6 +1131,7 @@
       if (t.dataset.dcnpf) { ruleEdit(function (r) { r.parts[+t.dataset.dcnpf].fmt = v; }); return; }
       if (t.matches('[data-dcnpa]') && v) { ruleEdit(function (r) { r.parts.push(v === 'date' ? { k: v, fmt: 'iso' } : { k: v }); npi = r.parts.length - 1; }); return; }
     });
+    on('input', function (e) { var t = e.target; if (t && t.matches && t.matches('input[data-dcnv]') && t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) liveCard(t); });
     on('toggle', function (e) { if (e.target.matches && e.target.matches('[data-dcnrules]')) nopen = e.target.open; }, true);
     on('click', function (e) {
       var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) return;
