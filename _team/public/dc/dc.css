@@ -998,6 +998,7 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-flist small { color: var(--muted); }
 .dx-rsum { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; font-size: 14px; }
 .dx-rbusy.dx-hide { visibility: hidden; }
+.dc-kuse { margin: 10px 0 0; }
 .pill-btn[data-dxrenuse], .dx-rsum, .dc-sumbar, .dcn-fl { font-variant-numeric: tabular-nums; }
 .pill-btn[data-dxrenuse]:disabled { opacity: .45; cursor: default; }
 .dx-rbtn { display: flex; flex-wrap: wrap; gap: 6px; }

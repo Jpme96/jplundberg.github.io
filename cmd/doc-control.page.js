@@ -669,7 +669,7 @@
     var subs = { krav: r ? k('ui.dc-n-docs', '{n} documents', { n: (r.lines || []).length }) : req() ? req().name : k('ui.dc-fl-no-krav', 'No requirements yet'),
       plan: hasPlan(p) ? (pc.err + pc.gaps.length ? k('ui.dc-fl-plan-dev', 'Checked · {n} deviations', { n: pc.err + pc.gaps.length }) : k('ui.dc-fl-plan-ok', 'Checked · OK')) : p.noPlan ? k('ui.dc-fl-no-plan', 'No plan') : L.length ? k('ui.dc-fl-from-krav', 'From the requirements') : k('ui.dc-fl-not-imported', 'Not imported'),
       lev: F.length ? k('ui.dc-fl-n-files', '{n} delivered', { n: F.length }) : k('ui.dc-fl-none-yet', 'Nothing yet'),
-      cmp: !L.length && F.length ? k('ui.dc-cmp-nolist', 'No list') : L.length ? k('ui.dc-fl-cmp-sub', '{a} delivered · {m} missing', { a: got, m: miss }) : '–', end: verdict[1] };
+      cmp: !L.length && F.length ? k('ui.dc-cmp-nolist', 'No list') : L.length ? k('ui.dc-fl-cmp-sub', '{a} delivered · {m} missing', { a: got, m: miss }) : k('ui.dc-fl-cmp-none', 'Nothing yet'), end: verdict[1] };
     var names = { krav: k('ui.dx-krav', 'Requirements'), plan: k('ui.dc-plan', 'Document plan'), lev: k('ui.dc-fl-lev', 'Delivery'), cmp: k('ui.dc-fl-cmp', 'Comparison'), end: k('ui.dc-fl-end', 'Final check') };
     var cur = tab === 'report' ? 'end' : tab;
     var head = '<div class="fdv-top"><button type="button" class="fdv-back" data-dcback><i class="bi bi-chevron-left"></i> ' + esc(k('ui.docu', 'Documentation')) + '</button>' +
@@ -701,7 +701,9 @@
     else {
       h += '<div class="dc-nokrav"><p class="dc-help">' + esc(req() ? k('ui.dc-fl-krav-req2', 'No requirements yet – the delivery is checked against the client’s checklist “{n}”.', { n: req().name }) : k('ui.dc-fl-krav-none2', 'No requirements yet – the delivery is checked against the document plan.')) + '</p>' +
         '<div class="dc-facts">' + (ed ? '<button type="button" class="pill-btn" data-dckin><i class="bi bi-list-check"></i> ' + esc(k('ui.dc-fl-krav-make', 'Make requirements')) + '</button>' : '') +
-        '<button type="button" class="text-btn dc-skipk" data-dctab="' + (hasPlan(p) || !p.noPlan ? 'plan' : 'lev') + '">' + esc(k('ui.dc-fl-krav-skip', 'Go on without requirements')) + ' <i class="bi bi-chevron-right"></i></button></div></div>';
+        '<button type="button" class="text-btn dc-skipk" data-dctab="' + (hasPlan(p) || !p.noPlan ? 'plan' : 'lev') + '">' + esc(k('ui.dc-fl-krav-skip', 'Go on without requirements')) + ' <i class="bi bi-chevron-right"></i></button></div>' +
+        /* a requirements list made on its own (it stands as a second row in the list) can be used here instead of starting a new one (2026-11-28) */
+        (ed ? loneKrav().map(function (q) { return '<button type="button" class="pill-btn ghost dc-kuse" data-dckravuse="' + esc(q.id) + '"><i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-krav-use', 'Use “{n}” ({c} documents)', { n: q.name || '', c: (q.lines || []).length })) + '</button>'; }).join('') : '') + '</div>';
       return h + dwPick(p, 'dctl');
     }
     h += dwPick(r, 'dckrav');
@@ -1766,6 +1768,8 @@
       lines: L.map(function (l, i) { return Object.assign({}, l, { id: uid() + i, st: 'missing', files: [], cmt: '' }); }), files: [] }]); Fe.saveTools(tt2);
     return nid;
   }
+  /* requirements lists no project uses yet, with something in them */
+  function loneKrav() { var t = Fe.tools(), used = {}; (t.dctl || []).forEach(function (q) { if (q.krav) used[q.krav] = 1; }); return (t.dckrav || []).filter(function (q) { return !used[q.id] && (q.lines || []).length; }).slice(0, 4); }
   /* Krav inside the project: make an empty list for it when it has none, and open the picker */
   function kinOpen(pk) {
     var rk = kravOf(pk);
@@ -2532,6 +2536,7 @@
       toast('<i class="bi bi-trash3"></i> ' + esc(k('ui.dc-line-removed', 'Line removed')), function () { var t6 = Fe.tools(); t6.dctl = (t6.dctl || []).map(function (x) { return x.id === keep2.id ? keep2 : x; }); Fe.saveTools(t6); draw(); }); }); return; }
     if ((b = t.closest('[data-dxtool]'))) { blurIn(); var nt = b.dataset.dxtool || null; xtool = xtool === nt ? null : nt; draw(); return; }
     if (t.closest('[data-dxrenopen]')) { renDrop(); return; }
+    if ((b = t.closest('[data-dckravuse]')) && open) { var kid2 = b.dataset.dckravuse; saveP(open, function (x) { x.krav = kid2; }); toast('<i class="bi bi-link-45deg"></i> ' + esc(k('ui.dc-krav-used', 'The requirements list is now part of this project.'))); draw(); return; }
     if (t.closest('[data-dckin]') && open) { var pk = proj(open); if (!pk) return; kinOpen(pk); draw(); window.scrollTo(0, 0); return; }
     if (t.closest('[data-dckinx]') && open) { var pk2 = proj(open), rk2 = kravOf(pk2); if (pk2 && rk2) syncKrav(pk2.id, rk2); kin = false; rpicking = false; rpen = false; draw(); window.scrollTo(0, 0); return; }
     if (t.closest('[data-dcdwo]')) { dwOpen = !dwOpen; draw(); return; }

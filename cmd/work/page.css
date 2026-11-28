@@ -484,7 +484,8 @@ button.dx-tool { font: inherit; color: inherit; text-align: left; background: no
 .dx-flist li span { display: grid; min-width: 0; overflow-wrap: anywhere; }
 .dx-flist small { color: var(--muted); }
 .dx-rsum { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0; font-size: 14px; }
-.dx-rbusy.dx-hide { visibility: hidden; }   /* keeps its room while hidden – the buttons beside it don't move (2026-11-27) */
+.dx-rbusy.dx-hide { visibility: hidden; }
+.dc-kuse { margin: 10px 0 0; }   /* keeps its room while hidden – the buttons beside it don't move (2026-11-27) */
 .pill-btn[data-dxrenuse], .dx-rsum, .dc-sumbar, .dcn-fl { font-variant-numeric: tabular-nums; }   /* counts change width less while files come in */
 .pill-btn[data-dxrenuse]:disabled { opacity: .45; cursor: default; }
 .dx-rbtn { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -62,8 +62,14 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   check(!/font-size:\s*(11|11\.5|12\.5|13\.5|14\.5)px/.test(dcc + tc), 'Team uses one type scale (no 12.5 / 13.5 / 14.5 px)');
   const tj = fs.readFileSync(path.join(__dirname, '..', '..', '_team', 'public', 'app.js'), 'utf8');
   check(/data-uphead/.test(tj) && /card\.remove\(\); upEmpty\(\);/.test(tj) && /New upload link/.test(tj), 'Opplastinger: when the last old link drops out, the heading goes and the empty text shows; New upload link sits like New project');
+  check(/data-dckravuse/.test(pcs) && /function loneKrav/.test(pcs) && /ui\.dc-fl-cmp-none/.test(pcs), 'a project\'s empty Krav step offers a requirements list made on its own; Sammenligning says Nothing yet instead of a dash');
   check(/\(Document plan\)/.test(pcs) && !/\(Received\)/.test(pcs), 'the empty Documentation list names today\'s five steps');
   check(/html\.t-modal, html\.dcn-modal \{ overflow: hidden/.test(tc), 'the page doesn\'t scroll behind a Documentation popup in Team');
+  /* a requirements list made on its own can be used in a project's empty Krav step (2026-11-28) */
+  await p.evaluate(() => { const t = Features.tools(); t.dckrav = (t.dckrav || []).concat([{ id: 'lk1', name: 'Made-up lone list', lines: [{ id: 'q1', code: '234', t: 'DA' }, { id: 'q2', code: '235', t: 'FDV' }] }]); t.dctl = (t.dctl || []).concat([{ id: 'lp1', name: 'Made-up lone project', lines: [], files: [] }]); Features.saveTools(t); });
+  await go(p, 'work/#dc=lp1', 2500);
+  const ku = await p.evaluate(async () => { const s = [...document.querySelectorAll('#wkDocCtl button')].find(b => /^1/.test(b.textContent.trim())); s && s.click(); await new Promise(r => setTimeout(r, 400)); const b = document.querySelector('[data-dckravuse="lk1"]'); const txt = b && b.textContent.trim(); b && b.click(); await new Promise(r => setTimeout(r, 500)); return { txt, krav: (Features.tools().dctl.find(x => x.id === 'lp1') || {}).krav, gone: !document.querySelector('[data-dckravuse]') }; });
+  check(/Made-up lone list/.test(ku.txt || '') && /2/.test(ku.txt || '') && ku.krav === 'lk1' && ku.gone, 'the empty Krav step offers the lone list and links it ' + JSON.stringify(ku));
   check(!errs.length, 'no page errors ' + errs.join(' | '));
   await b.close(); done();
 })();
