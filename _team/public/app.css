@@ -210,10 +210,10 @@ a.t-icon { text-decoration: none; }
 .t-pdue { font-size: 13px; color: var(--muted); }
 .t-pdue.t-warn { color: var(--warn); font-weight: 600; }
 /* A computer gets a computer layout (JP 2026-11-17 11:43 "looks like it's for the phone"): the tabs become a menu on the left,
-   the page uses the width (up to 1200 px), the Overview has two columns, Documents its full width. The phone is unchanged. */
+   the page uses the width (up to 1680 px – JP 2026-11-28 "give me a PC layout"; 1200 left a quarter of a laptop empty; on a wider screen it stands in the middle of the space beside the menu; % not vw, so it follows the page zoom), the Overview has two columns, Documents its full width. The phone is unchanged. */
 .t-cols { display: block; }
 @media (min-width: 1000px) {
-  #app { max-width: 1200px; margin: 0 auto 0 max(232px, calc((100vw - 1200px) / 2 + 116px)); padding: 28px 32px 48px; }
+  #app { max-width: 1680px; margin: 0 auto 0 max(232px, calc((100% - 1680px) / 2 + 116px)); padding: 28px 32px 48px; }
   .t-tabs { top: 0; bottom: 0; left: 0; right: auto; width: 208px; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 88px 12px 16px; border-top: 0; border-right: 1px solid var(--line); background: var(--bg); }
   .t-tabs button { flex: 0 0 auto; max-width: none; width: 100%; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 44px; padding: 0 14px; font-size: 15px; }
   .t-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
@@ -348,7 +348,7 @@ html, body { scrollbar-gutter: stable; }   /* a page that grows past the screen 
 /* a laptop shown at 200 % is under 1000 px wide, so the media queries give it the tablet layout – but scaled down it has room for the
    PC layout: html.tz-wide (set by __teamFit when the width divided by the zoom is 1000 px or more) gives it the side menu and the wide
    column (JP 2026-11-25 18:37 – the step names were cut off) */
-html.tz-wide #app { max-width: 1200px; margin: 0 auto 0 232px; padding: 28px 32px 48px; }
+html.tz-wide #app { max-width: 1680px; margin: 0 auto 0 max(232px, calc((100% - 1680px) / 2 + 116px)); padding: 28px 32px 48px; }
 html.tz-wide .t-tabs { top: 0; bottom: 0; left: 0; right: auto; width: 208px; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 88px 12px 16px; border-top: 0; border-right: 1px solid var(--line); background: var(--bg); }
 html.tz-wide .t-tabs button { flex: 0 0 auto; max-width: none; width: 100%; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 44px; padding: 0 14px; font-size: 15px; }
 html.tz-wide .t-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }

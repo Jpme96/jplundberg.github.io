@@ -516,6 +516,10 @@ async function until(pg, fn, ms = 15000, arg) { const t = Date.now(); while (Dat
     /* a laptop at 200 % (JP 2026-11-25 18:37): under 1000 px wide, but scaled down it gets the PC layout – side menu, wide column – not the tablet one */
     const zL2 = await at(960, 443), lay = await own.evaluate(() => { const t = getComputedStyle(document.querySelector('.t-tabs')), a = document.getElementById('app').getBoundingClientRect(); return { wide: document.documentElement.classList.contains('tz-wide'), side: t.top === '0px' && t.bottom === '0px' && parseFloat(t.width) < 260, col: Math.round(a.width / (parseFloat(getComputedStyle(document.documentElement).zoom) || 1)) }; });
     check(Math.abs(zL2 - .78) < .02 && lay.wide && lay.side && lay.col > 800, 'a laptop at 200 % (960 px) is scaled and gets the PC layout with the side menu, so step names have room ' + JSON.stringify({ zL2, lay }));
+    /* the PC layout uses the width (JP 2026-11-28): on a laptop the page reaches the right edge, on a big screen it stands in the middle of the space beside the menu */
+    const span = async (w, h) => { await at(w, h); return own.evaluate(() => { const a = document.getElementById('app').getBoundingClientRect(), m = document.querySelector('.t-tabs').getBoundingClientRect(); return { l: Math.round(a.left - m.right), r: Math.round(innerWidth - a.right), w: Math.round(a.width) }; }); };
+    const sMac = await span(1512, 862), sBig = await span(3440, 1440);
+    check(sMac.r < 30 && sMac.w > 1200 && sBig.l > 200 && Math.abs(sBig.l - sBig.r) < 60, 'the PC layout fills a laptop and stands in the middle on a wide screen ' + JSON.stringify({ sMac, sBig }));
     const zT = await at(820, 1180); check(zT === 1 && !(await own.evaluate(() => document.documentElement.classList.contains('tz-wide'))), 'a narrow window keeps its own size and layout');
     await own.click('[data-go="actions"]'); const went = await until(own, () => /#actions/.test(location.hash), 4000);
     const noSetting = await own.evaluate(() => !document.querySelector('[data-sizepick]'));
