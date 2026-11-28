@@ -1771,6 +1771,9 @@
   }
   /* a project made from a requirements list (Start, and in the five steps every list is a project – JP 2026-11-24 18:37) */
   function projFromKrav(ps) {
+    /* a project with the same name and no requirements yet takes the list – a second project of that name was made beside it (JP 2026-11-28 12:22) */
+    var nm0 = String(ps.name || '').trim().toLowerCase(), same = nm0 && projects().filter(function (x) { return x && !x.krav && String(x.name || '').trim().toLowerCase() === nm0 && can('edit', gOf(x, 'dctl')); })[0];
+    if (same) { saveP(same.id, function (x) { x.krav = ps.id; }); syncKrav(same.id, ps); return same.id; }
     var nid = uid(), tt2 = Fe.tools(), L = ps.lines || [];
     tt2.dctl = (tt2.dctl || []).concat([{ id: nid, name: ps.name, no: ps.no || '', bid: ps.bid || '', bname: ps.bname || '', pname: ps.pname || '', pid: ps.pid || '', trade: ps.type || '', made: new Date().toISOString(), krav: ps.id,
       planName: L.length ? k('ui.doc-req', 'Document requirements') + ': ' + ps.name : undefined, planAt: L.length ? today() : undefined,
