@@ -869,6 +869,8 @@ I18N.add({
   "ui.dc-fl-from-lev": ["Made from the delivery", "Laget fra leveransen"],
   "ui.dc-fl-plan-lev": ["The list was made from what was delivered ({n} lines) – no document plan from the contractor yet.", "Listen er laget fra det som ble levert ({n} linjer) – ingen dokumentplan fra entreprenøren ennå."],
   "ui.dx-part-made": ["(made {d})", "(laget {d})"],
+  "ui.dc-fl-lev-t": ["Lines made from the delivery", "Linjer laget fra leveransen"],
+  "ui.dx-st-loose": ["{n} not on the list", "{n} ikke på listen"],
   "ui.dc-fl-have-plan": ["We got a plan after all – import it", "Vi fikk en plan likevel – importer den"],
   "ui.dc-fl-imp-b": ["Import document plan (.xlsx)", "Importer dokumentplan (.xlsx)"],
   "ui.dc-fl-imp-h": ["Choose the filled-in document plan (.xlsx). Every tab is read and the plan is checked against the requirements right away.", "Velg den utfylte dokumentplanen (.xlsx). Alle fanene leses, og planen sjekkes mot kravene med en gang."],

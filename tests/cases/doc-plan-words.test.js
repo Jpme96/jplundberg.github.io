@@ -5,7 +5,7 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
 (async () => {
   const { b, p } = await open(1280);
   await p.evaluate(() => {
-    const t = Features.tools(), mk = (id, made) => ({ id, name: 'Madeup site', made, lines: [{ id: id + 'l1', code: '360', st: 'recv' }, { id: id + 'l2', code: '362', st: 'missing' }], files: [{ id: id + 'f1', name: '360 Madeup damper.pdf', line: id + 'l1', p: { code: '360' } }] });
+    const t = Features.tools(), mk = (id, made) => ({ id, name: 'Madeup site', made, lines: [{ id: id + 'l1', code: '360', st: 'recv' }, { id: id + 'l2', code: '362', st: 'missing' }], files: [{ id: id + 'f1', name: '360 Madeup damper.pdf', line: id + 'l1', p: { code: '360' } }, { id: id + 'f2', name: 'Madeup loose sheet.pdf', p: {} }] });
     t.dckrav = [{ id: 'kmadeupj', name: 'Madeup join', lines: [{ id: 'kj1', code: '320', t: 'D' }] }]; t.dctl = [{ id: 'pmadeupj', name: 'Madeup join', made: '2026-11-26T09:00:00.000Z', lines: [], files: [] }, mk('pmadeupa', '2026-11-20T10:00:00.000Z'), mk('pmadeupb', '2026-11-27T10:00:00.000Z'), Object.assign(mk('pmadeupc', '2026-11-27T14:30:00.000Z'), {})]; Features.saveTools(t);
   });
   await go(p, 'work/', 2500);
@@ -17,12 +17,16 @@ const { open, go, sl } = require('../lib/browser'); const { check, done } = requ
   const jn = await p.evaluate(() => { const L = Features.list('dctl'); return { n: L.filter(x => x.name === 'Madeup join').length, krav: (L.find(x => x.id === 'pmadeupj') || {}).krav, lines: ((L.find(x => x.id === 'pmadeupj') || {}).lines || []).length, hash: location.hash }; });
   check(jn.n === 1 && jn.krav === 'kmadeupj' && jn.lines === 1 && /pmadeupj/.test(jn.hash), 'the list joins the project of the same name – no second project ' + JSON.stringify(jn));
   await go(p, 'work/', 2000); await p.evaluate(() => PageTabs.show('doc')); await sl(400);
+  const tagA = await p.evaluate(() => document.querySelector('[data-dcopen="pmadeupa"] .dc-st').textContent);
+  check(/1 of 2 delivered · 0 approved · 1 not on the list/.test(tagA), 'the project row also counts files that are on no line ' + tagA);
   await p.evaluate(() => document.querySelector('[data-dcopen="pmadeupa"]').click()); await sl(600);
   const st = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl [data-dctab]')].map(x => x.dataset.dctab + ':' + x.textContent.replace(/\s+/g, ' ').trim()));
   check(st.some(x => /^plan:.*Made from the delivery/.test(x)) && !st.some(x => /From the requirements/.test(x)), 'no requirements: the plan step says it was made from the delivery ' + JSON.stringify(st));
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-dctab="plan"]').click()); await sl(500);
   const pl = await p.evaluate(() => document.querySelector('#wkDocCtl').textContent.replace(/\s+/g, ' '));
   check(/made from what was delivered \(2 lines\)/.test(pl) && !/made from the requirements/.test(pl), 'the plan step explains where the list came from ' + pl.slice(0, 300));
+  const ll = await p.evaluate(() => ({ rows: [...document.querySelectorAll('#wkDocCtl .dc-levlines > li')].map(x => x.textContent.replace(/\s+/g, ' ').trim()), dl: !!document.querySelector('#wkDocCtl .dc-levhead [data-dcvx7]') }));
+  check(ll.rows.length === 2 && /360/.test(ll.rows[0]) && /Madeup damper/.test(ll.rows[0]) && ll.dl, 'the plan step lists the lines made from the delivery, with the plan to download ' + JSON.stringify(ll));
   await p.evaluate(() => document.querySelector('#wkDocCtl [data-dctab="cmp"]').click()); await sl(500);
   const heads = await p.evaluate(() => [...document.querySelectorAll('#wkDocCtl .dc-flist2 li b, #wkDocCtl .dc-frow b')].map(x => x.textContent.trim()).filter(Boolean));
   check(heads.length && !heads.some(x => /^–/.test(x)), 'line titles without a type have no lone dash ' + JSON.stringify(heads));

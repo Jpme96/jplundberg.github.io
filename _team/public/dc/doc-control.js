@@ -607,7 +607,8 @@
       var p = x.p, r = x.r, c = p ? counts(p.lines || []) : null, o = p || r, tag;
       if (!p) tag = ['plan', (r.lines || []).length === 1 ? k('ui.dx-st-krav1', 'Requirements · 1 document') : k('ui.dx-st-krav', 'Requirements · {n} documents', { n: (r.lines || []).length })];
       else if (c.all && c.done === c.all) tag = ['ok', k('ui.dx-st-done', 'Report · all approved')];
-      else tag = ['recv', c.all ? k('ui.dx-st-lev2', '{a} of {b} delivered · {d} approved', { a: c.all - c.missing, b: c.all, d: c.ok + c.cmt }) : k('ui.dc-no-plan', 'No plan yet')];   /* the same words as Team's overview card: how many are in and how many approved (JP 2026-11-26 17:05) */
+      else tag = ['recv', c.all ? k('ui.dx-st-lev2', '{a} of {b} delivered · {d} approved', { a: c.all - c.missing, b: c.all, d: c.ok + c.cmt }) : k('ui.dc-no-plan', 'No plan yet')];
+      var lf0 = p ? looseFiles(p).filter(function (f) { return !f.nf; }).length : 0; if (lf0 && tag[0] !== 'plan') tag[1] += ' · ' + k('ui.dx-st-loose', '{n} not on the list', { n: lf0 });   /* files with no line said too, so the row matches Levering's count (JP 2026-11-28 13:25) */   /* the same words as Team's overview card: how many are in and how many approved (JP 2026-11-26 17:05) */
       return '<li class="kit-item dx-row"><button type="button" class="kit-main" ' + (p ? 'data-dcopen="' + esc(p.id) + '"' : 'data-dropen="' + esc(r.id) + '"') + '><span class="kit-ic" style="--c:' + (p ? '#3b6fb6' : '#2f8a57') + '"><i class="bi bi-' + (p ? 'folder-check' : 'clipboard2-check') + '"></i></span>' +
         '<span class="kit-x"><b data-noi18n>' + esc(o.name) + '</b>' + (nmN[String(o.name || '').trim().toLowerCase()] > 1 ? ' <span class="dx-part">' + esc(p && p.made && nmK[String(o.name || '').trim().toLowerCase() + '|p'] > 1 ? k('ui.dx-part-made', '(made {d})', { d: madeOn(p, L.map(function (y) { return y.p; })) }) : p ? (flowOn() ? k('ui.dx-part-lev', '(delivery)') : k('ui.dx-part-mot', '(received)')) : k('ui.dx-part-krav', '(requirements)')) + '</span>' : '') + '<small data-noi18n>' + esc([o.no, siteLine(o), p ? p.trade || (r && r.type) : r.type, p && p.who].filter(Boolean).join(' · ')) + '</small>' +
         '<span class="dc-st" style="--c:' + (tag[0] === 'plan' ? 'var(--violet, #8a63d2)' : stc(tag[0])) + '">' + esc(tag[1]) + '</span></span><i class="bi bi-chevron-right fdv-go"></i></button>' +
@@ -685,6 +686,13 @@
     if (projPop) body += '<div class="dx-tov dc-ppov" data-dcppov><div class="dx-tsheet dc-freshsheet" role="dialog" aria-modal="true" aria-label="' + esc(k('ui.dc-proj-edit', 'Edit the project')) + '"><div class="dc-freshh"><span><b>' + esc(k('ui.dc-proj-edit', 'Edit the project')) + '</b></span><button type="button" class="icon-btn sm" data-dcppx aria-label="' + esc(k('ui.close', 'Close')) + '"><i class="bi bi-x-lg"></i></button></div>' + projForm(p) + '</div></div>';
     return '<div class="fdv-page dc-page dc-flow">' + head + '<div class="fdv-body">' + body + '</div></div>';
   }
+  /* the lines made from the delivery are shown in their own step, with the plan as a download (JP 2026-11-28 13:25 – they were only seen under Sammenligning) */
+  function levLines(p, L) {
+    if (fromKrav(p) || !L.length) return '';
+    var byL = {}; (p.files || []).forEach(function (f) { if (f.line) (byL[f.line] = byL[f.line] || []).push(f.name); });
+    return '<div class="dc-fhead dc-levhead"><h3 class="fdv-h">' + esc(k('ui.dc-fl-lev-t', 'Lines made from the delivery')) + '</h3><span class="dc-fheadb"><button type="button" class="pill-btn ghost" data-dcvx7="' + esc(p.id) + '"><i class="bi bi-file-earmark-excel"></i> ' + esc(k('ui.dc-fl-v7', 'Download document plan (.xlsx)')) + '</button></span></div>' +
+      '<ul class="dc-flist2 dc-levlines">' + L.slice().sort(lineOrder).map(function (l) { return flowRow(l.code, lineHead(l), (byL[l.id] || []).join(', ') || l.planned || '', chip(l.st), '', p, l); }).join('') + '</ul>';
+  }
   function fnext(t, label) { return '<div class="dc-fnext"><button type="button" class="pill-btn" data-dctab="' + t + '">' + esc(label) + ' <i class="bi bi-chevron-right"></i></button></div>'; }
   function flowRow(code, title, sub, chipHtml, extra, p, l, pick) {
     /* a row with a line behind it opens it – the status, deadline, responsible and comment, as in Dokumenter (JP 2026-11-23 "Se på" did nothing) */
@@ -726,7 +734,7 @@
       if (L.length && can('edit', gOf(p, 'dctl'))) h0 += needCard(p.id, L, needSkip(p.id)) + ownLine(p);
       return h0 + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
     }
-    if (!hasPlan(p)) return '<p class="muted dc-help">' + esc(fromKrav(p) || !L.length ? k('ui.dc-fl-plan-krav', 'The list was made from the requirements – no document plan from the contractor yet.') : k('ui.dc-fl-plan-lev', 'The list was made from what was delivered ({n} lines) – no document plan from the contractor yet.', { n: L.length })) + '</p><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label>' +
+    if (!hasPlan(p)) return '<p class="muted dc-help">' + esc(fromKrav(p) || !L.length ? k('ui.dc-fl-plan-krav', 'The list was made from the requirements – no document plan from the contractor yet.') : k('ui.dc-fl-plan-lev', 'The list was made from what was delivered ({n} lines) – no document plan from the contractor yet.', { n: L.length })) + '</p><label class="pill-btn dc-file"><i class="bi bi-file-earmark-spreadsheet"></i> ' + esc(k('ui.dc-fl-imp-b', 'Import document plan (.xlsx)')) + imp + '</label>' + levLines(p, L) +
       (can('edit', gOf(p, 'dctl')) ? needCard(p.id, L, needSkip(p.id)) + ownLine(p) : '') + fnext('lev', k('ui.dc-fl-next-lev', 'Next: delivery'));
     var bad = pc.rows.filter(function (x) { return x.is.err.length || x.is.warn.length; });
     var psel = selOn('pl', p.id), ced = can('edit', gOf(p, 'dctl')), shownP = [];
