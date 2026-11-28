@@ -818,12 +818,28 @@
     if (c.d) li.push('<li>' + esc(k('ui.dcn-cc-title', 'Product or title on page 1: {d}', { d: c.d })) + '</li>');
     if (c.lang) { var ln = { nb: k('ui.dcn-l-nb', 'Norwegian'), en: k('ui.dcn-l-en', 'English'), sv: k('ui.dcn-l-sv', 'Swedish'), de: k('ui.dcn-l-de', 'German') }[c.lang]; li.push('<li>' + esc(k('ui.dcn-cc-lang', 'Language: {l}', { l: ln })) + (c.lang !== 'nb' ? ' <span class="w">' + esc(k('ui.dcn-cc-nb', 'Check whether a Norwegian version is needed.')) + '</span>' : '') + '</li>'); }
     li.push(c.mk.length ? '<li>' + esc(k('ui.dcn-cc-mk', 'Marked for (Bruker, Drift, Prosjekt): {m}', { m: c.mk.join(', ') })) + '</li>' : '<li class="w">' + esc(k('ui.dcn-cc-nomk', 'No marking for user, operation or project found (Bruker, Drift, Prosjekt – spec 4.5)')) + '</li>');
-    return '<div class="dcn-cc"><b>' + esc(k('ui.dcn-cc', 'Content check')) + '</b> ' + tag(bad ? 'var(--warn)' : 'var(--ok)', bad ? k('ui.dcn-cc-check', 'Check this') : k('ui.dcn-cc-fine', 'Nothing odd found')) + ' <span class="muted tnum">' + esc(k('ui.dcn-cc-size', '{n} pages · {c} characters', { n: c.pg, c: c.ch })) + '</span><ul>' + li.join('') + '</ul>' +
-      (ccText[f.id] ? '<details><summary>' + esc(k('ui.dcn-cc-show', 'Show the text that was read')) + '</summary><pre data-noi18n>' + esc(ccText[f.id]) + '</pre></details>' : '') + run + '</div>';
+    var more = li.length > 1 ? '<button type="button" class="text-btn dcn-ccmore" data-dcnccmore="' + esc(f.id) + '" data-l1="' + esc(k('ui.dcn-cc-more', 'Show all ({n})', { n: li.length })) + '" data-l2="' + esc(k('ui.dcn-cc-less', 'Show less')) + '">' + esc(CCOPEN[f.id] ? k('ui.dcn-cc-less', 'Show less') : k('ui.dcn-cc-more', 'Show all ({n})', { n: li.length })) + '</button> ' : '';
+    return '<div class="dcn-cc' + (CCOPEN[f.id] ? ' dcn-ccopen' : '') + '"><b>' + esc(k('ui.dcn-cc', 'Content check')) + '</b> ' + tag(bad ? 'var(--warn)' : 'var(--ok)', bad ? k('ui.dcn-cc-check', 'Check this') : k('ui.dcn-cc-fine', 'Nothing odd found')) + ' <span class="muted tnum">' + esc(k('ui.dcn-cc-size', '{n} pages · {c} characters', { n: c.pg, c: c.ch })) + '</span><ul>' + li.join('') + '</ul>' +
+      (ccText[f.id] ? '<details><summary>' + esc(k('ui.dcn-cc-show', 'Show the text that was read')) + '</summary><pre data-noi18n>' + esc(ccText[f.id]) + '</pre></details>' : '') + more + run + '</div>';
   }
   /* the naming rules (JP 2026-11-16 22:00 "making a rule was lackluster … messy with a lot of rules"): which rule each kind of file
      uses, then the rules as a short list (Boligbygg's folded away), and an editor that builds the name from parts you tap, with the
      result shown as you go */
+  /* the file card keeps its look wherever it fits (JP's Mac); only where the window is too low for it (his PC, drawn a bit larger) it
+     turns tight: the fields side by side, the content check folded to its first finding and its warnings, "Show all" for the rest –
+     so the whole card is seen without scrolling (JP 2026-11-28 21:44) */
+  var TIGHT = false, CCOPEN = {}, fitQ = 0, fitW = '';
+  function fitCard() {
+    fitQ = 0; var sh = document.querySelector('.dcn-fpop:not(.ov-ghost) .dcn-fsheet'); if (!sh) return;
+    if (window.innerWidth < 700) { if (TIGHT) { TIGHT = false; sh.classList.remove('dcn-tight'); } return; }
+    var over = function () { return sh.scrollHeight > sh.clientHeight + 2; }, wh = window.innerWidth + 'x' + window.innerHeight;
+    if (TIGHT && fitW !== wh) { sh.classList.remove('dcn-tight'); if (over()) sh.classList.add('dcn-tight'); else TIGHT = false; }
+    else if (!TIGHT && over()) { TIGHT = true; sh.classList.add('dcn-tight'); }
+    else if (TIGHT && !sh.classList.contains('dcn-tight')) sh.classList.add('dcn-tight');
+    fitW = wh;
+  }
+  function fitSoon() { if (!fitQ) fitQ = requestAnimationFrame(fitCard); }
+  try { new MutationObserver(function () { if (document.querySelector('.dcn-fpop')) fitSoon(); }).observe(document.body, { childList: true, subtree: true }); window.addEventListener('resize', fitSoon); } catch (e) {}
   var npi = -1;
   var EXF = { id: '_ex', name: 'x.pdf', p: { code: '442', abbr: 'DA', text: 'taklampe korridor C20', kind: 'doc' }, nv: { floor: 'H02', disc: 'E', dtype: 'P', room: '0204', free: 'kjøkken', rev: '01', contractor: 'Eksempel Elektro AS' } };
   function exName(p, r) { return nbuild(Object.assign({}, p, { files: [EXF], bid: p.bid || '11621', no: p.no || '23200', pid: p.pid || '2010' }), EXF, r); }
@@ -1042,7 +1058,7 @@
   function popHtml(p, F, G, many) {
     var L2 = G.some(function (f) { return f.id === nfo; }) ? G : F, ix = -1; L2.forEach(function (f, i) { if (f.id === nfo) ix = i; });
     if (!(many && ix > -1)) return ''; var f0 = L2[ix], pv = L2[ix - 1], nx = L2[ix + 1];
-    return '<div class="dcn-ov dc-host dcn-fpop" data-dcnov2><div class="dcn-sheet dcn-fsheet" role="dialog" aria-modal="true" aria-label="' + esc(f0.name) + '"><div class="dcn-shead">' +
+    return '<div class="dcn-ov dc-host dcn-fpop" data-dcnov2><div class="dcn-sheet dcn-fsheet' + (TIGHT ? ' dcn-tight' : '') + '" role="dialog" aria-modal="true" aria-label="' + esc(f0.name) + '"><div class="dcn-shead">' +
         '<button type="button" class="icon-btn" data-dcnfgo="' + esc(pv ? pv.id : '') + '"' + (pv ? '' : ' disabled') + ' aria-label="' + esc(k('ui.dcn-prev', 'The file before')) + '"><i class="bi bi-chevron-left"></i></button>' +
         '<b class="dcn-fpos">' + esc(k('ui.dcn-fpos', 'File {i} of {n}', { i: ix + 1, n: L2.length })) + '</b>' +
         '<button type="button" class="icon-btn" data-dcnfgo="' + esc(nx ? nx.id : '') + '"' + (nx ? '' : ' disabled') + ' aria-label="' + esc(k('ui.dcn-next', 'The next file')) + '"><i class="bi bi-chevron-right"></i></button>' +
@@ -1138,6 +1154,7 @@
     on('toggle', function (e) { if (e.target.matches && e.target.matches('[data-dcnrules]')) nopen = e.target.open; }, true);
     on('click', function (e) {
       var t = e.target, b; if (!t.closest || !t.closest('#wkDocCtl, .dcn-ov, #dcPopHold')) return;
+      if ((b = t.closest('[data-dcnccmore]'))) { var cid = b.dataset.dcnccmore; CCOPEN[cid] = !CCOPEN[cid]; var cc0 = b.closest('.dcn-cc'); if (cc0) { cc0.classList.toggle('dcn-ccopen', !!CCOPEN[cid]); b.textContent = CCOPEN[cid] ? b.dataset.l2 : b.dataset.l1; } return; }
       var fileOf = function (p, id) { return (p.files || []).filter(function (x) { return x.id === id; })[0]; };
       if ((b = t.closest('[data-dcnuse]'))) { var id = b.dataset.dcnuse; saveP(cur(), function (p) { var f = fileOf(p, id); if (!f) return; var nb2 = nbuild(p, f); if (!nb2.miss.length) { rename(p, f, nb2.plain + ext(f.orig || f.name)); teach(f); } }); if (nfo === id) { var PF = ((proj(cur()) || {}).files || []).filter(function (x) { return !x.nf; }), j = -1; PF.forEach(function (x, i) { if (x.id === id) j = i; }); var P2 = proj(cur()), left = function (x) { return x.id !== id && fstate(P2, x) !== 'done'; }, nxf = PF.slice(j + 1).filter(left)[0] || PF.filter(left)[0];   /* renamed – on to the next file that still needs it */
         if (nxf) nfo = nxf.id; else { nfo = ''; if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); toast('<i class="bi bi-check2-circle"></i> ' + esc(k('ui.dcn-all-done', 'All the files have their new names'))); } }   /* none left: the popup closes (JP 2026-11-26 10:17) */ draw(); return; }
