@@ -1189,7 +1189,11 @@
   /* a redraw from elsewhere (a sync, another person's change) waits while you are in a field or an open list of a file or a popup –
      it used to close the list you were choosing from (JP 2026-11-17 12:54 "boxes close so fast"); what you do yourself draws at once */
   var drawLater = false;
-  function busyField() { var ae = document.activeElement; return !!(ae && /^(SELECT|INPUT|TEXTAREA)$/.test(ae.tagName) && ae.closest('.dcn-ov, .dcn-files, .dcn-rules, .dx-ren') && Date.now() - (window.__dcUser || 0) > 400); }
+  /* the field whose change was just handled may still have focus (Enter, Tab, a click on the page): it is drawn, or the card kept
+     its old colour and name until something else drew (JP 2026-11-28 10:36) – a field still being typed in is never touched */
+  var CHG = null; document.addEventListener('change', function (e) { CHG = { el: e.target, t: Date.now() }; }, true); document.addEventListener('input', function (e) { if (CHG && CHG.el === e.target) CHG = null; }, true);
+  function justChanged(ae) { return !!(CHG && CHG.el === ae && Date.now() - CHG.t < 3000); }
+  function busyField() { var ae = document.activeElement; return !!(ae && /^(SELECT|INPUT|TEXTAREA)$/.test(ae.tagName) && ae.closest('.dcn-ov, .dcn-files, .dcn-rules, .dx-ren') && Date.now() - (window.__dcUser || 0) > 400 && !justChanged(ae)); }
   document.addEventListener('focusout', function () { if (drawLater) setTimeout(function () { if (drawLater && !busyField()) { drawLater = false; draw(); } }, 60); });
   /* redraws that come by themselves (each saved file, each finished check, a sync) are gathered: at most one every 0.8 s, the last one always
      comes – uploading many files made the page flicker (JP 2026-11-17 13:32); what you do yourself still draws at once */
@@ -1245,7 +1249,7 @@
     if ((shBusy || (window.DocNaming && DocNaming.busy && DocNaming.busy()) || impBusy) && now - (window.__dcInput || 0) > 500 && now - lastDraw < 700) { if (!drawT) drawT = setTimeout(function () { drawT = 0; draw(); }, 700 - (now - lastDraw)); return; }
     if (drawT) { clearTimeout(drawT); drawT = 0; }
     lastDraw = now; window.__dcDraws = (window.__dcDraws || 0) + 1;   /* counted for the tests – an update in place may change nothing on the page */
-    var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae) || (document.getElementById('dcPopHold') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input')) return;   /* never redraw under the finger */
+    var ae = document.activeElement; if (ae && !/^(checkbox|radio)$/.test(ae.type || '') && (el.contains(ae) || (document.getElementById('wkDocReq') || el).contains(ae) || (document.getElementById('dcPopHold') || el).contains(ae)) && ae.matches('textarea[data-dccmt], [data-dcwho], [data-dcdue], .dc-pform input, [data-dredit] input, [data-drform] input, .dc-paste textarea, .dc-tsave input, .dc-addl input, [data-dcpq], .dx-panel input, .dx-panel textarea, .dx-tform input, .dx-send input') && !justChanged(ae)) { drawLater = true; return; }   /* never redraw under the finger */
     if (!open && ropen && flowOn()) { var rq0 = krav(ropen), cq0 = rq0 && ctlOf(rq0); if (!cq0 && rq0 && can('newp')) { cq0 = proj(projFromKrav(rq0)); if (cq0 && !(rq0.lines || []).length) { open = cq0.id; kinOpen(cq0); open = null; } }   /* a list without a project becomes one: in the five steps every list is a project (JP 18:37) */
       if (cq0) { var kk = kin, kr = ropen; open = cq0.id; setTab('krav'); if (kk) { kin = kk; ropen = kr; } try { history.replaceState({ dc: cq0.id, from: 'list' }, '', location.pathname + location.search + '#dc=' + cq0.id); } catch (e) {} } }   /* a project's requirements live in its step 1 (JP 2026-11-24) */
     var p = open && proj(open);
