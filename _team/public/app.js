@@ -594,7 +594,7 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
     }); shut.forEach(function (x) { if (!x[0].isConnected && !open[x[1]]) ghost(x[0]); }); }).observe(document.body, { childList: true, subtree: true }); })();
   /* a new version comes in by itself (JP 2026-11-25 – his tab ran code from before the last release): Team notes the files it started with and looks
      again when it opens, when you come back to it and every 5 minutes; with nothing open or being typed it reloads quietly, otherwise a small button offers it */
-  var BUILD = '4ccbe04196ce';   /* stamped by _team/build.py – the same as /version.txt for this release */
+  var BUILD = '6f67dc534d4a';   /* stamped by _team/build.py – the same as /version.txt for this release */
   var VT = 0;
   function calmNow() { var ae = document.activeElement; return !S.edit && !S.sheet && !document.querySelector('.dcn-ov, .dx-tov, .xv, .fdz-ov, .dc-sharing') && !(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !(window.__selOpen && window.__selOpen()); }
   function verCheck() { if (!BUILD || Date.now() - VT < 20000 || !navigator.onLine) return; VT = Date.now();
@@ -1681,11 +1681,12 @@ window.__teamSwitchDone = function () { var el = document.getElementById('tSwitc
   function projectsCard() {
     var ps = docRO().dctl || []; if (!ps.length) return '';
     var SEG = [['ok', L('approved', 'godkjent')], ['cmt', L('approved with comments', 'godkjent med merknad')], ['recv', L('to check', 'til kontroll')], ['rej', L('not approved', 'ikke godkjent')], ['missing', L('missing', 'mangler')]];
+    var nmN = {}; ps.forEach(function (p) { var n = String(p.name || '').trim().toLowerCase(); nmN[n] = (nmN[n] || 0) + 1; });   /* two with one name: the day each was made tells them apart (JP 2026-11-28 live check) */
     return '<p class="t-h"><span>' + L('Projects', 'Prosjekter') + '</span><span>' + ps.length + '</span></p><div class="t-projs">' + ps.map(function (p) {
       var all = p.lines || [], ls = all.filter(function (l) { return l.st !== 'na'; }), c = { ok: 0, cmt: 0, recv: 0, rej: 0, missing: 0 };
       ls.forEach(function (l) { c[c[l.st] != null ? l.st : 'missing']++; });
       var done = c.ok + c.cmt, pct = ls.length ? Math.round(done / ls.length * 100) : 0, due = p.due || p.deadline || '', late = due && due < today() && done < ls.length;
-      var sub = [p.no, p.trade || p.type, p.site || p.addr, p.who].filter(Boolean).join(' · ');
+      var sub = [p.no, p.trade || p.type, p.site || p.addr, p.who, nmN[String(p.name || '').trim().toLowerCase()] > 1 && p.made ? L('made ', 'laget ') + fmtDate(String(p.made).slice(0, 10)) : ''].filter(Boolean).join(' · ');
       var bar = ls.length ? '<span class="t-pbar" role="img" aria-label="' + esc(SEG.filter(function (g) { return c[g[0]]; }).map(function (g) { return c[g[0]] + ' ' + g[1]; }).join(', ')) + '">' + SEG.map(function (g) { return c[g[0]] ? '<i class="s-' + g[0] + '" style="flex:' + c[g[0]] + '"></i>' : ''; }).join('') + '</span>' : '';
       var keys = ls.length ? '<span class="t-pkeys">' + SEG.filter(function (g) { return c[g[0]]; }).map(function (g) { return '<span><i class="s-' + g[0] + '"></i><b class="t-num">' + c[g[0]] + '</b> ' + g[1] + '</span>'; }).join('') + (all.length > ls.length ? '<span><i class="s-na"></i><b class="t-num">' + (all.length - ls.length) + '</b> ' + L('not relevant', 'ikke relevant') + '</span>' : '') + '</span>' : '<span class="t-small">' + L('No document plan yet', 'Ingen dokumentplan ennå') + '</span>';
       return '<a class="t-proj" href="#dc=' + esc(p.id) + '"><span class="t-ptop"><span class="grow"><b>' + esc(p.name) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
