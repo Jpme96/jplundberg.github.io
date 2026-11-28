@@ -536,7 +536,10 @@
       var pl = /^(?:produkt(?:navn)?|product(?: name)?|modell?|model|typebetegnelse)\s*[:\-–]\s*(.{3,80})$/im.exec(all), d = (pl ? pl[1] : r.title || '').replace(/\s+/g, ' ').trim();
       [].concat(TKW.SE, TKW.DA, TKW.DV, TKW.FB).forEach(function (e) { d = d.replace(new RegExp('\\S*' + e[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\S*', 'ig'), '');   /* the whole word: EU-samsvarserklæring goes, not just its middle */ });
       d = d.replace(/[-–:|]+/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 6).join(' ');
-      var mm = /\b([A-ZÆØÅ][\wÆØÅæøå&.-]{1,25}(?:\s[A-ZÆØÅ][\wÆØÅæøå&.-]{1,25})?)\s(AS|ASA|AB|GmbH|Oy|A\/S|Ltd|Inc)\b/.exec(all); if (mm && d.toLowerCase().indexOf(mm[1].toLowerCase()) < 0) d = (d ? d + ' ' : '') + mm[1];
+      var mm = /\b([A-ZÆØÅ][\wÆØÅæøå&.-]{1,25}(?:\s[A-ZÆØÅ][\wÆØÅæøå&.-]{1,25})?)\s(AS|ASA|AB|GmbH|Oy|A\/S|Ltd|Inc)\b/.exec(all);
+      /* the label in front of a maker is not part of its name: "Produsent Testfirma AS" gives Testfirma (2026-11-28) */
+      var mk = mm ? mm[1].replace(/^(?:produsent|produsert|produktet|leverandør|leverandor|leverandør\/produsent|manufacturer|manufactured|supplier|tillverkare|leverantör|producent|leverandør:|fabrikant|importør|importer|hersteller|firma|selskap|company)\s+/i, '').trim() : '';
+      if (mk && d.toLowerCase().indexOf(mk.toLowerCase()) < 0) d = (d ? d + ' ' : '') + mk;
       ccText[fid] = all.slice(0, 1500); var dw = looksDrawn(r);
       var cc = { at: today(), pg: r.n, ch: chars, t: st ? [st.k, why(st, 't')] : null, c: sc ? [sc.k, why(sc, 't')] : null, ca: !sc && co.length > 1 ? co.slice(0, 2).map(function (x) { return [x.k, why(x, 't')]; }) : null, tt: ty.slice(0, 3).map(function (x) { return x.k; }), cs: co.slice(0, 3).map(function (x) { return x.k; }), d: d.slice(0, 80),
         lang: chars > 200 ? langOf(low) : '', mk: ['Bruker', 'Drift', 'Prosjekt'].filter(function (w) { return new RegExp('(^|[^A-Za-zæøå])' + w + '([^a-zæøå]|$)').test(all); }), w: [] };

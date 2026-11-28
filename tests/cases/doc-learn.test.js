@@ -61,6 +61,10 @@ const mk = (n, lines) => { const f = path.join(dir, n); fs.writeFileSync(f, pdf(
   await up(Array.from({ length: 10 }, (_, i) => mk('Calm made-up ' + i + '.pdf', ['Made-up', 'Product sheet ' + i])));
   const dn = await p.evaluate(d0 => (window.__dcDraws || 0) - d0, d0);
   check(dn <= 12, 'ten files added at once draw the page at most 12 times (was about 25) – ' + dn);
+  /* the label in front of a maker isn't part of its name (2026-11-28: "… Produsent Testfirma.pdf") */
+  await up([mk('360 Madeup gizmo sheet.pdf', ['Madeup gizmo', 'Produsent Zorbfirma AS', 'Forvaltning, drift og vedlikehold'])]);
+  const mkr = await p.evaluate(async () => { for (let i = 0; i < 30; i++) { const li = [...document.querySelectorAll('.dx-ren li, .dx-ren .dcn-row')].find(x => /360 Madeup gizmo sheet/.test(x.textContent)); const t = li && li.textContent; if (t && /Zorbfirma/.test(t)) return t; await new Promise(r => setTimeout(r, 200)); } const li2 = [...document.querySelectorAll('.dx-ren li, .dx-ren .dcn-row, .dx-ren [data-dcnexp]')].find(x => /gizmo/.test(x.textContent)); return 'NONE:' + (li2 ? li2.textContent.slice(0, 200) : document.querySelectorAll('.dx-ren [data-dcnexp]').length); });
+  check(/Zorbfirma/.test(mkr) && !/Produsent Zorbfirma/.test(mkr), 'the maker is named without its label ' + mkr.slice(0, 160));
   await up([mk('Zorblat irisspjeld A.pdf', ['Made-up', 'Product sheet'])]);
   await row(/Zorblat irisspjeld A/); await setCode(/Zorblat irisspjeld A/, '364'); await closeRow();
   await up([mk('Zorblat irisspjeld B.pdf', ['Made-up', 'Product sheet'])]);
